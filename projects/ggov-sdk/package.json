@@ -1,0 +1,40 @@
+{
+  "name": "ggov-sdk",
+  "version": "0.0.1",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d13co/xgov-delegator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/d13co/xgov-delegator/issues"
+  },
+  "homepage": "https://github.com/d13co/xgov-delegator/tree/main/projects/ggov-sdk#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "cp ../contracts/smart_contracts/artifacts/ggov/GGovClient.ts src/generated/GGovClient.ts && tsx ../common/sdks/generate-errors.ts .",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "js-sha512": "^0.9.0",
+    "xgov-committees-oracle-sdk": "link:../oracle-sdk"
+  },
+  "peerDependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.0",
+    "algosdk": "^3.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  }
+}

@@ -22,6 +22,7 @@
   "dependencies": {
     "@algorandfoundation/algorand-typescript": "^1.1.0",
     "@d13co/superbox": "^1.1.0",
+    "ggov-sdk": "link:../ggov-sdk",
     "xgov-committees-oracle-sdk": "link:../oracle-sdk",
     "xgov-delegator-sdk": "link:../delegator-sdk"
   },

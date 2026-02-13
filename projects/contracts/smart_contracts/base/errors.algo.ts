@@ -54,3 +54,25 @@ export const errIncorrectVotes = 'ERR:IV' // Incorrect vote total - vote totals 
 export const errNoVotes = 'ERR:NV' // No votes found
 export const errAccountNumMismatch = 'ERR:ANM' // Number of accounts provided does not match number of accounts with pending votes in proposal
 export const errState = 'ERR:ST' // Invalid state for this action
+
+// gGov auth
+export const errNotOperator = 'ERR:G_OP' // Caller must be operator
+
+// gGov period
+export const errGGovPeriodExists = 'ERR:GP_EX' // Period already exists
+export const errGGovPeriodNotExists = 'ERR:GP_NX' // Period does not exist
+export const errGGovVotingNotStarted = 'ERR:GP_NS' // Voting has not started
+export const errGGovVotingEnded = 'ERR:GP_EN' // Voting period ended
+export const errGGovVotingActive = 'ERR:GP_AC' // Cannot modify while voting active
+export const errGGovHasVotes = 'ERR:GP_VE' // Cannot modify: votes exist
+
+// gGov topic
+export const errGGovTopicIndexOOB = 'ERR:GT_OB' // Topic index out of bounds
+export const errGGovNoOptions = 'ERR:GT_NO' // Topic must have at least one option
+
+// gGov voting
+export const errGGovVoteMismatch = 'ERR:GV_MM' // Vote array length mismatch
+export const errGGovVotePowerMismatch = 'ERR:GV_VP' // Vote sum != voting power
+export const errGGovCannotOverride = 'ERR:GV_OD' // Delegatee cannot override direct vote
+export const errGGovNoDelegation = 'ERR:GD_NX' // No delegation for account
+export const errGGovSelfDelegate = 'ERR:GD_SD' // Cannot delegate to self

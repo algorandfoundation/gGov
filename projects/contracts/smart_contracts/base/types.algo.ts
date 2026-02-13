@@ -138,3 +138,47 @@ export type DelegatorVote = {
   abstainVotes: uint64
   boycottVotes: uint64
 }
+
+// gGov types
+
+/** Key for vote records: [periodId, accountId] */
+export type GGovVoteKey = [Uint32, Uint32]
+
+/** Key for topic body JSON: [periodId, topicIndex] */
+export type GGovTopicBigKey = [Uint32, Uint32]
+
+/** Topic - inlined in GGovPeriod */
+export type GGovTopic = {
+  options: string[]
+  votes: Uint32[]
+}
+
+/** Period - stored in BoxMap<Uint32, GGovPeriod> */
+export type GGovPeriod = {
+  committeeId: CommitteeId
+  votingStart: Uint32
+  votingEnd: Uint32
+  topics: GGovTopic[]
+}
+
+/** Vote record per account per period */
+export type GGovVoteRecord = {
+  byDelegator: boolean
+  topicVotes: Uint32[][]
+}
+
+export function getEmptyGGovPeriod(): GGovPeriod {
+  return {
+    committeeId: new StaticBytes<32>(),
+    votingStart: u32(0),
+    votingEnd: u32(0),
+    topics: [] as GGovTopic[],
+  }
+}
+
+export function getEmptyGGovVoteRecord(): GGovVoteRecord {
+  return {
+    byDelegator: false,
+    topicVotes: [] as Uint32[][],
+  }
+}
