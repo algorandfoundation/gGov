@@ -1,28 +1,23 @@
-import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
-import { GGovClient, GGovComposer } from "./generated/GGovClient";
+import { GGovClient } from "./generated/GGovClient";
 import { GGovReaderSDK } from "./sdkReader";
+import { createTxnExecutor } from "xgov-committees-oracle-sdk";
 import {
   CommitteeId,
   CommonMethodBuilderArgs,
   ConstructorArgs,
   GGovContractArgs,
-  SenderWithSigner,
-  SendResult,
 } from "./types";
-import { getIncreaseBudgetBuilder } from "./util/increaseBudget";
 import { requireWriter } from "./util/requiresSender";
 import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
 import { committeeIdToRaw } from "./util/comitteeId";
 import { chunk } from "./util/chunk";
 
 export class GGovSDK extends GGovReaderSDK {
-  public ggovWriterAccount?: SenderWithSigner;
   public ggovWriteClient?: GGovClient;
 
   constructor({ writerAccount, ...rest }: ConstructorArgs) {
     super({ ...rest, writerAccount });
     if (writerAccount) {
-      this.ggovWriterAccount = writerAccount;
       this.ggovWriteClient = new GGovClient({
         algorand: this.algorand,
         appId: this.appId,
@@ -32,58 +27,13 @@ export class GGovSDK extends GGovReaderSDK {
     }
   }
 
-  // Create an executor from a makeXYZTxn function
-  private makeGGovTxnExecutor = <T extends (...args: any) => any, R = SendResult>({
-    maker,
-    returnTransformer,
-    sendParams,
-  }: {
-    maker: T;
-    returnTransformer?: (result: SendResult) => R;
-    sendParams?: SendParams;
-  }) => {
-    return async (args: Omit<Parameters<T>[0], "builder">): Promise<R> => {
-      if (!this.ggovWriterAccount) {
-        throw new Error(`writerAccount not set on the SDK instance`);
-      }
-      const result = await wrapErrorsInternal(
-        this.executeGGov({
-          txnBuilder: (args) => maker.bind(this)(args),
-          txnBuilderArgs: args,
-          emptyGroupBuilder: () => this.ggovWriteClient!.newGroup(),
-          sendParams,
-        }),
-      );
-      if (returnTransformer) {
-        return returnTransformer(result);
-      }
-      return result as R;
-    };
-  };
-
-  // Utility to handle increaseBudget automatically and wrap algod errors
-  private async executeGGov<T extends CommonMethodBuilderArgs, Y extends GGovComposer<any>>({
-    txnBuilder,
-    txnBuilderArgs,
-    emptyGroupBuilder,
-    sendParams,
-  }: {
-    txnBuilder: (args: T) => Promise<Y>;
-    txnBuilderArgs: T;
-    emptyGroupBuilder: () => Y;
-    sendParams?: SendParams;
-  }) {
-    let builder = await txnBuilder(txnBuilderArgs);
-    const increasedBudgetBuilder = await getIncreaseBudgetBuilder(
-      builder,
-      emptyGroupBuilder,
-      this.ggovWriterAccount!.sender.toString(),
-      this.ggovWriterAccount!.signer,
-      this.algorand.client.algod,
-    );
-    if (increasedBudgetBuilder) builder = await txnBuilder({ ...txnBuilderArgs, builder: increasedBudgetBuilder });
-    return builder.send(sendParams);
-  }
+  private makeGGovTxnExecutor = createTxnExecutor(
+    this,
+    () => this.ggovWriteClient!.newGroup(),
+    wrapErrorsInternal,
+    () => this.writerAccount,
+    () => this.algorand.client.algod,
+  );
 
   // ── Admin methods ────────────────────────────────────────────────
 

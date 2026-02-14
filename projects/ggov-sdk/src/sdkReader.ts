@@ -6,7 +6,7 @@ import { GGovClient, GGovPeriod, GGovVoteRecord } from "./generated/GGovClient";
 import { getConstructorConfig } from "./networkConfig";
 import { ReaderConstructorArgs, SenderWithSigner } from "./types";
 import { errorTransformer, wrapErrors } from "./util/wrapErrors";
-import { SIMULATE_PARAMS } from "./util/increaseBudget";
+import { SIMULATE_PARAMS } from "xgov-committees-oracle-sdk";
 
 export class GGovReaderSDK extends XGovCommitteesOracleSDK {
   public ggovReadClient: GGovClient;

@@ -14,6 +14,9 @@ importers:
       '@d13co/superbox':
         specifier: ^1.1.0
         version: 1.1.0(tslib@2.8.1)
+      ggov-sdk:
+        specifier: link:../ggov-sdk
+        version: link:../ggov-sdk
       xgov-committees-oracle-sdk:
         specifier: link:../oracle-sdk
         version: link:../oracle-sdk
@@ -203,6 +206,31 @@ importers:
       vite-plugin-node-polyfills:
         specifier: ^0.22.0
         version: 0.22.0(rollup@4.56.0)(vite@5.4.21(@types/node@18.19.130))
+
+  projects/ggov-sdk:
+    dependencies:
+      '@algorandfoundation/algokit-utils':
+        specifier: ^9.2.0
+        version: 9.2.0(algosdk@3.5.2)
+      algosdk:
+        specifier: ^3.5.2
+        version: 3.5.2
+      js-sha512:
+        specifier: ^0.9.0
+        version: 0.9.0
+      xgov-committees-oracle-sdk:
+        specifier: link:../oracle-sdk
+        version: link:../oracle-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.2.1
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   projects/oracle-sdk:
     dependencies:

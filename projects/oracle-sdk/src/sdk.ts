@@ -1,11 +1,10 @@
-import { CommitteeOracleClient, CommitteeOracleComposer } from "./generated/CommitteeOracleClient";
+import { CommitteeOracleClient } from "./generated/CommitteeOracleClient";
 import {
   ConstructorArgs,
   AccountWithVotes,
   SenderWithSigner,
   XGovCommitteeFile,
   CommonMethodBuilderArgs,
-  SendResult,
   OracleContractArgs,
 } from "./types";
 import { requireWriter } from "./util/requiresSender";
@@ -13,8 +12,7 @@ import { calculateCommitteeId } from "./util/comitteeId";
 import { xGovToTuple } from "./util/types";
 import { XGovCommitteesOracleReaderSDK } from "./sdkReader";
 import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
-import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
-import { getIncreaseBudgetBuilder } from "./util/increaseBudget";
+import { createTxnExecutor } from "./util/txnExecutor";
 import { chunk } from "./util/chunk";
 
 export class XGovCommitteesOracleSDK extends XGovCommitteesOracleReaderSDK {
@@ -33,6 +31,14 @@ export class XGovCommitteesOracleSDK extends XGovCommitteesOracleReaderSDK {
       });
     }
   }
+
+  private makeTxnExecutor = createTxnExecutor(
+    this,
+    () => this.writeClient!.newGroup(),
+    wrapErrorsInternal,
+    () => this.writerAccount,
+    () => this.algorand.client.algod,
+  );
 
   @requireWriter()
   @wrapErrors()
@@ -78,62 +84,6 @@ export class XGovCommitteesOracleSDK extends XGovCommitteesOracleReaderSDK {
       this.debug && console.log("xGov ingested ", accountsLog, txIds[txIds.length - 1]);
     }
     return committeeId;
-  }
-
-  // Create an executor from a makeXYZTxn function
-  private makeTxnExecutor = <T extends (...args: any) => any, R = SendResult>({
-    maker,
-    returnTransformer,
-    sendParams,
-  }: {
-    maker: T;
-    returnTransformer?: (result: SendResult) => R;
-    sendParams?: SendParams;
-  }) => {
-    return async (args: Omit<Parameters<T>[0], "builder">): Promise<R> => {
-      if (!this.writerAccount) {
-        throw new Error(`writerAccount not set on the SDK instance`);
-      }
-      const result = await wrapErrorsInternal(
-        this.execute({
-          txnBuilder: (args) => maker.bind(this)(args),
-          txnBuilderArgs: args,
-          emptyGroupBuilder: () => this.writeClient!.newGroup(),
-          sendParams,
-        }),
-      );
-      if (returnTransformer) {
-        return returnTransformer(result);
-      }
-      return result as R;
-    };
-  };
-
-  // Utility to handle increaseBudget automatically and wrap algod errors
-  // gets a standalone group without opup
-  // test if need to prepend increaseBudget()
-  // if so, remake group with emptyGroupBuilder, passing in a group with increaseBudget() prepended
-  private async execute<T extends CommonMethodBuilderArgs, Y extends CommitteeOracleComposer<any>>({
-    txnBuilder,
-    txnBuilderArgs,
-    emptyGroupBuilder,
-    sendParams,
-  }: {
-    txnBuilder: (args: T) => Promise<Y>;
-    txnBuilderArgs: T;
-    emptyGroupBuilder: () => Y;
-    sendParams?: SendParams;
-  }) {
-    let builder = await txnBuilder(txnBuilderArgs);
-    const increasedBudgetBuilder = await getIncreaseBudgetBuilder(
-      builder,
-      emptyGroupBuilder,
-      this.writerAccount!.sender.toString(),
-      this.writerAccount!.signer,
-      this.algorand.client.algod,
-    );
-    if (increasedBudgetBuilder) builder = await txnBuilder({ ...txnBuilderArgs, builder: increasedBudgetBuilder });
-    return builder.send(sendParams);
   }
 
   @requireWriter()

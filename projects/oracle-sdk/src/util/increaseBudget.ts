@@ -1,6 +1,5 @@
 import { TransactionSignerAccount } from "@algorandfoundation/algokit-utils/types/account"
 import { modelsv2, TransactionSigner, Algodv2, makeEmptyTransactionSigner } from "algosdk"
-import { CommitteeOracleComposer } from "../generated/CommitteeOracleClient"
 import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from "../constants"
 
 export const SIMULATE_PARAMS = {
@@ -17,10 +16,10 @@ const simulateRequest = new modelsv2.SimulateRequest({
 })
 
 /* Utility to increase the budget of a transaction group if needed.
- * Simulates and returns undefines if we are under budget, otherwise returns a new builder with an increaseBudget call prepended.
+ * Simulates and returns undefined if we are under budget, otherwise returns a new builder with an increaseBudget call prepended.
  */
 export async function getIncreaseBudgetBuilder<
-  T extends CommitteeOracleComposer<any>
+  T extends { composer(): Promise<any>; increaseBudget(args: any): any }
 >(
   builder: T,
   newBuilderFactory: () => T,
@@ -57,7 +56,7 @@ export async function getIncreaseBudgetBuilder<
 
   // get existing budget: count app calls
   // NOTE only goes 1 level deep in itxns
-  const numAppCalls = txnResults.map(({ txnResult }) => {
+  const numAppCalls = txnResults.map(({ txnResult }: any) => {
     if (txnResult?.txn.txn.type !== "appl") return 0
     const innerTxns = txnResult.innerTxns ?? []
     return 1 + innerTxns.length

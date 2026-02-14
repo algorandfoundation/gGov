@@ -1,6 +1,5 @@
 /**
- * Decorator that ensures the instance has a writerAccount property set before calling the method.
- * Checks for ggovWriterAccount (gGov SDK) or writerAccount (oracle SDK) on the instance.
+ * Decorator that ensures the instance has a writerAccount property set before calling the method
  * @returns Method decorator
  */
 export function requireWriter() {
@@ -8,7 +7,7 @@ export function requireWriter() {
     const originalMethod = descriptor.value
 
     descriptor.value = function (...args: any[]) {
-      if (!this || ((this as any).ggovWriterAccount === undefined && (this as any).writerAccount === undefined)) {
+      if (!this || (this as any).writerAccount === undefined) {
         throw new Error(`Method "${propertyKey}" requires a writerAccount to be set on the instance`)
       }
 

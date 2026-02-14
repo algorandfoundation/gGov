@@ -46,5 +46,19 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:IV": "Incorrect vote total - vote totals must match the account voting power",
   "ERR:NV": "No votes found",
   "ERR:ANM": "Number of accounts provided does not match number of accounts with pending votes in proposal",
-  "ERR:ST": "Invalid state for this action"
+  "ERR:ST": "Invalid state for this action",
+  "ERR:G_OP": "Caller must be operator",
+  "ERR:GP_EX": "Period already exists",
+  "ERR:GP_NX": "Period does not exist",
+  "ERR:GP_NS": "Voting has not started",
+  "ERR:GP_EN": "Voting period ended",
+  "ERR:GP_AC": "Cannot modify while voting active",
+  "ERR:GP_VE": "Cannot modify: votes exist",
+  "ERR:GT_OB": "Topic index out of bounds",
+  "ERR:GT_NO": "Topic must have at least one option",
+  "ERR:GV_MM": "Vote array length mismatch",
+  "ERR:GV_VP": "Vote sum != voting power",
+  "ERR:GV_OD": "Delegatee cannot override direct vote",
+  "ERR:GD_NX": "No delegation for account",
+  "ERR:GD_SD": "Cannot delegate to self"
 };

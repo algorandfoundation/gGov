@@ -10,7 +10,6 @@ import {
 import { GGovSDK, GGovFactory } from 'ggov-sdk'
 import {
   errGGovCannotOverride,
-  errGGovHasVotes,
   errGGovNoDelegation,
   errGGovNoOptions,
   errGGovPeriodNotExists,
@@ -18,6 +17,7 @@ import {
   errGGovTopicIndexOOB,
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
+  errGGovVotingActive,
   errGGovVotingNotStarted,
   errNotOperator,
   errPeriodEndLessThanStart,
@@ -670,24 +670,96 @@ describe('GGov contract', () => {
     })
   })
 
-  // ── editTopic with votes ────────────────────────────────────────
+  // ── Large body uploads ─────────────────────────────────────────
+  // Note: Box I/O budget limits single-box writes to ~30KB per transaction group
+  // (2 txns * 8 box refs * 2048 bytes = 32768 budget; resize costs newSize bytes).
+  // For bodies >30KB, a multi-phase upload or superbox approach would be needed.
 
-  describe('editTopic with existing votes', () => {
-    test('Cannot edit topic after votes have been cast', async () => {
-      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployGGovWithCommittee(localnet, 1, 10)
+  describe('large body uploads', () => {
+    test('Upload ~12KB period body via chunked SDK method', async () => {
+      const { sdk, committeeId, admin } = await deployGGovWithCommittee(localnet)
       await sdk.setOperator({ account: admin.toString() })
 
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+
+      // Generate ~12KB JSON body
+      const bodyObj = {
+        title: 'Test Period with Large Body',
+        description: 'A'.repeat(11000),
+        metadata: { key: 'value', nested: { data: Array.from({ length: 100 }, (_, i) => `item-${i}`) } },
+      }
+      const bodyJson = JSON.stringify(bodyObj)
+      expect(bodyJson.length).toBeGreaterThan(11000)
+      expect(bodyJson.length).toBeLessThan(14000)
+
+      await sdk.uploadPeriodBody({ periodId, body: bodyJson })
+    }, 60_000)
+
+    test('Upload ~12KB topic body via chunked SDK method', async () => {
+      const { sdk, committeeId, admin } = await deployGGovWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+
+      // Generate ~12KB JSON body
+      const bodyObj = {
+        title: 'Proposal: Large Topic Body Test',
+        body: 'B'.repeat(11000),
+        references: Array.from({ length: 50 }, (_, i) => ({ id: i, url: `https://example.com/ref/${i}` })),
+      }
+      const bodyJson = JSON.stringify(bodyObj)
+      expect(bodyJson.length).toBeGreaterThan(11000)
+      expect(bodyJson.length).toBeLessThan(14000)
+
+      await sdk.uploadTopicBody({ periodId, topicIndex: 0n, body: bodyJson })
+    }, 60_000)
+
+    test('Re-upload period body overwrites previous data', async () => {
+      const { sdk, committeeId, admin } = await deployGGovWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+
+      // Upload first body
+      const body1 = JSON.stringify({ version: 1, data: 'X'.repeat(5000) })
+      await sdk.uploadPeriodBody({ periodId, body: body1 })
+
+      // Re-upload with different body
+      const body2 = JSON.stringify({ version: 2, data: 'Y'.repeat(10000) })
+      await sdk.uploadPeriodBody({ periodId, body: body2 })
+    }, 60_000)
+  })
+
+  // ── editTopic after voting started ─────────────────────────────
+
+  describe('editTopic after voting started', () => {
+    test('Cannot edit topic after voting has started', async () => {
+      const { sdk, committeeId, admin } = await deployGGovWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+
+      // createVotingPeriod moves votingStart to the past
       const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
 
-      // Cast a vote
-      const voter = xGovAccounts[0]
-      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
-
-      // Try to edit — should fail since votes are non-zero
+      // Try to edit — should fail since voting has started
       await expect(
         sdk.editTopic({ periodId, topicIndex: 0n, options: ['Approve', 'Reject'] }),
-      ).rejects.toThrow(transformedError(errGGovHasVotes))
+      ).rejects.toThrow(transformedError(errGGovVotingActive))
     })
   })
 })

@@ -142,14 +142,17 @@ export class GGovContract extends CommitteeOracleContract {
     ensure(this.periods(u32(periodId)).exists, errGGovPeriodNotExists)
 
     const boxKey = Bytes`P`.concat(encodeArc4(u32(periodId)))
+    const writeEnd: uint64 = startOffset + data.length
     if (startOffset === 0) {
-      const estimatedSize: uint64 = startOffset + data.length + (last ? 0 : 4096)
-      op.Box.create(boxKey, estimatedSize)
+      op.Box.delete(boxKey)
+      op.Box.create(boxKey, writeEnd)
+    } else {
+      const [boxLen] = op.Box.length(boxKey)
+      if (writeEnd > boxLen) {
+        op.Box.resize(boxKey, writeEnd)
+      }
     }
     op.Box.replace(boxKey, startOffset, data)
-    if (last) {
-      op.Box.resize(boxKey, startOffset + data.length)
-    }
   }
 
   // ── Operator: Topic CRUD ─────────────────────────────────────────
@@ -204,11 +207,8 @@ export class GGovContract extends CommitteeOracleContract {
 
     ensure(topicIndex < period.topics.length, errGGovTopicIndexOOB)
 
-    // Check no votes have been cast on this topic
-    const existingTopic = clone(period.topics[topicIndex])
-    for (const v of clone(existingTopic.votes)) {
-      ensure(v.asUint64() === 0, errGGovHasVotes)
-    }
+    // Cannot edit topics if voting has started
+    ensure(Global.latestTimestamp < period.votingStart.asUint64(), errGGovVotingActive)
 
     // Replace topic with new options and zeroed votes
     const votes: Uint32[] = []
@@ -241,14 +241,17 @@ export class GGovContract extends CommitteeOracleContract {
     ensure(this.periods(u32(periodId)).exists, errGGovPeriodNotExists)
 
     const boxKey = Bytes`T`.concat(encodeArc4(u32(periodId))).concat(encodeArc4(u32(topicIndex)))
+    const writeEnd: uint64 = startOffset + data.length
     if (startOffset === 0) {
-      const estimatedSize: uint64 = startOffset + data.length + (last ? 0 : 4096)
-      op.Box.create(boxKey, estimatedSize) // TODO fix
+      op.Box.delete(boxKey)
+      op.Box.create(boxKey, writeEnd)
+    } else {
+      const [boxLen] = op.Box.length(boxKey)
+      if (writeEnd > boxLen) {
+        op.Box.resize(boxKey, writeEnd)
+      }
     }
     op.Box.replace(boxKey, startOffset, data)
-    if (last) {
-      op.Box.resize(boxKey, startOffset + data.length)
-    }
   }
 
   // ── Delegation ───────────────────────────────────────────────────
@@ -313,6 +316,9 @@ export class GGovContract extends CommitteeOracleContract {
       isDelegated = true
     }
 
+    // Voter must already be a known oracle account (ingested committee member)
+    const oracleAccount = this.mustGetAccount(voterAccount)
+
     // Get voting power from inherited oracle
     const votingPower = this.getXGovVotingPower(period.committeeId, voterAccount)
 
@@ -329,9 +335,6 @@ export class GGovContract extends CommitteeOracleContract {
       }
       ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
     }
-
-    // Get or create account ID for the voter
-    const oracleAccount = this.getOrCreateAccount(voterAccount) // TODO move up to before getXGovVotingPower, make mustGet
     const voteKey: GGovVoteKey = [u32(periodId), oracleAccount.accountId]
     const voteRecordBox = this.voteRecords(voteKey)
 
