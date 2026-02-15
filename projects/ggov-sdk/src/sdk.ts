@@ -1,16 +1,21 @@
-import { GGovClient } from "./generated/GGovClient";
+import { GGovClient, GGovComposer } from "./generated/GGovClient";
 import { GGovReaderSDK } from "./sdkReader";
 import { createTxnExecutor } from "xgov-committees-oracle-sdk";
 import {
+  BodyJson,
   CommitteeId,
   CommonMethodBuilderArgs,
   ConstructorArgs,
   GGovContractArgs,
+  validateBodyJson,
 } from "./types";
 import { requireWriter } from "./util/requiresSender";
 import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
 import { committeeIdToRaw } from "./util/comitteeId";
 import { chunk } from "./util/chunk";
+
+/** Algorand atomic group transaction limit. */
+const MAX_GROUP_SIZE = 16;
 
 export class GGovSDK extends GGovReaderSDK {
   public ggovWriteClient?: GGovClient;
@@ -39,9 +44,9 @@ export class GGovSDK extends GGovReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  makeSetOperatorTxns({ account, builder }: GGovContractArgs["setOperator(address)void"] & CommonMethodBuilderArgs) {
+  makeSetOperatorTxns({ account, note, builder }: GGovContractArgs["setOperator(address)void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.setOperator({ args: { account } });
+    builder = builder.setOperator({ args: { account }, note });
     return builder;
   }
 
@@ -57,6 +62,7 @@ export class GGovSDK extends GGovReaderSDK {
     committeeId,
     votingStart,
     votingEnd,
+    note,
     builder,
   }: Omit<GGovContractArgs["addPeriod(byte[32],uint64,uint64)uint64"], "committeeId"> & {
     committeeId: CommitteeId;
@@ -64,6 +70,7 @@ export class GGovSDK extends GGovReaderSDK {
     builder = builder ?? this.ggovWriteClient!.newGroup();
     builder = builder.addPeriod({
       args: { committeeId: committeeIdToRaw(committeeId), votingStart, votingEnd },
+      note,
     });
     return builder;
   }
@@ -79,13 +86,17 @@ export class GGovSDK extends GGovReaderSDK {
   @requireWriter()
   @wrapErrors()
   makeEditPeriodTxns({
+    committeeId,
     periodId,
     votingStart,
     votingEnd,
+    note,
     builder,
-  }: GGovContractArgs["editPeriod(uint64,uint64,uint64)void"] & CommonMethodBuilderArgs) {
+  }: Omit<GGovContractArgs["editPeriod(uint64,byte[32],uint64,uint64)void"], "committeeId"> & {
+    committeeId: CommitteeId;
+  } & CommonMethodBuilderArgs) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.editPeriod({ args: { periodId, votingStart, votingEnd } });
+    builder = builder.editPeriod({ args: { periodId, committeeId: committeeIdToRaw(committeeId), votingStart, votingEnd }, note });
     return builder;
   }
 
@@ -100,10 +111,11 @@ export class GGovSDK extends GGovReaderSDK {
     startOffset,
     data,
     last,
+    note,
     builder,
   }: GGovContractArgs["uploadPeriodBodyPartial(uint64,uint64,byte[],bool)void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.uploadPeriodBodyPartial({ args: { periodId, startOffset, data, last } });
+    builder = builder.uploadPeriodBodyPartial({ args: { periodId, startOffset, data, last }, note });
     return builder;
   }
 
@@ -112,23 +124,30 @@ export class GGovSDK extends GGovReaderSDK {
   });
 
   /**
-   * Upload a full period body JSON string, chunked automatically.
-   * @param periodId Period ID
-   * @param body JSON string or Uint8Array to upload
+   * Upload a full period body, chunked automatically.
+   * Accepts a BodyJson object ({ title, body }) or a pre-serialized string/Uint8Array.
+   * When a string or Uint8Array is provided it is validated against the { title, body } schema.
+   * Chunks are batched into atomic groups of up to 16 transactions for efficiency.
    */
   @requireWriter()
   @wrapErrors()
-  async uploadPeriodBody({ periodId, body }: { periodId: bigint | number; body: string | Uint8Array }): Promise<void> {
-    const data = typeof body === "string" ? new TextEncoder().encode(body) : body;
+  async uploadPeriodBody({ periodId, body, note }: { periodId: bigint | number; body: BodyJson | string | Uint8Array; note?: string | Uint8Array }): Promise<void> {
+    const data = serializeAndValidateBody(body);
     const chunks = chunk(Array.from(data), 2000);
-    for (let i = 0; i < chunks.length; i++) {
-      const isLast = i === chunks.length - 1;
-      await this.uploadPeriodBodyPartial({
-        periodId,
-        startOffset: i * 2000,
-        data: new Uint8Array(chunks[i]),
-        last: isLast,
-      });
+    const groups = chunk(
+      chunks.map((c, i) => ({ index: i, data: c })),
+      MAX_GROUP_SIZE,
+    );
+    for (const group of groups) {
+      let builder: GGovComposer<any> = this.ggovWriteClient!.newGroup();
+      for (const { index, data: chunkData } of group) {
+        const isLast = index === chunks.length - 1;
+        builder = builder.uploadPeriodBodyPartial({
+          args: { periodId, startOffset: index * 2000, data: new Uint8Array(chunkData), last: isLast },
+          note,
+        });
+      }
+      await builder.send();
     }
   }
 
@@ -139,10 +158,11 @@ export class GGovSDK extends GGovReaderSDK {
   makeAddTopicTxns({
     periodId,
     options,
+    note,
     builder,
   }: GGovContractArgs["addTopic(uint64,string[])uint64"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.addTopic({ args: { periodId, options } });
+    builder = builder.addTopic({ args: { periodId, options }, note });
     return builder;
   }
 
@@ -160,10 +180,11 @@ export class GGovSDK extends GGovReaderSDK {
     periodId,
     topicIndex,
     options,
+    note,
     builder,
   }: GGovContractArgs["editTopic(uint64,uint64,string[])void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.editTopic({ args: { periodId, topicIndex, options } });
+    builder = builder.editTopic({ args: { periodId, topicIndex, options }, note });
     return builder;
   }
 
@@ -179,10 +200,11 @@ export class GGovSDK extends GGovReaderSDK {
     startOffset,
     data,
     last,
+    note,
     builder,
   }: GGovContractArgs["uploadTopicBodyPartial(uint64,uint64,uint64,byte[],bool)void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.uploadTopicBodyPartial({ args: { periodId, topicIndex, startOffset, data, last } });
+    builder = builder.uploadTopicBodyPartial({ args: { periodId, topicIndex, startOffset, data, last }, note });
     return builder;
   }
 
@@ -191,7 +213,10 @@ export class GGovSDK extends GGovReaderSDK {
   });
 
   /**
-   * Upload a full topic body JSON string, chunked automatically.
+   * Upload a full topic body, chunked automatically.
+   * Accepts a BodyJson object ({ title, body }) or a pre-serialized string/Uint8Array.
+   * When a string or Uint8Array is provided it is validated against the { title, body } schema.
+   * Chunks are batched into atomic groups of up to 16 transactions for efficiency.
    */
   @requireWriter()
   @wrapErrors()
@@ -199,22 +224,29 @@ export class GGovSDK extends GGovReaderSDK {
     periodId,
     topicIndex,
     body,
+    note,
   }: {
     periodId: bigint | number;
     topicIndex: bigint | number;
-    body: string | Uint8Array;
+    body: BodyJson | string | Uint8Array;
+    note?: string | Uint8Array;
   }): Promise<void> {
-    const data = typeof body === "string" ? new TextEncoder().encode(body) : body;
+    const data = serializeAndValidateBody(body);
     const chunks = chunk(Array.from(data), 2000);
-    for (let i = 0; i < chunks.length; i++) {
-      const isLast = i === chunks.length - 1;
-      await this.uploadTopicBodyPartial({
-        periodId,
-        topicIndex,
-        startOffset: i * 2000,
-        data: new Uint8Array(chunks[i]),
-        last: isLast,
-      });
+    const groups = chunk(
+      chunks.map((c, i) => ({ index: i, data: c })),
+      MAX_GROUP_SIZE,
+    );
+    for (const group of groups) {
+      let builder: GGovComposer<any> = this.ggovWriteClient!.newGroup();
+      for (const { index, data: chunkData } of group) {
+        const isLast = index === chunks.length - 1;
+        builder = builder.uploadTopicBodyPartial({
+          args: { periodId, topicIndex, startOffset: index * 2000, data: new Uint8Array(chunkData), last: isLast },
+          note,
+        });
+      }
+      await builder.send();
     }
   }
 
@@ -224,11 +256,12 @@ export class GGovSDK extends GGovReaderSDK {
   @wrapErrors()
   makeDelegateTxns({
     delegatee,
+    note,
     sender,
     builder,
   }: GGovContractArgs["delegate(address)void"] & CommonMethodBuilderArgs & { sender?: string }) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    const delegateArgs: any = { args: { delegatee } };
+    const delegateArgs: any = { args: { delegatee }, note };
     if (sender) {
       delegateArgs.sender = sender;
       delegateArgs.signer = this.algorand.account.getSigner(sender);
@@ -243,9 +276,9 @@ export class GGovSDK extends GGovReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  makeUndelegateTxns({ sender, builder }: CommonMethodBuilderArgs & { sender?: string } = {}) {
+  makeUndelegateTxns({ note, sender, builder }: CommonMethodBuilderArgs & { sender?: string } = {}) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    const undelegateArgs: any = { args: {} };
+    const undelegateArgs: any = { args: {}, note };
     if (sender) {
       undelegateArgs.sender = sender;
       undelegateArgs.signer = this.algorand.account.getSigner(sender);
@@ -266,11 +299,12 @@ export class GGovSDK extends GGovReaderSDK {
     periodId,
     voterAccount,
     topicVotes,
+    note,
     sender,
     builder,
   }: GGovContractArgs["vote(uint64,address,uint64[][])void"] & CommonMethodBuilderArgs & { sender?: string }) {
     builder = builder ?? this.ggovWriteClient!.newGroup();
-    const voteArgs: any = { args: { periodId, voterAccount, topicVotes } };
+    const voteArgs: any = { args: { periodId, voterAccount, topicVotes }, note };
     if (sender) {
       voteArgs.sender = sender;
       voteArgs.signer = this.algorand.account.getSigner(sender);
@@ -282,4 +316,26 @@ export class GGovSDK extends GGovReaderSDK {
   vote = this.makeGGovTxnExecutor({
     maker: this.makeVoteTxns,
   });
+}
+
+function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {
+  if (typeof body === "object" && !(body instanceof Uint8Array)) {
+    // BodyJson object - validate and serialize
+    if (!validateBodyJson(body)) {
+      throw new Error("Body must have 'title' (string) and 'body' (string) fields");
+    }
+    return new TextEncoder().encode(JSON.stringify(body));
+  }
+  // string or Uint8Array - parse and validate schema
+  const text = typeof body === "string" ? body : new TextDecoder().decode(body);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("Body must be valid JSON with 'title' (string) and 'body' (string) fields");
+  }
+  if (!validateBodyJson(parsed)) {
+    throw new Error("Body must have 'title' (string) and 'body' (string) fields");
+  }
+  return typeof body === "string" ? new TextEncoder().encode(body) : body;
 }

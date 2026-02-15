@@ -1,0 +1,47 @@
+import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+
+interface ErrorDialogContextValue {
+  showError: (err: unknown) => void
+  clearError: () => void
+}
+
+const ErrorDialogContext = createContext<ErrorDialogContextValue | null>(null)
+
+export function ErrorDialogProvider({ children }: { children: ReactNode }) {
+  const [error, setError] = useState<Error | null>(null)
+
+  const showError = useCallback((err: unknown) => {
+    setError(err instanceof Error ? err : new Error(String(err)))
+  }, [])
+
+  const clearError = useCallback(() => setError(null), [])
+
+  return (
+    <ErrorDialogContext.Provider value={{ showError, clearError }}>
+      {children}
+      {error && (
+        <Dialog open onOpenChange={() => clearError()}>
+          <DialogContent onClose={clearError}>
+            <DialogHeader>
+              <DialogTitle>Error</DialogTitle>
+              <DialogDescription className="whitespace-pre-wrap break-words">
+                {error.message}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={clearError}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </ErrorDialogContext.Provider>
+  )
+}
+
+export function useErrorDialog() {
+  const ctx = useContext(ErrorDialogContext)
+  if (!ctx) throw new Error('useErrorDialog must be used within ErrorDialogProvider')
+  return ctx
+}

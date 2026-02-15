@@ -16,7 +16,6 @@ import {
 import { abimethod, compileArc4, encodeArc4, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import {
   errGGovCannotOverride,
-  errGGovHasVotes,
   errGGovNoDelegation,
   errGGovNoOptions,
   errGGovPeriodNotExists,
@@ -109,14 +108,18 @@ export class GGovContract extends CommitteeOracleContract {
   }
 
   /**
-   * Edit voting period times (only before voting starts)
+   * Edit voting period (only before voting starts)
    * @param periodId Period ID
+   * @param committeeId Committee ID (must be complete)
    * @param votingStart New voting start
    * @param votingEnd New voting end
    */
-  public editPeriod(periodId: uint64, votingStart: uint64, votingEnd: uint64): void {
+  public editPeriod(periodId: uint64, committeeId: CommitteeId, votingStart: uint64, votingEnd: uint64): void {
     this.ensureCallerIsOperator()
     ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
+
+    // Verify committee exists and is complete (local call, inherited)
+    this.getCommitteeMetadata(committeeId, true)
 
     const periodBox = this.periods(u32(periodId))
     ensure(periodBox.exists, errGGovPeriodNotExists)
@@ -125,6 +128,7 @@ export class GGovContract extends CommitteeOracleContract {
     // Cannot edit if voting has started
     ensure(Global.latestTimestamp < period.votingStart.asUint64(), errGGovVotingActive)
 
+    period.committeeId = committeeId
     period.votingStart = u32(votingStart)
     period.votingEnd = u32(votingEnd)
     periodBox.value = clone(period)
@@ -383,11 +387,11 @@ export class GGovContract extends CommitteeOracleContract {
   /**
    * Check if an account can vote in a period
    * @param periodId Period ID
-   * @param voterAccount Account to check
-   * @returns [canVote, votingPower]
+   * @param voterAccount Account with voting power
+   * @param senderAccount Account that will attempt to vote
    */
   @abimethod({ readonly: true })
-  public canVote(periodId: uint64, voterAccount: Account): [boolean, uint64] {
+  public canVote(periodId: uint64, voterAccount: Account, senderAccount: Account): [boolean, uint64] {
     const periodBox = this.periods(u32(periodId))
     if (!periodBox.exists) return [false, 0]
 
@@ -396,10 +400,10 @@ export class GGovContract extends CommitteeOracleContract {
     if (Global.latestTimestamp >= period.votingEnd.asUint64()) return [false, 0]
 
     // Check delegation if sender != voter
-    if (Txn.sender !== voterAccount) {
+    if (senderAccount !== voterAccount) {
       const delegationBox = this.delegations(voterAccount)
       if (!delegationBox.exists) return [false, 0]
-      if (delegationBox.value !== Txn.sender) return [false, 0]
+      if (delegationBox.value !== senderAccount) return [false, 0]
     }
 
     const oracleAccount = this.getAccountIfExists(voterAccount)
@@ -449,6 +453,23 @@ export class GGovContract extends CommitteeOracleContract {
     const box = this.delegations(account)
     if (box.exists) return [box.value, true]
     return [Global.zeroAddress, false]
+  }
+
+  /**
+   * Batch log delegations for off-chain retrieval
+   * @param accounts Accounts to log delegations for
+   * Logs delegatee address or zero address if no delegation, in the same order as input accounts
+   */
+  @abimethod({ readonly: true })
+  public logDelegations(accounts: Account[]): void {
+    for (const account of accounts) {
+      const box = this.delegations(account)
+      if (box.exists) {
+        log(encodeArc4(box.value))
+      } else {
+        log(encodeArc4(Global.zeroAddress))
+      }
+    }
   }
 
   /**
