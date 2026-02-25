@@ -350,26 +350,31 @@ export class GGovContract extends CommitteeOracleContract {
         log(errGGovCannotOverride)
         err()
       }
-      // Subtract old votes from period tallies
+      // Subtract old votes — build new votes per topic, assign once
+      // (avoids per-option dynamic_array_replace: O(T) assigns instead of O(T×O))
       for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
         const oldTopicVotes = clone(existingRecord.topicVotes[i])
+        const currentVotes = clone(period.topics[i].votes)
+        const subtractedVotes: Uint32[] = []
         for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
-          const currentVal = period.topics[i].votes[j].asUint64()
-          period.topics[i].votes[j] = u32(currentVal - oldTopicVotes[j].asUint64())
+          subtractedVotes.push(u32(currentVotes[j].asUint64() - oldTopicVotes[j].asUint64()))
         }
+        period.topics[i] = { options: clone(period.topics[i].options), votes: clone(subtractedVotes) }
       }
     }
 
-    // Add new votes to period tallies and build vote record
+    // Add new votes — build new votes per topic, assign once
     const newTopicVotes: Uint32[][] = []
     for (let i: uint64 = 0; i < topicVotes.length; i++) {
       const topicVote = clone(topicVotes[i])
+      const currentVotes = clone(period.topics[i].votes)
+      const newVotes: Uint32[] = []
       const recordRow: Uint32[] = []
       for (let j: uint64 = 0; j < topicVote.length; j++) {
-        const currentVal = period.topics[i].votes[j].asUint64()
-        period.topics[i].votes[j] = u32(currentVal + topicVote[j])
+        newVotes.push(u32(currentVotes[j].asUint64() + topicVote[j]))
         recordRow.push(u32(topicVote[j]))
       }
+      period.topics[i] = { options: clone(period.topics[i].options), votes: clone(newVotes) }
       newTopicVotes.push(clone(recordRow))
     }
 

@@ -120,10 +120,11 @@ async function createVotingPeriod(
     await sdk.addTopic({ periodId, options })
   }
 
-  // Edit period to move voting start to the past
+  // Edit period to move voting start to the past (large buffer for localnet timing)
   await sdk.editPeriod({
     periodId,
-    votingStart: now - 100n,
+    committeeId,
+    votingStart: now - 600n,
     votingEnd: now + 3600n,
   })
 
@@ -235,6 +236,7 @@ describe('GGov contract', () => {
 
       await sdk.editPeriod({
         periodId,
+        committeeId,
         votingStart: now + 2000n,
         votingEnd: now + 6000n,
       })
@@ -244,12 +246,12 @@ describe('GGov contract', () => {
     })
 
     test('Cannot edit nonexistent period', async () => {
-      const { sdk, admin } = await deployGGovWithCommittee(localnet)
+      const { sdk, committeeId, admin } = await deployGGovWithCommittee(localnet)
       await sdk.setOperator({ account: admin.toString() })
 
       const now = BigInt(Math.floor(Date.now() / 1000))
       await expect(
-        sdk.editPeriod({ periodId: 999n, votingStart: now + 100n, votingEnd: now + 200n }),
+        sdk.editPeriod({ periodId: 999n, committeeId, votingStart: now + 100n, votingEnd: now + 200n }),
       ).rejects.toThrow(transformedError(errGGovPeriodNotExists))
     })
   })
@@ -597,12 +599,11 @@ describe('GGov contract', () => {
       expect(period.topics).toHaveLength(0)
     })
 
-    test('getVotingRecord returns empty for nonexistent record', async () => {
+    test('getVotingRecord returns null for nonexistent record', async () => {
       const { sdk, xGovAccounts } = await deployGGovWithCommittee(localnet)
 
       const record = await sdk.getVotingRecord(1n, xGovAccounts[0].toString())
-      expect(record.byDelegator).toBe(false)
-      expect(record.topicVotes).toHaveLength(0)
+      expect(record).toBeNull()
     })
 
     test('getDelegation returns false for no delegation', async () => {
@@ -690,7 +691,7 @@ describe('GGov contract', () => {
       // Generate ~12KB JSON body
       const bodyObj = {
         title: 'Test Period with Large Body',
-        description: 'A'.repeat(11000),
+        body: 'A'.repeat(11000),
         metadata: { key: 'value', nested: { data: Array.from({ length: 100 }, (_, i) => `item-${i}`) } },
       }
       const bodyJson = JSON.stringify(bodyObj)
@@ -737,11 +738,11 @@ describe('GGov contract', () => {
       })
 
       // Upload first body
-      const body1 = JSON.stringify({ version: 1, data: 'X'.repeat(5000) })
+      const body1 = JSON.stringify({ title: 'Version 1', body: 'X'.repeat(5000) })
       await sdk.uploadPeriodBody({ periodId, body: body1 })
 
       // Re-upload with different body
-      const body2 = JSON.stringify({ version: 2, data: 'Y'.repeat(10000) })
+      const body2 = JSON.stringify({ title: 'Version 2', body: 'Y'.repeat(10000) })
       await sdk.uploadPeriodBody({ periodId, body: body2 })
     }, 60_000)
   })
