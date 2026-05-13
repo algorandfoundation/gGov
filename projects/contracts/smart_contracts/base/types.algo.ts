@@ -160,7 +160,17 @@ export function getEmptyGGovPeriodSummary(): GGovPeriodSummary {
   }
 }
 
-/** Topic - inlined in GGovPeriod */
+/** Topic options — stored in topicOptionsArr; mutated only during editable phase. */
+export type GGovTopicOptions = {
+  options: string[]
+}
+
+/** Topic vote tallies — stored in topicVotesArr; mutated on every vote(). */
+export type GGovTopicVotes = {
+  votes: Uint32[]
+}
+
+/** Merged read shape returned by GGovPeriod.getPeriod(). Composed from the two arrays above. */
 export type GGovTopic = {
   options: string[]
   votes: Uint32[]

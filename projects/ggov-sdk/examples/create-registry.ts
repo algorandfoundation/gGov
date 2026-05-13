@@ -26,7 +26,7 @@ import { GGovSDK } from "..";
     deployer: { sender: deployer.addr, signer: deployer.signer },
     operatorAccount: deployer.addr.toString(),
     // xGovRegistryAppId: 1234n, // optional: pre-configure the xGov registry app id
-    // initialFundingAlgos: 10n, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
+    initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
   });
 
   console.log("Registry deployed:", appClient.appId);

@@ -5,8 +5,8 @@
   "main": "smart_contracts/index.ts",
   "scripts": {
     "build": "algokit compile ts smart_contracts --output-source-map --out-dir artifacts && algokit generate client smart_contracts/artifacts --output {app_spec_dir}/{contract_name}Client.ts",
-    "deploy": "ts-node-dev --transpile-only --watch .env -r dotenv/config smart_contracts/index.ts",
-    "deploy:ci": "ts-node --transpile-only -r dotenv/config smart_contracts/index.ts",
+    "deploy": "tsx watch --clear-screen=false -r dotenv/config smart_contracts/index.ts",
+    "deploy:ci": "tsx -r dotenv/config smart_contracts/index.ts",
     "lint": "eslint smart_contracts",
     "lint:fix": "eslint smart_contracts --fix",
     "audit": "better-npm-audit audit",
@@ -42,7 +42,7 @@
     "dotenv": "^16.4.7",
     "eslint": "^9.18.0",
     "prettier": "^3.4.2",
-    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.19.1",
     "vitest": "^2.1.8"

@@ -41,6 +41,8 @@ import {
   getEmptyGGovVoteRecord,
   GGovPeriod,
   GGovTopic,
+  GGovTopicOptions,
+  GGovTopicVotes,
   GGovVoteRecord,
 } from '../base/types.algo'
 import { ensure, u32 } from '../base/utils.algo'
@@ -61,8 +63,10 @@ export class GGovPeriodContract extends BaseContract {
   /** Committee ID this period votes against (lives in registry) */
   committeeId = GlobalState<CommitteeId>()
 
-  /** Topics array with inlined vote tallies */
-  topicsArr = Box<GGovTopic[]>({ key: 't' })
+  /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). */
+  topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
+  /** Per-topic vote tallies. Mutated on every vote(). Parallel to topicOptionsArr (same length & order). */
+  topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
   /** Period body JSON (chunked) */
   periodBody = Box<bytes>({ key: 'P' })
   /** Topic body JSON by topicIndex */
@@ -92,7 +96,8 @@ export class GGovPeriodContract extends BaseContract {
     this.committeeId.value = committeeId
     this.votingStart.value = votingStart.asUint64()
     this.votingEnd.value = votingEnd.asUint64()
-    this.topicsArr.value = [] as GGovTopic[]
+    this.topicOptionsArr.value = [] as GGovTopicOptions[]
+    this.topicVotesArr.value = [] as GGovTopicVotes[]
   }
 
   // ── Helpers ──────────────────────────────────────────────────────
@@ -123,7 +128,7 @@ export class GGovPeriodContract extends BaseContract {
         u32(this.periodId.value),
         u32(this.votingStart.value),
         u32(this.votingEnd.value),
-        u32(this.topicsArr.value.length),
+        u32(this.topicOptionsArr.value.length),
         this.ready.value,
       ],
     })
@@ -155,14 +160,15 @@ export class GGovPeriodContract extends BaseContract {
     for (let i: uint64 = 0; i < options.length; i++) {
       votes.push(u32(0))
     }
-    const topic: GGovTopic = {
-      options: clone(options),
-      votes: clone(votes),
-    }
-    const arr = clone(this.topicsArr.value)
-    const topicIndex: uint64 = arr.length
-    arr.push(clone(topic))
-    this.topicsArr.value = clone(arr)
+    const newOptions: GGovTopicOptions = { options: clone(options) }
+    const newVotes: GGovTopicVotes = { votes: clone(votes) }
+    const optionsArr = clone(this.topicOptionsArr.value)
+    const votesArr = clone(this.topicVotesArr.value)
+    const topicIndex: uint64 = optionsArr.length
+    optionsArr.push(clone(newOptions))
+    votesArr.push(clone(newVotes))
+    this.topicOptionsArr.value = clone(optionsArr)
+    this.topicVotesArr.value = clone(votesArr)
     this.syncSummaryToRegistry()
     return topicIndex
   }
@@ -171,46 +177,50 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureCallerIsOperator()
     this.ensureEditable()
     ensure(options.length > 0, errGGovNoOptions)
-    const arr = clone(this.topicsArr.value)
-    ensure(topicIndex < arr.length, errGGovTopicIndexOOB)
+    const optionsArr = clone(this.topicOptionsArr.value)
+    const votesArr = clone(this.topicVotesArr.value)
+    ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
 
     const votes: Uint32[] = []
     for (let i: uint64 = 0; i < options.length; i++) {
       votes.push(u32(0))
     }
-    arr[topicIndex] = {
-      options: clone(options),
-      votes: clone(votes),
-    }
-    this.topicsArr.value = clone(arr)
+    optionsArr[topicIndex] = { options: clone(options) }
+    votesArr[topicIndex] = { votes: clone(votes) }
+    this.topicOptionsArr.value = clone(optionsArr)
+    this.topicVotesArr.value = clone(votesArr)
   }
 
   /** Remove the topic at $topicIndex. Operator only; only allowed while editable. */
   public removeTopic(topicIndex: uint64): void {
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    const arr = clone(this.topicsArr.value)
-    ensure(topicIndex < arr.length, errGGovTopicIndexOOB)
-    const next: GGovTopic[] = []
-    for (let i: uint64 = 0; i < arr.length; i++) {
+    const optionsArr = clone(this.topicOptionsArr.value)
+    const votesArr = clone(this.topicVotesArr.value)
+    ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
+    const nextOptions: GGovTopicOptions[] = []
+    const nextVotes: GGovTopicVotes[] = []
+    for (let i: uint64 = 0; i < optionsArr.length; i++) {
       if (i !== topicIndex) {
-        next.push(clone(arr[i]))
+        nextOptions.push(clone(optionsArr[i]))
+        nextVotes.push(clone(votesArr[i]))
       }
     }
-    this.topicsArr.value = clone(next)
+    this.topicOptionsArr.value = clone(nextOptions)
+    this.topicVotesArr.value = clone(nextVotes)
     this.syncSummaryToRegistry()
   }
 
   /** Set the ready flag. Once ready=true, edits are blocked and voting becomes possible. Operator only. */
   public setReady(ready: boolean): void {
     this.ensureCallerIsOperator()
-    // If setting ready=false, ensure no votes have been cast yet
+    // If setting ready=false, ensure no votes have been cast yet (only votes box loaded — options skipped)
     if (!ready) {
-      const topics = clone(this.topicsArr.value)
-      for (let i: uint64 = 0; i < topics.length; i++) {
-        const topic = clone(topics[i])
-        for (let j: uint64 = 0; j < topic.votes.length; j++) {
-          ensure(topic.votes[j].asUint64() === 0, errGGovHasVotes)
+      const votesArr = clone(this.topicVotesArr.value)
+      for (let i: uint64 = 0; i < votesArr.length; i++) {
+        const tallies = clone(votesArr[i].votes)
+        for (let j: uint64 = 0; j < tallies.length; j++) {
+          ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
         }
       }
     }
@@ -277,12 +287,13 @@ export class GGovPeriodContract extends BaseContract {
       args: [this.committeeId.value, voterAccount],
     }).returnValue
 
-    const topicsArr = clone(this.topicsArr.value)
-    ensure(topicVotes.length === topicsArr.length, errGGovVoteMismatch)
+    // Hot path: load only the votes box. Option strings stay on-chain.
+    const votesArr = clone(this.topicVotesArr.value)
+    ensure(topicVotes.length === votesArr.length, errGGovVoteMismatch)
 
     for (let i: uint64 = 0; i < topicVotes.length; i++) {
       const topicVote = clone(topicVotes[i])
-      ensure(topicVote.length === topicsArr[i].options.length, errGGovVoteMismatch)
+      ensure(topicVote.length === votesArr[i].votes.length, errGGovVoteMismatch)
       let voteSum: uint64 = 0
       for (let j: uint64 = 0; j < topicVote.length; j++) {
         voteSum += topicVote[j]
@@ -301,12 +312,12 @@ export class GGovPeriodContract extends BaseContract {
       }
       for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
         const oldTopicVotes = clone(existingRecord.topicVotes[i])
-        const currentVotes = clone(topicsArr[i].votes)
+        const currentVotes = clone(votesArr[i].votes)
         const subtractedVotes: Uint32[] = []
         for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
           subtractedVotes.push(u32(currentVotes[j].asUint64() - oldTopicVotes[j].asUint64()))
         }
-        topicsArr[i] = { options: clone(topicsArr[i].options), votes: clone(subtractedVotes) }
+        votesArr[i] = { votes: clone(subtractedVotes) }
       }
     }
 
@@ -314,18 +325,18 @@ export class GGovPeriodContract extends BaseContract {
     const newTopicVotes: Uint32[][] = []
     for (let i: uint64 = 0; i < topicVotes.length; i++) {
       const topicVote = clone(topicVotes[i])
-      const currentVotes = clone(topicsArr[i].votes)
+      const currentVotes = clone(votesArr[i].votes)
       const newVotes: Uint32[] = []
       const recordRow: Uint32[] = []
       for (let j: uint64 = 0; j < topicVote.length; j++) {
         newVotes.push(u32(currentVotes[j].asUint64() + topicVote[j]))
         recordRow.push(u32(topicVote[j]))
       }
-      topicsArr[i] = { options: clone(topicsArr[i].options), votes: clone(newVotes) }
+      votesArr[i] = { votes: clone(newVotes) }
       newTopicVotes.push(clone(recordRow))
     }
 
-    this.topicsArr.value = clone(topicsArr)
+    this.topicVotesArr.value = clone(votesArr)
     voteRecordBox.value = {
       byDelegator: isDelegated,
       topicVotes: clone(newTopicVotes),
@@ -361,11 +372,17 @@ export class GGovPeriodContract extends BaseContract {
   @abimethod({ readonly: true })
   public getPeriod(): GGovPeriod {
     if (this.oracleApp.value === 0) return getEmptyGGovPeriod()
+    const optionsArr = clone(this.topicOptionsArr.value)
+    const votesArr = clone(this.topicVotesArr.value)
+    const topics: GGovTopic[] = []
+    for (let i: uint64 = 0; i < optionsArr.length; i++) {
+      topics.push({ options: clone(optionsArr[i].options), votes: clone(votesArr[i].votes) })
+    }
     return {
       committeeId: this.committeeId.value,
       votingStart: u32(this.votingStart.value),
       votingEnd: u32(this.votingEnd.value),
-      topics: clone(this.topicsArr.value),
+      topics: clone(topics),
     }
   }
 

@@ -1,5 +1,5 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { GGovRegistryFactory } from '../artifacts/ggov-registry/GGovRegistryClient'
+import { GGovSDK } from 'ggov-sdk'
 
 // Below is a showcase of various deployment options you can use in TypeScript Client
 export async function deploy() {
@@ -8,18 +8,11 @@ export async function deploy() {
   const algorand = AlgorandClient.fromEnvironment()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 
-  const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-    defaultSender: deployer.addr,
+  const { sdk, appClient } = await GGovSDK.createRegistry({
+    algorand,
+    deployer: { sender: deployer.addr, signer: deployer.signer },
+    operatorAccount: deployer.addr.toString(),
+    // xGovRegistryAppId: 1234n, // optional: pre-configure the xGov registry app id
+    initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
   })
-
-  const { appClient, result } = await factory.deploy({ onUpdate: 'append', onSchemaBreak: 'append' })
-
-  // If app was just created fund the app account
-  if (['create', 'replace'].includes(result.operationPerformed)) {
-    await algorand.send.payment({
-      amount: (10).algo(),
-      sender: deployer.addr,
-      receiver: appClient.appAddress,
-    })
-  }
 }
