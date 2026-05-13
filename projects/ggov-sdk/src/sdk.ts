@@ -1,7 +1,9 @@
+import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
+import { Address } from "algosdk";
 import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "ggov-registry-sdk";
-import { GGovRegistryClient } from "./generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriodComposer } from "./generated/GGovPeriodClient";
+import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "./generated/GGovRegistryClient";
+import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "./generated/GGovPeriodClient";
 import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
@@ -22,8 +24,13 @@ import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
 /** Algorand atomic group transaction limit. */
 const MAX_GROUP_SIZE = 16;
 
-/** Default MBR (µAlgo) sent from operator to registry per createPeriod call. */
-const DEFAULT_PERIOD_MBR_MICROALGOS = 200_000n;
+/**
+ * Default MBR (µAlgo) sent from operator to registry per createPeriod call.
+ * Covers the spawned period app's account MBR: 100k base + 7*28.5k global ints +
+ * 3*50k global bytes + 3*100k extra pages ≈ 750k. 1 ALGO buys a healthy buffer
+ * and keeps the math stable if the period schema grows into its reserved slots.
+ */
+const DEFAULT_PERIOD_MBR_MICROALGOS = 1_000_000n;
 
 /** Body chunk size for partial-upload txns. */
 const BODY_CHUNK_BYTES = 2000;
@@ -195,6 +202,64 @@ export class GGovSDK extends GGovReaderSDK {
   }
 
   mirrorXGovDelegation = this.makeRegistryTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns });
+
+  // ── Registry: uploadPeriodApprovalPartial (admin-only bytecode upload) ──
+
+  @requireWriter()
+  @wrapErrors()
+  makeUploadPeriodApprovalPartialTxns({
+    startOffset,
+    data,
+    last,
+    note,
+    builder,
+  }: {
+    startOffset: bigint | number;
+    data: Uint8Array;
+    last: boolean;
+  } & CommonMethodBuilderArgs) {
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    return builder.uploadPeriodApprovalPartial({
+      args: { startOffset, data, last },
+      note,
+    });
+  }
+
+  uploadPeriodApprovalPartial = this.makeRegistryTxnExecutor({
+    maker: this.makeUploadPeriodApprovalPartialTxns,
+  });
+
+  /** Upload the full GGovPeriod approval bytecode, chunked into groups of up to 16 txns. */
+  @requireWriter()
+  @wrapErrors()
+  async uploadPeriodApprovalProgram({
+    bytecode,
+    note,
+  }: {
+    bytecode: Uint8Array;
+    note?: string | Uint8Array;
+  }): Promise<void> {
+    const chunks = chunk(Array.from(bytecode), BODY_CHUNK_BYTES);
+    const groups = chunk(
+      chunks.map((c, i) => ({ index: i, data: c })),
+      MAX_GROUP_SIZE,
+    );
+    for (const group of groups) {
+      let builder: GGovRegistryComposer<any> = this.registryWriteClient!.newGroup();
+      for (const { index, data: chunkData } of group) {
+        const isLast = index === chunks.length - 1;
+        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
+        builder = await this.makeUploadPeriodApprovalPartialTxns({
+          startOffset: index * BODY_CHUNK_BYTES,
+          data: new Uint8Array(chunkData),
+          last: isLast,
+          note,
+          builder,
+        });
+      }
+      await builder.send();
+    }
+  }
 
   // ── Registry: addPeriod (paired payment + createPeriod) ──────────
 
@@ -556,6 +621,72 @@ export class GGovSDK extends GGovReaderSDK {
   }
 
   vote = this.makePeriodTxnExecutor({ maker: this.makeVoteTxns });
+
+  // ── Bootstrap: deploy + fund + upload approval bytecode + optional setup ──
+
+  /**
+   * Deploy a fresh `GGovRegistry` app, seed its MBR, upload the GGovPeriod approval
+   * bytecode into the registry's approval box, and optionally configure the xGov registry
+   * app id and operator account. Returns the writer-enabled SDK bound to the new app.
+   *
+   * The period bytecode is compiled at runtime from `GGovPeriodFactory`, so the version
+   * uploaded matches the version exported by this `ggov-sdk` build.
+   */
+  static async createRegistry({
+    algorand,
+    deployer,
+    operatorAccount,
+    xGovRegistryAppId,
+    initialFundingAlgos,
+  }: {
+    algorand: AlgorandClient;
+    deployer: SenderWithSigner;
+    operatorAccount?: string | Address;
+    xGovRegistryAppId?: bigint | number;
+    initialFundingAlgos?: bigint | number;
+  }): Promise<{ sdk: GGovSDK; appClient: GGovRegistryClient }> {
+    const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
+      defaultSender: deployer.sender,
+      defaultSigner: deployer.signer,
+    });
+    const { appClient } = await factory.deploy({
+      onUpdate: "append",
+      onSchemaBreak: "append",
+    });
+
+    // Seed the registry's account: covers base MBR + 1 approval box (~3.3 ALGO at 8KB).
+    const fundingAlgos = BigInt(initialFundingAlgos ?? 10n);
+    await algorand.send.payment({
+      sender: deployer.sender,
+      receiver: appClient.appAddress,
+      amount: fundingAlgos.algo(),
+    });
+
+    // Compile the current GGovPeriod approval bytecode (no app deployed; just bytes).
+    const periodFactory = algorand.client.getTypedAppFactory(GGovPeriodFactory, {
+      defaultSender: deployer.sender,
+      defaultSigner: deployer.signer,
+    });
+    const compiled = await periodFactory.appFactory.compile();
+
+    const sdk = new GGovSDK({
+      algorand,
+      ggovRegistryAppId: appClient.appId,
+      writerAccount: deployer,
+    });
+
+    await sdk.uploadPeriodApprovalProgram({ bytecode: compiled.approvalProgram });
+
+    if (xGovRegistryAppId !== undefined) {
+      await sdk.setXGovRegistryApp({ appId: BigInt(xGovRegistryAppId) });
+    }
+    if (operatorAccount !== undefined) {
+      const op = typeof operatorAccount === "string" ? operatorAccount : operatorAccount.toString();
+      await sdk.setOperator({ account: op });
+    }
+
+    return { sdk, appClient };
+  }
 }
 
 function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {

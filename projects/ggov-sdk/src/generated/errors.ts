@@ -51,6 +51,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:AI": "Contract already initialised",
   "ERR:GP_EX": "Period already exists",
   "ERR:GP_NX": "Period does not exist",
+  "ERR:GP_NC": "Period approval program not yet uploaded to registry",
   "ERR:GP_NS": "Voting has not started",
   "ERR:GP_EN": "Voting period ended",
   "ERR:GP_VE": "Cannot modify: votes exist",

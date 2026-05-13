@@ -6,17 +6,16 @@
  *   npx tsx examples/add-period.ts ../common/committee-files/2048.json
  *
  * Steps:
- *   1. Deploy a fresh GGovRegistry
- *   2. setOperator (operator = deployer for convenience)
- *   3. uploadCommitteeFile (committee must be complete before addPeriod)
- *   4. addPeriod (creates a child GGovPeriod app via inner txn)
- *   5. addTopic
- *   6. getPeriod (reads from the per-period app)
- *   7. getPeriodSummary (reads from the registry)
+ *   1. GGovSDK.createRegistry() — deploys registry, seeds MBR, uploads period approval
+ *      bytecode, sets the operator (= deployer for convenience) in one call
+ *   2. uploadCommitteeFile (committee must be complete before addPeriod)
+ *   3. addPeriod (creates a child GGovPeriod app via inner txn)
+ *   4. addTopic
+ *   5. getPeriod (reads from the per-period app)
+ *   6. getPeriodSummary (reads from the registry)
  */
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { readFileSync } from "fs";
-import { GGovRegistryFactory } from "..";
 import { GGovSDK } from "..";
 
 (async () => {
@@ -25,31 +24,13 @@ import { GGovSDK } from "..";
   const algorand = AlgorandClient.defaultLocalNet();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
-  // 1. Deploy fresh GGovRegistry
-  const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-    defaultSender: deployer.addr,
-  });
-  const { appClient } = await factory.deploy({
-    onUpdate: "append",
-    onSchemaBreak: "append",
-  });
-  await algorand.send.payment({
-    amount: (10).algo(),
-    sender: deployer.addr,
-    receiver: appClient.appAddress,
-  });
-  console.log("Registry app:", appClient.appId);
-
-  const sdk = new GGovSDK({
+  // 1. Deploy fresh GGovRegistry + seed MBR + upload period approval bytecode + setOperator.
+  const { sdk, appClient } = await GGovSDK.createRegistry({
     algorand,
-    writerAccount: { sender: deployer.addr, signer: deployer.signer },
-    ggovRegistryAppId: appClient.appId,
-    debug: true,
+    deployer: { sender: deployer.addr, signer: deployer.signer },
+    operatorAccount: deployer.addr.toString(),
   });
-
-  // 2. setOperator
-  await sdk.setOperator({ account: deployer.addr.toString() });
-  console.log("Operator set to deployer");
+  console.log("Registry app:", appClient.appId, "operator set to deployer");
 
   // 3. uploadCommitteeFile
   const committeeId = await sdk.uploadCommitteeFile(file);

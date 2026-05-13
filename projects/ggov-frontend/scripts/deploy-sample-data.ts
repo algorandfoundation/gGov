@@ -26,7 +26,6 @@ const __dirname = path.dirname(__filename);
 
 // Use require for packages that have CJS dist but ESM source issues
 const { AlgorandClient } = require("@algorandfoundation/algokit-utils");
-const { GGovRegistryFactory } = require("../../ggov-sdk/dist/generated/GGovRegistryClient.js");
 const { GGovSDK } = require("../../ggov-sdk/dist/sdk.js");
 const algosdk = require("algosdk");
 
@@ -133,41 +132,19 @@ async function main() {
 
   // ── Deploy GGovRegistry contract ──────────────────────────────────
 
-  console.log("\nDeploying GGovRegistry contract...");
-  const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-    defaultSender: deployerAddr,
-  });
-
-  const { appClient } = await factory.deploy({
-    onUpdate: "append",
-    onSchemaBreak: "append",
-  });
-
-  const appId = appClient.appId;
-  console.log(`GGovRegistry deployed! App ID: ${appId}`);
-  console.log(`App address: ${appClient.appAddress}`);
-
-  // Fund the registry app account for box storage and per-period MBR
-  await algorand.send.payment({
-    sender: deployerAddr,
-    receiver: appClient.appAddress,
-    amount: (50 as any).algo(),
-  });
-
-  // ── Create SDK instance ───────────────────────────────────────────
-
-  const sdk = new GGovSDK({
+  console.log("\nDeploying GGovRegistry contract via GGovSDK.createRegistry()...");
+  const { sdk, appClient } = await GGovSDK.createRegistry({
     algorand,
-    ggovRegistryAppId: appId,
-    writerAccount: {
+    deployer: {
       sender: deployerAddr,
       signer: algorand.account.getSigner(deployerAddr),
     },
-    debug: false,
+    operatorAccount: deployerAddr,
+    initialFundingAlgos: 50n,
   });
-
-  // Set deployer as operator (must happen via SDK so the writer account is correct)
-  await sdk.setOperator({ account: deployerAddr });
+  const appId = appClient.appId;
+  console.log(`GGovRegistry deployed! App ID: ${appId}`);
+  console.log(`App address: ${appClient.appAddress}`);
   console.log("Operator set to deployer");
 
   // ── Generate 5 new KMD accounts for committee members ──────────────

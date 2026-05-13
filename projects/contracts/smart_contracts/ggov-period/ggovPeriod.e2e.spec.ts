@@ -3,8 +3,8 @@ import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-de
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { Address } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovSDK } from 'ggov-sdk'
-import { GGovRegistryFactory, XGovCommitteeFile } from 'ggov-registry-sdk'
+import { GGovSDK, GGovRegistryFactory, GGovPeriodFactory } from 'ggov-sdk'
+import { XGovCommitteeFile } from 'ggov-registry-sdk'
 import {
   errGGovCannotOverride,
   errGGovHasVotes,
@@ -18,6 +18,7 @@ import {
   errGGovVotePowerMismatch,
   errGGovVotingNotStarted,
   errNotOperator,
+  errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errUnauthorized,
 } from '../base/errors.algo'
@@ -25,13 +26,28 @@ import { transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 
 async function deployRegistryAndSDK(localnet: ReturnType<typeof algorandFixture>, admin: Address) {
+  // GGovSDK.createRegistry() pays the registry MBR + box-MBR out of the deployer's balance; top
+  // the localnet test admin up so it can afford the 10 ALGO transfer plus deploy fees.
+  await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
+  const { sdk, appClient } = await GGovSDK.createRegistry({
+    algorand: localnet.algorand,
+    deployer: {
+      sender: admin,
+      signer: localnet.algorand.account.getSigner(admin),
+    },
+  })
+  return { appClient, sdk }
+}
+
+/**
+ * Deploy the registry app but skip the period approval bytecode upload. Used by the
+ * "approval not configured" tests where we want createPeriod to fail at the box-exists guard.
+ */
+async function deployRegistryWithoutBytecode(localnet: ReturnType<typeof algorandFixture>, admin: Address) {
   const factory = localnet.algorand.client.getTypedAppFactory(GGovRegistryFactory, {
     defaultSender: admin,
   })
-  const { appClient } = await factory.deploy({
-    onUpdate: 'append',
-    onSchemaBreak: 'append',
-  })
+  const { appClient } = await factory.deploy({ onUpdate: 'append', onSchemaBreak: 'append' })
   await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (10).algos())
   const sdk = new GGovSDK({
     algorand: localnet.algorand,
@@ -188,6 +204,69 @@ describe('GGovPeriod contract', () => {
       await expect(
         sdk.addPeriod({ committeeId, votingStart: now + 3700n, votingEnd: now + 100n }),
       ).rejects.toThrow(transformedError(errPeriodEndLessThanStart))
+    })
+  })
+
+  // ── uploadPeriodApprovalProgram + bytecode-configuration guard ───
+
+  describe('period approval program', () => {
+    test('createPeriod rejects when approval bytecode has not been uploaded', async () => {
+      const { testAccount: admin } = localnet.context
+      const { sdk } = await deployRegistryWithoutBytecode(localnet, admin)
+      await sdk.setOperator({ account: admin.toString() })
+
+      // Register a committee so addPeriod gets past the committee checks.
+      const xGovs = await Promise.all(
+        Array.from({ length: 1 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
+      )
+      const committeeFile: XGovCommitteeFile = {
+        ...committeeTemplate,
+        totalMembers: 1,
+        totalVotes: 10,
+        registryId: 0,
+        xGovs: xGovs.map((a) => ({ address: a.toString(), votes: 10 })),
+      }
+      const committeeId = await sdk.uploadCommitteeFile(committeeFile)
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n }),
+      ).rejects.toThrow(transformedError(errPeriodAppNotConfigured))
+    })
+
+    test('Non-admin cannot upload approval bytecode', async () => {
+      const { testAccount: admin } = localnet.context
+      const { appClient } = await deployRegistryWithoutBytecode(localnet, admin)
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const nonAdminSDK = createUserSDK(localnet, appClient.appId, nonAdmin)
+
+      await expect(
+        nonAdminSDK.uploadPeriodApprovalProgram({ bytecode: new Uint8Array([1, 2, 3]) }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('Admin re-upload replaces the prior bytecode (subsequent addPeriod uses fresh bytes)', async () => {
+      // The fixture deployRegistryAndSDK already uploaded the canonical bytecode via GGovSDK.createRegistry.
+      // Re-uploading must succeed (chunk 0 resets the box) and a subsequent addPeriod must still spawn.
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+
+      // Re-upload the canonical bytecode. Box re-create must work (chunk 0 deletes the box first).
+      // Use a unique note so the re-upload txns don't collide with the original upload (same payload
+      // + same sender would otherwise produce a duplicate txn ID).
+      const periodFactory = localnet.algorand.client.getTypedAppFactory(GGovPeriodFactory, {
+        defaultSender: admin,
+      })
+      const compiled = await periodFactory.appFactory.compile()
+      await sdk.uploadPeriodApprovalProgram({ bytecode: compiled.approvalProgram, note: 're-upload' })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      expect(periodId).toBeGreaterThan(0n)
     })
   })
 

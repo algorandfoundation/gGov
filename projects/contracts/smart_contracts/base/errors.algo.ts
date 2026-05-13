@@ -62,6 +62,7 @@ export const errAlreadyInit = 'ERR:AI' // Contract already initialised
 // gGov period
 export const errGGovPeriodExists = 'ERR:GP_EX' // Period already exists
 export const errGGovPeriodNotExists = 'ERR:GP_NX' // Period does not exist
+export const errPeriodAppNotConfigured = 'ERR:GP_NC' // Period approval program not yet uploaded to registry
 export const errGGovVotingNotStarted = 'ERR:GP_NS' // Voting has not started
 export const errGGovVotingEnded = 'ERR:GP_EN' // Voting period ended
 export const errGGovHasVotes = 'ERR:GP_VE' // Cannot modify: votes exist
