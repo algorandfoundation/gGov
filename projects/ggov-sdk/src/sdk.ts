@@ -418,7 +418,7 @@ export class GGovSDK extends GGovReaderSDK {
       let builder: GGovPeriodComposer<any> = client.newGroup();
       for (const { index, data: chunkData } of group) {
         const isLast = index === chunks.length - 1;
-        builder = this.makeUploadPeriodBodyPartialTxns({
+        builder = await this.makeUploadPeriodBodyPartialTxns({
           periodId,
           startOffset: index * BODY_CHUNK_BYTES,
           data: new Uint8Array(chunkData),
@@ -457,7 +457,7 @@ export class GGovSDK extends GGovReaderSDK {
       let builder: GGovPeriodComposer<any> = client.newGroup();
       for (const { index, data: chunkData } of group) {
         const isLast = index === chunks.length - 1;
-        builder = this.makeUploadTopicBodyPartialTxns({
+        builder = await this.makeUploadTopicBodyPartialTxns({
           periodId,
           topicIndex,
           startOffset: index * BODY_CHUNK_BYTES,

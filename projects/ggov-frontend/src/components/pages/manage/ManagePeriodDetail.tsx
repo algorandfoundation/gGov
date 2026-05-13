@@ -58,6 +58,9 @@ export default function ManagePeriodDetail() {
   const [editTopicTitle, setEditTopicTitle] = useState('')
   const [editTopicBody, setEditTopicBody] = useState('')
 
+  // Ready transition dialog
+  const [readyDialogOpen, setReadyDialogOpen] = useState(false)
+
   useEffect(() => {
     if (period) {
       setEditCommittee(toBase64Url(period.committeeId))
@@ -136,6 +139,13 @@ export default function ManagePeriodDetail() {
 
   const status = periodStatus(period.votingStart, period.votingEnd)
   const canEdit = status === 'upcoming' && !ready && !!sdk
+  const hasVotes = period.topics.some(([, tallies]) => tallies.some((t) => t > 0))
+  const readyWarnings: string[] = []
+  if (!periodBody) readyWarnings.push('period body is missing')
+  if (period.topics.length === 0) readyWarnings.push('no topics added')
+  else if (topicBodies.length < period.topics.length || topicBodies.some((b) => !b))
+    readyWarnings.push('one or more topics are missing a body')
+  if (status === 'ended') readyWarnings.push('voting window has already ended')
 
   return (
     <div className="space-y-6">
@@ -157,13 +167,14 @@ export default function ManagePeriodDetail() {
           <Button
             size="sm"
             variant={ready ? 'outline' : 'default'}
-            onClick={() => setReadyMutation.mutate({ periodId, ready: !ready })}
-            disabled={setReadyMutation.isPending}
+            onClick={() => setReadyDialogOpen(true)}
+            disabled={setReadyMutation.isPending || (ready && hasVotes)}
+            title={ready && hasVotes ? 'Cannot revert to draft: votes have already been cast' : undefined}
           >
             {setReadyMutation.isPending
               ? 'Saving...'
               : ready
-                ? 'Mark Draft'
+                ? 'Revert to Draft'
                 : 'Mark Ready'}
           </Button>
         )}
@@ -399,6 +410,74 @@ export default function ManagePeriodDetail() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Ready Transition Dialog */}
+      <Dialog open={readyDialogOpen} onOpenChange={setReadyDialogOpen}>
+        <DialogContent onClose={() => setReadyDialogOpen(false)}>
+          <DialogHeader>
+            <DialogTitle>
+              {ready ? 'Revert period to Draft?' : 'Mark period as Ready?'}
+            </DialogTitle>
+          </DialogHeader>
+          {ready ? (
+            <div className="space-y-2 text-sm">
+              <p>Reverting to Draft will:</p>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Hide this period from voters again</li>
+                <li>Re-enable edits to the committee, voting window, topics, and options</li>
+              </ul>
+              <p className="text-muted-foreground">
+                This is only possible because no votes have been cast yet. Once any vote is recorded,
+                the period is locked in Ready and cannot be reverted.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 text-sm">
+              <p>Marking this period as Ready will:</p>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Make it visible to voters</li>
+                <li>Allow voting once the voting window opens</li>
+                <li>
+                  <span className="text-foreground font-medium">Lock all edits</span>{' '}
+                  to the committee, voting window, topics, and options
+                </li>
+              </ul>
+              <p className="text-muted-foreground">
+                You can revert to Draft later only if no votes have been cast yet.
+              </p>
+              {readyWarnings.length > 0 && (
+                <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-yellow-700 dark:text-yellow-300">
+                  <p className="font-medium">Heads up:</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                    {readyWarnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReadyDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant={ready ? 'outline' : 'default'}
+              onClick={() =>
+                setReadyMutation.mutate(
+                  { periodId, ready: !ready },
+                  { onSuccess: () => setReadyDialogOpen(false) },
+                )
+              }
+              disabled={setReadyMutation.isPending}
+            >
+              {setReadyMutation.isPending
+                ? 'Saving...'
+                : ready
+                  ? 'Revert to Draft'
+                  : 'Mark Ready'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Topic Body Dialog */}
       {editingTopicBody !== null && (
