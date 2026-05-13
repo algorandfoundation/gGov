@@ -1,6 +1,7 @@
 import {
   Account,
   Application,
+  baremethod,
   Box,
   BoxMap,
   bytes,
@@ -103,6 +104,15 @@ export class GGovPeriodContract extends BaseContract {
       args: [Txn.sender],
     }).returnValue
     ensure(ok, errNotOperator)
+  }
+
+  /** Inner-call the registry's verifyAdmin and ensure caller is the admin. */
+  protected checkAdminCaller(): void {
+    const ok = compileArc4(GGovRegistryContract).call.verifyAdmin({
+      appId: Application(this.oracleApp.value),
+      args: [Txn.sender],
+    }).returnValue
+    ensure(ok, errUnauthorized)
   }
 
   /** Mirror current summary (votingStart, votingEnd, numTopics, ready) onto the registry. */
@@ -364,5 +374,19 @@ export class GGovPeriodContract extends BaseContract {
     const box = this.voteRecords(account)
     if (box.exists) return box.value
     return getEmptyGGovVoteRecord()
+  }
+
+  // ── Lifecycle: update + delete (admin only, via registry C2C) ────
+
+  /** App updatable by registry admin (verified via inner call to registry.verifyAdmin) */
+  @baremethod({ allowActions: ['UpdateApplication'] })
+  public updateApplication(): void {
+    this.checkAdminCaller()
+  }
+
+  /** App deletable by registry admin (verified via inner call to registry.verifyAdmin) */
+  @baremethod({ allowActions: ['DeleteApplication'] })
+  public deleteApplication(): void {
+    this.checkAdminCaller()
   }
 }

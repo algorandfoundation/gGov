@@ -1,6 +1,6 @@
 # Project Summary
 
-pnpm monorepo for an Algorand xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), three SDKs, two React frontends, and shared resources.
+pnpm monorepo for an Algorand general governance (ggox) and gGov/xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), three SDKs, two React frontends, and shared resources.
 
 ## Workspace Layout
 

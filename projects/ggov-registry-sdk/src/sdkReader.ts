@@ -185,6 +185,11 @@ export class GGovRegistryReaderSDK {
     return a.account < b.account ? -1 : 1;
   }
 
+  async getAdmin(): Promise<string> {
+    const admin = await this.readClient.state.global.admin();
+    return admin!;
+  }
+
   async getCommitteeMetadata(committeeId: CommitteeId, mustBeComplete: boolean = false): Promise<CommitteeMetadata | null> {
     const { return: committeeMetadata } = await this.readClient.send.getCommitteeMetadata({
       args: { committeeId: committeeIdToRaw(committeeId), mustBeComplete },

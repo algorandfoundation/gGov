@@ -135,6 +135,8 @@ export class GGovSDK extends GGovReaderSDK {
     this.registry.uningestCommitteeXGovs(args);
   setXGovRegistryApp = (args: Parameters<GGovRegistrySDK["setXGovRegistryApp"]>[0]) =>
     this.registry.setXGovRegistryApp(args);
+  setAdmin = (args: Parameters<GGovRegistrySDK["setAdmin"]>[0]) => this.registry.setAdmin(args);
+  getAdmin = () => this.registry.getAdmin();
 
   // ── Registry: setOperator ────────────────────────────────────────
 

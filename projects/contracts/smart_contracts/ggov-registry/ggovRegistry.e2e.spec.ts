@@ -643,4 +643,99 @@ describe('GGovRegistry contract', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
   })
+
+  describe('admin transfer and lifecycle', () => {
+    test('admin defaults to creator on deploy', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const admin = await sdk.getAdmin()
+      expect(admin).toBe(testAccount.toString())
+    })
+
+    test('admin can transfer to new admin and old admin loses access', async () => {
+      const { testAccount } = localnet.context
+      const newAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { sdk, client } = await deployRegistry(localnet, testAccount)
+
+      await sdk.setAdmin({ newAdmin: newAdmin.toString() })
+      expect(await sdk.getAdmin()).toBe(newAdmin.toString())
+
+      // old admin can no longer call admin-gated methods
+      await expect(
+        sdk.registerCommittee({
+          committeeId: new Uint8Array(32),
+          periodStart: 50_000_000,
+          periodEnd: 53_000_000,
+          totalMembers: 1,
+          totalVotes: 10,
+          xGovRegistryId: 0n,
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+
+      // new admin can call admin-gated methods (use setOperator as a simple no-side-effect example)
+      const newAdminSDK = new GGovRegistrySDK({
+        algorand: localnet.algorand,
+        registryAppId: client.appId,
+        writerAccount: { sender: newAdmin, signer: localnet.algorand.account.getSigner(newAdmin) },
+      })
+      await expect(newAdminSDK.setOperator({ account: newAdmin.toString() })).resolves.toBeDefined()
+    })
+
+    test('non-admin cannot setAdmin', async () => {
+      const { testAccount } = localnet.context
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const nonAdminSDK = new GGovRegistrySDK({
+        algorand: localnet.algorand,
+        registryAppId: sdk.appId,
+        writerAccount: { sender: nonAdmin, signer: localnet.algorand.account.getSigner(nonAdmin) },
+      })
+      await expect(nonAdminSDK.setAdmin({ newAdmin: nonAdmin.toString() })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('admin cannot transfer to zero address', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
+      await expect(sdk.setAdmin({ newAdmin: ALGORAND_ZERO_ADDRESS_STRING })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('admin can update the registry app', async () => {
+      const { testAccount } = localnet.context
+      const { client } = await deployRegistry(localnet, testAccount)
+      const sender = testAccount.toString()
+      const signer = testAccount.signer
+      await expect(client.send.update.bare({ sender, signer })).resolves.toBeDefined()
+    })
+
+    test('non-admin cannot update the registry app', async () => {
+      const { testAccount } = localnet.context
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { client } = await deployRegistry(localnet, testAccount)
+      await expect(
+        client.send.update.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot delete the registry app', async () => {
+      const { testAccount } = localnet.context
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { client } = await deployRegistry(localnet, testAccount)
+      await expect(
+        client.send.delete.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('admin can delete the registry app', async () => {
+      const { testAccount } = localnet.context
+      const { client } = await deployRegistry(localnet, testAccount)
+      const sender = testAccount.toString()
+      const signer = testAccount.signer
+      await expect(client.send.delete.bare({ sender, signer })).resolves.toBeDefined()
+    })
+  })
 })

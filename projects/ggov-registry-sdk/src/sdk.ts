@@ -183,6 +183,18 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
+  makeSetAdminTxns({ newAdmin, builder }: GGovRegistryContractArgs["setAdmin(address)void"] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup();
+    builder = builder.setAdmin({ args: { newAdmin } });
+    return builder;
+  }
+
+  setAdmin = this.makeTxnExecutor({
+    maker: this.makeSetAdminTxns,
+  });
+
+  @requireWriter()
+  @wrapErrors()
   makeUningestXGovsTxns({
     committeeId,
     xGovs,

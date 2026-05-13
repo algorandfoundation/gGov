@@ -3,7 +3,7 @@ import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-de
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { Address } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovSDK, GGovRegistryFactory, GGovPeriodFactory } from 'ggov-sdk'
+import { GGovSDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
 import { XGovCommitteeFile } from 'ggov-registry-sdk'
 import {
   errGGovCannotOverride,
@@ -890,6 +890,115 @@ describe('GGovPeriod contract', () => {
       await expect(sdk.removeTopic({ periodId, topicIndex: 0n })).rejects.toThrow(
         transformedError(errGGovReady),
       )
+    })
+  })
+
+  // ── update/delete period (admin via registry c2c) ────────────────
+
+  describe('updateApplication / deleteApplication', () => {
+    const makePeriodClient = (
+      localnet: ReturnType<typeof algorandFixture>,
+      appId: bigint,
+      sender: Address,
+    ) =>
+      new GGovPeriodClient({
+        algorand: localnet.algorand,
+        appId,
+        defaultSender: sender,
+        defaultSigner: localnet.algorand.account.getSigner(sender),
+      })
+
+    test('Registry admin can update a period app', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const client = makePeriodClient(localnet, periodAppId, admin)
+      await expect(
+        client.send.update.bare({ extraFee: (1000).microAlgo() }),
+      ).resolves.toBeDefined()
+    })
+
+    test('Non-admin cannot update a period app', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const client = makePeriodClient(localnet, periodAppId, nonAdmin)
+      await expect(
+        client.send.update.bare({ extraFee: (1000).microAlgo() }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('After admin rotation, new admin can update; old admin cannot', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+
+      const newAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await sdk.setAdmin({ newAdmin: newAdmin.toString() })
+
+      // Old admin (test creator) is no longer admin
+      const oldClient = makePeriodClient(localnet, periodAppId, admin)
+      await expect(
+        oldClient.send.update.bare({ extraFee: (1000).microAlgo() }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+
+      // New admin can update
+      const newClient = makePeriodClient(localnet, periodAppId, newAdmin)
+      await expect(
+        newClient.send.update.bare({ extraFee: (1000).microAlgo() }),
+      ).resolves.toBeDefined()
+    })
+
+    test('Non-admin cannot delete a period app', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const client = makePeriodClient(localnet, periodAppId, nonAdmin)
+      await expect(
+        client.send.delete.bare({ extraFee: (1000).microAlgo() }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('Registry admin can delete a period app', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const client = makePeriodClient(localnet, periodAppId, admin)
+      await expect(
+        client.send.delete.bare({ extraFee: (1000).microAlgo() }),
+      ).resolves.toBeDefined()
     })
   })
 })

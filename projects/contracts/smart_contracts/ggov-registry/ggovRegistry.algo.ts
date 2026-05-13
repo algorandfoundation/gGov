@@ -1,6 +1,7 @@
 import {
   Account,
   Application,
+  baremethod,
   Box,
   BoxMap,
   bytes,
@@ -77,6 +78,8 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** Last committee numeric ID; superbox prefix for committees */
   lastCommitteeId = GlobalState<uint64>({ initialValue: 0 })
 
+  /** Admin address; defaults to creator. Rotatable via setAdmin. */
+  admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** Operator address (manages periods on spawned ggov-period apps) */
   operator = GlobalState<Account>()
   /** Auto-increment period IDs */
@@ -235,6 +238,38 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   public setXGovRegistryApp(appId: Application): void {
     this.ensureCallerIsAdmin()
     this.xGovRegistryApp.value = appId
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────────
+
+  /** Override base check: caller must match this registry's stored admin (not the contract creator). */
+  protected override ensureCallerIsAdmin(): void {
+    ensure(Txn.sender === this.admin.value, errUnauthorized)
+  }
+
+  /** Transfer admin to $newAdmin. Admin only; zero address rejected. */
+  public setAdmin(newAdmin: Account): void {
+    this.ensureCallerIsAdmin()
+    ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
+    this.admin.value = newAdmin
+  }
+
+  /** Whether $account is the admin. Called by period contracts via inner txn. */
+  @abimethod({ readonly: true })
+  public verifyAdmin(account: Account): boolean {
+    return account === this.admin.value
+  }
+
+  /** App updatable by admin */
+  @baremethod({ allowActions: ['UpdateApplication'] })
+  public updateApplication(): void {
+    this.ensureCallerIsAdmin()
+  }
+
+  /** App deletable by admin */
+  @baremethod({ allowActions: ['DeleteApplication'] })
+  public deleteApplication(): void {
+    this.ensureCallerIsAdmin()
   }
 
   // ── Operator + delegations ────────────────────────────────────────
