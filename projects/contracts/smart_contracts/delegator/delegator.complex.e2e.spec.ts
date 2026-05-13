@@ -4,7 +4,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { Account, Address } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { calculateCommitteeId, XGovCommitteeFile, XGovCommitteesOracleSDK } from 'xgov-committees-oracle-sdk'
+import { calculateCommitteeId, XGovCommitteeFile, GGovRegistrySDK } from 'ggov-registry-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import { XGovProposalMockClient } from '../artifacts/xgov-proposal-mock/XGovProposalMockClient'
 import { errCommitteeNotExists, errState } from '../base/errors.algo'
@@ -27,7 +27,7 @@ describe('Delegator complex e2e tests', () => {
     let committee: XGovCommitteeFile
     let delegatorAdminSDK: XGovDelegatorSDK
     let delegatorUserSDK: XGovDelegatorSDK | undefined
-    let oracleSDK: XGovCommitteesOracleSDK
+    let ggovRegistrySDK: GGovRegistrySDK
     let proposalAppClient: XGovProposalMockClient
     let registryAppClient: Awaited<ReturnType<typeof deployDelegatorFull>>['registryAppClient']
     let xGovs: (Address & Account & TransactionSignerAccount)[]
@@ -36,13 +36,13 @@ describe('Delegator complex e2e tests', () => {
       await localnet.newScope()
       const { testAccount } = localnet.context
       adminAccount = testAccount
-      ;({ committee, delegatorAdminSDK, delegatorUserSDK, oracleSDK, proposalAppClient, registryAppClient, xGovs } =
+      ;({ committee, delegatorAdminSDK, delegatorUserSDK, ggovRegistrySDK, proposalAppClient, registryAppClient, xGovs } =
         await deployDelegatorFull(localnet, adminAccount, 3, 6))
     })
 
     async function syncCommitteeMetadata() {
       const committeeId = calculateCommitteeId(JSON.stringify(committee))
-      const committeeWithOffsets = await oracleSDK.fastGetCommittee(committeeId, { includeBoxOrder: true })
+      const committeeWithOffsets = await ggovRegistrySDK.fastGetCommittee(committeeId, { includeBoxOrder: true })
       const delegatedAccounts = committeeWithOffsets!.xGovBoxOrder!
       await delegatorAdminSDK.syncCommitteeMetadata({ committeeId, delegatedAccounts })
       console.log('Synced committee metadata')

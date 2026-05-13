@@ -32,12 +32,14 @@ if (import.meta.env.VITE_ALGOD_NETWORK === 'localnet') {
         port: String(kmdConfig.port),
       },
     },
+    { id: WalletId.LUTE, options: { siteName: 'gGov' } },
   ]
 } else {
   supportedWallets = [
     { id: WalletId.PERA },
     { id: WalletId.DEFLY },
     { id: WalletId.EXODUS },
+    { id: WalletId.LUTE, options: { siteName: 'gGov' } },
   ]
 }
 

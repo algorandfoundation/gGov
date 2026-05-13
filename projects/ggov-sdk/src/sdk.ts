@@ -1,223 +1,438 @@
-import { GGovClient, GGovComposer } from "./generated/GGovClient";
+import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
+import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "ggov-registry-sdk";
+import { GGovRegistryClient } from "./generated/GGovRegistryClient";
+import { GGovPeriodClient, GGovPeriodComposer } from "./generated/GGovPeriodClient";
 import { GGovReaderSDK } from "./sdkReader";
-import { createTxnExecutor } from "xgov-committees-oracle-sdk";
 import {
   BodyJson,
   CommitteeId,
   CommonMethodBuilderArgs,
   ConstructorArgs,
-  GGovContractArgs,
+  GGovPeriodContractArgs,
+  GGovRegistryContractArgs,
+  PeriodMethodBuilderArgs,
+  SenderWithSigner,
   validateBodyJson,
 } from "./types";
-import { requireWriter } from "./util/requiresSender";
-import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
 import { committeeIdToRaw } from "./util/comitteeId";
 import { chunk } from "./util/chunk";
+import { requireWriter } from "./util/requiresSender";
+import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
 
 /** Algorand atomic group transaction limit. */
 const MAX_GROUP_SIZE = 16;
 
+/** Default MBR (µAlgo) sent from operator to registry per createPeriod call. */
+const DEFAULT_PERIOD_MBR_MICROALGOS = 200_000n;
+
+/** Body chunk size for partial-upload txns. */
+const BODY_CHUNK_BYTES = 2000;
+
 export class GGovSDK extends GGovReaderSDK {
-  public ggovWriteClient?: GGovClient;
+  public writerAccount?: SenderWithSigner;
+  /** Registry write client. */
+  public registryWriteClient?: GGovRegistryClient;
+  /** Composed registry SDK (writer-enabled). Provides committee/operator/delegation writes. */
+  declare public registry: GGovRegistrySDK;
+  /** periodId → cached writer client. */
+  protected periodWriteClientCache: Map<bigint, GGovPeriodClient> = new Map();
 
   constructor({ writerAccount, ...rest }: ConstructorArgs) {
-    super({ ...rest, writerAccount });
+    super(rest);
+    this.writerAccount = writerAccount;
     if (writerAccount) {
-      this.ggovWriteClient = new GGovClient({
+      this.registry = new GGovRegistrySDK({
         algorand: this.algorand,
-        appId: this.appId,
-        defaultSender: writerAccount?.sender,
-        defaultSigner: writerAccount?.signer,
+        concurrency: this.concurrency,
+        debug: this.debug,
+        registryAppId: this.ggovRegistryAppId,
+        readerAccount: undefined,
+        writerAccount,
       });
+      this.registryWriteClient = this.registry.writeClient!;
     }
   }
 
-  private makeGGovTxnExecutor = createTxnExecutor(
+  // ── Period client cache ──────────────────────────────────────────
+
+  protected async getPeriodWriteClient(periodId: bigint | number): Promise<GGovPeriodClient> {
+    if (!this.writerAccount) throw new Error("writerAccount required");
+    const pid = BigInt(periodId);
+    const cached = this.periodWriteClientCache.get(pid);
+    if (cached) return cached;
+    const appId = await this.getPeriodAppId(pid);
+    const client = new GGovPeriodClient({
+      algorand: this.algorand,
+      appId,
+      defaultSender: this.writerAccount.sender,
+      defaultSigner: this.writerAccount.signer,
+    });
+    this.periodWriteClientCache.set(pid, client);
+    return client;
+  }
+
+  // ── Executor factories ───────────────────────────────────────────
+
+  /** Registry-side executor (single registry client). */
+  private makeRegistryTxnExecutor = createTxnExecutor(
     this,
-    () => this.ggovWriteClient!.newGroup(),
+    () => this.registryWriteClient!.newGroup(),
     wrapErrorsInternal,
     () => this.writerAccount,
     () => this.algorand.client.algod,
   );
 
-  // ── Admin methods ────────────────────────────────────────────────
+  /**
+   * Period-side executor factory. Resolves the per-period client at call time, binds the
+   * empty-group factory to that client, then runs the standard executeTxns flow (which also
+   * auto-increases opcode budget via getIncreaseBudgetBuilder).
+   */
+  private makePeriodTxnExecutor = <T extends (...args: any) => any, R = SendResult>({
+    maker,
+    returnTransformer,
+    sendParams,
+  }: {
+    maker: T;
+    returnTransformer?: (result: SendResult) => R;
+    sendParams?: SendParams;
+  }) => {
+    return async (args: Omit<Parameters<T>[0], "builder" | "client">): Promise<R> => {
+      if (!this.writerAccount) throw new Error("writerAccount not set on the SDK instance");
+      const client = await this.getPeriodWriteClient((args as any).periodId);
+      const result = await wrapErrorsInternal(
+        executeTxns({
+          txnBuilder: (a: any) => (maker as any).call(this, { ...a, client }),
+          txnBuilderArgs: { ...(args as object) } as any,
+          emptyGroupBuilder: () => client.newGroup(),
+          sendParams,
+          writerAccount: this.writerAccount,
+          algod: this.algorand.client.algod,
+        }),
+      );
+      return returnTransformer ? returnTransformer(result) : (result as R);
+    };
+  };
+
+  // ── Pass-throughs to composed registry SDK ───────────────────────
+  // Inherited registry admin writes. Wrap to keep call signatures stable.
+
+  uploadCommitteeFile = (...args: Parameters<GGovRegistrySDK["uploadCommitteeFile"]>) =>
+    this.registry.uploadCommitteeFile(...args);
+  registerCommittee = (args: Parameters<GGovRegistrySDK["registerCommittee"]>[0]) =>
+    this.registry.registerCommittee(args);
+  unregisterCommittee = (args: Parameters<GGovRegistrySDK["unregisterCommittee"]>[0]) =>
+    this.registry.unregisterCommittee(args);
+  ingestXGovs = (args: Parameters<GGovRegistrySDK["ingestXGovs"]>[0]) => this.registry.ingestXGovs(args);
+  uningestXGovs = (args: Parameters<GGovRegistrySDK["uningestXGovs"]>[0]) => this.registry.uningestXGovs(args);
+  uningestCommitteeXGovs = (args: Parameters<GGovRegistrySDK["uningestCommitteeXGovs"]>[0]) =>
+    this.registry.uningestCommitteeXGovs(args);
+  setXGovRegistryApp = (args: Parameters<GGovRegistrySDK["setXGovRegistryApp"]>[0]) =>
+    this.registry.setXGovRegistryApp(args);
+
+  // ── Registry: setOperator ────────────────────────────────────────
 
   @requireWriter()
   @wrapErrors()
-  makeSetOperatorTxns({ account, note, builder }: GGovContractArgs["setOperator(address)void"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.setOperator({ args: { account }, note });
-    return builder;
+  makeSetOperatorTxns({
+    account,
+    note,
+    builder,
+  }: GGovRegistryContractArgs["setOperator(address)void"] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    return builder.setOperator({ args: { account }, note });
   }
 
-  setOperator = this.makeGGovTxnExecutor({
-    maker: this.makeSetOperatorTxns,
-  });
+  setOperator = this.makeRegistryTxnExecutor({ maker: this.makeSetOperatorTxns });
 
-  // ── Operator: Period CRUD ────────────────────────────────────────
+  // ── Registry: delegation ─────────────────────────────────────────
 
   @requireWriter()
   @wrapErrors()
-  makeAddPeriodTxns({
+  makeDelegateTxns({
+    delegatee,
+    note,
+    sender,
+    builder,
+  }: GGovRegistryContractArgs["delegate(address)void"] & CommonMethodBuilderArgs & { sender?: string }) {
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    const opts: any = { args: { delegatee }, note };
+    if (sender) {
+      opts.sender = sender;
+      opts.signer = this.algorand.account.getSigner(sender);
+    }
+    return builder.delegate(opts);
+  }
+
+  delegate = this.makeRegistryTxnExecutor({ maker: this.makeDelegateTxns });
+
+  @requireWriter()
+  @wrapErrors()
+  makeUndelegateTxns({
+    note,
+    sender,
+    builder,
+  }: CommonMethodBuilderArgs & { sender?: string } = {}) {
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    const opts: any = { args: {}, note };
+    if (sender) {
+      opts.sender = sender;
+      opts.signer = this.algorand.account.getSigner(sender);
+    }
+    return builder.undelegate(opts);
+  }
+
+  undelegate = this.makeRegistryTxnExecutor({ maker: this.makeUndelegateTxns });
+
+  @requireWriter()
+  @wrapErrors()
+  makeMirrorXGovDelegationTxns({
+    account,
+    note,
+    builder,
+  }: GGovRegistryContractArgs["mirrorXGovDelegation(address)void"] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    return builder.mirrorXGovDelegation({ args: { account }, note });
+  }
+
+  mirrorXGovDelegation = this.makeRegistryTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns });
+
+  // ── Registry: addPeriod (paired payment + createPeriod) ──────────
+
+  @requireWriter()
+  @wrapErrors()
+  async makeAddPeriodTxns({
     committeeId,
     votingStart,
     votingEnd,
+    mbrAmount,
     note,
     builder,
-  }: Omit<GGovContractArgs["addPeriod(byte[32],uint64,uint64)uint64"], "committeeId"> & {
+  }: {
     committeeId: CommitteeId;
+    votingStart: bigint | number;
+    votingEnd: bigint | number;
+    mbrAmount?: bigint | number;
   } & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.addPeriod({
-      args: { committeeId: committeeIdToRaw(committeeId), votingStart, votingEnd },
+    const writer = this.writerAccount!;
+    const mbr = BigInt(mbrAmount ?? DEFAULT_PERIOD_MBR_MICROALGOS);
+    const mbrPayment = await this.algorand.createTransaction.payment({
+      sender: writer.sender,
+      receiver: this.registryWriteClient!.appAddress,
+      amount: { microAlgo: mbr } as any,
+    } as any);
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    return builder.createPeriod({
+      args: {
+        committeeId: committeeIdToRaw(committeeId),
+        votingStart,
+        votingEnd,
+        mbrPayment,
+      },
       note,
+      extraFee: (3000).microAlgo(),
     });
-    return builder;
   }
 
-  addPeriod = this.makeGGovTxnExecutor({
+  addPeriod = this.makeRegistryTxnExecutor<typeof this.makeAddPeriodTxns, bigint>({
     maker: this.makeAddPeriodTxns,
     returnTransformer: (result) => {
-      const returns = (result as any).returns;
-      return (returns?.[returns.length - 1] ?? returns?.[0]) as bigint;
+      const returns = (result as any).returns ?? [];
+      const tup = returns[returns.length - 1] ?? returns[0];
+      const periodId = BigInt(Array.isArray(tup) ? tup[0] : tup);
+      const newAppId = BigInt(Array.isArray(tup) ? tup[1] : 0);
+      if (newAppId !== 0n) this.periodAppCache.set(periodId, newAppId);
+      return periodId;
     },
   });
+
+  // ── Period: editPeriod ───────────────────────────────────────────
 
   @requireWriter()
   @wrapErrors()
   makeEditPeriodTxns({
+    periodId: _periodId,
     committeeId,
-    periodId,
     votingStart,
     votingEnd,
     note,
+    client,
     builder,
-  }: Omit<GGovContractArgs["editPeriod(uint64,byte[32],uint64,uint64)void"], "committeeId"> & {
+  }: {
+    periodId: bigint | number;
     committeeId: CommitteeId;
-  } & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.editPeriod({ args: { periodId, committeeId: committeeIdToRaw(committeeId), votingStart, votingEnd }, note });
-    return builder;
+    votingStart: bigint | number;
+    votingEnd: bigint | number;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.editPeriod({
+      args: { committeeId: committeeIdToRaw(committeeId), votingStart, votingEnd },
+      note,
+      // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
+      extraFee: (2000).microAlgo(),
+    });
   }
 
-  editPeriod = this.makeGGovTxnExecutor({
-    maker: this.makeEditPeriodTxns,
+  editPeriod = this.makePeriodTxnExecutor({ maker: this.makeEditPeriodTxns });
+
+  // ── Period: addTopic (returns topic index) ───────────────────────
+
+  @requireWriter()
+  @wrapErrors()
+  makeAddTopicTxns({
+    periodId: _periodId,
+    options,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    options: string[];
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.addTopic({
+      args: { options },
+      note,
+      // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
+      extraFee: (2000).microAlgo(),
+    });
+  }
+
+  addTopic = this.makePeriodTxnExecutor<typeof this.makeAddTopicTxns, bigint>({
+    maker: this.makeAddTopicTxns,
+    returnTransformer: (result) => {
+      const returns = (result as any).returns ?? [];
+      return BigInt(returns[returns.length - 1] ?? returns[0] ?? 0);
+    },
   });
+
+  // ── Period: editTopic ────────────────────────────────────────────
+
+  @requireWriter()
+  @wrapErrors()
+  makeEditTopicTxns({
+    periodId: _periodId,
+    topicIndex,
+    options,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    topicIndex: bigint | number;
+    options: string[];
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.editTopic({
+      args: { topicIndex, options },
+      note,
+      // 1 inner verifyOperator (no summary change)
+      extraFee: (1000).microAlgo(),
+    });
+  }
+
+  editTopic = this.makePeriodTxnExecutor({ maker: this.makeEditTopicTxns });
+
+  // ── Period: uploadPeriodBodyPartial ──────────────────────────────
 
   @requireWriter()
   @wrapErrors()
   makeUploadPeriodBodyPartialTxns({
-    periodId,
+    periodId: _periodId,
     startOffset,
     data,
     last,
     note,
+    client,
     builder,
-  }: GGovContractArgs["uploadPeriodBodyPartial(uint64,uint64,byte[],bool)void"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.uploadPeriodBodyPartial({ args: { periodId, startOffset, data, last }, note });
-    return builder;
+  }: {
+    periodId: bigint | number;
+    startOffset: bigint | number;
+    data: Uint8Array;
+    last: boolean;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.uploadPeriodBodyPartial({
+      args: { startOffset, data, last },
+      note,
+      extraFee: (1000).microAlgo(),
+    });
   }
 
-  uploadPeriodBodyPartial = this.makeGGovTxnExecutor({
-    maker: this.makeUploadPeriodBodyPartialTxns,
-  });
+  uploadPeriodBodyPartial = this.makePeriodTxnExecutor({ maker: this.makeUploadPeriodBodyPartialTxns });
 
-  /**
-   * Upload a full period body, chunked automatically.
-   * Accepts a BodyJson object ({ title, body }) or a pre-serialized string/Uint8Array.
-   * When a string or Uint8Array is provided it is validated against the { title, body } schema.
-   * Chunks are batched into atomic groups of up to 16 transactions for efficiency.
-   */
+  // ── Period: uploadTopicBodyPartial ───────────────────────────────
+
   @requireWriter()
   @wrapErrors()
-  async uploadPeriodBody({ periodId, body, note }: { periodId: bigint | number; body: BodyJson | string | Uint8Array; note?: string | Uint8Array }): Promise<void> {
+  makeUploadTopicBodyPartialTxns({
+    periodId: _periodId,
+    topicIndex,
+    startOffset,
+    data,
+    last,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    topicIndex: bigint | number;
+    startOffset: bigint | number;
+    data: Uint8Array;
+    last: boolean;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.uploadTopicBodyPartial({
+      args: { topicIndex, startOffset, data, last },
+      note,
+      extraFee: (1000).microAlgo(),
+    });
+  }
+
+  uploadTopicBodyPartial = this.makePeriodTxnExecutor({ maker: this.makeUploadTopicBodyPartialTxns });
+
+  /** Upload a full period body, chunked into groups of up to 16 txns. */
+  @requireWriter()
+  @wrapErrors()
+  async uploadPeriodBody({
+    periodId,
+    body,
+    note,
+  }: {
+    periodId: bigint | number;
+    body: BodyJson | string | Uint8Array;
+    note?: string | Uint8Array;
+  }): Promise<void> {
+    const client = await this.getPeriodWriteClient(periodId);
     const data = serializeAndValidateBody(body);
-    const chunks = chunk(Array.from(data), 2000);
+    const chunks = chunk(Array.from(data), BODY_CHUNK_BYTES);
     const groups = chunk(
       chunks.map((c, i) => ({ index: i, data: c })),
       MAX_GROUP_SIZE,
     );
     for (const group of groups) {
-      let builder: GGovComposer<any> = this.ggovWriteClient!.newGroup();
+      let builder: GGovPeriodComposer<any> = client.newGroup();
       for (const { index, data: chunkData } of group) {
         const isLast = index === chunks.length - 1;
-        builder = builder.uploadPeriodBodyPartial({
-          args: { periodId, startOffset: index * 2000, data: new Uint8Array(chunkData), last: isLast },
+        builder = this.makeUploadPeriodBodyPartialTxns({
+          periodId,
+          startOffset: index * BODY_CHUNK_BYTES,
+          data: new Uint8Array(chunkData),
+          last: isLast,
           note,
+          client,
+          builder,
         });
       }
       await builder.send();
     }
   }
 
-  // ── Operator: Topic CRUD ──────────────────────────────────────────
-
-  @requireWriter()
-  @wrapErrors()
-  makeAddTopicTxns({
-    periodId,
-    options,
-    note,
-    builder,
-  }: GGovContractArgs["addTopic(uint64,string[])uint64"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.addTopic({ args: { periodId, options }, note });
-    return builder;
-  }
-
-  addTopic = this.makeGGovTxnExecutor({
-    maker: this.makeAddTopicTxns,
-    returnTransformer: (result) => {
-      const returns = (result as any).returns;
-      return (returns?.[returns.length - 1] ?? returns?.[0]) as bigint;
-    },
-  });
-
-  @requireWriter()
-  @wrapErrors()
-  makeEditTopicTxns({
-    periodId,
-    topicIndex,
-    options,
-    note,
-    builder,
-  }: GGovContractArgs["editTopic(uint64,uint64,string[])void"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.editTopic({ args: { periodId, topicIndex, options }, note });
-    return builder;
-  }
-
-  editTopic = this.makeGGovTxnExecutor({
-    maker: this.makeEditTopicTxns,
-  });
-
-  @requireWriter()
-  @wrapErrors()
-  makeUploadTopicBodyPartialTxns({
-    periodId,
-    topicIndex,
-    startOffset,
-    data,
-    last,
-    note,
-    builder,
-  }: GGovContractArgs["uploadTopicBodyPartial(uint64,uint64,uint64,byte[],bool)void"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    builder = builder.uploadTopicBodyPartial({ args: { periodId, topicIndex, startOffset, data, last }, note });
-    return builder;
-  }
-
-  uploadTopicBodyPartial = this.makeGGovTxnExecutor({
-    maker: this.makeUploadTopicBodyPartialTxns,
-  });
-
-  /**
-   * Upload a full topic body, chunked automatically.
-   * Accepts a BodyJson object ({ title, body }) or a pre-serialized string/Uint8Array.
-   * When a string or Uint8Array is provided it is validated against the { title, body } schema.
-   * Chunks are batched into atomic groups of up to 16 transactions for efficiency.
-   */
+  /** Upload a full topic body, chunked into groups of up to 16 txns. */
   @requireWriter()
   @wrapErrors()
   async uploadTopicBody({
@@ -231,102 +446,125 @@ export class GGovSDK extends GGovReaderSDK {
     body: BodyJson | string | Uint8Array;
     note?: string | Uint8Array;
   }): Promise<void> {
+    const client = await this.getPeriodWriteClient(periodId);
     const data = serializeAndValidateBody(body);
-    const chunks = chunk(Array.from(data), 2000);
+    const chunks = chunk(Array.from(data), BODY_CHUNK_BYTES);
     const groups = chunk(
       chunks.map((c, i) => ({ index: i, data: c })),
       MAX_GROUP_SIZE,
     );
     for (const group of groups) {
-      let builder: GGovComposer<any> = this.ggovWriteClient!.newGroup();
+      let builder: GGovPeriodComposer<any> = client.newGroup();
       for (const { index, data: chunkData } of group) {
         const isLast = index === chunks.length - 1;
-        builder = builder.uploadTopicBodyPartial({
-          args: { periodId, topicIndex, startOffset: index * 2000, data: new Uint8Array(chunkData), last: isLast },
+        builder = this.makeUploadTopicBodyPartialTxns({
+          periodId,
+          topicIndex,
+          startOffset: index * BODY_CHUNK_BYTES,
+          data: new Uint8Array(chunkData),
+          last: isLast,
           note,
+          client,
+          builder,
         });
       }
       await builder.send();
     }
   }
 
-  // ── Delegation ───────────────────────────────────────────────────
+  // ── Period: removeTopic ──────────────────────────────────────────
 
   @requireWriter()
   @wrapErrors()
-  makeDelegateTxns({
-    delegatee,
+  makeRemoveTopicTxns({
+    periodId: _periodId,
+    topicIndex,
     note,
-    sender,
+    client,
     builder,
-  }: GGovContractArgs["delegate(address)void"] & CommonMethodBuilderArgs & { sender?: string }) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    const delegateArgs: any = { args: { delegatee }, note };
-    if (sender) {
-      delegateArgs.sender = sender;
-      delegateArgs.signer = this.algorand.account.getSigner(sender);
-    }
-    builder = builder.delegate(delegateArgs);
-    return builder;
+  }: {
+    periodId: bigint | number;
+    topicIndex: bigint | number;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.removeTopic({
+      args: { topicIndex },
+      note,
+      // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
+      extraFee: (2000).microAlgo(),
+    });
   }
 
-  delegate = this.makeGGovTxnExecutor({
-    maker: this.makeDelegateTxns,
-  });
+  removeTopic = this.makePeriodTxnExecutor({ maker: this.makeRemoveTopicTxns });
+
+  // ── Period: setReady ─────────────────────────────────────────────
 
   @requireWriter()
   @wrapErrors()
-  makeUndelegateTxns({ note, sender, builder }: CommonMethodBuilderArgs & { sender?: string } = {}) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    const undelegateArgs: any = { args: {}, note };
-    if (sender) {
-      undelegateArgs.sender = sender;
-      undelegateArgs.signer = this.algorand.account.getSigner(sender);
-    }
-    builder = builder.undelegate(undelegateArgs);
-    return builder;
+  makeSetReadyTxns({
+    periodId: _periodId,
+    ready,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    ready: boolean;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.setReady({
+      args: { ready },
+      note,
+      // 1 inner verifyOperator + 1 inner updatePeriodSummary
+      extraFee: (2000).microAlgo(),
+    });
   }
 
-  undelegate = this.makeGGovTxnExecutor({
-    maker: this.makeUndelegateTxns,
-  });
+  setReady = this.makePeriodTxnExecutor({ maker: this.makeSetReadyTxns });
 
-  // ── Voting ───────────────────────────────────────────────────────
+  // ── Period: vote ─────────────────────────────────────────────────
 
   @requireWriter()
   @wrapErrors()
   makeVoteTxns({
-    periodId,
+    periodId: _periodId,
     voterAccount,
     topicVotes,
     note,
     sender,
+    client,
     builder,
-  }: GGovContractArgs["vote(uint64,address,uint64[][])void"] & CommonMethodBuilderArgs & { sender?: string }) {
-    builder = builder ?? this.ggovWriteClient!.newGroup();
-    const voteArgs: any = { args: { periodId, voterAccount, topicVotes }, note };
+  }: GGovPeriodContractArgs["vote(address,uint64[][])void"] & {
+    periodId: bigint | number;
+    sender?: string;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    const opts: any = {
+      args: { voterAccount, topicVotes },
+      note,
+      // 1 inner getDelegate (when delegated) + 1 inner getXGovVotingPower
+      extraFee: (2000).microAlgo(),
+    };
     if (sender) {
-      voteArgs.sender = sender;
-      voteArgs.signer = this.algorand.account.getSigner(sender);
+      opts.sender = sender;
+      opts.signer = this.algorand.account.getSigner(sender);
     }
-    builder = builder.vote(voteArgs);
-    return builder;
+    return builder.vote(opts);
   }
 
-  vote = this.makeGGovTxnExecutor({
-    maker: this.makeVoteTxns,
-  });
+  vote = this.makePeriodTxnExecutor({ maker: this.makeVoteTxns });
 }
 
 function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {
   if (typeof body === "object" && !(body instanceof Uint8Array)) {
-    // BodyJson object - validate and serialize
     if (!validateBodyJson(body)) {
       throw new Error("Body must have 'title' (string) and 'body' (string) fields");
     }
     return new TextEncoder().encode(JSON.stringify(body));
   }
-  // string or Uint8Array - parse and validate schema
   const text = typeof body === "string" ? body : new TextDecoder().decode(body);
   let parsed: unknown;
   try {

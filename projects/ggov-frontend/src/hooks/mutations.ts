@@ -221,3 +221,44 @@ export function useUploadTopicBodyMutation() {
     onError: showError,
   })
 }
+
+export function useRemoveTopicMutation() {
+  const { sdk } = useGGovSDK()
+  const queryClient = useQueryClient()
+  const { showError } = useErrorDialog()
+
+  return useMutation({
+    mutationFn: (args: { periodId: number; topicIndex: number }) =>
+      sdk!.removeTopic({
+        periodId: BigInt(args.periodId),
+        topicIndex: BigInt(args.topicIndex),
+      }),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.periods })
+      txnSuccessToast('Topic removed', data)
+    },
+    onError: showError,
+  })
+}
+
+export function useSetReadyMutation() {
+  const { sdk } = useGGovSDK()
+  const queryClient = useQueryClient()
+  const { showError } = useErrorDialog()
+
+  return useMutation({
+    mutationFn: (args: { periodId: number; ready: boolean }) =>
+      sdk!.setReady({
+        periodId: BigInt(args.periodId),
+        ready: args.ready,
+      }),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.periods })
+      txnSuccessToast(vars.ready ? 'Period marked ready' : 'Period marked draft', data)
+    },
+    onError: showError,
+  })
+}

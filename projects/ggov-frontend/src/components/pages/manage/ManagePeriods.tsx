@@ -40,12 +40,13 @@ export default function ManagePeriods() {
               <TableHead>Committee (Rounds)</TableHead>
               <TableHead>Voting Window</TableHead>
               <TableHead>Topics</TableHead>
+              <TableHead>Ready</TableHead>
               <TableHead>Status</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {periods.map(({ id, period }) => (
+            {periods.map(({ id, period, ready }) => (
               <TableRow key={id}>
                 <TableCell className="font-medium">{id}</TableCell>
                 <TableCell className="text-sm">{committeeRounds(period.committeeId)}</TableCell>
@@ -53,6 +54,18 @@ export default function ManagePeriods() {
                   {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
                 </TableCell>
                 <TableCell>{period.topics.length}</TableCell>
+                <TableCell>
+                  <span
+                    className={
+                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
+                      (ready
+                        ? 'bg-green-500/20 text-green-700 dark:text-green-300'
+                        : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300')
+                    }
+                  >
+                    {ready ? 'Ready' : 'Draft'}
+                  </span>
+                </TableCell>
                 <TableCell>
                   <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
                 </TableCell>

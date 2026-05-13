@@ -4,7 +4,7 @@ import { u16, u32 } from './utils.algo'
 
 export type CommitteeId = StaticBytes<32>
 
-export type OracleAccount = {
+export type GGovAccount = {
   /** Account ID */
   accountId: Uint32
   /** Committee superbox offsets for the account */
@@ -141,11 +141,24 @@ export type DelegatorVote = {
 
 // gGov types
 
-/** Key for vote records: [periodId, accountId] */
-export type GGovVoteKey = [Uint32, Uint32]
+/** Summary of a period stored on the registry side. Kept in sync by the period contract via updatePeriodSummary. */
+export type GGovPeriodSummary = {
+  appId: uint64
+  votingStart: Uint32
+  votingEnd: Uint32
+  numTopics: Uint32
+  ready: boolean
+}
 
-/** Key for topic body JSON: [periodId, topicIndex] */
-export type GGovTopicBigKey = [Uint32, Uint32]
+export function getEmptyGGovPeriodSummary(): GGovPeriodSummary {
+  return {
+    appId: 0,
+    votingStart: u32(0),
+    votingEnd: u32(0),
+    numTopics: u32(0),
+    ready: false,
+  }
+}
 
 /** Topic - inlined in GGovPeriod */
 export type GGovTopic = {

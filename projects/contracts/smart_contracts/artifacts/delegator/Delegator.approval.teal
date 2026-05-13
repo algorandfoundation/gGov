@@ -517,12 +517,12 @@ syncProposalMetadata_after_if_else@28:
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/delegator/delegator.algo.ts:170
-    // oracleXGovRegistryAppKey,
+    // ggovRegistryXGovKey,
     pushbytes "xGovRegistryApp"
     // smart_contracts/delegator/delegator.algo.ts:168-171
     // const [registryAppId, registryAppExists] = op.AppGlobal.getExUint64(
     //   this.committeeOracleApp.value,
-    //   oracleXGovRegistryAppKey,
+    //   ggovRegistryXGovKey,
     // )
     app_global_get_ex
     swap

@@ -57,14 +57,16 @@ export const errState = 'ERR:ST' // Invalid state for this action
 
 // gGov auth
 export const errNotOperator = 'ERR:G_OP' // Caller must be operator
+export const errAlreadyInit = 'ERR:AI' // Contract already initialised
 
 // gGov period
 export const errGGovPeriodExists = 'ERR:GP_EX' // Period already exists
 export const errGGovPeriodNotExists = 'ERR:GP_NX' // Period does not exist
 export const errGGovVotingNotStarted = 'ERR:GP_NS' // Voting has not started
 export const errGGovVotingEnded = 'ERR:GP_EN' // Voting period ended
-export const errGGovVotingActive = 'ERR:GP_AC' // Cannot modify while voting active
 export const errGGovHasVotes = 'ERR:GP_VE' // Cannot modify: votes exist
+export const errGGovReady = 'ERR:GP_RD' // Cannot modify: period is marked ready
+export const errGGovNotReady = 'ERR:GP_NR' // Cannot vote: period is not marked ready
 
 // gGov topic
 export const errGGovTopicIndexOOB = 'ERR:GT_OB' // Topic index out of bounds

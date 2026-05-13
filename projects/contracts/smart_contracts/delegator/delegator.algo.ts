@@ -53,7 +53,7 @@ import {
   getEmptyDelegatorProposal,
 } from '../base/types.algo'
 import { ensure, ensureExtra, u32 } from '../base/utils.algo'
-import { CommitteeOracleContract, oracleXGovRegistryAppKey } from '../oracle/oracle.algo'
+import { GGovRegistryContract, ggovRegistryXGovKey } from '../ggov-registry/ggovRegistry.algo'
 import {
   STATUS_SUBMITTED,
   STATUS_VOTING,
@@ -118,7 +118,7 @@ export class Delegator extends AccountIdContract {
   }
 
   /**
-   * Sync committee metadata and delegated accounts from CommitteeOracle
+   * Sync committee metadata and delegated accounts from the GGov registry
    * @param committeeId Committee ID to sync
    * @param delegatedAccounts Accounts delegated to this contract
    */
@@ -127,7 +127,7 @@ export class Delegator extends AccountIdContract {
     const committeeBox = this.committees(committeeId)
     ensure(!committeeBox.exists, errCommitteeExists)
 
-    const oracleApp = compileArc4(CommitteeOracleContract)
+    const oracleApp = compileArc4(GGovRegistryContract)
     const remoteCommittee = oracleApp.call.getCommitteeMetadata({
       appId: this.committeeOracleApp.value,
       args: [committeeId, true],
@@ -167,7 +167,7 @@ export class Delegator extends AccountIdContract {
     // validate proposal was created by xgov registry
     const [registryAppId, registryAppExists] = op.AppGlobal.getExUint64(
       this.committeeOracleApp.value,
-      oracleXGovRegistryAppKey,
+      ggovRegistryXGovKey,
     )
     ensure(registryAppExists, errXGovRegistryMissing)
     const proposalCreator = proposalId.creator

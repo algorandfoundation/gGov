@@ -1,6 +1,7 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { Address, TransactionSigner } from "algosdk";
-import { GGovArgs, GGovComposer } from "./generated/GGovClient";
+import { GGovRegistryArgs, GGovRegistryComposer } from "./generated/GGovRegistryClient";
+import { GGovPeriodArgs, GGovPeriodComposer } from "./generated/GGovPeriodClient";
 import { SendSingleTransactionResult, SendAtomicTransactionComposerResults } from "@algorandfoundation/algokit-utils/types/transaction";
 
 export type Network = "mainnet" | "testnet";
@@ -9,6 +10,11 @@ export type ConstructorArgsOptions =
   | {
       network: Network;
     }
+  | {
+      ggovRegistryAppId: number | bigint;
+      readerAccount?: string;
+    }
+  /** @deprecated Use ggovRegistryAppId. Kept for backward compatibility. */
   | {
       ggovAppId: number | bigint;
       readerAccount?: string;
@@ -30,14 +36,21 @@ export type ReaderConstructorArgs = {
 } & ConstructorArgsOptions;
 
 export interface CommonMethodBuilderArgs {
-  builder?: GGovComposer<any>;
+  builder?: GGovRegistryComposer<any>;
   /** Optional transaction note. Useful for deduplicating otherwise-identical transactions. */
+  note?: string | Uint8Array;
+}
+
+export interface PeriodMethodBuilderArgs {
+  builder?: GGovPeriodComposer<any>;
+  /** Optional transaction note. */
   note?: string | Uint8Array;
 }
 
 export type SendResult = SendSingleTransactionResult | SendAtomicTransactionComposerResults;
 
-export type GGovContractArgs = GGovArgs["obj"];
+export type GGovRegistryContractArgs = GGovRegistryArgs["obj"];
+export type GGovPeriodContractArgs = GGovPeriodArgs["obj"];
 
 export type CommitteeId = Uint8Array | Buffer | string;
 

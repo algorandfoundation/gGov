@@ -16,7 +16,7 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "cp ../contracts/smart_contracts/artifacts/ggov/GGovClient.ts src/generated/GGovClient.ts && tsx ../common/sdks/generate-errors.ts .",
+    "prebuild": "cp ../contracts/smart_contracts/artifacts/ggov-registry/GGovRegistryClient.ts src/generated/GGovRegistryClient.ts && cp ../contracts/smart_contracts/artifacts/ggov-period/GGovPeriodClient.ts src/generated/GGovPeriodClient.ts && tsx ../common/sdks/generate-errors.ts .",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
@@ -27,7 +27,7 @@
   "dependencies": {
     "js-sha512": "^0.9.0",
     "p-map": "^7.0.4",
-    "xgov-committees-oracle-sdk": "link:../oracle-sdk"
+    "ggov-registry-sdk": "link:../ggov-registry-sdk"
   },
   "peerDependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",

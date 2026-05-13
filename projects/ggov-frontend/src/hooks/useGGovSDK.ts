@@ -23,14 +23,14 @@ function createAlgorandClient() {
   })
 }
 
-const appId = BigInt(import.meta.env.VITE_GGOV_APP_ID || '0')
+const appId = BigInt(import.meta.env.VITE_GGOV_REGISTRY_APP_ID || '0')
 
 export function GGovSDKProvider({ children }: { children: ReactNode }) {
   const { activeAddress, transactionSigner } = useWallet()
 
   const readerSDK = useMemo(() => {
     const algorand = createAlgorandClient()
-    return new GGovReaderSDK({ algorand, ggovAppId: appId })
+    return new GGovReaderSDK({ algorand, ggovRegistryAppId: appId })
   }, [])
 
   const sdk = useMemo(() => {
@@ -38,7 +38,7 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
     const algorand = createAlgorandClient()
     return new GGovSDK({
       algorand,
-      ggovAppId: appId,
+      ggovRegistryAppId: appId,
       writerAccount: {
         sender: activeAddress,
         signer: transactionSigner,

@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 
 // Use require for packages that have CJS dist but ESM source issues
 const { AlgorandClient } = require("@algorandfoundation/algokit-utils");
-const { GGovFactory } = require("../../ggov-sdk/dist/generated/GGovClient.js");
+const { GGovRegistryFactory } = require("../../ggov-sdk/dist/generated/GGovRegistryClient.js");
 const { GGovSDK } = require("../../ggov-sdk/dist/sdk.js");
 const algosdk = require("algosdk");
 
@@ -131,10 +131,10 @@ async function main() {
     amount: (100 as any).algo(),
   });
 
-  // ── Deploy GGov contract ──────────────────────────────────────────
+  // ── Deploy GGovRegistry contract ──────────────────────────────────
 
-  console.log("\nDeploying GGov contract...");
-  const factory = algorand.client.getTypedAppFactory(GGovFactory, {
+  console.log("\nDeploying GGovRegistry contract...");
+  const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
     defaultSender: deployerAddr,
   });
 
@@ -144,31 +144,31 @@ async function main() {
   });
 
   const appId = appClient.appId;
-  console.log(`GGov deployed! App ID: ${appId}`);
+  console.log(`GGovRegistry deployed! App ID: ${appId}`);
   console.log(`App address: ${appClient.appAddress}`);
 
-  // Fund the app account for box storage
+  // Fund the registry app account for box storage and per-period MBR
   await algorand.send.payment({
     sender: deployerAddr,
     receiver: appClient.appAddress,
     amount: (50 as any).algo(),
   });
 
-  // Set deployer as operator
-  await appClient.send.setOperator({ args: { account: deployerAddr } });
-  console.log("Operator set to deployer");
-
   // ── Create SDK instance ───────────────────────────────────────────
 
   const sdk = new GGovSDK({
     algorand,
-    ggovAppId: appId,
+    ggovRegistryAppId: appId,
     writerAccount: {
       sender: deployerAddr,
       signer: algorand.account.getSigner(deployerAddr),
     },
     debug: false,
   });
+
+  // Set deployer as operator (must happen via SDK so the writer account is correct)
+  await sdk.setOperator({ account: deployerAddr });
+  console.log("Operator set to deployer");
 
   // ── Generate 5 new KMD accounts for committee members ──────────────
 
@@ -298,6 +298,7 @@ async function main() {
   // Now edit period to make it active (voting start in the past)
   await sdk.editPeriod({
     periodId: periodId!,
+    committeeId,
     votingStart: now - 3600n, // started 1 hour ago
     votingEnd: now + 86400n * 7n, // ends in 7 days
   });
@@ -357,13 +358,13 @@ async function main() {
   if (fs.existsSync(envPath)) {
     let envContent = fs.readFileSync(envPath, "utf-8");
     envContent = envContent.replace(
-      /VITE_GGOV_APP_ID=.*/,
-      `VITE_GGOV_APP_ID=${appId}`
+      /VITE_GGOV_(REGISTRY_)?APP_ID=.*/,
+      `VITE_GGOV_REGISTRY_APP_ID=${appId}`
     );
     fs.writeFileSync(envPath, envContent);
-    console.log(`\n.env updated: VITE_GGOV_APP_ID=${appId}`);
+    console.log(`\n.env updated: VITE_GGOV_REGISTRY_APP_ID=${appId}`);
   } else {
-    console.log(`\nNo .env found at ${envPath}. Set VITE_GGOV_APP_ID=${appId} manually.`);
+    console.log(`\nNo .env found at ${envPath}. Set VITE_GGOV_REGISTRY_APP_ID=${appId} manually.`);
   }
 
   // ── Summary ───────────────────────────────────────────────────────

@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import { usePeriod, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
-import { useEditPeriodMutation, useUploadPeriodBodyMutation, useEditTopicMutation, useUploadTopicBodyMutation } from '@/hooks/mutations'
+import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
+import {
+  useEditPeriodMutation,
+  useUploadPeriodBodyMutation,
+  useEditTopicMutation,
+  useUploadTopicBodyMutation,
+  useRemoveTopicMutation,
+  useSetReadyMutation,
+} from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,11 +30,15 @@ export default function ManagePeriodDetail() {
   const { data: periodBody } = usePeriodBody(periodId)
   const { data: topicBodies = [] } = useTopicBodies(periodId, period?.topics.length ?? 0)
   const { data: committees = [] } = useCommittees()
+  const { data: allPeriods = [] } = usePeriods()
+  const ready = allPeriods.find((p) => p.id === periodId)?.ready ?? false
 
   const editPeriodMutation = useEditPeriodMutation()
   const uploadPeriodBodyMutation = useUploadPeriodBodyMutation()
   const editTopicMutation = useEditTopicMutation()
   const uploadTopicBodyMutation = useUploadTopicBodyMutation()
+  const removeTopicMutation = useRemoveTopicMutation()
+  const setReadyMutation = useSetReadyMutation()
 
   // Edit period form
   const [editCommittee, setEditCommittee] = useState('')
@@ -124,14 +135,38 @@ export default function ManagePeriodDetail() {
   }
 
   const status = periodStatus(period.votingStart, period.votingEnd)
-  const canEdit = status === 'upcoming' && !!sdk
+  const canEdit = status === 'upcoming' && !ready && !!sdk
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Link to="/manage" className="text-muted-foreground hover:text-foreground">&larr;</Link>
         <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
         <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
+        <span
+          className={
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
+            (ready
+              ? 'bg-green-500/20 text-green-700 dark:text-green-300'
+              : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300')
+          }
+        >
+          {ready ? 'Ready' : 'Draft'}
+        </span>
+        {sdk && (
+          <Button
+            size="sm"
+            variant={ready ? 'outline' : 'default'}
+            onClick={() => setReadyMutation.mutate({ periodId, ready: !ready })}
+            disabled={setReadyMutation.isPending}
+          >
+            {setReadyMutation.isPending
+              ? 'Saving...'
+              : ready
+                ? 'Mark Draft'
+                : 'Mark Ready'}
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -277,9 +312,23 @@ export default function ManagePeriodDetail() {
                         </Button>
                       )}
                       {canEdit && (
-                        <Button variant="ghost" size="sm" onClick={() => openEditTopic(topicIdx)}>
-                          Edit Options
-                        </Button>
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => openEditTopic(topicIdx)}>
+                            Edit Options
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm(`Remove topic ${topicIdx + 1}? This cannot be undone.`)) {
+                                removeTopicMutation.mutate({ periodId, topicIndex: topicIdx })
+                              }
+                            }}
+                            disabled={removeTopicMutation.isPending}
+                          >
+                            Remove
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>

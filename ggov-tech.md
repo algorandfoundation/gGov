@@ -10,17 +10,28 @@ Period data: https://governance.algorand.foundation/api/periods/governance-perio
 
 Topic data: https://governance.algorand.foundation/api/voting-sessions/period-15-voting-session-1/
 
-## Contract
+## Architecture
 
-Single contract for multiple committees / voting periods
+Two contracts:
 
-Extends Oracle
+- **`GGovRegistry`** (durable factory): committees + xGov power + operator + gGov delegations + periods index. The registry holds the `periodId → GGovPeriodSummary` box.
+- **`GGovPeriod`** (one app per voting period): topics + tally + vote records + period/topic bodies. Spawned by `registry.createPeriod` via inner-txn.
+
+Cross-contract flow:
+
+```
+operator → registry.createPeriod() → itxn creates GGovPeriod app, inner-pays MBR, inner-calls period.init()
+operator → period.editPeriod/addTopic() → inner-calls registry.updatePeriodSummary() to keep summary in sync
+voter   → period.vote()              → inner-calls registry.getDelegate() + registry.getXGovVotingPower()
+```
+
+The registry's `updatePeriodSummary` enforces `Global.callerApplicationId === storedAppId` for the given periodId, so only the registered period app can mutate its summary.
 
 ## Roles
 
-admin role: upgrade contract, update committee oracle app ID
+admin role: upgrade registry, set xGov registry app ID, set operator
 
-operator: CRUD governance period measures
+operator: CRUD governance periods (create periods, add/edit topics, edit voting windows)
 
 ## Types
 
@@ -78,20 +89,33 @@ TopicBig {
 }
 ```
 
-## Global State
+## Registry global state
 
-- lastPeriodId
-  - for auto increment
-- lastTopicId
-  - for auto increment
+- `operator` (account) — set by admin
+- `lastPeriodId` (uint64) — auto-increment for `createPeriod`
+- `lastCommitteeId` (uint64) — auto-increment for committee numeric ID
+- `xGovRegistryApp` (Application) — pointer to xGov registry
 
-## Boxes
+## Registry boxes
 
-- Periods
-- PeriodsBig
-- TopicsBig
-- Votes
-- Delegations
+- `c<committeeId>` — `CommitteeMetadata`
+- `a<address>` — `GGovAccount` (the gGov-side accountId + committee offsets)
+- `p<periodId(uint32)>` — `GGovPeriodSummary { appId, votingStart, votingEnd, numTopics }`
+- `d<address>` — delegatee address (delegations)
+- `S<numericId>...` — Superbox storage for committee xGovs
+
+## Period global state (per app)
+
+- `oracleApp` (uint64) — registry app ID, set by `init`
+- `periodId` (uint64) — this period's ID
+- `committeeId` (32 bytes), `votingStart` (uint64), `votingEnd` (uint64)
+
+## Period boxes
+
+- `t` — topics array (`GGovTopic[]` with inlined vote tallies)
+- `P` — period body JSON (single box)
+- `T<topicIndex(uint32)>` — topic body JSON
+- `v<address>` — `GGovVoteRecord { byDelegator, topicVotes[][] }`
 
 ## Methods
 

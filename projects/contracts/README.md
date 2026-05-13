@@ -1,4 +1,6 @@
-# xgov-delegator and [xgov-committee-oracle](#xgov-committee-oracle)
+# xgov-delegator and [GGovRegistry](#ggov-registry)
+
+> **Note on naming**: the "Committee Oracle" referenced throughout this document is now the **`GGovRegistry`** contract. The registry is a durable factory that also holds an operator, gGov delegations, and a `periodId → GGovPeriodSummary` index. It spawns one `GGovPeriod` app per voting period via inner-txn. The delegator's `setCommitteeOracleApp` / `committeeOracleApp` API names are preserved for backward compatibility but the app they point to is the registry.
 
 # xgov-delegator
 
@@ -122,7 +124,24 @@ changing votes could be allowed, subtract previous votes_yes / votes_no and add 
 - `getAlgoHourPeriodTotals(periodStart: uint64)` - Get total algohours and finality for period
 - `getAccountAlgoHours(periodStart: uint64, account: Account)` - Get account algohours for period
 
-# xgov-committee-oracle
+<a id="ggov-registry"></a>
+# GGovRegistry (formerly xgov-committee-oracle)
+
+The committee oracle has been folded into `GGovRegistry`, which adds:
+
+- `operator` global state and `setOperator` / `verifyOperator` / `getOperator`
+- gGov delegation BoxMap (`d` prefix) + `delegate` / `undelegate` / `getDelegation` / `getDelegate` / `logDelegations` / `mirrorXGovDelegation`
+- `periods` BoxMap (`p` prefix) keyed by `Uint32` periodId, storing `{ appId, votingStart, votingEnd, numTopics }`
+- `createPeriod(committeeId, votingStart, votingEnd, mbrPayment)` — operator-only inner-txn factory that compiles + creates + funds + initialises a `GGovPeriod` app
+- `updatePeriodSummary(periodId, votingStart, votingEnd, numTopics)` — gated on `Global.callerApplicationId === storedAppId`; only the registered period app can update its summary
+- `getPeriodApp(periodId)`, `getPeriodSummary(periodId)`, `logPeriodSummaries(periodIds[])`
+- `tryGetXGovVotingPower(committeeId, account)` — non-throwing variant for `canVote`
+
+Period-level state (topics, vote records, period/topic bodies) lives on the spawned `GGovPeriod` app rather than the registry. The period contract inner-calls the registry for `verifyOperator`, `getDelegate`, `getXGovVotingPower`, and `updatePeriodSummary`.
+
+---
+
+# xgov-committee-oracle (historical name)
 
 Store basic committee info and xgov voting power on chain
 

@@ -12,7 +12,7 @@ const { AlgorandClient } = require("@algorandfoundation/algokit-utils");
 const { GGovReaderSDK } = require("../../ggov-sdk/dist/sdkReader.js");
 
 const KMD_TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const APP_ID = Number(process.env.VITE_GGOV_APP_ID || 1002);
+const APP_ID = Number(process.env.VITE_GGOV_REGISTRY_APP_ID || process.env.VITE_GGOV_APP_ID || 1002);
 
 const LOCALNET_CONFIG = {
   algodConfig: { server: "http://localhost", port: 4001, token: KMD_TOKEN },
@@ -31,15 +31,15 @@ async function main() {
 
   const sdk = new GGovReaderSDK({
     algorand,
-    ggovAppId: APP_ID,
+    ggovRegistryAppId: APP_ID,
   });
 
-  console.log(`GGov App ID: ${APP_ID}`);
+  console.log(`GGovRegistry App ID: ${APP_ID}`);
 
   // Get creator and operator from app info / global state
   const appInfo = await algorand.app.getById(BigInt(APP_ID));
   const creator = appInfo.creator?.toString() ?? "(unknown)";
-  const operator = await sdk.ggovReadClient.state.global.operator() ?? "(not set)";
+  const operator = await sdk.registryReadClient.state.global.operator() ?? "(not set)";
   console.log(`Creator:     ${creator}`);
   console.log(`Operator:    ${operator}\n`);
 
@@ -53,8 +53,8 @@ async function main() {
     console.log(`Committee: ${hex}`);
     console.log(`${"=".repeat(70)}`);
 
-    // Get metadata
-    const metadata = await sdk.getCommitteeMetadata(committeeId);
+    // Get metadata (via composed registry SDK)
+    const metadata = await sdk.registry.getCommitteeMetadata(committeeId);
     if (metadata) {
       console.log(`  Numeric ID:      ${metadata.numericId}`);
       console.log(`  Period Start:    ${metadata.periodStart}`);
@@ -67,8 +67,8 @@ async function main() {
       console.log("  (no metadata)");
     }
 
-    // Get xGov members
-    const xGovs = await sdk.getCommitteeXGovs(committeeId);
+    // Get xGov members (via composed registry SDK)
+    const xGovs = await sdk.registry.getCommitteeXGovs(committeeId);
     console.log(`\n  Members (${xGovs.length}):`);
     for (const xGov of xGovs) {
       const addr = typeof xGov.account === "string" ? xGov.account : xGov.account.toString();

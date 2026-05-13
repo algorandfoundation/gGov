@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
 interface ErrorDialogContextValue {
@@ -24,11 +24,11 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
       {error && (
         <Dialog open onOpenChange={() => clearError()}>
           <DialogContent onClose={clearError}>
-            <DialogHeader>
+            <DialogHeader className="min-w-0">
               <DialogTitle>Error</DialogTitle>
-              <DialogDescription className="whitespace-pre-wrap break-words">
+              <div className="max-w-full overflow-x-auto whitespace-pre-wrap font-mono text-xs text-muted-foreground">
                 {error.message}
-              </DialogDescription>
+              </div>
             </DialogHeader>
             <DialogFooter>
               <Button onClick={clearError}>Close</Button>

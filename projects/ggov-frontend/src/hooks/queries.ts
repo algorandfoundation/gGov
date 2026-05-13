@@ -5,6 +5,8 @@ import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes } from 'ggo
 export interface PeriodWithId {
   id: number
   period: GGovPeriod
+  /** Registry-summary view: whether the operator has marked this period ready for voting. */
+  ready: boolean
 }
 
 export const queryKeys = {
@@ -42,8 +44,15 @@ export function usePeriods() {
       const count = Number(globalState.lastPeriodId ?? 0)
       if (count === 0) return []
       const periodIds = Array.from({ length: count }, (_, i) => BigInt(i + 1))
-      const periods = await readerSDK.getPeriods(periodIds)
-      return periods.map((period, i) => ({ id: i + 1, period }))
+      const [summaries, periods] = await Promise.all([
+        readerSDK.getPeriodSummaries(periodIds),
+        readerSDK.getPeriods(periodIds),
+      ])
+      return periods.map((period, i) => ({
+        id: i + 1,
+        period,
+        ready: summaries[i]?.ready ?? false,
+      }))
     },
   })
 }
@@ -167,7 +176,7 @@ export function useCommittees() {
       const ids = await readerSDK.getCommitteeIds()
       const options: CommitteeOption[] = []
       for (const id of ids) {
-        const meta = await readerSDK.getCommitteeMetadata(id)
+        const meta = await readerSDK.registry.getCommitteeMetadata(id)
         if (meta) {
           options.push({
             id,
@@ -238,9 +247,9 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
       const ids = await readerSDK.getCommitteeIds()
       const results: CommitteeVotingPower[] = []
       for (const id of ids) {
-        const meta = await readerSDK.getCommitteeMetadata(id)
+        const meta = await readerSDK.registry.getCommitteeMetadata(id)
         if (!meta) continue
-        const { return: power } = await readerSDK.ggovReadClient.send.getXGovVotingPower({
+        const { return: power } = await readerSDK.registryReadClient.send.getXGovVotingPower({
           args: { committeeId: id, account: account! },
         })
         results.push({
@@ -262,7 +271,7 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
     queryKey: queryKeys.committeeMembers(idBase64Url ?? ''),
     queryFn: async (): Promise<AccountWithVotes[]> => {
       const bytes = fromBase64Url(idBase64Url!)
-      return readerSDK.getCommitteeXGovs(bytes)
+      return readerSDK.registry.getCommitteeXGovs(bytes)
     },
     enabled: !!idBase64Url,
   })

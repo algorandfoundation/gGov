@@ -23,7 +23,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       // Resolve workspace SDKs to source for proper bundling
       'ggov-sdk': path.resolve(__dirname, '../ggov-sdk/src/index.ts'),
-      'xgov-committees-oracle-sdk': path.resolve(__dirname, '../oracle-sdk/src/index.ts'),
+      'ggov-registry-sdk': path.resolve(__dirname, '../ggov-registry-sdk/src/index.ts'),
     },
   },
   // Ensure vite-plugin-node-polyfills shims can be resolved from linked packages
