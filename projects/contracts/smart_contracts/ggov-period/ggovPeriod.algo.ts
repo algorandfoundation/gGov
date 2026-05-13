@@ -232,6 +232,7 @@ export class GGovPeriodContract extends BaseContract {
 
   public uploadPeriodBodyPartial(startOffset: uint64, data: bytes, last: boolean): void {
     this.ensureCallerIsOperator()
+    this.ensureEditable()
     const boxKey = Bytes`P`
     const writeEnd: uint64 = startOffset + data.length
     if (startOffset === 0) {
@@ -248,6 +249,7 @@ export class GGovPeriodContract extends BaseContract {
 
   public uploadTopicBodyPartial(topicIndex: uint64, startOffset: uint64, data: bytes, last: boolean): void {
     this.ensureCallerIsOperator()
+    this.ensureEditable()
     const boxKey = Bytes`T`.concat(encodeArc4(u32(topicIndex)))
     const writeEnd: uint64 = startOffset + data.length
     if (startOffset === 0) {

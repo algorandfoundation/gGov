@@ -654,6 +654,46 @@ describe('GGovPeriod contract', () => {
         last: true,
       })
     })
+
+    test('Cannot upload period body once period is ready', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.setReady({ periodId, ready: true })
+      const bodyJson = new TextEncoder().encode('{"title":"After ready"}')
+      await expect(
+        sdk.uploadPeriodBodyPartial({ periodId, startOffset: 0n, data: bodyJson, last: true }),
+      ).rejects.toThrow(transformedError(errGGovReady))
+    })
+
+    test('Cannot upload topic body once period is ready', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.setReady({ periodId, ready: true })
+      const bodyJson = new TextEncoder().encode('{"title":"Topic body"}')
+      await expect(
+        sdk.uploadTopicBodyPartial({
+          periodId,
+          topicIndex: 0n,
+          startOffset: 0n,
+          data: bodyJson,
+          last: true,
+        }),
+      ).rejects.toThrow(transformedError(errGGovReady))
+    })
   })
 
   // ── Trust boundary on summary updates ────────────────────────────
