@@ -89,6 +89,16 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** Delegator → delegatee mapping (gGov voting delegations) */
   delegations = BoxMap<Account, Account>({ keyPrefix: 'd' })
   /**
+   * Reverse delegation index: delegatee → delegator addresses. Maintained in lockstep with
+   * `delegations` so the frontend can answer "who delegated to me?" with a single box read
+   * keyed by the delegatee, instead of scanning every forward delegation.
+   *
+   * TODO this is a plain box holding a dynamic `Account[]`, so a single delegatee's list is
+   * bounded by the 32KB box ceiling (~1024 addresses) and every add/remove rewrites the whole box.
+   * If a delegatee can accrue many delegators, consider migrating this to a superbox.
+   */
+  reverseDelegations = BoxMap<Account, Account[]>({ keyPrefix: 'D' })
+  /**
    * GGovPeriod approval program bytecode. Chunk-uploaded by admin; read by createPeriod
    * when spawning a new period app. Lets admins ship period approval-program upgrades
    * without redeploying the registry. Existing periods are independent apps and are
@@ -293,14 +303,14 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
   /** Delegate own voting power to $delegatee. */
   public delegate(delegatee: Account): void {
-    ensure(Txn.sender !== delegatee, errGGovSelfDelegate)
-    this.delegations(Txn.sender).value = delegatee
+    this.addDelegation(Txn.sender, delegatee)
   }
 
   /** Remove own delegation. */
   public undelegate(): void {
     const box = this.delegations(Txn.sender)
     ensure(box.exists, errGGovNoDelegation)
+    this.removeReverseDelegation(box.value, Txn.sender)
     box.delete()
   }
 
@@ -312,8 +322,55 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
       args: [account],
     }).returnValue
 
-    if (exists && xGovBox.votingAddress !== Global.zeroAddress) {
-      this.delegations(account).value = xGovBox.votingAddress
+    // Skip self-delegation (xGov "vote for self" == no delegation) so addDelegation never rejects.
+    if (exists && xGovBox.votingAddress !== Global.zeroAddress && xGovBox.votingAddress !== account) {
+      this.addDelegation(account, xGovBox.votingAddress)
+    }
+  }
+
+  /**
+   * Record a delegation from $delegator to $delegatee, keeping the forward (`delegations`) and
+   * reverse (`reverseDelegations`) indexes in sync. Single entry point for adding a delegation —
+   * reused by `delegate` and `mirrorXGovDelegation`. Re-delegating moves the delegator's address
+   * off the previous delegatee's reverse list onto the new one.
+   */
+  private addDelegation(delegator: Account, delegatee: Account): void {
+    ensure(delegator !== delegatee, errGGovSelfDelegate)
+    // only existing accounts can delegate; prevents spamming delegations from random addresses and keeps reverse index clean
+    ensure(this.accounts(delegator).exists, errAccountNotExists)
+    const fwd = this.delegations(delegator)
+    if (fwd.exists) {
+      const previousDelegatee = fwd.value
+      if (previousDelegatee === delegatee) return // unchanged; reverse index already correct
+      this.removeReverseDelegation(previousDelegatee, delegator)
+    }
+    fwd.value = delegatee
+    this.addReverseDelegation(delegatee, delegator)
+  }
+
+  /** Append $delegator to $delegatee's reverse delegation list. */
+  private addReverseDelegation(delegatee: Account, delegator: Account): void {
+    const box = this.reverseDelegations(delegatee)
+    const list: Account[] = []
+    if (box.exists) {
+      for (const addr of clone(box.value)) list.push(addr)
+    }
+    list.push(delegator)
+    box.value = clone(list)
+  }
+
+  /** Remove $delegator from $delegatee's reverse delegation list; delete the box when empty. */
+  private removeReverseDelegation(delegatee: Account, delegator: Account): void {
+    const box = this.reverseDelegations(delegatee)
+    if (!box.exists) return
+    const next: Account[] = []
+    for (const addr of clone(box.value)) {
+      if (addr !== delegator) next.push(addr)
+    }
+    if (next.length === 0) {
+      box.delete()
+    } else {
+      box.value = clone(next)
     }
   }
 
@@ -331,6 +388,18 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const box = this.delegations(account)
     if (box.exists) return box.value
     return Global.zeroAddress
+  }
+
+  /** Log the addresses that have delegated to $delegatee (reverse lookup), one per log line. */
+  @abimethod({ readonly: true })
+  public logDelegators(delegatee: Account): void {
+    // TODO with limited delegations (~1024) this is fine
+    // but if we migrate reverse delegations to a superbox, we could exceed the simulate+allowMoreLogging limits (2048 calls, 65K total log bytes)
+    const box = this.reverseDelegations(delegatee)
+    if (!box.exists) return
+    for (const delegator of clone(box.value)) {
+      log(encodeArc4(delegator))
+    }
   }
 
   /** Batch log delegations. */

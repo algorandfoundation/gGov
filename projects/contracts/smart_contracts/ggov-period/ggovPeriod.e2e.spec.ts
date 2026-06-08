@@ -6,6 +6,7 @@ import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
 import { XGovCommitteeFile } from 'ggov-registry-sdk'
 import {
+  errAccountNotExists,
   errGGovCannotOverride,
   errGGovHasVotes,
   errGGovNoDelegation,
@@ -564,6 +565,16 @@ describe('GGovPeriod contract', () => {
       )
     })
 
+    test('Random address (no gGov account) cannot delegate', async () => {
+      const { appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      // a freshly generated account is not a committee member, so it has no gGov account
+      const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const strangerSDK = createUserSDK(localnet, appClient.appId, stranger)
+      await expect(strangerSDK.delegate({ delegatee: xGovAccounts[0].toString() })).rejects.toThrow(
+        transformedError(errAccountNotExists),
+      )
+    })
+
     test('Can undelegate', async () => {
       const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
       const voter = xGovAccounts[0]
@@ -617,6 +628,93 @@ describe('GGovPeriod contract', () => {
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.byDelegator).toBe(false)
+    })
+  })
+
+  // ── Reverse delegation index ─────────────────────────────────────
+
+  describe('reverse delegation index', () => {
+    test('delegate records the delegator address under the delegatee', async () => {
+      const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+
+      expect(await sdk.getDelegators(delegatee.toString())).toEqual([voter.toString()])
+      // forward index stays consistent with the reverse index
+      expect((await sdk.getDelegation(voter.toString())).delegatee).toBe(delegatee.toString())
+    })
+
+    test('multiple delegators accumulate under one delegatee', async () => {
+      const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      const [voterA, voterB] = xGovAccounts
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await createUserSDK(localnet, appClient.appId, voterA).delegate({ delegatee: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, voterB).delegate({ delegatee: delegatee.toString() })
+
+      // insertion order preserved (delegate-call order)
+      expect(await sdk.getDelegators(delegatee.toString())).toEqual([voterA.toString(), voterB.toString()])
+    })
+
+    test('undelegate removes the delegator from the reverse index', async () => {
+      const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.undelegate({})
+
+      expect(await sdk.getDelegators(delegatee.toString())).toEqual([])
+    })
+
+    test('undelegate leaves co-delegators of the same delegatee untouched', async () => {
+      const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      const [voterA, voterB] = xGovAccounts
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterASDK = createUserSDK(localnet, appClient.appId, voterA)
+      await voterASDK.delegate({ delegatee: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, voterB).delegate({ delegatee: delegatee.toString() })
+
+      await voterASDK.undelegate({})
+
+      expect(await sdk.getDelegators(delegatee.toString())).toEqual([voterB.toString()])
+    })
+
+    test('re-delegating moves the delegator between reverse lists', async () => {
+      const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      const voter = xGovAccounts[0]
+      const delegateeA = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const delegateeB = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+
+      await voterSDK.delegate({ delegatee: delegateeA.toString() })
+      await voterSDK.delegate({ delegatee: delegateeB.toString() })
+
+      expect(await sdk.getDelegators(delegateeA.toString())).toEqual([])
+      expect(await sdk.getDelegators(delegateeB.toString())).toEqual([voter.toString()])
+    })
+
+    test('re-delegating to the same delegatee does not duplicate the entry', async () => {
+      const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+
+      expect(await sdk.getDelegators(delegatee.toString())).toEqual([voter.toString()])
+    })
+
+    test('no delegations yields an empty reverse list', async () => {
+      const { sdk } = await deployWithCommittee(localnet)
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      expect(await sdk.getDelegators(delegatee.toString())).toEqual([])
     })
   })
 

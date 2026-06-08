@@ -15,7 +15,7 @@ export const queryKeys = {
   period: (id: number) => ['period', id] as const,
   periodBody: (id: number) => ['periodBody', id] as const,
   topicBodies: (id: number) => ['topicBodies', id] as const,
-  canVote: (periodId: number, account: string) => ['canVote', periodId, account] as const,
+  canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
   delegation: (account: string) => ['delegation', account] as const,
   allDelegations: ['allDelegations'] as const,
@@ -88,11 +88,15 @@ export function useTopicBodies(periodId: number, topicCount: number) {
   })
 }
 
-export function useCanVote(periodId: number, account: string | null | undefined) {
+export function useCanVote(
+  periodId: number,
+  account: string | null | undefined,
+  senderAccount?: string | null,
+) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
-    queryKey: queryKeys.canVote(periodId, account ?? ''),
-    queryFn: () => readerSDK.canVote(BigInt(periodId), account!),
+    queryKey: queryKeys.canVote(periodId, account ?? '', senderAccount ?? ''),
+    queryFn: () => readerSDK.canVote(BigInt(periodId), account!, senderAccount ?? undefined),
     enabled: !!account,
   })
 }
@@ -130,18 +134,13 @@ export function useAllDelegations() {
   })
 }
 
+/** Addresses that have delegated to `account` — a single reverse-index box read (`getDelegators`). */
 export function useDelegatedToMe(account: string | null | undefined) {
-  const { data: allDelegations } = useAllDelegations()
+  const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.delegatedToMe(account ?? ''),
-    queryFn: (): string[] => {
-      const delegators: string[] = []
-      for (const [delegator, delegatee] of allDelegations!) {
-        if (delegatee === account) delegators.push(delegator)
-      }
-      return delegators
-    },
-    enabled: !!account && !!allDelegations,
+    queryFn: (): Promise<string[]> => readerSDK.getDelegators(account!),
+    enabled: !!account,
   })
 }
 

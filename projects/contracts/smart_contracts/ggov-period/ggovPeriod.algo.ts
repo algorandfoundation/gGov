@@ -359,6 +359,7 @@ export class GGovPeriodContract extends BaseContract {
       }).returnValue
       if (delegate === Global.zeroAddress) return [false, 0]
       if (delegate !== senderAccount) return [false, 0]
+      // TODO add check that the voter hasn't voted yet - delegators can not override their votes
     }
 
     const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({

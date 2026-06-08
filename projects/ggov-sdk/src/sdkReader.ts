@@ -195,6 +195,19 @@ export class GGovReaderSDK {
     return { delegatee: result![0], exists: result![1] };
   }
 
+  /** Reverse lookup: addresses that have delegated to $delegatee (empty if none), one per log line. */
+  @wrapErrors()
+  async getDelegators(delegatee: string): Promise<string[]> {
+    const builder = this.registryReadClient.newGroup().logDelegators({ args: { delegatee } });
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
+    // A confirmation with no logs surfaces as an undefined `logs` field — coalesce so the empty
+    // reverse list (box deleted) yields [] rather than a single undefined entry.
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
+    return logs.map((log) =>
+      getABIDecodedValue(new Uint8Array(log!), "address", this.registryReadClient.appSpec.structs) as string,
+    );
+  }
+
   @chunked(128)
   @wrapErrors()
   async getDelegations(accounts: string[]): Promise<string[]> {

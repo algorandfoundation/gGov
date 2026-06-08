@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord } from "@/hooks/queries";
+import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useDelegatedToMe } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
+import { ellipseAddress } from "@/utils/ellipseAddress";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,12 +35,22 @@ export default function VotePeriodDetail() {
   const { sdk } = useGGovSDK();
   const { activeAddress } = useWallet();
 
+  // Account being voted for: yourself by default, or an account that delegated to you.
+  const [selectedVoter, setSelectedVoter] = useState<string | null>(activeAddress ?? null);
+  useEffect(() => {
+    setSelectedVoter(activeAddress ?? null);
+  }, [activeAddress]);
+
   const { data: period, isLoading } = usePeriod(periodId);
   const { data: periodBody } = usePeriodBody(periodId);
   const { data: topicBodies = [] } = useTopicBodies(periodId, period?.topics.length ?? 0);
-  const { data: canVoteResult } = useCanVote(periodId, activeAddress);
-  const { data: voteRecord } = useVoteRecord(periodId, activeAddress);
+  const { data: delegators = [] } = useDelegatedToMe(activeAddress);
+  // For delegated voting, the connected wallet (activeAddress) is the sender; selectedVoter is the voter.
+  const { data: canVoteResult } = useCanVote(periodId, selectedVoter, activeAddress);
+  const { data: voteRecord } = useVoteRecord(periodId, selectedVoter);
   const voteMutation = useVoteMutation();
+
+  const votingForSelf = selectedVoter === activeAddress;
 
   const [advancedMode, setAdvancedMode] = useState(false);
   // Simple mode: selected option index per topic (-1 = none selected)
@@ -101,8 +112,8 @@ export default function VotePeriodDetail() {
   }
 
   function submitVote() {
-    if (!activeAddress) return;
-    voteMutation.mutate({ periodId, voterAccount: activeAddress, topicVotes: buildVotes() });
+    if (!selectedVoter) return;
+    voteMutation.mutate({ periodId, voterAccount: selectedVoter, topicVotes: buildVotes() });
   }
 
   const canSubmitSimple = simpleSelections.length > 0 && simpleSelections.every((s) => s >= 0);
@@ -136,12 +147,47 @@ export default function VotePeriodDetail() {
         </Link>
       </div>
 
+      {activeAddress && delegators.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Vote as:</span>
+          <button
+            type="button"
+            className={cn(
+              "rounded-md border px-2.5 py-1 transition-colors",
+              votingForSelf ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
+            )}
+            onClick={() => setSelectedVoter(activeAddress)}
+          >
+            Yourself
+          </button>
+          {delegators.map((addr) => (
+            <button
+              key={addr}
+              type="button"
+              className={cn(
+                "rounded-md border px-2.5 py-1 font-mono transition-colors",
+                selectedVoter === addr ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
+              )}
+              onClick={() => setSelectedVoter(addr)}
+            >
+              {ellipseAddress(addr, 6)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {activeAddress && canVoteResult && !voteRecord && (
         <div className="text-sm">
           {canVoteResult.canVote ? (
-            <span className="font-bold">You are eligible to vote</span>
+            <span className="font-bold">
+              {votingForSelf ? "You are eligible to vote" : `${ellipseAddress(selectedVoter!, 6)} is eligible to vote`}
+            </span>
           ) : (
-            <span className="text-muted-foreground">You cannot vote in this period</span>
+            <span className="text-muted-foreground">
+              {votingForSelf
+                ? "You cannot vote in this period"
+                : `${ellipseAddress(selectedVoter!, 6)} cannot vote in this period`}
+            </span>
           )}
         </div>
       )}
@@ -149,7 +195,9 @@ export default function VotePeriodDetail() {
       {voteRecord && (
         <Card className="max-w-lg">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Your Vote Record</CardTitle>
+            <CardTitle className="text-base">
+              {votingForSelf ? "Your Vote Record" : `Vote Record — ${ellipseAddress(selectedVoter!, 6)}`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {voteRecord.byDelegator && <p className="text-sm text-muted-foreground mb-2">Voted by delegator.</p>}

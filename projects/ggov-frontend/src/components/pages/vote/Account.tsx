@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { useCommitteeVotingPowers, useMyVotes, useDelegation } from "@/hooks/queries";
+import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe } from "@/hooks/queries";
 import { useDelegateMutation, useUndelegateMutation } from "@/hooks/mutations";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export default function Account() {
   const { data: committees = [], isLoading: loadingCommittees } = useCommitteeVotingPowers(address);
   const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address);
   const { data: delegation, isLoading: loadingDelegation } = useDelegation(isOwnAccount ? address : undefined);
+  const { data: delegators = [], isLoading: loadingDelegators } = useDelegatedToMe(address);
   const delegateMutation = useDelegateMutation();
   const undelegateMutation = useUndelegateMutation();
   const [delegateeInput, setDelegateeInput] = useState("");
@@ -123,6 +124,36 @@ export default function Account() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{isOwnAccount ? "Delegated to You" : "Delegators"}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingDelegators ? (
+            <Skeleton className="h-10" />
+          ) : delegators.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No accounts have delegated to this address.</p>
+          ) : (
+            <div className="space-y-2">
+              {delegators.map((addr) => (
+                <Link
+                  key={addr}
+                  to={`/account/${addr}`}
+                  className="block font-mono text-sm text-primary hover:underline"
+                >
+                  {ellipseAddress(addr, 8)}
+                </Link>
+              ))}
+              {isOwnAccount && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  You can vote on their behalf from an active period's vote page.
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
