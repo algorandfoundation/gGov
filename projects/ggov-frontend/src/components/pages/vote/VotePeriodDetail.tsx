@@ -64,6 +64,12 @@ export default function VotePeriodDetail() {
   const { data: voteRecord } = useVoteRecord(periodId, selectedVoter);
   const voteMutation = useVoteMutation();
 
+  useEffect(() => {
+    if (selectedVoter) {
+      console.log(`Voting record for ${selectedVoter} (period ${periodId}):`, voteRecord);
+    }
+  }, [selectedVoter, periodId, voteRecord]);
+
   const votingForSelf = selectedVoter === activeAddress;
 
   const [advancedMode, setAdvancedMode] = useState(false);
@@ -127,7 +133,11 @@ export default function VotePeriodDetail() {
 
   function submitVote() {
     if (!selectedVoter) return;
-    voteMutation.mutate({ periodId, voterAccount: selectedVoter, topicVotes: buildVotes() });
+    voteMutation.mutate(
+      { periodId, voterAccount: selectedVoter, topicVotes: buildVotes() },
+      // Return to simple mode once an advanced-mode vote lands.
+      { onSuccess: () => setAdvancedMode(false) },
+    );
   }
 
   const canSubmitSimple = simpleSelections.length > 0 && simpleSelections.every((s) => s >= 0);
@@ -205,6 +215,13 @@ export default function VotePeriodDetail() {
                 : `${ellipseAddress(selectedVoter!, 6)} cannot vote in this period`}
             </span>
           )}
+        </div>
+      )}
+
+      {isActive && !votingForSelf && voteRecord && !voteRecord.byDelegator && (
+        <div className="max-w-lg rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {ellipseAddress(selectedVoter!, 6)} has already voted directly, so you cannot vote on their
+          behalf. A delegate cannot override a vote the account holder cast themselves.
         </div>
       )}
 

@@ -668,6 +668,61 @@ describe('GGovPeriod contract', () => {
       await expect(
         delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] }),
       ).rejects.toThrow(transformedError(errGGovCannotOverride))
+
+      // The rejected override must leave the voter's direct vote and the tallies untouched.
+      const record = await sdk.getVotingRecord(periodId, voter.toString())
+      expect(record!.byDelegator).toBe(false)
+      expect(record!.topicVotes[0]).toEqual([10, 0])
+      const period = await sdk.getPeriod(periodId)
+      expect(period.topics[0][1]).toEqual([10, 0])
+    })
+
+    test('Delegatee can override their own prior delegated vote', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+
+      const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] })
+      // Re-voting on behalf overrides the delegatee's own prior delegated vote (byDelegator stays true).
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[1, 9]] })
+
+      const record = await sdk.getVotingRecord(periodId, voter.toString())
+      expect(record!.byDelegator).toBe(true)
+      expect(record!.topicVotes[0]).toEqual([1, 9])
+      const period = await sdk.getPeriod(periodId)
+      expect(period.topics[0][1]).toEqual([1, 9])
+    })
+
+    test('Voter override of a delegated vote flips the record and re-tallies', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
+
+      // Record is the delegated vote before the voter steps in.
+      let record = await sdk.getVotingRecord(periodId, voter.toString())
+      expect(record!.byDelegator).toBe(true)
+      expect(record!.topicVotes[0]).toEqual([10, 0])
+
+      // Voter votes directly: byDelegator flips to false and the tally reflects only the new vote.
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] })
+      record = await sdk.getVotingRecord(periodId, voter.toString())
+      expect(record!.byDelegator).toBe(false)
+      expect(record!.topicVotes[0]).toEqual([0, 10])
+      const period = await sdk.getPeriod(periodId)
+      expect(period.topics[0][1]).toEqual([0, 10])
     })
 
     test('Voter can override delegatee vote', async () => {
@@ -787,6 +842,63 @@ describe('GGovPeriod contract', () => {
       const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
 
       const result = await sdk.canVote(periodId, xGovAccounts[0].toString(), xGovAccounts[0].toString())
+      expect(result.canVote).toBe(true)
+      expect(result.votingPower).toBe(10n)
+    })
+
+    test('canVote is true for a delegatee while the voter has not voted', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createUserSDK(localnet, appClient.appId, voter).delegate({ delegatee: delegatee.toString() })
+
+      const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
+      expect(result.canVote).toBe(true)
+      expect(result.votingPower).toBe(10n)
+    })
+
+    // Regression: canVote must agree with vote()'s override guard. Previously canVote returned
+    // true here even though vote() rejects with errGGovCannotOverride, so the delegatee was shown
+    // as eligible but could not actually cast the vote.
+    test('canVote is false for a delegatee once the voter has voted directly', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
+
+      const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
+      expect(result.canVote).toBe(false)
+      expect(result.votingPower).toBe(0n)
+
+      // The voter themselves can still vote (override their own direct vote).
+      const self = await sdk.canVote(periodId, voter.toString(), voter.toString())
+      expect(self.canVote).toBe(true)
+    })
+
+    test('canVote stays true for a delegatee overriding their own delegated vote', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, delegatee).vote({
+        periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [[10, 0]],
+      })
+
+      // The existing record is a delegated vote (byDelegator=true), so the delegatee may re-vote.
+      const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
       expect(result.canVote).toBe(true)
       expect(result.votingPower).toBe(10n)
     })

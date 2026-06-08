@@ -359,7 +359,11 @@ export class GGovPeriodContract extends BaseContract {
       }).returnValue
       if (delegate === Global.zeroAddress) return [false, 0]
       if (delegate !== senderAccount) return [false, 0]
-      // TODO add check that the voter hasn't voted yet - delegators can not override their votes
+      // Mirror vote()'s override guard: a delegatee cannot override a vote the voter cast
+      // directly. If a direct vote record (byDelegator=false) already exists, the delegatee
+      // is not eligible — surface that here so canVote agrees with what vote() will enforce.
+      const recordBox = this.voteRecords(voterAccount)
+      if (recordBox.exists && !recordBox.value.byDelegator) return [false, 0]
     }
 
     const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({

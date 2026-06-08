@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useErrorDialog } from '@/hooks/useErrorDialog'
 import { queryKeys } from '@/hooks/queries'
+import { signingProgress } from '@/lib/signingProgress'
 import type { BodyJson } from 'ggov-sdk'
 
 function txnSuccessToast(message: string, data?: unknown) {
@@ -83,20 +84,30 @@ export function useAddPeriodMutation() {
       title?: string
       body?: string
     }) => {
-      const periodId = await sdk!.addPeriod({
-        committeeId: args.committeeId,
-        votingStart: args.votingStart,
-        votingEnd: args.votingEnd,
-      }) as bigint
+      const hasBody = !!args.title?.trim()
+      const progress = signingProgress(hasBody ? 2 : 1)
+      try {
+        progress.step('Creating period')
+        const periodId = await sdk!.addPeriod({
+          committeeId: args.committeeId,
+          votingStart: args.votingStart,
+          votingEnd: args.votingEnd,
+        }) as bigint
 
-      if (args.title?.trim()) {
-        await sdk!.uploadPeriodBody({
-          periodId,
-          body: { title: args.title.trim(), body: args.body?.trim() ?? '' },
-        })
+        if (hasBody) {
+          progress.step('Uploading period body')
+          await sdk!.uploadPeriodBody({
+            periodId,
+            body: { title: args.title!.trim(), body: args.body?.trim() ?? '' },
+          })
+        }
+
+        progress.done()
+        return periodId
+      } catch (e) {
+        progress.fail()
+        throw e
       }
-
-      return periodId
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.periods })
@@ -158,20 +169,30 @@ export function useAddTopicMutation() {
       title?: string
       body?: string
     }) => {
-      const topicIndex = await sdk!.addTopic({
-        periodId: BigInt(args.periodId),
-        options: args.options,
-      }) as bigint
-
-      if (args.title?.trim()) {
-        await sdk!.uploadTopicBody({
+      const hasBody = !!args.title?.trim()
+      const progress = signingProgress(hasBody ? 2 : 1)
+      try {
+        progress.step('Adding topic')
+        const topicIndex = await sdk!.addTopic({
           periodId: BigInt(args.periodId),
-          topicIndex,
-          body: { title: args.title.trim(), body: args.body?.trim() ?? '' },
-        })
-      }
+          options: args.options,
+        }) as bigint
 
-      return topicIndex
+        if (hasBody) {
+          progress.step('Uploading topic body')
+          await sdk!.uploadTopicBody({
+            periodId: BigInt(args.periodId),
+            topicIndex,
+            body: { title: args.title!.trim(), body: args.body?.trim() ?? '' },
+          })
+        }
+
+        progress.done()
+        return topicIndex
+      } catch (e) {
+        progress.fail()
+        throw e
+      }
     },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
