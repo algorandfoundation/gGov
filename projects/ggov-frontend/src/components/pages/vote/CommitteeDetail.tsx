@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { Download } from 'lucide-react'
 import { useCommittees, useCommitteeMembers } from '@/hooks/queries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -19,6 +20,26 @@ export default function CommitteeDetail() {
   const totalPages = Math.ceil(members.length / PAGE_SIZE)
   const paginated = members.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
+  const exportCsv = () => {
+    if (!committee) return
+    const escapeCell = (value: string) => `"${value.replace(/"/g, '""')}"`
+    const rows = [
+      ['Account', 'Votes'],
+      ...members.map((m) => [String(m.account), String(m.votes)]),
+    ]
+    const csv = rows.map((row) => row.map(escapeCell).join(',')).join('\r\n')
+    const safeId = committee.idBase64Url.replace(/[^a-zA-Z0-9-_]/g, '_')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${committee.periodStart}-${committee.periodEnd}-${safeId}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -28,9 +49,15 @@ export default function CommitteeDetail() {
       <h1 className="text-2xl font-bold">Committee</h1>
 
       {committee && (
-        <div className="text-sm text-muted-foreground space-y-1">
-          <div>Rounds: {committee.periodStart} — {committee.periodEnd}</div>
-          <div>{committee.totalMembers} members &middot; {committee.totalVotes} total votes</div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="text-sm text-muted-foreground space-y-1">
+            <div>Rounds: {committee.periodStart} — {committee.periodEnd}</div>
+            <div>{committee.totalMembers} members &middot; {committee.totalVotes} total votes</div>
+          </div>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={members.length === 0}>
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
         </div>
       )}
 

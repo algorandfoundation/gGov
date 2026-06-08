@@ -438,7 +438,7 @@ export default function ManagePeriodDetail() {
                 <li>Make it visible to voters</li>
                 <li>Allow voting once the voting window opens</li>
                 <li>
-                  <span className="text-foreground font-medium">Lock all edits</span>{' '}
+                  <span className="text-foreground font-medium">Once a vote is cast, lock all edits</span>{' '}
                   to the committee, voting window, topics, and options
                 </li>
               </ul>

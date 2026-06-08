@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes } from 'ggov-sdk'
 
@@ -101,6 +101,26 @@ export function useVoteRecord(periodId: number, account: string | null | undefin
     queryFn: () => readerSDK.getVotingRecord(BigInt(periodId), account!),
     enabled: !!account,
   })
+}
+
+/**
+ * Vote records for several accounts at once. Value per account: `true` voted,
+ * `false` not voted, `undefined` while the record is still loading.
+ */
+export function useVoteStatuses(periodId: number, accounts: string[]): Record<string, boolean | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const results = useQueries({
+    queries: accounts.map((account) => ({
+      queryKey: queryKeys.voteRecord(periodId, account),
+      queryFn: () => readerSDK.getVotingRecord(BigInt(periodId), account),
+    })),
+  })
+  const statuses: Record<string, boolean | undefined> = {}
+  accounts.forEach((account, i) => {
+    const result = results[i]
+    statuses[account] = result?.isSuccess ? !!result.data && result.data.topicVotes != null : undefined
+  })
+  return statuses
 }
 
 export function useDelegation(account: string | null | undefined) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useDelegatedToMe } from "@/hooks/queries";
+import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useDelegatedToMe, useVoteStatuses } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
 import { ellipseAddress } from "@/utils/ellipseAddress";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -15,6 +15,17 @@ import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { formatTimestamp, periodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
+
+/** Red dot shown on a "Vote as" account that has not voted in this period yet. */
+function NotVotedBadge() {
+  return (
+    <span
+      className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background"
+      aria-label="Has not voted yet"
+      title="Has not voted yet"
+    />
+  );
+}
 
 function VoteAllocationSummary({ allocated, power }: { allocated: number; power: number }) {
   const remaining = power - allocated;
@@ -45,6 +56,9 @@ export default function VotePeriodDetail() {
   const { data: periodBody } = usePeriodBody(periodId);
   const { data: topicBodies = [] } = useTopicBodies(periodId, period?.topics.length ?? 0);
   const { data: delegators = [] } = useDelegatedToMe(activeAddress);
+  // Vote status for every account in the "Vote as" group, to badge those that haven't voted yet.
+  const voterAccounts = activeAddress ? [activeAddress, ...delegators] : [];
+  const voteStatuses = useVoteStatuses(periodId, voterAccounts);
   // For delegated voting, the connected wallet (activeAddress) is the sender; selectedVoter is the voter.
   const { data: canVoteResult } = useCanVote(periodId, selectedVoter, activeAddress);
   const { data: voteRecord } = useVoteRecord(periodId, selectedVoter);
@@ -153,24 +167,26 @@ export default function VotePeriodDetail() {
           <button
             type="button"
             className={cn(
-              "rounded-md border px-2.5 py-1 transition-colors",
+              "relative rounded-md border px-2.5 py-1 transition-colors",
               votingForSelf ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
             )}
             onClick={() => setSelectedVoter(activeAddress)}
           >
             Yourself
+            {voteStatuses[activeAddress] === false && <NotVotedBadge />}
           </button>
           {delegators.map((addr) => (
             <button
               key={addr}
               type="button"
               className={cn(
-                "rounded-md border px-2.5 py-1 font-mono transition-colors",
+                "relative rounded-md border px-2.5 py-1 font-mono transition-colors",
                 selectedVoter === addr ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
               )}
               onClick={() => setSelectedVoter(addr)}
             >
               {ellipseAddress(addr, 6)}
+              {voteStatuses[addr] === false && <NotVotedBadge />}
             </button>
           ))}
         </div>
