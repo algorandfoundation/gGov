@@ -69,7 +69,7 @@ function getCommitteeSBXGovs(sbMeta: Box<SuperboxMeta>): uint64 {
 
 export const ggovRegistryXGovKey = Bytes`xGovRegistryApp`
 
-@contract({ name: 'GGovRegistry' })
+@contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
 export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** xGov registry application ID */
   xGovRegistryApp = GlobalState<Application>({ key: ggovRegistryXGovKey })

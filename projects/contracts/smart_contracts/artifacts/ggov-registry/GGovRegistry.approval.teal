@@ -30,7 +30,7 @@ main:
 
 main_after_if_else@2:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:72-73
-    // @contract({ name: 'GGovRegistry' })
+    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     txn NumAppArgs
     bz main_bare_routing@40
@@ -45,13 +45,13 @@ main_after_if_else@2:
 
 main_after_if_else@45:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:72-73
-    // @contract({ name: 'GGovRegistry' })
+    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     err
 
 main_bare_routing@40:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:72-73
-    // @contract({ name: 'GGovRegistry' })
+    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     txn OnCompletion
     switch main___algots__.defaultCreate@41 main_after_if_else@45 main_after_if_else@45 main_after_if_else@45 main_updateApplication@42 main_deleteApplication@43
@@ -85,7 +85,7 @@ main_updateApplication@42:
 
 main___algots__.defaultCreate@41:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:72-73
-    // @contract({ name: 'GGovRegistry' })
+    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     txn ApplicationID
     !

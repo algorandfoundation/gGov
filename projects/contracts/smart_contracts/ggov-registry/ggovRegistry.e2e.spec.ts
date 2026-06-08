@@ -83,32 +83,32 @@ describe('GGovRegistry contract', () => {
     })
   }
 
-  describe('oracle accounts', () => {
+  describe('registry accounts', () => {
     test('getAccount returns GGovAccount with committeeOffsets after ingestion', async () => {
       const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet)
 
       for (const xGov of xGovAccounts) {
-        const { return: oracleAccount } = await sdk.readClient.send.getAccount({
+        const { return: registryAccount } = await sdk.readClient.send.getAccount({
           args: { account: xGov.toString() },
         })
-        expect(oracleAccount).toBeDefined()
-        expect(oracleAccount!.accountId).toBeGreaterThan(0)
+        expect(registryAccount).toBeDefined()
+        expect(registryAccount!.accountId).toBeGreaterThan(0)
         // should have exactly one committee offset entry
-        expect(oracleAccount!.committeeOffsets).toHaveLength(1)
+        expect(registryAccount!.committeeOffsets).toHaveLength(1)
         // committee numericId should be 0 (first committee)
-        expect(oracleAccount!.committeeOffsets[0][0]).toBe(0)
+        expect(registryAccount!.committeeOffsets[0][0]).toBe(0)
       }
     })
 
     test('getAccount returns zero accountId for unknown account', async () => {
       const { sdk } = await deployRegistryWithCommittee(localnet)
       const randomAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { return: oracleAccount } = await sdk.readClient.send.getAccount({
+      const { return: registryAccount } = await sdk.readClient.send.getAccount({
         args: { account: randomAccount.toString() },
       })
-      expect(oracleAccount).toBeDefined()
-      expect(oracleAccount!.accountId).toBe(0)
-      expect(oracleAccount!.committeeOffsets).toHaveLength(0)
+      expect(registryAccount).toBeDefined()
+      expect(registryAccount!.accountId).toBe(0)
+      expect(registryAccount!.committeeOffsets).toHaveLength(0)
     })
 
     test('getXGovVotingPower returns correct votes without offset hint', async () => {
@@ -157,15 +157,15 @@ describe('GGovRegistry contract', () => {
     test('account in two committees has two committeeOffsets', async () => {
       const { sdk, accountB } = await deployRegistryWithTwoCommittees(localnet)
 
-      const { return: oracleAccount } = await sdk.readClient.send.getAccount({
+      const { return: registryAccount } = await sdk.readClient.send.getAccount({
         args: { account: accountB.toString() },
       })
-      expect(oracleAccount).toBeDefined()
-      expect(oracleAccount!.accountId).toBeGreaterThan(0)
-      expect(oracleAccount!.committeeOffsets).toHaveLength(2)
+      expect(registryAccount).toBeDefined()
+      expect(registryAccount!.accountId).toBeGreaterThan(0)
+      expect(registryAccount!.committeeOffsets).toHaveLength(2)
 
       // numericId 0 = first committee, numericId 1 = second committee
-      const numericIds = oracleAccount!.committeeOffsets.map(([cId]) => cId).sort()
+      const numericIds = registryAccount!.committeeOffsets.map(([cId]) => cId).sort()
       expect(numericIds).toEqual([0, 1])
     })
 
@@ -182,17 +182,17 @@ describe('GGovRegistry contract', () => {
       expect(votingPower).toBe(10)
 
       // accountB should have exactly 1 committee offset remaining (committee 2)
-      const { return: oracleAccount } = await sdk.readClient.send.getAccount({
+      const { return: registryAccount } = await sdk.readClient.send.getAccount({
         args: { account: accountB.toString() },
       })
-      expect(oracleAccount!.committeeOffsets).toHaveLength(1)
-      expect(oracleAccount!.committeeOffsets[0][0]).toBe(1) // numericId 1
+      expect(registryAccount!.committeeOffsets).toHaveLength(1)
+      expect(registryAccount!.committeeOffsets[0][0]).toBe(1) // numericId 1
 
       // accountA should have zero committee offsets
-      const { return: oracleAccountA } = await sdk.readClient.send.getAccount({
+      const { return: registryAccountA } = await sdk.readClient.send.getAccount({
         args: { account: accountA.toString() },
       })
-      expect(oracleAccountA!.committeeOffsets).toHaveLength(0)
+      expect(registryAccountA!.committeeOffsets).toHaveLength(0)
     })
 
     test('uningestCommitteeXGovs removes all members from a fully ingested committee', async () => {

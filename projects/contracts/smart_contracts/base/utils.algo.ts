@@ -9,7 +9,7 @@ export function u32(v: uint64) {
   return new Uint32(v)
 }
 
-// looks like I can't do this? needed e.g. in Oracle.getCommitteeAccountOffsetHint
+// looks like I can't do this? needed e.g. in Registry.getCommitteeAccountOffsetHint
 //
 // export function fail(code: string): never {
 // log(code)

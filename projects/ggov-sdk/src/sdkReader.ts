@@ -19,7 +19,7 @@ const EMPTY_PERIOD: GGovPeriod = {
 
 export class GGovReaderSDK {
   public algorand: AlgorandClient;
-  /** Composed registry reader SDK (committee oracle + operator + delegations + periods). */
+  /** Composed registry reader SDK (committee registry + operator + delegations + periods). */
   public registry: GGovRegistryReaderSDK;
   /** Registry app ID. */
   public ggovRegistryAppId: bigint;

@@ -51,7 +51,7 @@ import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
 @contract({ name: 'GGovPeriod' })
 export class GGovPeriodContract extends BaseContract {
   /** Registry app ID. 0 sentinel = uninitialised */
-  oracleApp = GlobalState<uint64>({ initialValue: 0 })
+  registryApp = GlobalState<uint64>({ initialValue: 0 })
   /** This period's ID on the registry */
   periodId = GlobalState<uint64>()
   /** Voting window start (unix seconds) */
@@ -78,20 +78,20 @@ export class GGovPeriodContract extends BaseContract {
 
   /**
    * Initialise the period. Called as an inner ARC-4 call from the registry's createPeriod.
-   * Can only be called once (oracleApp must still be 0); creator (the registry app account)
+   * Can only be called once (registryApp must still be 0); creator (the registry app account)
    * is the only allowed sender.
    */
   @abimethod()
   public init(
-    oracleApp: Application,
+    registryApp: Application,
     periodId: Uint32,
     committeeId: CommitteeId,
     votingStart: Uint32,
     votingEnd: Uint32,
   ): void {
-    ensure(this.oracleApp.value === 0, errAlreadyInit)
+    ensure(this.registryApp.value === 0, errAlreadyInit)
     ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
-    this.oracleApp.value = oracleApp.id
+    this.registryApp.value = registryApp.id
     this.periodId.value = periodId.asUint64()
     this.committeeId.value = committeeId
     this.votingStart.value = votingStart.asUint64()
@@ -105,7 +105,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Inner-call the registry's verifyOperator and ensure caller is the operator. */
   protected ensureCallerIsOperator(): void {
     const ok = compileArc4(GGovRegistryContract).call.verifyOperator({
-      appId: Application(this.oracleApp.value),
+      appId: Application(this.registryApp.value),
       args: [Txn.sender],
     }).returnValue
     ensure(ok, errNotOperator)
@@ -114,7 +114,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Inner-call the registry's verifyAdmin and ensure caller is the admin. */
   protected checkAdminCaller(): void {
     const ok = compileArc4(GGovRegistryContract).call.verifyAdmin({
-      appId: Application(this.oracleApp.value),
+      appId: Application(this.registryApp.value),
       args: [Txn.sender],
     }).returnValue
     ensure(ok, errUnauthorized)
@@ -123,7 +123,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Mirror current summary (votingStart, votingEnd, numTopics, ready) onto the registry. */
   protected syncSummaryToRegistry(): void {
     compileArc4(GGovRegistryContract).call.updatePeriodSummary({
-      appId: Application(this.oracleApp.value),
+      appId: Application(this.registryApp.value),
       args: [
         u32(this.periodId.value),
         u32(this.votingStart.value),
@@ -275,7 +275,7 @@ export class GGovPeriodContract extends BaseContract {
     let isDelegated = false
     if (Txn.sender !== voterAccount) {
       const delegate = compileArc4(GGovRegistryContract).call.getDelegate({
-        appId: Application(this.oracleApp.value),
+        appId: Application(this.registryApp.value),
         args: [voterAccount],
       }).returnValue
       ensure(delegate !== Global.zeroAddress, errGGovNoDelegation)
@@ -285,7 +285,7 @@ export class GGovPeriodContract extends BaseContract {
 
     // Voting power (inner-call registry — throws errAccountNotExists if voter unknown)
     const votingPower = compileArc4(GGovRegistryContract).call.getXGovVotingPower({
-      appId: Application(this.oracleApp.value),
+      appId: Application(this.registryApp.value),
       args: [this.committeeId.value, voterAccount],
     }).returnValue
 
@@ -354,7 +354,7 @@ export class GGovPeriodContract extends BaseContract {
 
     if (senderAccount !== voterAccount) {
       const delegate = compileArc4(GGovRegistryContract).call.getDelegate({
-        appId: Application(this.oracleApp.value),
+        appId: Application(this.registryApp.value),
         args: [voterAccount],
       }).returnValue
       if (delegate === Global.zeroAddress) return [false, 0]
@@ -362,7 +362,7 @@ export class GGovPeriodContract extends BaseContract {
     }
 
     const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({
-      appId: Application(this.oracleApp.value),
+      appId: Application(this.registryApp.value),
       args: [this.committeeId.value, voterAccount],
     }).returnValue
     if (power.asUint64() === 0) return [false, 0]
@@ -373,7 +373,7 @@ export class GGovPeriodContract extends BaseContract {
 
   @abimethod({ readonly: true })
   public getPeriod(): GGovPeriod {
-    if (this.oracleApp.value === 0) return getEmptyGGovPeriod()
+    if (this.registryApp.value === 0) return getEmptyGGovPeriod()
     const optionsArr = clone(this.topicOptionsArr.value)
     const votesArr = clone(this.topicVotesArr.value)
     const topics: GGovTopic[] = []
