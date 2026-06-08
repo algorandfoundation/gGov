@@ -9,7 +9,7 @@ function txnSuccessToast(message: string, data?: unknown) {
   const txIds = data && typeof data === 'object' && 'txIds' in data
     ? (data as { txIds: string[] }).txIds
     : undefined
-  const txId = txIds?.at(-1)
+  const txId = txIds && txIds.length > 0 ? txIds[txIds.length - 1] : undefined
   toast.success(message, txId ? {
     action: {
       label: 'Copy Txn ID',

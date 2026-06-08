@@ -624,6 +624,36 @@ export class GGovSDK extends GGovReaderSDK {
 
   vote = this.makePeriodTxnExecutor({ maker: this.makeVoteTxns });
 
+  // ── Period: updateApplication (admin-only app-code update) ────────
+
+  /**
+   * Update a deployed period app's program to the GGovPeriod build exported by this
+   * `ggov-sdk` version. The period write client compiles the current approval/clear
+   * programs from its embedded app spec, so the on-chain code is replaced with the
+   * version bundled here. Admin-only (the contract's updateApplication baremethod
+   * inner-calls registry.verifyAdmin).
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeUpdatePeriodAppTxns({
+    periodId: _periodId,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.update.bare({
+      note,
+      // 1 inner verifyAdmin (checkAdminCaller)
+      extraFee: (1000).microAlgo(),
+    });
+  }
+
+  updatePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeUpdatePeriodAppTxns });
+
   // ── Bootstrap: deploy + fund + upload approval bytecode + optional setup ──
 
   /**
@@ -640,20 +670,22 @@ export class GGovSDK extends GGovReaderSDK {
     operatorAccount,
     xGovRegistryAppId,
     initialFundingAlgos,
+    update = false,
   }: {
     algorand: AlgorandClient;
     deployer: SenderWithSigner;
     operatorAccount?: string | Address;
     xGovRegistryAppId?: bigint | number;
     initialFundingAlgos?: bigint | number;
+    update?: boolean
   }): Promise<{ sdk: GGovSDK; appClient: GGovRegistryClient }> {
     const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
       defaultSender: deployer.sender,
       defaultSigner: deployer.signer,
     });
     const { appClient } = await factory.deploy({
-      onUpdate: "append",
-      onSchemaBreak: "append",
+      onUpdate: update ? "update" : "append",
+      onSchemaBreak: update ? "fail" : "append",
     });
 
     // Seed the registry's account: covers base MBR + 1 approval box (~3.3 ALGO at 8KB).

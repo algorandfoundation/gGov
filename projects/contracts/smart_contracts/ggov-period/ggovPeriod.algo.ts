@@ -408,5 +408,8 @@ export class GGovPeriodContract extends BaseContract {
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.checkAdminCaller()
+    // TODO: inner-call the registry to remove this period's summary box so deleted periods
+    // drop out of getAllPeriods/getAllPeriodSummaries (which filter on appId === 0).
+    // Requires a deletePeriod/removePeriod method on GGovRegistryContract.
   }
 }

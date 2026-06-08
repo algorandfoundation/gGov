@@ -40,18 +40,11 @@ export function usePeriods() {
   return useQuery({
     queryKey: queryKeys.periods,
     queryFn: async (): Promise<PeriodWithId[]> => {
-      const globalState = await readerSDK.getGlobalState()
-      const count = Number(globalState.lastPeriodId ?? 0)
-      if (count === 0) return []
-      const periodIds = Array.from({ length: count }, (_, i) => BigInt(i + 1))
-      const [summaries, periods] = await Promise.all([
-        readerSDK.getPeriodSummaries(periodIds),
-        readerSDK.getPeriods(periodIds),
-      ])
-      return periods.map((period, i) => ({
-        id: i + 1,
+      const all = await readerSDK.getAllPeriods()
+      return all.map(({ id, period, summary }) => ({
+        id: Number(id),
         period,
-        ready: summaries[i]?.ready ?? false,
+        ready: summary.ready,
       }))
     },
   })
@@ -206,24 +199,19 @@ export function useMyVotes(account: string | null | undefined) {
     queryKey: queryKeys.myVotes(account ?? ''),
     queryFn: async (): Promise<VoteEntry[]> => {
       const results: VoteEntry[] = []
-      for (let i = 1; ; i++) {
+      const all = await readerSDK.getAllPeriods()
+      for (const { id, period } of all) {
         try {
-          const period = await readerSDK.getPeriod(BigInt(i))
-          if (period.votingStart === 0 && period.votingEnd === 0) break
-          try {
-            const record = await readerSDK.getVotingRecord(BigInt(i), account!)
-            if (!record || record.topicVotes == null) continue
-            const body = await readerSDK.getPeriodBody(BigInt(i))
-            const topicBodies = await Promise.all(
-              Array.from({ length: period.topics.length }, (_, ti) =>
-                readerSDK.getTopicBody(BigInt(i), BigInt(ti)).catch(() => null)
-              )
+          const record = await readerSDK.getVotingRecord(id, account!)
+          if (!record || record.topicVotes == null) continue
+          const body = await readerSDK.getPeriodBody(id)
+          const topicBodies = await Promise.all(
+            Array.from({ length: period.topics.length }, (_, ti) =>
+              readerSDK.getTopicBody(id, BigInt(ti)).catch(() => null)
             )
-            results.push({ periodId: i, period, record, body, topicBodies })
-          } catch { /* no vote for this period */ }
-        } catch {
-          break
-        }
+          )
+          results.push({ periodId: Number(id), period, record, body, topicBodies })
+        } catch { /* no vote for this period */ }
       }
       return results
     },

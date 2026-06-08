@@ -17,6 +17,17 @@ const EMPTY_PERIOD: GGovPeriod = {
   topics: [],
 };
 
+export interface PeriodSummaryWithId {
+  id: bigint;
+  summary: GGovPeriodSummary;
+}
+
+export interface PeriodWithSummary {
+  id: bigint;
+  period: GGovPeriod;
+  summary: GGovPeriodSummary;
+}
+
 export class GGovReaderSDK {
   public algorand: AlgorandClient;
   /** Composed registry reader SDK (committee registry + operator + delegations + periods). */
@@ -175,6 +186,7 @@ export class GGovReaderSDK {
   /** Fetch full periods. Routes through summaries → per-period fetches. Preserves prior signature. */
   @wrapErrors()
   async getPeriods(periodIds: bigint[]): Promise<GGovPeriod[]> {
+    // TODO can be made more efficient by logPeriods() on registry
     const summaries = await this.getPeriodSummaries(periodIds);
     return pMap(
       periodIds,
@@ -184,6 +196,40 @@ export class GGovReaderSDK {
         // populate cache so getPeriod doesn't re-query the registry
         this.periodAppCache.set(BigInt(pid), BigInt(summary.appId));
         return this.getPeriod(pid);
+      },
+      { concurrency: this.concurrency },
+    );
+  }
+
+  /**
+   * All live period summaries on the registry, paired with their periodId.
+   * Enumerates 1..lastPeriodId and filters out deleted periods (summary.appId === 0).
+   */
+  @wrapErrors()
+  async getAllPeriodSummaries(): Promise<PeriodSummaryWithId[]> {
+    const { lastPeriodId } = await this.getGlobalState();
+    const count = Number(lastPeriodId ?? 0);
+    if (count === 0) return [];
+    const ids = Array.from({ length: count }, (_, i) => BigInt(i + 1));
+    const summaries = await this.getPeriodSummaries(ids);
+    return ids
+      .map((id, i) => ({ id, summary: summaries[i] }))
+      .filter(({ summary }) => summary && BigInt(summary.appId) !== 0n);
+  }
+
+  /**
+   * All live periods with full data + registry summary. Built on getAllPeriodSummaries,
+   * so deleted periods (summary.appId === 0) are already filtered out.
+   */
+  @wrapErrors()
+  async getAllPeriods(): Promise<PeriodWithSummary[]> {
+    const summaries = await this.getAllPeriodSummaries();
+    return pMap(
+      summaries,
+      async ({ id, summary }) => {
+        // populate cache so getPeriod doesn't re-query the registry for the appId
+        this.periodAppCache.set(id, BigInt(summary.appId));
+        return { id, period: await this.getPeriod(id), summary };
       },
       { concurrency: this.concurrency },
     );

@@ -208,6 +208,66 @@ describe('GGovPeriod contract', () => {
     })
   })
 
+  // ── getAllPeriods / getAllPeriodSummaries ────────────────────────
+
+  describe('getAllPeriods / getAllPeriodSummaries', () => {
+    // NOTE: deleted-period filtering (summary.appId === 0) is currently a no-op — the registry
+    // has no deletePeriod, so summary boxes are never removed and there is no way to produce an
+    // appId === 0 summary for an existing ID. Left untested until the registry-cleanup TODO lands
+    // (see GGovPeriodContract.deleteApplication).
+
+    test('Empty registry returns no periods', async () => {
+      const { sdk } = await deployWithCommittee(localnet)
+      expect(await sdk.getAllPeriodSummaries()).toEqual([])
+      expect(await sdk.getAllPeriods()).toEqual([])
+    })
+
+    test('Enumerates all periods in order with full data', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const id1 = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const id2 = await sdk.addPeriod({ committeeId, votingStart: now + 200n, votingEnd: now + 3800n })
+      const id3 = await sdk.addPeriod({ committeeId, votingStart: now + 300n, votingEnd: now + 3900n })
+      expect([id1, id2, id3]).toEqual([1n, 2n, 3n])
+      // give period 2 two topics
+      await sdk.addTopic({ periodId: id2, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId: id2, options: ['A', 'B', 'C'] })
+
+      const summaries = await sdk.getAllPeriodSummaries()
+      expect(summaries.map((s) => s.id)).toEqual([1n, 2n, 3n])
+      for (const { summary } of summaries) {
+        expect(BigInt(summary.appId)).toBeGreaterThan(0n)
+      }
+      expect(summaries[0].summary.numTopics).toBe(0)
+      expect(summaries[1].summary.numTopics).toBe(2)
+
+      const periods = await sdk.getAllPeriods()
+      expect(periods.map((p) => p.id)).toEqual([1n, 2n, 3n])
+      expect(periods[1].period.topics).toHaveLength(2)
+      for (const { period } of periods) {
+        expect(Number(period.votingStart)).toBeGreaterThan(0)
+        expect(Number(period.votingEnd)).toBeGreaterThan(Number(period.votingStart))
+      }
+    })
+
+    test('ready flag round-trips through the summary', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const id1 = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      await sdk.addPeriod({ committeeId, votingStart: now + 200n, votingEnd: now + 3800n })
+      await sdk.setReady({ periodId: id1, ready: true })
+
+      const summaries = await sdk.getAllPeriodSummaries()
+      const byId = new Map(summaries.map((s) => [s.id, s.summary]))
+      expect(byId.get(1n)!.ready).toBe(true)
+      expect(byId.get(2n)!.ready).toBe(false)
+    })
+  })
+
   // ── uploadPeriodApprovalProgram + bytecode-configuration guard ───
 
   describe('period approval program', () => {

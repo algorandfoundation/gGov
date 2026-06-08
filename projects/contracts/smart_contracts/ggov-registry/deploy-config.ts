@@ -14,5 +14,8 @@ export async function deploy() {
     operatorAccount: deployer.addr.toString(),
     // xGovRegistryAppId: 1234n, // optional: pre-configure the xGov registry app id
     initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
+    update: true,
   })
+
+  // TODO test if there are periods on the registry; if so, update them to the latest bytecode using sdk.updatePeriodApp
 }
