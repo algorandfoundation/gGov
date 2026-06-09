@@ -1,0 +1,8 @@
+{
+  // Cloudflare Pages project configuration.
+  // Enables `wrangler pages deploy` / `wrangler pages dev` to pick up the
+  // project name and build output without extra flags.
+  "name": "ggov-frontend",
+  "compatibility_date": "2026-06-09",
+  "pages_build_output_dir": "dist"
+}
