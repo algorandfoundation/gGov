@@ -8,7 +8,7 @@ import {
   increaseBudgetIncrementCost,
   XGovCommitteeFile,
   GGovRegistrySDK,
-} from 'ggov-registry-sdk'
+} from 'ggov-sdk'
 import {
   errCommitteeExists,
   errCommitteeIncomplete,

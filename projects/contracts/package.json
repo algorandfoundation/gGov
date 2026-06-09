@@ -23,7 +23,6 @@
     "@algorandfoundation/algorand-typescript": "^1.1.0",
     "@d13co/superbox": "^1.1.0",
     "ggov-sdk": "link:../ggov-sdk",
-    "ggov-registry-sdk": "link:../ggov-registry-sdk",
     "xgov-delegator-sdk": "link:../delegator-sdk"
   },
   "devDependencies": {

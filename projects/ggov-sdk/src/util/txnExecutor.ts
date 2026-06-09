@@ -5,7 +5,7 @@ import { SendResult, SenderWithSigner } from "../types";
 
 /**
  * Execute a transaction group with automatic budget increase.
- * Shared between ggov-registry-sdk and ggov-sdk.
+ * Shared between the registry SDK and the top-level GGovSDK.
  */
 export async function executeTxns<T extends { builder?: any }>({
   txnBuilder,

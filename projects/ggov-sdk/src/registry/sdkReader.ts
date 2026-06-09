@@ -2,14 +2,14 @@ import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
 import { ALGORAND_ZERO_ADDRESS_STRING, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
-import { CommitteeMetadata, GGovRegistryClient, GGovRegistryComposer, GGovAccount, SuperboxMeta } from "./generated/GGovRegistryClient";
+import { CommitteeMetadata, GGovRegistryClient, GGovRegistryComposer, GGovAccount, SuperboxMeta } from "../generated/GGovRegistryClient";
 import { getConstructorConfig } from "./networkConfig";
 import { CommitteeId, AccountWithVotes, ReaderConstructorArgs, STORED_XGOV_BYTE_LENGTH, StoredXGov, XGovCommitteeFile } from "./types";
-import { chunk } from "./util/chunk";
-import { chunked } from "./util/chunked";
-import { committeeIdToRaw } from "./util/comitteeId";
-import { errorTransformer, wrapErrors } from "./util/wrapErrors";
-import { SIMULATE_PARAMS } from "./util/increaseBudget";
+import { chunk } from "../util/chunk";
+import { chunked } from "../util/chunked";
+import { committeeIdToRaw } from "../util/comitteeId";
+import { errorTransformer, wrapErrors } from "../util/wrapErrors";
+import { SIMULATE_PARAMS } from "../util/increaseBudget";
 
 const PARTIAL_COMMITTEE_SIMULATE_CALLS = 16; // 16 simulate calls per fast-get
 const PARTIAL_COMMITTEE_FIRST_DATA_PAGE_LENGTH = 6; // first fast-get call retrieves 6 data pages, because 2x refs needed for sb meta + committee meta

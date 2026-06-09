@@ -1,4 +1,4 @@
-import { GGovRegistryClient } from "./generated/GGovRegistryClient";
+import { GGovRegistryClient } from "../generated/GGovRegistryClient";
 import {
   ConstructorArgs,
   AccountWithVotes,
@@ -7,13 +7,13 @@ import {
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
 } from "./types";
-import { requireWriter } from "./util/requiresSender";
-import { calculateCommitteeId } from "./util/comitteeId";
-import { xGovToTuple } from "./util/types";
+import { requireWriter } from "../util/requiresSender";
+import { calculateCommitteeId } from "../util/comitteeId";
+import { xGovToTuple } from "./xGov";
 import { GGovRegistryReaderSDK } from "./sdkReader";
-import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
-import { createTxnExecutor } from "./util/txnExecutor";
-import { chunk } from "./util/chunk";
+import { wrapErrors, wrapErrorsInternal } from "../util/wrapErrors";
+import { createTxnExecutor } from "../util/txnExecutor";
+import { chunk } from "../util/chunk";
 
 export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   public writerAccount?: SenderWithSigner;

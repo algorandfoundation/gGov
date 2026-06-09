@@ -4,7 +4,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { Address } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
-import { XGovCommitteeFile } from 'ggov-registry-sdk'
+import { XGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
   errGGovCannotOverride,

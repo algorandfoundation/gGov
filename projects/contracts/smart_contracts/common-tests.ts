@@ -7,7 +7,7 @@ import {
   GGovRegistryFactory,
   XGovCommitteeFile,
   GGovRegistrySDK,
-} from 'ggov-registry-sdk'
+} from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
 import { DelegatorFactory } from './artifacts/delegator/DelegatorClient'

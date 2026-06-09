@@ -1,4 +1,4 @@
-import { AccountWithVotes } from "../types";
+import { AccountWithVotes } from "./types";
 
 export function xGovToTuple(xGov: AccountWithVotes): [string, number] {
   return [

@@ -1,6 +1,6 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { Account, Address, TransactionSigner } from "algosdk";
-import { GGovRegistryArgs, GGovRegistryComposer } from "./generated/GGovRegistryClient";
+import { GGovRegistryArgs, GGovRegistryComposer } from "../generated/GGovRegistryClient";
 import { SendSingleTransactionResult, SendAtomicTransactionComposerResults } from "@algorandfoundation/algokit-utils/types/transaction";
 
 export type Network = "mainnet" | "testnet";

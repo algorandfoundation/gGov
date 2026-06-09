@@ -2,7 +2,7 @@ import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
 import { encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
-import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "ggov-registry-sdk";
+import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "./registry";
 import { GGovRegistryClient, GGovPeriodSummary } from "./generated/GGovRegistryClient";
 import { GGovPeriodClient, GGovPeriod, GGovVoteRecord } from "./generated/GGovPeriodClient";
 import { getConstructorConfig } from "./networkConfig";

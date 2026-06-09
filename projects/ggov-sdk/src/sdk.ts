@@ -1,7 +1,7 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
 import { Address } from "algosdk";
-import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "ggov-registry-sdk";
+import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "./registry";
 import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "./generated/GGovRegistryClient";
 import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "./generated/GGovPeriodClient";
 import { GGovReaderSDK } from "./sdkReader";
