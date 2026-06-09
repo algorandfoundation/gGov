@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useGlobalState } from '@/hooks/queries'
 import { useTheme } from '@/hooks/useTheme'
@@ -19,7 +21,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
-import { Vote, Users, UserCircle, Settings, Sun, Moon } from 'lucide-react'
+import { Vote, Users, UserCircle, Settings, Sun, Moon, RefreshCw } from 'lucide-react'
 
 function AlgorandLogo({ className }: { className?: string }) {
   return (
@@ -88,6 +90,35 @@ function AppSidebar() {
   )
 }
 
+function RefreshButton() {
+  const queryClient = useQueryClient()
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await queryClient.invalidateQueries()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-7"
+      onClick={handleRefresh}
+      disabled={refreshing}
+      aria-label="Refresh data"
+      title="Refresh data"
+    >
+      <RefreshCw className={refreshing ? 'animate-spin' : undefined} />
+      <span className="sr-only">Refresh data</span>
+    </Button>
+  )
+}
+
 export default function Layout() {
   return (
     <SidebarProvider>
@@ -95,6 +126,7 @@ export default function Layout() {
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
           <SidebarTrigger aria-label="Toggle sidebar" />
+          <RefreshButton />
           <Separator orientation="vertical" className="h-4" />
         </header>
         <main className="flex-1 px-4 py-6">
