@@ -8,7 +8,3 @@ jobs:
     name: Run xgov-delegator-contracts validation
     uses: ./.github/workflows/xgov-delegator-contracts-ci.yaml
 
-  xgov-delegator-frontend-ci:
-    name: Run xgov-delegator-frontend validation
-    uses: ./.github/workflows/xgov-delegator-frontend-ci.yaml
-

@@ -25,14 +25,3 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/xgov-delegator-contracts-cd.yaml
     needs: xgov-delegator-contracts-validate
-
-  xgov-delegator-frontend-validate:
-    name: Run xgov-delegator-frontend release
-    secrets: inherit
-    uses: ./.github/workflows/xgov-delegator-frontend-ci.yaml
-
-  xgov-delegator-frontend-release:
-    name: Run xgov-delegator-frontend release
-    secrets: inherit
-    uses: ./.github/workflows/xgov-delegator-frontend-cd.yaml
-    needs: xgov-delegator-frontend-validate

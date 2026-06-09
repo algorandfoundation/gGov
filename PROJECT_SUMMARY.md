@@ -1,17 +1,16 @@
 # Project Summary
 
-pnpm monorepo for an Algorand general governance (ggox) and gGov/xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), three SDKs, two React frontends, and shared resources.
+pnpm monorepo for an Algorand general governance (ggov) and gGov/xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), two SDKs, two React frontends, and shared resources.
 
 ## Workspace Layout
 
 ```
 xgov-delegator/
-  .algokit.toml              # workspace config; build order: contracts -> ggov-registry-sdk -> delegator-sdk -> ggov-sdk
+  .algokit.toml              # workspace config; build order: contracts -> oracle-sdk -> delegator-sdk -> ggov-sdk
   pnpm-workspace.yaml        # packages: projects/*
   projects/
     contracts/               # PuyaTs smart contracts
-    ggov-registry-sdk/       # SDK for GGovRegistry (committee oracle + operator + delegations + period factory)
-    ggov-sdk/                # Higher-level SDK combining registry + per-period operations
+    ggov-sdk/                # Unified GGov SDK: registry (src/registry/) + per-period operations
     delegator-sdk/           # SDK for delegator contract
     frontend/                # Legacy React + Vite frontend (oracle viewer)
     ggov-frontend/           # Current React + Vite + Tailwind frontend for gGov
@@ -68,52 +67,39 @@ pnpm run build    # compile contracts + generate clients
 pnpm run test     # vitest with coverage
 ```
 
-## projects/ggov-registry-sdk
-
-SDK for the GGovRegistry contract (the durable factory + committee oracle).
-
-### Structure
-
-```
-src/
-  index.ts                           # Exports: GGovRegistrySDK, GGovRegistryReaderSDK, GGovRegistryFactory, GGovRegistryClient, calculateCommitteeId
-  sdk.ts                             # Write SDK (extends reader): uploadCommitteeFile() orchestration, ingest/uningest, setOperator, delegate
-  sdkReader.ts                       # Read-only SDK
-  types.ts                           # XGovCommitteeFile, AccountWithVotes, StoredXGov, etc.
-  constants.ts
-  networkConfig.ts
-  generated/
-    GGovRegistryClient.ts            # Auto-generated typed client (copied from contracts artifacts)
-    errors.ts                        # Auto-generated error map
-  util/
-    chunk.ts, chunked.ts, comitteeId.ts, increaseBudget.ts,
-    requiresSender.ts, wrapErrors.ts, types.ts
-examples/
-  get.ts, upload.ts                  # Round-trip committee writes/reads against a localnet registry
-```
-
-### Build
-
-Prebuild copies client from contracts artifacts + generates error map, then tsc to `dist/`.
-
 ## projects/ggov-sdk
 
-Higher-level SDK that **composes** the registry SDK and adds per-period orchestration. User-facing surface preserved across the split.
+Unified GGov SDK. The top level is the higher-level SDK (`GGovSDK`/`GGovReaderSDK`) that **composes** the registry SDK and adds per-period orchestration; the registry SDK (formerly the separate `ggov-registry-sdk` package) lives under `src/registry/` and is re-exported from the package root, so registry symbols (`GGovRegistrySDK`, `XGovCommitteeFile`, `calculateCommitteeId`, …) import straight from `ggov-sdk`.
 
 ```
 src/
-  index.ts                           # Exports: GGovSDK, GGovReaderSDK + re-exports from ggov-registry-sdk
+  index.ts                           # Exports: GGovSDK, GGovReaderSDK + the registry surface (GGovRegistrySDK, calculateCommitteeId, ...)
   sdk.ts                             # Write SDK: addPeriod (registry inner-txn create), per-period writes (editPeriod, addTopic, vote, ...)
   sdkReader.ts                       # Reader: composes GGovRegistryReaderSDK; per-period client cache; routes reads to period apps
   types.ts                           # Constructor args + body JSON helpers
   networkConfig.ts                   # ggovRegistryAppId (deprecated alias: ggovAppId)
+  registry/                          # Registry SDK (merged from ggov-registry-sdk)
+    index.ts                         # Registry barrel; reuses ../generated, ../util, ../constants
+    sdk.ts                           # GGovRegistrySDK: uploadCommitteeFile() orchestration, ingest/uningest, setOperator, delegate
+    sdkReader.ts                     # GGovRegistryReaderSDK (read-only)
+    types.ts                         # XGovCommitteeFile, AccountWithVotes, StoredXGov, registryAppId constructor args
+    networkConfig.ts                 # Registry network config (mainnet/testnet registry app ids)
+    xGov.ts                          # xGovToTuple helper
   generated/
-    GGovRegistryClient.ts            # Registry client
+    GGovRegistryClient.ts            # Registry client (shared by registry/ and top level)
     GGovPeriodClient.ts              # Period client
-    errors.ts
+    errors.ts                        # Auto-generated error map
+  util/
+    chunk.ts, chunked.ts, comitteeId.ts, requiresSender.ts, wrapErrors.ts,
+    increaseBudget.ts, txnExecutor.ts   # shared by registry/ and top level
 examples/
   add-period.ts                      # End-to-end: deploy registry → setOperator → uploadCommittee → addPeriod → addTopic
+  get.ts, upload.ts, set-config.ts   # Registry round-trip committee writes/reads against a localnet registry
 ```
+
+### Build
+
+Prebuild copies both clients from contracts artifacts + generates the error map, then tsc to `dist/`.
 
 ## projects/delegator-sdk
 
@@ -129,10 +115,6 @@ React 19 + Vite + TailwindCSS + DaisyUI. Current frontend for gGov.
 - `src/hooks/queries.ts`, `src/hooks/mutations.ts` — React Query bindings to the SDK
 - `scripts/deploy-sample-data.ts` — Deploys a registry + sets operator + seeds sample periods
 - `scripts/print-committees.ts` — Diagnostic script
-
-## projects/frontend (legacy)
-
-Older oracle viewer; still uses generated clients for `Delegator`. Mostly inactive.
 
 ## projects/common
 
