@@ -61,6 +61,9 @@ export default function VotePeriodDetail() {
   const voteStatuses = useVoteStatuses(periodId, voterAccounts);
   // For delegated voting, the connected wallet (activeAddress) is the sender; selectedVoter is the voter.
   const { data: canVoteResult } = useCanVote(periodId, selectedVoter, activeAddress);
+  // Whether the connected wallet has voting power of its own; if not, hide the "Yourself" option.
+  const { data: selfCanVoteResult } = useCanVote(periodId, activeAddress, activeAddress);
+  const selfCanVote = (selfCanVoteResult?.votingPower ?? 0n) > 0n;
   const { data: voteRecord } = useVoteRecord(periodId, selectedVoter);
   const voteMutation = useVoteMutation();
 
@@ -69,6 +72,14 @@ export default function VotePeriodDetail() {
       console.log(`Voting record for ${selectedVoter} (period ${periodId}):`, voteRecord);
     }
   }, [selectedVoter, periodId, voteRecord]);
+
+  // If the connected wallet has no voting power of its own, fall back to the first
+  // delegator so we never leave the (now hidden) "Yourself" option selected.
+  useEffect(() => {
+    if (selfCanVoteResult && !selfCanVote && selectedVoter === activeAddress && delegators.length > 0) {
+      setSelectedVoter(delegators[0]);
+    }
+  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, delegators]);
 
   const votingForSelf = selectedVoter === activeAddress;
 
@@ -174,17 +185,19 @@ export default function VotePeriodDetail() {
       {activeAddress && delegators.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-muted-foreground">Vote as:</span>
-          <button
-            type="button"
-            className={cn(
-              "relative rounded-md border px-2.5 py-1 transition-colors",
-              votingForSelf ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
-            )}
-            onClick={() => setSelectedVoter(activeAddress)}
-          >
-            Yourself
-            {voteStatuses[activeAddress] === false && <NotVotedBadge />}
-          </button>
+          {selfCanVote && (
+            <button
+              type="button"
+              className={cn(
+                "relative rounded-md border px-2.5 py-1 transition-colors",
+                votingForSelf ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
+              )}
+              onClick={() => setSelectedVoter(activeAddress)}
+            >
+              Yourself
+              {voteStatuses[activeAddress] === false && <NotVotedBadge />}
+            </button>
+          )}
           {delegators.map((addr) => (
             <button
               key={addr}
