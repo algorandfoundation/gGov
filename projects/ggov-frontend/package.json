@@ -9,15 +9,12 @@
   "scripts": {
     "dev": "vite",
     "dev:testnet": "vite --mode testnet",
-    "dev:pera-test": "vite --mode pera-test",
     "build": "tsc && vite build",
     "build:testnet": "tsc && vite build --mode testnet",
-    "build:pera-test": "tsc && vite build --mode pera-test",
     "preview": "vite preview",
     "pages:dev": "wrangler pages dev",
     "pages:deploy": "pnpm build && wrangler pages deploy",
-    "pages:deploy:testnet": "pnpm build:testnet && wrangler pages deploy",
-    "pages:deploy:pera-test": "pnpm build:pera-test && wrangler pages deploy --branch pera-test"
+    "pages:deploy:testnet": "pnpm build:testnet && wrangler pages deploy"
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",
