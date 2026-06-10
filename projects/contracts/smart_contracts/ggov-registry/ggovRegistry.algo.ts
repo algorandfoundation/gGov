@@ -264,6 +264,17 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.admin.value = newAdmin
   }
 
+  /**
+   * Withdraw $amount microALGO from the registry app account to $receiver. Admin only.
+   * The AVM rejects the inner payment if it would drop the app account below its min
+   * balance, so over-withdrawal fails atomically (no explicit balance check needed).
+   */
+  public withdrawALGO(receiver: Account, amount: uint64): void {
+    this.ensureCallerIsAdmin()
+    ensure(receiver !== Global.zeroAddress, errUnauthorized)
+    itxn.payment({ receiver, amount }).submit()
+  }
+
   /** Whether $account is the admin. Called by period contracts via inner txn. */
   @abimethod({ readonly: true })
   public verifyAdmin(account: Account): boolean {

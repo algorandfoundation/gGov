@@ -195,6 +195,23 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
+  makeWithdrawALGOTxns({
+    receiver,
+    amount,
+    builder,
+  }: GGovRegistryContractArgs["withdrawALGO(address,uint64)void"] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup();
+    // extraFee covers the single inner payment
+    builder = builder.withdrawAlgo({ args: { receiver, amount }, extraFee: (1000).microAlgo() });
+    return builder;
+  }
+
+  withdrawALGO = this.makeTxnExecutor({
+    maker: this.makeWithdrawALGOTxns,
+  });
+
+  @requireWriter()
+  @wrapErrors()
   makeUningestXGovsTxns({
     committeeId,
     xGovs,

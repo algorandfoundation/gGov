@@ -738,4 +738,59 @@ describe('GGovRegistry contract', () => {
       await expect(client.send.delete.bare({ sender, signer })).resolves.toBeDefined()
     })
   })
+
+  describe('withdrawALGO', () => {
+    test('admin can withdraw ALGO to a receiver', async () => {
+      const { testAccount } = localnet.context
+      // deployRegistry funds the app account with 10 ALGO
+      const { sdk, client } = await deployRegistry(localnet, testAccount)
+      const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const before = await localnet.algorand.account.getInformation(receiver)
+      const registryBefore = await localnet.algorand.account.getInformation(client.appAddress)
+      const amount = (3).algos().microAlgo
+
+      await sdk.withdrawALGO({ receiver: receiver.toString(), amount })
+
+      const after = await localnet.algorand.account.getInformation(receiver)
+      const registryAfter = await localnet.algorand.account.getInformation(client.appAddress)
+      // Receiver does not pay the fees (sender/admin does), so it gains exactly `amount`.
+      expect(after.balance.microAlgo).toBe(before.balance.microAlgo + amount)
+      // Registry loses `amount` (the inner-payment fee is paid by the outer txn sender).
+      expect(registryAfter.balance.microAlgo).toBe(registryBefore.balance.microAlgo - amount)
+    })
+
+    test('non-admin cannot withdraw ALGO', async () => {
+      const { testAccount } = localnet.context
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const nonAdminSDK = new GGovRegistrySDK({
+        algorand: localnet.algorand,
+        registryAppId: sdk.appId,
+        writerAccount: { sender: nonAdmin, signer: localnet.algorand.account.getSigner(nonAdmin) },
+      })
+      await expect(
+        nonAdminSDK.withdrawALGO({ receiver: nonAdmin.toString(), amount: (1).algos().microAlgo }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('cannot withdraw to the zero address', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
+      await expect(
+        sdk.withdrawALGO({ receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: (1).algos().microAlgo }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      // App holds ~10 ALGO; ask for far more than the balance minus min balance.
+      await expect(
+        sdk.withdrawALGO({ receiver: receiver.toString(), amount: (100).algos().microAlgo }),
+      ).rejects.toThrow()
+    })
+  })
 })

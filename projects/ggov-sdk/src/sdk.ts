@@ -654,6 +654,40 @@ export class GGovSDK extends GGovReaderSDK {
 
   updatePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeUpdatePeriodAppTxns });
 
+  // ── Period: withdrawALGO (admin-only, via registry C2C verifyAdmin) ──
+
+  /**
+   * Withdraw `amount` µAlgo from the period app account to `receiver`. Registry admin only
+   * (the contract's withdrawALGO inner-calls registry.verifyAdmin). Exposed as
+   * `withdrawPeriodALGO` to avoid colliding with the registry's `withdrawALGO` on this SDK;
+   * the on-chain method is `withdrawALGO`.
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeWithdrawPeriodALGOTxns({
+    periodId: _periodId,
+    receiver,
+    amount,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    receiver: string | Address;
+    amount: bigint | number;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.withdrawAlgo({
+      args: { receiver: receiver.toString(), amount },
+      note,
+      // 1 inner verifyAdmin + 1 inner payment
+      extraFee: (2000).microAlgo(),
+    });
+  }
+
+  withdrawPeriodALGO = this.makePeriodTxnExecutor({ maker: this.makeWithdrawPeriodALGOTxns });
+
   // ── Bootstrap: deploy + fund + upload approval bytecode + optional setup ──
 
   /**

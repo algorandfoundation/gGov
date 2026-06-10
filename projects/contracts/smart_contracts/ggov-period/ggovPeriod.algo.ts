@@ -11,6 +11,7 @@ import {
   err,
   Global,
   GlobalState,
+  itxn,
   log,
   op,
   Txn,
@@ -449,6 +450,19 @@ export class GGovPeriodContract extends BaseContract {
       const topicVotes: GGovTopicVotes = { votes: clone(record.topicVotes[i]) }
       log(encodeArc4(topicVotes))
     }
+  }
+
+  // ── Admin: withdraw ALGO (via registry C2C verifyAdmin) ──────────
+
+  /**
+   * Withdraw $amount microALGO from this period app account to $receiver. Registry admin
+   * only (verified via inner call to registry.verifyAdmin). The AVM rejects the inner
+   * payment if it would drop the app account below its min balance.
+   */
+  public withdrawALGO(receiver: Account, amount: uint64): void {
+    this.checkAdminCaller()
+    ensure(receiver !== Global.zeroAddress, errUnauthorized)
+    itxn.payment({ receiver, amount }).submit()
   }
 
   // ── Lifecycle: update + delete (admin only, via registry C2C) ────

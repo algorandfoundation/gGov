@@ -1311,4 +1311,77 @@ describe('GGovPeriod contract', () => {
       ).resolves.toBeDefined()
     })
   })
+
+  // ── withdrawALGO (admin via registry c2c) ────────────────────────
+
+  describe('withdrawALGO', () => {
+    const makePeriodClient = (
+      localnet: ReturnType<typeof algorandFixture>,
+      appId: bigint,
+      sender: Address,
+    ) =>
+      new GGovPeriodClient({
+        algorand: localnet.algorand,
+        appId,
+        defaultSender: sender,
+        defaultSigner: localnet.algorand.account.getSigner(sender),
+      })
+
+    /** Deploy a committee, set operator, and spawn a single period app. Returns the period app context. */
+    async function deployWithPeriod(localnet: ReturnType<typeof algorandFixture>) {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const periodAddress = makePeriodClient(localnet, periodAppId, admin).appAddress
+      return { sdk, admin, periodId, periodAppId, periodAddress }
+    }
+
+    test('Registry admin can withdraw ALGO from a period app', async () => {
+      const { sdk, periodId, periodAddress } = await deployWithPeriod(localnet)
+      // createPeriod funds the period app ~1 ALGO MBR; top it up so there's a clear surplus.
+      await localnet.algorand.account.ensureFundedFromEnvironment(periodAddress, (6).algos())
+      const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const before = await localnet.algorand.account.getInformation(receiver)
+      const amount = (3).algos().microAlgo
+      await sdk.withdrawPeriodALGO({ periodId, receiver: receiver.toString(), amount })
+
+      const after = await localnet.algorand.account.getInformation(receiver)
+      // Receiver does not pay fees, so it gains exactly `amount`.
+      expect(after.balance.microAlgo).toBe(before.balance.microAlgo + amount)
+    })
+
+    test('Non-admin cannot withdraw ALGO from a period app', async () => {
+      const { sdk, periodId, periodAppId } = await deployWithPeriod(localnet)
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const nonAdminSDK = createUserSDK(localnet, sdk.appId, nonAdmin)
+      await expect(
+        nonAdminSDK.withdrawPeriodALGO({ periodId, receiver: nonAdmin.toString(), amount: (1).algos().microAlgo }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+      void periodAppId
+    })
+
+    test('Cannot withdraw to the zero address', async () => {
+      const { sdk, periodId, periodAddress } = await deployWithPeriod(localnet)
+      await localnet.algorand.account.ensureFundedFromEnvironment(periodAddress, (6).algos())
+      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
+      await expect(
+        sdk.withdrawPeriodALGO({ periodId, receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: (1).algos().microAlgo }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('Withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
+      const { sdk, periodId } = await deployWithPeriod(localnet)
+      const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        sdk.withdrawPeriodALGO({ periodId, receiver: receiver.toString(), amount: (100).algos().microAlgo }),
+      ).rejects.toThrow()
+    })
+  })
 })
