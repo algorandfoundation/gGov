@@ -5,7 +5,7 @@ import { readFileSync } from "fs";
 (async () => {
   const file = JSON.parse(readFileSync(process.argv[2], "utf-8"));
 
-  const algorand = AlgorandClient.defaultLocalNet();
+  const algorand = AlgorandClient.fromEnvironment();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
   const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {

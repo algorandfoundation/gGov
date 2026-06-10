@@ -22,7 +22,7 @@ import { GGovSDK } from "..";
   const registryAppId = BigInt(process.argv[2] ?? 1004);
   const title = process.argv[3] ?? "Entertainment";
 
-  const algorand = AlgorandClient.defaultLocalNet();
+  const algorand = AlgorandClient.fromEnvironment();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
   // Writer-enabled SDK bound to the existing registry. Writer must be the registry admin.

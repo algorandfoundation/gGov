@@ -18,7 +18,7 @@ import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { GGovSDK } from "..";
 
 (async () => {
-  const algorand = AlgorandClient.defaultLocalNet();
+  const algorand = AlgorandClient.fromEnvironment();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
   const { sdk, appClient } = await GGovSDK.createRegistry({

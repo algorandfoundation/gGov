@@ -26,7 +26,7 @@ import { GGovRegistrySDK, GGovRegistryFactory } from "..";
   const xGovRegistryAppId = BigInt(xGovRegistryAppIdArg);
   const operatorAddress = operatorAddressArg === "-" ? null : operatorAddressArg;
 
-  const algorand = AlgorandClient.defaultLocalNet();
+  const algorand = AlgorandClient.fromEnvironment();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
   // Locate the existing GGovRegistry app deployed by this deployer
