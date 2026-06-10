@@ -198,6 +198,53 @@ export class GGovRegistryReaderSDK {
     return committeeMetadata!;
   }
 
+  /**
+   * Batch-fetch metadata for many committees in a single (chunked) simulate group via `logCommitteeMetadata`.
+   * The result is index-aligned with `committeeIds`; non-existent committees (periodEnd === 0) come back as null.
+   */
+  async getCommitteesMetadata(committeeIds: CommitteeId[]): Promise<(CommitteeMetadata | null)[]> {
+    return this._getCommitteesMetadataChunked(committeeIds.map((id) => committeeIdToRaw(id)));
+  }
+
+  @chunked(128)
+  private async _getCommitteesMetadataChunked(committeeIds: Uint8Array[]): Promise<(CommitteeMetadata | null)[]> {
+    if (committeeIds.length === 0) return [];
+    const committeeIdChunks = chunk(committeeIds, 63);
+    let builder: GGovRegistryComposer<any> = this.readClient.newGroup();
+    for (const committeeIdChunk of committeeIdChunks) {
+      builder = builder.logCommitteeMetadata({ args: { committeeIds: committeeIdChunk } });
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
+    const logs = confirmations.flatMap(({ logs }) => logs);
+    return logs.map((log) => {
+      const meta = getABIDecodedValue(new Uint8Array(log!), "CommitteeMetadata", this.readClient.appSpec.structs) as CommitteeMetadata;
+      return meta.periodEnd === 0 ? null : meta;
+    });
+  }
+
+  /**
+   * Batch-read an account's xGov voting power across many committees in a single (chunked) simulate group.
+   * The result is index-aligned with `committeeIds`. There is no batch ABI method, so each committee is one
+   * readonly call grouped into the simulate (chunked to stay under the 16-txn group limit).
+   *
+   * Uses the non-throwing `tryGetXGovVotingPower` (returns 0 for committees the account is not a member of) —
+   * the throwing `getXGovVotingPower` would fail the entire simulate group on the first non-member committee.
+   */
+  async getXGovVotingPowers(committeeIds: CommitteeId[], account: string): Promise<number[]> {
+    return this._getXGovVotingPowersChunked(committeeIds.map((id) => committeeIdToRaw(id)), account);
+  }
+
+  @chunked(16)
+  private async _getXGovVotingPowersChunked(committeeIds: Uint8Array[], account: string): Promise<number[]> {
+    if (committeeIds.length === 0) return [];
+    let builder: GGovRegistryComposer<any> = this.readClient.newGroup();
+    for (const committeeId of committeeIds) {
+      builder = builder.tryGetXGovVotingPower({ args: { committeeId, account } });
+    }
+    const { returns } = await builder.simulate(SIMULATE_PARAMS);
+    return (returns ?? []).map((power: unknown) => Number(power ?? 0));
+  }
+
   async getCommitteeSuperboxMeta(committeeId: CommitteeId): Promise<SuperboxMeta> {
     const { return: superboxMeta } = await this.readClient.send.getCommitteeSuperboxMeta({
       args: { committeeId: committeeIdToRaw(committeeId) },
