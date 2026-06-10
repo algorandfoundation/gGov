@@ -4,7 +4,7 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useDelegatedToMe, useVoteStatuses } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
-import { ellipseAddress } from "@/utils/ellipseAddress";
+import Address from "@/components/Address";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,12 +203,12 @@ export default function VotePeriodDetail() {
               key={addr}
               type="button"
               className={cn(
-                "relative rounded-md border px-2.5 py-1 font-mono transition-colors",
+                "relative rounded-md border px-2.5 py-1 transition-colors",
                 selectedVoter === addr ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20",
               )}
               onClick={() => setSelectedVoter(addr)}
             >
-              {ellipseAddress(addr, 6)}
+              <Address address={addr} width={6} copy={false} tooltip={false} />
               {voteStatuses[addr] === false && <NotVotedBadge />}
             </button>
           ))}
@@ -219,13 +219,23 @@ export default function VotePeriodDetail() {
         <div className="text-sm">
           {canVoteResult.canVote ? (
             <span className="font-bold">
-              {votingForSelf ? "You are eligible to vote" : `${ellipseAddress(selectedVoter!, 6)} is eligible to vote`}
+              {votingForSelf ? (
+                "You are eligible to vote"
+              ) : (
+                <>
+                  <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> is eligible to vote
+                </>
+              )}
             </span>
           ) : (
             <span className="text-muted-foreground">
-              {votingForSelf
-                ? "You cannot vote in this period"
-                : `${ellipseAddress(selectedVoter!, 6)} cannot vote in this period`}
+              {votingForSelf ? (
+                "You cannot vote in this period"
+              ) : (
+                <>
+                  <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> cannot vote in this period
+                </>
+              )}
             </span>
           )}
         </div>
@@ -233,7 +243,7 @@ export default function VotePeriodDetail() {
 
       {isActive && !votingForSelf && voteRecord && !voteRecord.byDelegator && (
         <div className="max-w-lg rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {ellipseAddress(selectedVoter!, 6)} has already voted directly, so you cannot vote on their
+          <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so you cannot vote on their
           behalf. A delegate cannot override a vote the account holder cast themselves.
         </div>
       )}
@@ -242,7 +252,13 @@ export default function VotePeriodDetail() {
         <Card className="max-w-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              {votingForSelf ? "Your Vote Record" : `Vote Record — ${ellipseAddress(selectedVoter!, 6)}`}
+              {votingForSelf ? (
+                "Your Vote Record"
+              ) : (
+                <>
+                  Vote Record — <Address address={selectedVoter!} width={6} copy={false} tooltip={false} />
+                </>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>

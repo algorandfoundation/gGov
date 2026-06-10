@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ellipseAddress } from '@/utils/ellipseAddress'
+import Address from '@/components/Address'
 
 export default function ConnectWallet() {
   const { activeAddress, activeWallet, activeWalletAccounts, wallets } = useWallet()
@@ -29,8 +30,8 @@ export default function ConnectWallet() {
             ))}
           </select>
         ) : (
-          <span className="text-sm text-muted-foreground font-mono truncate">
-            {ellipseAddress(activeAddress)}
+          <span className="text-sm text-muted-foreground truncate">
+            <Address address={activeAddress} tooltip={false} />
           </span>
         )}
         <Button variant="outline" size="sm" className="w-full" onClick={() => activeWallet.disconnect()}>

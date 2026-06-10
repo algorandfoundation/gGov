@@ -5,7 +5,7 @@ import { useCommittees, useCommitteeMembers } from '@/hooks/queries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { ellipseAddress } from '@/utils/ellipseAddress'
+import Address from '@/components/Address'
 
 const PAGE_SIZE = 25
 
@@ -84,12 +84,7 @@ export default function CommitteeDetail() {
                   <TableRow key={addr}>
                     <TableCell className="text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</TableCell>
                     <TableCell>
-                      <Link
-                        to={`/account/${addr}`}
-                        className="font-mono text-xs text-primary hover:underline"
-                      >
-                        {ellipseAddress(addr, 8)}
-                      </Link>
+                      <Address address={addr} to width={8} className="text-xs text-primary hover:underline" />
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{m.votes}</TableCell>
                   </TableRow>

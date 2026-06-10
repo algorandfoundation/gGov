@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { formatTimestamp } from "@/utils/time";
-import { ellipseAddress } from "@/utils/ellipseAddress";
+import Address from "@/components/Address";
 
 export default function Account() {
   const { address } = useParams<{ address: string }>();
@@ -40,7 +40,7 @@ export default function Account() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">
-        Account <span className="font-mono text-lg text-muted-foreground">{ellipseAddress(address, 8)}</span>
+        Account <Address address={address} width={8} long className="text-lg text-muted-foreground" />
       </h1>
 
       <div className={isOwnAccount ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
@@ -56,9 +56,7 @@ export default function Account() {
                 <div className="space-y-3">
                   <p className="text-sm">
                     Delegated to:{" "}
-                    <Link to={`/account/${delegation.delegatee}`} className="font-mono text-primary hover:underline">
-                      {ellipseAddress(delegation.delegatee, 8)}
-                    </Link>
+                    <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
                   </p>
                   <Button variant="destructive" size="sm" onClick={() => undelegateMutation.mutate()} disabled={submitting}>
                     {undelegateMutation.isPending ? "Removing..." : "Remove Delegation"}
@@ -137,13 +135,9 @@ export default function Account() {
           ) : (
             <div className="space-y-2">
               {delegators.map((addr) => (
-                <Link
-                  key={addr}
-                  to={`/account/${addr}`}
-                  className="block font-mono text-sm text-primary hover:underline"
-                >
-                  {ellipseAddress(addr, 8)}
-                </Link>
+                <div key={addr}>
+                  <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
+                </div>
               ))}
               {isOwnAccount && (
                 <p className="text-xs text-muted-foreground pt-1">

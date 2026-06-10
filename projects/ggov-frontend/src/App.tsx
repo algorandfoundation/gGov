@@ -3,6 +3,7 @@ import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnla
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { GGovSDKProvider } from '@/hooks/useGGovSDK'
 import { ErrorDialogProvider } from '@/hooks/useErrorDialog'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from '@/utils/network'
@@ -68,6 +69,7 @@ export default function App() {
       <GGovSDKProvider>
         <QueryClientProvider client={queryClient}>
           <ErrorDialogProvider>
+           <TooltipProvider>
             <BrowserRouter>
               <Routes>
                 <Route element={<Layout />}>
@@ -84,6 +86,7 @@ export default function App() {
                 </Route>
               </Routes>
             </BrowserRouter>
+           </TooltipProvider>
           </ErrorDialogProvider>
           <Toaster position="bottom-right" />
         </QueryClientProvider>

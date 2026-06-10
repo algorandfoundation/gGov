@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import Address from '@/components/Address'
 
 export default function Delegation() {
   const { sdk } = useGGovSDK()
@@ -42,7 +43,7 @@ export default function Delegation() {
           ) : delegation?.exists ? (
             <div className="space-y-3">
               <p className="text-sm">
-                Delegated to: <span className="font-mono">{delegation.delegatee}</span>
+                Delegated to: <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
               </p>
               <Button
                 variant="destructive"
