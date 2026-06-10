@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { formatTimestamp, periodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
@@ -170,7 +171,7 @@ export default function VotePeriodDetail() {
         <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
       </div>
 
-      {periodBody?.body && <p className="text-muted-foreground whitespace-pre-wrap">{periodBody.body}</p>}
+      {periodBody?.body && <MarkdownContent>{periodBody.body}</MarkdownContent>}
 
       <div className="text-sm text-muted-foreground">
         Voting: {formatTimestamp(period.votingStart)} — {formatTimestamp(period.votingEnd)}
@@ -317,7 +318,11 @@ export default function VotePeriodDetail() {
               <Card key={topicIdx}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{tb?.title}</CardTitle>
-                  {tb?.body && <CardDescription className="whitespace-pre-wrap">{tb.body}</CardDescription>}
+                  {tb?.body && (
+                    <CardDescription>
+                      <MarkdownContent>{tb.body}</MarkdownContent>
+                    </CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {isUpcoming ? (

@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { fromDatetimeLocalUTC } from '@/utils/time'
 
 export default function AddPeriod() {
@@ -118,14 +118,11 @@ export default function AddPeriod() {
 
             <div className="space-y-2">
               <Label htmlFor="period-description">Description</Label>
-              <Textarea
+              <MarkdownEditor
                 id="period-description"
-                name="period-description"
                 placeholder="Period description..."
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={4}
-                required
+                onChange={setBody}
               />
             </div>
 

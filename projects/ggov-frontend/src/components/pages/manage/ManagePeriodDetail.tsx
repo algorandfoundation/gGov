@@ -14,7 +14,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
+import { MarkdownContent } from '@/components/ui/markdown-content'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -270,14 +271,11 @@ export default function ManagePeriodDetail() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-period-body">Description</Label>
-                <Textarea
+                <MarkdownEditor
                   id="edit-period-body"
-                  name="edit-period-body"
                   value={editPeriodBody}
-                  onChange={(e) => setEditPeriodBody(e.target.value)}
+                  onChange={setEditPeriodBody}
                   placeholder="Period description..."
-                  rows={4}
-                  required
                 />
               </div>
               <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending}>
@@ -287,7 +285,7 @@ export default function ManagePeriodDetail() {
           ) : periodBody && (
             <div>
               <p className="font-medium">{periodBody.title}</p>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{periodBody.body}</p>
+              <MarkdownContent className="mt-1">{periodBody.body}</MarkdownContent>
             </div>
           )}
         </CardContent>
@@ -314,7 +312,11 @@ export default function ManagePeriodDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-base">{tb?.title}</CardTitle>
-                      {tb?.body && <CardDescription className="whitespace-pre-wrap mt-1">{tb.body}</CardDescription>}
+                      {tb?.body && (
+                        <CardDescription className="mt-1">
+                          <MarkdownContent>{tb.body}</MarkdownContent>
+                        </CardDescription>
+                      )}
                     </div>
                     <div className="flex gap-1">
                       {sdk && (
@@ -502,14 +504,11 @@ export default function ManagePeriodDetail() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-topic-body">Description</Label>
-                <Textarea
+                <MarkdownEditor
                   id="edit-topic-body"
-                  name="edit-topic-body"
                   value={editTopicBody}
-                  onChange={(e) => setEditTopicBody(e.target.value)}
+                  onChange={setEditTopicBody}
                   placeholder="Topic description..."
-                  rows={4}
-                  required
                 />
               </div>
             </div>

@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
 
 export default function AddTopic() {
   const { periodId: pidParam } = useParams<{ periodId: string }>()
@@ -70,14 +70,11 @@ export default function AddTopic() {
 
             <div className="space-y-2">
               <Label htmlFor="topic-description">Description</Label>
-              <Textarea
+              <MarkdownEditor
                 id="topic-description"
-                name="topic-description"
                 placeholder="Topic description..."
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={3}
-                required
+                onChange={setBody}
               />
             </div>
 
