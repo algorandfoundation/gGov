@@ -6,4 +6,4 @@ type = 'workspace'
 projects_root_path = 'projects'
 
 [project.run]
-build = ['contracts', 'oracle-sdk', 'delegator-sdk', 'ggov-sdk']
+build = ['contracts', 'delegator-sdk', 'ggov-sdk']

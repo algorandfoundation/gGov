@@ -1,19 +1,18 @@
 # Project Summary
 
-pnpm monorepo for an Algorand general governance (ggov) and gGov/xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), two SDKs, two React frontends, and shared resources.
+pnpm monorepo for an Algorand general governance (ggov) and gGov/xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), two SDKs, a React frontend, and shared resources.
 
 ## Workspace Layout
 
 ```
 xgov-delegator/
-  .algokit.toml              # workspace config; build order: contracts -> oracle-sdk -> delegator-sdk -> ggov-sdk
+  .algokit.toml              # workspace config; build order: contracts -> delegator-sdk -> ggov-sdk
   pnpm-workspace.yaml        # packages: projects/*
   projects/
     contracts/               # PuyaTs smart contracts
     ggov-sdk/                # Unified GGov SDK: registry (src/registry/) + per-period operations
     delegator-sdk/           # SDK for delegator contract
-    frontend/                # Legacy React + Vite frontend (oracle viewer)
-    ggov-frontend/           # Current React + Vite + Tailwind frontend for gGov
+    ggov-frontend/           # React + Vite + Tailwind frontend for gGov
     common/                  # Shared committee JSON files + build scripts
 ```
 
@@ -94,6 +93,8 @@ src/
     increaseBudget.ts, txnExecutor.ts   # shared by registry/ and top level
 examples/
   add-period.ts                      # End-to-end: deploy registry → setOperator → uploadCommittee → addPeriod → addTopic
+  create-registry.ts                 # Minimal bootstrap: GGovSDK.createRegistry() (deploy + seed MBR + upload period approval + optional operator/xgov config)
+  update-period-app.ts               # Admin-only: replace a deployed period's on-chain app code with the GGovPeriod build bundled in this SDK version
   get.ts, upload.ts, set-config.ts   # Registry round-trip committee writes/reads against a localnet registry
 ```
 

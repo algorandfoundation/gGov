@@ -48,6 +48,8 @@ Max accounts: 2^32. Accounts are assigned uint32 identifiers in order to compres
 
 Max votes per account: 2^32. Account voting power is stored as a uint32.
 
+Max delegations per delegatee: ~1024. At the moment we store reverse delegation lookups for accounts in a single box.
+
 ## State
 
 ### Global
@@ -126,6 +128,11 @@ GGovPeriod approval-program bytecode, chunk-uploaded by admin and read by `creat
 
 ## Methods
 
+### Lifecycle Methods
+
+- `updateApplication()` - App updatable by the admin (bare method; `ensureCallerIsAdmin`)
+- `deleteApplication()` - App deletable by the admin (bare method; `ensureCallerIsAdmin`)
+
 ### Admin Methods
 
 - `registerCommittee(committeeId, periodStart, periodEnd, totalMembers, totalVotes, xGovRegistryId)` - Register a committee and create its xGov superbox
@@ -143,7 +150,7 @@ increment lastCommitteeId
 
 - `unregisterCommittee(committeeId)` - Delete committee. Must have no ingested votes
 - `ingestXGovs(committeeId, xGovs: [account, votes][])` - Ingest xGovs into a committee superbox (ascending account-ID order, dedup-enforced; verifies total votes on completion)
-- `uningestXGovs(committeeId, accounts[])` - Remove the last N xGovs from a committee superbox (strictly descending offset order)
+- `uningestXGovs(committeeId, xGovs: Account[])` - Remove the last N xGovs from a committee superbox (strictly descending offset order)
 - `setXGovRegistryApp(appId: Application)` - Set the xGov Registry Application ID
 - `setAdmin(newAdmin: Account)` - Transfer admin (zero address rejected)
 - `setOperator(account: Account)` - Set the operator account
@@ -174,7 +181,6 @@ store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false
 ### Read Methods
 
 - `verifyAdmin(account)` -> boolean - Whether account is the admin (called by period contracts via inner txn)
-- `getOperator()` -> Account
 - `verifyOperator(account)` -> boolean - Whether account is the operator (called by period contracts via inner txn)
 - `getDelegation(account)` -> [Account, boolean] - Delegatee and whether a delegation exists
 - `getDelegate(account)` -> Account - Delegatee address, or zero address if none (called by period contracts)
@@ -323,18 +329,18 @@ Smart contract to delegate xGov voting power for pooled and liquid staking syste
 
 ### Global
 
-- `last_account_id`: uint32 (0) - incrementing account ID counter
+- `lastAccountId`: uint64 (0) - incrementing account ID counter (inherited from `AccountIdContract`)
 - `committeeOracleApp`: Application - Committee Oracle Application ID
 - `voteSubmitThreshold`: uint64 (10800) - time in seconds before external vote end to submit votes (default: 3 hours)
 - `absenteeMode`: string ('strict') - absentee mode: 'strict' or 'scaled'
 
-### Account boxes (keyPrefix: 'A')
+### Account boxes (keyPrefix: 'a')
 
 key: address
 
 value: uint32 incrementing ID
 
-Assigns uint32 ids to accounts to save 28 bytes per reference
+Assigns uint32 ids to accounts to save 28 bytes per reference (from `AccountIdContract`)
 
 ### Algohour Period Totals (keyPrefix: 'H')
 
@@ -374,30 +380,33 @@ key: proposal_id (Application)
 
 value: DelegatorProposal struct
 
-  - `status`: string - 'WAIT' | 'VOTD' | 'CANC'
+  - `status`: string - 'WAIT' | 'VOTE' | 'VOTD' | 'CANC'
   - `committeeId`: byte[32]
+  - `extVoteStartTime`: uint32
   - `extVoteEndTime`: uint32
   - `extTotalVotingPower`: uint32 (not dupe - committee member may have been removed for absenteeism)
   - `extAccountsPendingVotes`: [accountId uint32, votes uint32][] - added when synced, removed when vote is cast
   - `extAccountsVoted`: [accountId uint32, votes uint32][] - accounts that have voted
-  - `intVoteEndTime`: uint64 - set earlier than external to allow for vote submission before xGov proposal voting ends
+  - `intVoteEndTime`: uint32 - set earlier than external to allow for vote submission before xGov proposal voting ends
   - `intTotalAlgohours`: uint64 - sum of algohour period totals for committee periods
   - `intVotedAlgohours`: uint64
   - `intVotesYesAlgohours`: uint64
   - `intVotesNoAlgohours`: uint64
+  - `intVotesAbstainAlgohours`: uint64
   - `intVotesBoycottAlgohours`: uint64
 
-### Vote Receipts (not yet implemented)
+### Vote Receipts (keyPrefix: 'V')
 
-key: [account id][proposal_id]
+Per-subdelegator vote receipt, ensuring each subdelegator votes once (changing a vote subtracts the old allocation and adds the new).
 
-value: empty # if no changing vote allowed
+key: [proposal_id (Application), account_id (uint32)]
 
-value: [votes_yes,votes_no] # if changing vote is allowed
+value: DelegatorVote struct
 
-receipt to ensure each subdelegator votes once
-
-changing votes could be allowed, subtract previous votes_yes / votes_no and add new ones
+  - `yesVotes`: uint64
+  - `noVotes`: uint64
+  - `abstainVotes`: uint64
+  - `boycottVotes`: uint64
 
 ## Methods
 
@@ -412,13 +421,20 @@ changing votes could be allowed, subtract previous votes_yes / votes_no and add 
 
 ### Sync Methods
 
-- `syncCommitteeMetadata(committeeId: byte[32], delegatedAccounts: [account, offsetHint][])` - Sync committee metadata and delegated accounts from CommitteeOracle
-- `syncProposalMetadata(proposalId: Application)` - Sync proposal metadata from xGov registry
+- `syncCommitteeMetadata(committeeId: byte[32], delegatedAccounts: Account[])` - Sync committee metadata and delegated accounts from CommitteeOracle
+- `syncProposalMetadata(proposalId: Application)` -> DelegatorProposal - Sync proposal metadata from xGov registry
+
+### Voting Methods
+
+- `voteInternal(proposalId: Application, voterAccount: Account, vote: DelegatorVote)` - Cast/recast a subdelegator's internal (algohour-weighted) vote on a proposal
+- `voteExternal(proposalId: Application, extAccounts: Account[])` - Submit the aggregated external xGov vote to the xGov registry for the given delegated accounts
 
 ### Read Methods
 
 - `getAlgoHourPeriodTotals(periodStart: uint64)` - Get total algohours and finality for period
 - `getAccountAlgoHours(periodStart: uint64, account: Account)` - Get account algohours for period
+- `logCommitteeMetadata(committeeIds: byte[32][])` - Log committee metadata for multiple committees
+- `logProposalMetadata(proposalIds: Application[])` - Log proposal metadata for multiple proposals
 
 ---
 
