@@ -112,6 +112,9 @@ importers:
       '@blockshake/defly-connect':
         specifier: ^1.2.1
         version: 1.2.1(algosdk@3.5.2)
+      '@d13co/open-in':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@perawallet/connect':
         specifier: ^1.4.1
         version: 1.4.2(algosdk@3.5.2)
@@ -432,6 +435,9 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
+
+  '@d13co/open-in@0.1.2':
+    resolution: {integrity: sha512-s2/p03vJLJnN46X6mAo1P2kERi0UGAubLwk8S5AI6vsEmxrxmfIvic/B01FM0+ygAQU23cIMRbY+qwbPsuyYag==}
 
   '@d13co/superbox@1.1.0':
     resolution: {integrity: sha512-EBZTrvSUYoXM2DxFzRETsmXaIrQo3DybMXT4drKUejM8z+AsPdeMcMQerBVSHqGHw4ff8/YNEd719Gp3UVIQEg==}
@@ -4864,6 +4870,8 @@ snapshots:
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
+
+  '@d13co/open-in@0.1.2': {}
 
   '@d13co/superbox@1.1.0(tslib@2.8.1)':
     dependencies:

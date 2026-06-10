@@ -74,6 +74,9 @@ export function usePeriodBody(periodId: number) {
   return useQuery({
     queryKey: queryKeys.periodBody(periodId),
     queryFn: () => readerSDK.getPeriodBody(BigInt(periodId)),
+    // Body is effectively immutable once uploaded; mutations that change it
+    // (useUploadPeriodBodyMutation) invalidate this key, overriding staleTime.
+    staleTime: 3_600_000,
   })
 }
 
@@ -89,6 +92,9 @@ export function useTopicBodies(periodId: number, topicCount: number) {
       )
     },
     enabled: topicCount > 0,
+    // Topic bodies are immutable once uploaded; mutations that change them
+    // (add/upload/remove topic) invalidate this key, overriding staleTime.
+    staleTime: 3_600_000,
   })
 }
 
