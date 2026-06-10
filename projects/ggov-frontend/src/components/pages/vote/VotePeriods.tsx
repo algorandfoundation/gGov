@@ -6,8 +6,8 @@ import { periodStatus } from '@/utils/time'
 export default function VotePeriods() {
   const { data: periods = [], isLoading } = usePeriods()
 
-  // Voters only see periods the operator has marked ready.
-  const readyPeriods = periods.filter((p) => p.ready)
+  // Voters only see periods the operator has marked ready, latest first.
+  const readyPeriods = periods.filter((p) => p.ready).sort((a, b) => b.id - a.id)
   const active = readyPeriods.filter((p) => periodStatus(p.period.votingStart, p.period.votingEnd) === 'active')
   const upcoming = readyPeriods.filter((p) => periodStatus(p.period.votingStart, p.period.votingEnd) === 'upcoming')
   const past = readyPeriods.filter((p) => periodStatus(p.period.votingStart, p.period.votingEnd) === 'ended')
