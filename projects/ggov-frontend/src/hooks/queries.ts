@@ -211,6 +211,7 @@ export function useCommittees() {
           })
         }
       }
+      options.sort((a, b) => b.periodStart - a.periodStart)
       return options
     },
   })
@@ -277,6 +278,7 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
           votingPower: power ?? 0,
         })
       }
+      results.sort((a, b) => b.periodStart - a.periodStart)
       return results
     },
     enabled: !!account,
