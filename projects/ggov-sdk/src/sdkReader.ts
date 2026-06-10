@@ -1,6 +1,6 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
-import { encodeAddress, makeEmptyTransactionSigner } from "algosdk";
+import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
 import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "./registry";
 import { GGovRegistryClient, GGovPeriodSummary } from "./generated/GGovRegistryClient";
@@ -103,23 +103,66 @@ export class GGovReaderSDK {
 
   // ── Per-period reads ─────────────────────────────────────────────
 
+  // TODO These are not exported in ARC56 because they are not used in an ABI return type
+  // if we want to keep them in sync automatically we can create a separate dummy contract
+  // with dummy methods with these return types for client-generation, and import the dummy client app spec.
+
+  // ARC-4 layouts logged by GGovPeriod.logPeriod(): the header line then one topic per line.
+  private static readonly PERIOD_META_TYPE = ABIType.from("(byte[32],uint32,uint32,uint32)");
+  private static readonly PERIOD_TOPIC_TYPE = ABIType.from("(string[],uint32[])");
+
+  // ARC-4 layouts logged by GGovPeriod.logVotingRecord(): the header line then one topic's votes per line.
+  private static readonly VOTE_RECORD_META_TYPE = ABIType.from("(bool,uint32)");
+  private static readonly VOTE_RECORD_TOPIC_TYPE = ABIType.from("(uint32[])");
+
+  /**
+   * Read a full period. Uses the contract's `logPeriod` (one log line for the header, one
+   * per topic) rather than `getPeriod`, whose single ARC-4 return value overflows the
+   * 1024-byte per-call log limit past ~21 topics. Simulated with allowMoreLogging so the
+   * logs are uncapped; the reconstructed shape is identical to the old getPeriod return.
+   */
   @wrapErrors()
   async getPeriod(periodId: bigint | number): Promise<GGovPeriod> {
     try {
       const client = await this.getPeriodReadClient(periodId);
-      const { return: period } = await client.send.getPeriod({ args: {} });
-      return period ?? EMPTY_PERIOD;
+      const { confirmations } = await client.newGroup().logPeriod({ args: {} }).simulate(SIMULATE_PARAMS);
+      const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[]);
+      if (logs.length === 0) return EMPTY_PERIOD;
+
+      const [committeeId, votingStart, votingEnd] = GGovReaderSDK.PERIOD_META_TYPE.decode(
+        new Uint8Array(logs[0]),
+      ) as [Uint8Array, bigint, bigint, bigint];
+      const topics = logs.slice(1).map((log) => {
+        const [options, votes] = GGovReaderSDK.PERIOD_TOPIC_TYPE.decode(new Uint8Array(log)) as [string[], bigint[]];
+        return [options, votes.map((v) => Number(v))] as [string[], number[]];
+      });
+
+      return { committeeId, votingStart: Number(votingStart), votingEnd: Number(votingEnd), topics };
     } catch {
       return EMPTY_PERIOD;
     }
   }
 
+  /**
+   * Read a vote record. Uses the contract's `logVotingRecord` (one log line for the header, one
+   * per topic) rather than `getVotingRecord`, whose single ARC-4 return value overflows the
+   * 1024-byte per-call log limit once topicVotes grows large (same failure mode as getPeriod).
+   * No logs means no record exists; an empty topicVotes is likewise treated as no record.
+   */
   @wrapErrors()
   async getVotingRecord(periodId: bigint | number, account: string): Promise<GGovVoteRecord | null> {
     const client = await this.getPeriodReadClient(periodId);
-    const { return: record } = await client.send.getVotingRecord({ args: { account } });
-    if (!record || record.topicVotes.length === 0) return null;
-    return record;
+    const { confirmations } = await client.newGroup().logVotingRecord({ args: { account } }).simulate(SIMULATE_PARAMS);
+    const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[]);
+    if (logs.length === 0) return null;
+
+    const [byDelegator] = GGovReaderSDK.VOTE_RECORD_META_TYPE.decode(new Uint8Array(logs[0])) as [boolean, bigint];
+    const topicVotes = logs.slice(1).map((log) => {
+      const [votes] = GGovReaderSDK.VOTE_RECORD_TOPIC_TYPE.decode(new Uint8Array(log)) as [bigint[]];
+      return votes.map((v) => Number(v));
+    });
+    if (topicVotes.length === 0) return null;
+    return { byDelegator, topicVotes };
   }
 
   @wrapErrors()

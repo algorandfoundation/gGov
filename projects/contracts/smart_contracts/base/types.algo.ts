@@ -184,10 +184,34 @@ export type GGovPeriod = {
   topics: GGovTopic[]
 }
 
+/**
+ * Period header, logged as the first line by GGovPeriod.logPeriod() — the non-topic
+ * fields of GGovPeriod plus the topic count. Each subsequent log line is one GGovTopic.
+ * Lets readers reconstruct the full period without GGovPeriod's single-log size cap.
+ */
+export type GGovPeriodMeta = {
+  committeeId: CommitteeId
+  votingStart: Uint32
+  votingEnd: Uint32
+  numTopics: Uint32
+}
+
 /** Vote record per account per period */
 export type GGovVoteRecord = {
   byDelegator: boolean
   topicVotes: Uint32[][]
+}
+
+/**
+ * Vote-record header, logged as the first line by GGovPeriod.logVotingRecord() — the
+ * non-topic fields of GGovVoteRecord plus the topic count. Each subsequent log line is one
+ * topic's Uint32[] votes (wrapped as GGovTopicVotes). Mirrors GGovPeriodMeta/logPeriod: lets
+ * readers reconstruct the full record without GGovVoteRecord's single-log size cap, which
+ * getVotingRecord() overflows once topicVotes grows large.
+ */
+export type GGovVoteRecordMeta = {
+  byDelegator: boolean
+  numTopics: Uint32
 }
 
 export function getEmptyGGovPeriod(): GGovPeriod {

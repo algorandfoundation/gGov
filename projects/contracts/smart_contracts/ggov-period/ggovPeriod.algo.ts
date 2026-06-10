@@ -40,10 +40,12 @@ import {
   getEmptyGGovPeriod,
   getEmptyGGovVoteRecord,
   GGovPeriod,
+  GGovPeriodMeta,
   GGovTopic,
   GGovTopicOptions,
   GGovTopicVotes,
   GGovVoteRecord,
+  GGovVoteRecordMeta,
 } from '../base/types.algo'
 import { ensure, u32 } from '../base/utils.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
@@ -393,11 +395,60 @@ export class GGovPeriodContract extends BaseContract {
     }
   }
 
+  /**
+   * Log the full period across many log lines instead of one ARC-4 return value.
+   * getPeriod() returns the whole period as a single logged value, which overflows the
+   * 1024-byte per-call ABI return limit once the topics get large (~22 Yes/No/Abstain topics).
+   * logPeriod logs the header (GGovPeriodMeta) first, then one GGovTopic per line, so a
+   * reader simulating with allowMoreLogging can reconstruct an arbitrarily large period.
+   */
+  @abimethod({ readonly: true })
+  public logPeriod(): void {
+    if (this.registryApp.value === 0) return
+    const optionsArr = clone(this.topicOptionsArr.value)
+    const votesArr = clone(this.topicVotesArr.value)
+    const meta: GGovPeriodMeta = {
+      committeeId: this.committeeId.value,
+      votingStart: u32(this.votingStart.value),
+      votingEnd: u32(this.votingEnd.value),
+      numTopics: u32(optionsArr.length),
+    }
+    log(encodeArc4(meta))
+    for (let i: uint64 = 0; i < optionsArr.length; i++) {
+      const topic: GGovTopic = { options: clone(optionsArr[i].options), votes: clone(votesArr[i].votes) }
+      log(encodeArc4(topic))
+    }
+  }
+
   @abimethod({ readonly: true })
   public getVotingRecord(account: Account): GGovVoteRecord {
     const box = this.voteRecords(account)
     if (box.exists) return box.value
     return getEmptyGGovVoteRecord()
+  }
+
+  /**
+   * Log a full vote record across many log lines instead of one ARC-4 return value.
+   * getVotingRecord() returns the whole record as a single logged value, which overflows the
+   * 1024-byte per-call ABI return limit once topicVotes gets large (same failure mode as
+   * getPeriod/logPeriod). logVotingRecord logs the header (GGovVoteRecordMeta) first, then one
+   * topic's votes (GGovTopicVotes) per line, so a reader simulating with allowMoreLogging can
+   * reconstruct an arbitrarily large record. No logs at all means no record exists.
+   */
+  @abimethod({ readonly: true })
+  public logVotingRecord(account: Account): void {
+    const box = this.voteRecords(account)
+    if (!box.exists) return
+    const record = clone(box.value)
+    const meta: GGovVoteRecordMeta = {
+      byDelegator: record.byDelegator,
+      numTopics: u32(record.topicVotes.length),
+    }
+    log(encodeArc4(meta))
+    for (let i: uint64 = 0; i < record.topicVotes.length; i++) {
+      const topicVotes: GGovTopicVotes = { votes: clone(record.topicVotes[i]) }
+      log(encodeArc4(topicVotes))
+    }
   }
 
   // ── Lifecycle: update + delete (admin only, via registry C2C) ────
