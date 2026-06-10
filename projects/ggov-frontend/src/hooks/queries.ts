@@ -13,6 +13,7 @@ export const queryKeys = {
   globalState: ['globalState'] as const,
   periods: ['periods'] as const,
   period: (id: number) => ['period', id] as const,
+  periodAppId: (id: number) => ['periodAppId', id] as const,
   periodBody: (id: number) => ['periodBody', id] as const,
   topicBodies: (id: number) => ['topicBodies', id] as const,
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
@@ -55,6 +56,16 @@ export function usePeriod(periodId: number) {
   return useQuery({
     queryKey: queryKeys.period(periodId),
     queryFn: () => readerSDK.getPeriod(BigInt(periodId)),
+  })
+}
+
+/** On-chain app ID of the per-period GGovPeriod contract (for explorer links). */
+export function usePeriodAppId(periodId: number) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.periodAppId(periodId),
+    queryFn: () => readerSDK.getPeriodAppId(BigInt(periodId)),
+    staleTime: Infinity,
   })
 }
 

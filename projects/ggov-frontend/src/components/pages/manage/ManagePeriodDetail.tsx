@@ -11,6 +11,7 @@ import {
   useSetReadyMutation,
 } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import PeriodAppExplorerLink from '@/components/PeriodAppExplorerLink'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -247,6 +248,8 @@ export default function ManagePeriodDetail() {
               {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
             </div>
           )}
+
+          <PeriodAppExplorerLink periodId={periodId} />
         </CardContent>
       </Card>
 

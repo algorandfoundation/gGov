@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
+import PeriodAppExplorerLink from "@/components/PeriodAppExplorerLink";
 import { formatTimestamp, periodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
@@ -412,6 +413,10 @@ export default function VotePeriodDetail() {
           {voteMutation.isPending ? "Submitting..." : "Submit Vote"}
         </Button>
       )}
+
+      <div className="pt-4">
+        <PeriodAppExplorerLink periodId={periodId} />
+      </div>
     </div>
   );
 }

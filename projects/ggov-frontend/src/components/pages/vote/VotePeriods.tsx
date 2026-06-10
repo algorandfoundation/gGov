@@ -22,7 +22,7 @@ export default function VotePeriods() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Governance Periods</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
         </div>
       </div>
@@ -38,7 +38,7 @@ export default function VotePeriods() {
         sections.map(({ label, items }) => (
           <section key={label} className="space-y-3">
             <h2 className="text-lg font-semibold">{label}</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1">
               {items.map((p) => (
                 <PeriodCard key={p.id} periodId={p.id} period={p.period} />
               ))}
