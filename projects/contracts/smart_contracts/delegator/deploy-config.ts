@@ -3,6 +3,10 @@ import { DelegatorFactory } from '../artifacts/delegator/DelegatorClient'
 
 // Below is a showcase of various deployment options you can use in TypeScript Client
 export async function deploy() {
+  console.log("Not deploying delegator, disabled in deploy-config.ts")
+  return
+  // DISABLED for now
+
   console.log('=== Deploying Delegator ===')
 
   const algorand = AlgorandClient.fromEnvironment()
