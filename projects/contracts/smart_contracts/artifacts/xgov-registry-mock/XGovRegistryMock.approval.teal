@@ -7,7 +7,7 @@ main:
     bytecblock base64(C4EBQw==) "x" 0x151f7c75
     txn ApplicationID
     bnz main_after_if_else@2
-    // smart_contracts/base/account-id.algo.ts:8
+    // smart_contracts/base/account-id.algo.ts:11
     // lastAccountId = GlobalState<uint64>({ initialValue: 0 })
     pushbytes "lastAccountId"
     intc_0 // 0

@@ -290,11 +290,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.operator.value = account
   }
 
-  @abimethod({ readonly: true })
-  public getOperator(): Account {
-    return this.operator.value
-  }
-
   /** Whether $account is the registered operator. Called by period contracts via inner txn. */
   @abimethod({ readonly: true })
   public verifyOperator(account: Account): boolean {

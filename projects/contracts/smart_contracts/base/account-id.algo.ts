@@ -4,6 +4,9 @@ import { BaseContract } from './base.algo'
 import { errAccountExists, errAccountNotExists } from './errors.algo'
 import { ensure, u32 } from './utils.algo'
 
+// Not used in gGov - we need more complex/specific value schema
+// Instead we use ggovRegistryAccount that mirrors this
+
 export abstract class AccountIdContract extends BaseContract {
   lastAccountId = GlobalState<uint64>({ initialValue: 0 })
   accountIds = BoxMap<Account, Uint32>({ keyPrefix: 'a' })
