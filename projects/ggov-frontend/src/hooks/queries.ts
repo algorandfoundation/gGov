@@ -270,18 +270,22 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
     queryKey: queryKeys.committeeVotingPowers(account ?? ''),
     queryFn: async (): Promise<CommitteeVotingPower[]> => {
       const ids = await readerSDK.getCommitteeIds()
+      // Two batched simulate groups instead of 2 serial on-chain reads per committee.
+      const [metas, powers] = await Promise.all([
+        readerSDK.registry.getCommitteesMetadata(ids),
+        readerSDK.registry.getXGovVotingPowers(ids, account!),
+      ])
       const results: CommitteeVotingPower[] = []
-      for (const id of ids) {
-        const meta = await readerSDK.registry.getCommitteeMetadata(id)
+      for (let i = 0; i < ids.length; i++) {
+        const meta = metas[i]
         if (!meta) continue
-        const { return: power } = await readerSDK.registryReadClient.send.getXGovVotingPower({
-          args: { committeeId: id, account: account! },
-        })
+        const votingPower = powers[i] ?? 0
+        if (votingPower === 0) continue // omit committees where the account has no voting power
         results.push({
-          idBase64Url: toBase64Url(id),
+          idBase64Url: toBase64Url(ids[i]),
           periodStart: meta.periodStart,
           periodEnd: meta.periodEnd,
-          votingPower: power ?? 0,
+          votingPower,
         })
       }
       results.sort((a, b) => b.periodStart - a.periodStart)
