@@ -1,5 +1,4 @@
 import { getOpenInEntries, type Network } from '@d13co/open-in'
-import { getApplicationAddress } from 'algosdk'
 import { ExternalLink } from 'lucide-react'
 import { usePeriodAppId } from '@/hooks/queries'
 import { getAlgodConfigFromViteEnvironment } from '@/utils/network'
@@ -7,8 +6,8 @@ import { cn } from '@/lib/utils'
 
 /**
  * Link to the period's on-chain GGovPeriod app on a block explorer. Uses @d13co/open-in
- * to pick an `account`-page explorer for the configured network (first entry returned —
- * e.g. Lora on localnet, Pera on testnet, Allo on mainnet) and links to the app's address.
+ * to pick an `application`-page explorer for the configured network (first entry returned —
+ * e.g. Lora on localnet, Pera on testnet, Allo on mainnet) and links to the app itself.
  * Renders nothing until the app ID resolves or if no explorer supports this network.
  */
 export default function PeriodAppExplorerLink({ periodId, className }: { periodId: number; className?: string }) {
@@ -16,9 +15,8 @@ export default function PeriodAppExplorerLink({ periodId, className }: { periodI
   if (appId === undefined) return null
 
   const network = getAlgodConfigFromViteEnvironment().network as Network
-  const address = getApplicationAddress(appId).toString()
-  const [explorer] = getOpenInEntries(network, 'account')
-  const url = explorer?.getUrl(network, 'account', address)
+  const [explorer] = getOpenInEntries(network, 'application')
+  const url = explorer?.getUrl(network, 'application', appId.toString())
   if (!explorer || !url) return null
 
   return (
