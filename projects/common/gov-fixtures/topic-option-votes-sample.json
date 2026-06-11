@@ -1,0 +1,791 @@
+{
+    "count": 917,
+    "next": "https://governance.algorand.foundation/api/topic-options/3672145628301864506/votes/?limit=20&offset=20",
+    "previous": null,
+    "results": [
+        {
+            "id": "3674009751607966661",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672753126700762478",
+                    "account": {
+                        "id": "3440089493088116479",
+                        "address": "72LZKN7AOGKGOLIKPPF5RDAASVN5UPV4BIDLDFAOZCWW2N24K2U4NDSJNY"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "134623696526",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 17:39:23.717808+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674009751370172821",
+                    "transaction_id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
+                    "rounded_at": "2025-07-07 16:06:06+00",
+                    "processed_at": "2025-07-07 16:06:09.055054+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:06:09.185197+00",
+            "allocated_algo_amount": "134623696526"
+        },
+        {
+            "id": "3674009863198826893",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672756280721718158",
+                    "account": {
+                        "id": "3476498501815819844",
+                        "address": "FREDESTDMDNTXKITMO2TEL4ADKHJ7KOQ4HHCX7N65NGTBNLUCWI7W7AMHY"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "500000000",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 18:04:27.672507+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674009862844272480",
+                    "transaction_id": "E67XU56JPX4VVIJLSTWL7A2QELRFUVSV2FMHCYT2RS2QTUCJII2A",
+                    "rounded_at": "2025-07-07 16:06:58+00",
+                    "processed_at": "2025-07-07 16:07:02.209157+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:07:02.396131+00",
+            "allocated_algo_amount": "500000000"
+        },
+        {
+            "id": "3674010160093201287",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3674006985019955163",
+                    "account": {
+                        "id": "3490842471025996070",
+                        "address": "X5KD3VTDUN3H2FFYJX2NDIGQ2V2SS44XUSYGJWHI4KH6ZOXF44SE7KEXVU"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "146931634",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 15:44:09.956301+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674010159918579687",
+                    "transaction_id": "Z53F6RYPTJC55EVRYIVU4JXDGAJEJ5XYB7VHVTR72PPCZPUKE4FQ",
+                    "rounded_at": "2025-07-07 16:09:20+00",
+                    "processed_at": "2025-07-07 16:09:23.865649+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:09:23.960142+00",
+            "allocated_algo_amount": "146931634"
+        },
+        {
+            "id": "3674010579322190547",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3673974048406575502",
+                    "account": {
+                        "id": "3527562470100913926",
+                        "address": "ALGONAUTSPIUHDCX3SLFXOFDUKOE4VY36XV4JX2JHQTWJNKVBKPEBQACRY"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "1000000",
+                    "committed_assets_amount_in_algo": "1349648999",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 11:22:24.555144+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "1349648999",
+                            "committed_amount_in_algo": "1349648999",
+                            "accepted_asset": {
+                                "name": "aAlgo",
+                                "organization": "Aramid Algo",
+                                "logo": "",
+                                "asset_id": 2320804780,
+                                "algo_ratio": 1
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674010579184656008",
+                    "transaction_id": "5UV6THSWUYHZAJWEQH6CY4IBHBRDFOS57AMDMOXOQ7MJEGB2JFKQ",
+                    "rounded_at": "2025-07-07 16:12:40+00",
+                    "processed_at": "2025-07-07 16:12:43.787163+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:12:43.861566+00",
+            "allocated_algo_amount": "1350648999"
+        },
+        {
+            "id": "3674010615400707078",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3673689283594453963",
+                    "account": {
+                        "id": "3606657777405025678",
+                        "address": "L3F5BRTVMKJEEDQBAZTWTC2AZVLQFK22QCYI7TI5TSB3Q427XZNL4QSCHU"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "45500000000",
+                    "committed_assets_amount_in_algo": "28070400000",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-05 21:39:18.110961+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "27200000000",
+                            "committed_amount_in_algo": "28070400000",
+                            "accepted_asset": {
+                                "name": "tAlgo",
+                                "organization": "Tinyman tAlgo",
+                                "logo": "accepted_assets/2025/06/27/e908634050cf4176a531a6319ef3e70a",
+                                "asset_id": 2537013734,
+                                "algo_ratio": 1.032
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674010615266153606",
+                    "transaction_id": "IEULHCVE4IOZNGDLM5PXKY7NMQQ2HACA24FNOQS3ZZZVGY44P76Q",
+                    "rounded_at": "2025-07-07 16:12:57+00",
+                    "processed_at": "2025-07-07 16:13:00.991461+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:13:01.062642+00",
+            "allocated_algo_amount": "73570400000"
+        },
+        {
+            "id": "3674010833778346175",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3674008188971383689",
+                    "account": {
+                        "id": "3424825596738451152",
+                        "address": "E35JOG2PKKPNVVC66ZUKUO2WG5ULJ2AENFFDUGDBEVNGHI6FBEVF6OPKAY"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "50000000000",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 15:53:44.045084+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674010833558118910",
+                    "transaction_id": "4RMDXZ4URQ4WLXCAYI7GW6U6NFQ4ZMVG6TCT2V7KRE6QF4GXWBCQ",
+                    "rounded_at": "2025-07-07 16:14:41+00",
+                    "processed_at": "2025-07-07 16:14:45.081319+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:14:45.199109+00",
+            "allocated_algo_amount": "50000000000"
+        },
+        {
+            "id": "3674011349669451139",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672859449473287967",
+                    "account": {
+                        "id": "3527207433935484185",
+                        "address": "X7FMMXIXI6JT3JKZ4HMGBDB4YBOTOP2VJZE3Y5JQC4GOARZBXBBTSS55SM"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "522400000000",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-01 07:44:22.366481+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674011349530991127",
+                    "transaction_id": "TPYQAQUFEJSDPSNQDWVJ5ZSMZM4PZ6AFI4GPRCHHUQR3P4VOOYYQ",
+                    "rounded_at": "2025-07-07 16:18:47+00",
+                    "processed_at": "2025-07-07 16:18:51.117094+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:18:51.190289+00",
+            "allocated_algo_amount": "522400000000"
+        },
+        {
+            "id": "3674011490746991837",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3674007492000423684",
+                    "account": {
+                        "id": "3492626461019983569",
+                        "address": "N4KJNUHNFHNJ2EUKYGZS5KFEZ3BPVCXXXI36KSDBJ6BOEMSXITYWC37HBA"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "0",
+                    "committed_assets_amount_in_algo": "114659413097",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 15:48:11.702573+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "99186343510",
+                            "committed_amount_in_algo": "114659413097",
+                            "accepted_asset": {
+                                "name": "xAlgo",
+                                "organization": "FolksFinance xAlgo",
+                                "logo": "accepted_assets/2025/06/27/f20b06f195d546c1891366bb47655670",
+                                "asset_id": 1134696561,
+                                "algo_ratio": 1.156
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674011490614485355",
+                    "transaction_id": "HHL7TUYJFFBHPTCK2QBBWFFZUQHZXJ4IRBCSH2DDX57XXLOS3F7Q",
+                    "rounded_at": "2025-07-07 16:19:55+00",
+                    "processed_at": "2025-07-07 16:19:58.390325+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:19:58.460724+00",
+            "allocated_algo_amount": "114659413097"
+        },
+        {
+            "id": "3674011568470879351",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672751708743868825",
+                    "account": {
+                        "id": "3625076233297143119",
+                        "address": "NXZ5MZ75MPIVJQ5VBXQLGKGZFNVWAPZNH66VHSI5H54S4Q7M7M6HHMC5LE"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "1000001000000",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 17:28:07.583907+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674011568161515806",
+                    "transaction_id": "SRGL53CSMH3COY6JQQ2OCE66LXIX24X54N4EF6DBJ6CMMQLWLP6A",
+                    "rounded_at": "2025-07-07 16:20:31+00",
+                    "processed_at": "2025-07-07 16:20:35.367499+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:20:35.526133+00",
+            "allocated_algo_amount": "1000001000000"
+        },
+        {
+            "id": "3674011867212110945",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672750448614592976",
+                    "account": {
+                        "id": "3591518778589159515",
+                        "address": "DBRTCJNLK7QEXEKZVG75IEQHI3JCWSLSVG5DZXCKWYRODRJKGNC7ZFA3LE"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "3999551193",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 17:18:06.706769+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674011867034006060",
+                    "transaction_id": "WA3PSN35XWN22ZJMDCYEQ7KRHTTUNKJFTXINMZE4BHJLVH5YZK3Q",
+                    "rounded_at": "2025-07-07 16:22:54+00",
+                    "processed_at": "2025-07-07 16:22:57.881908+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:22:57.974758+00",
+            "allocated_algo_amount": "3999551193"
+        },
+        {
+            "id": "3674012056292618716",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3673188309161515021",
+                    "account": {
+                        "id": "3424874049790930230",
+                        "address": "2HYTI5GAB3WAJL5MZKQYUHZHYQJBEUD54OQNFZNBCPZXFPVDZOSCGUNORU"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "0",
+                    "committed_assets_amount_in_algo": "36672971072",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-03 03:17:54.886174+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "6324209840",
+                            "committed_amount_in_algo": "1649339639",
+                            "accepted_asset": {
+                                "name": "TinymanPool2.0 VEST-ALGO",
+                                "organization": "Tinyman",
+                                "logo": "accepted_assets/2025/06/27/4ae608f501114eb387fa52f2981e968d",
+                                "asset_id": 1002677148,
+                                "algo_ratio": 0.260797741
+                            }
+                        },
+                        {
+                            "committed_amount": "324813197000",
+                            "committed_amount_in_algo": "25023631433",
+                            "accepted_asset": {
+                                "name": "TinymanPool2.0 ORA-ALGO",
+                                "organization": "Tinyman",
+                                "logo": "accepted_assets/2025/06/27/dc6613104f254813a0616c484f24538c",
+                                "asset_id": 1294765516,
+                                "algo_ratio": 0.07704007
+                            }
+                        },
+                        {
+                            "committed_amount": "9999999999",
+                            "committed_amount_in_algo": "9999999999",
+                            "accepted_asset": {
+                                "name": "oraALGO",
+                                "organization": "Myth dualSTAKE",
+                                "logo": "accepted_assets/2025/06/27/0bcbadf567a949bca80003154e5d8e55",
+                                "asset_id": 2933559000,
+                                "algo_ratio": 1
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674012056138304951",
+                    "transaction_id": "WOHEZO65TZTH4F6LUZNUOYSTPIB7QQ63IUKLTDQA6RRK3T36XLTQ",
+                    "rounded_at": "2025-07-07 16:24:24+00",
+                    "processed_at": "2025-07-07 16:24:28.054166+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:24:28.135881+00",
+            "allocated_algo_amount": "36672971072"
+        },
+        {
+            "id": "3674012222667219346",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3674007885058937079",
+                    "account": {
+                        "id": "3527472543346204840",
+                        "address": "D4UCJ3UY2C4KE5DMBMMCGPFD6HWQSY4RBOOU6GZZ73TOKFNCLUSVDY3EXQ"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "0",
+                    "committed_assets_amount_in_algo": "4511249998",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 15:51:19.127685+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "3749999999",
+                            "committed_amount_in_algo": "4511249998",
+                            "accepted_asset": {
+                                "name": "mAlgo",
+                                "organization": "Messina mAlgo",
+                                "logo": "accepted_assets/2025/06/27/23b0abfa2c584c0e8cc561f086c3f454",
+                                "asset_id": 1185173782,
+                                "algo_ratio": 1.203
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674012222518197014",
+                    "transaction_id": "HZHOGIOZIMTYBABHHWZKSBSABCDLLETH3MADI5MLMGWFHFKC32KQ",
+                    "rounded_at": "2025-07-07 16:25:43+00",
+                    "processed_at": "2025-07-07 16:25:47.389385+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:25:47.469708+00",
+            "allocated_algo_amount": "4511249998"
+        },
+        {
+            "id": "3674013344590775023",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672777148588385454",
+                    "account": {
+                        "id": "3425259303449652916",
+                        "address": "RSGDEUMXJHFI76AN4PCEXXI3456TRBSROZUZ6FAVYPF53HGUZONUHLRYKU"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "0",
+                    "committed_assets_amount_in_algo": "111456000000",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 20:50:18.246568+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "108000000000",
+                            "committed_amount_in_algo": "111456000000",
+                            "accepted_asset": {
+                                "name": "tAlgo",
+                                "organization": "Tinyman tAlgo",
+                                "logo": "accepted_assets/2025/06/27/e908634050cf4176a531a6319ef3e70a",
+                                "asset_id": 2537013734,
+                                "algo_ratio": 1.032
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674013344440815013",
+                    "transaction_id": "TG7NUQ25ZGP2QQRS7K3BVDF3QVGZNX5PIC2BAFTM3STPCWQQ5B4Q",
+                    "rounded_at": "2025-07-07 16:34:39+00",
+                    "processed_at": "2025-07-07 16:34:42.36406+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:34:42.442993+00",
+            "allocated_algo_amount": "111456000000"
+        },
+        {
+            "id": "3674013587064308335",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3674008339121590373",
+                    "account": {
+                        "id": "3592816513248841372",
+                        "address": "BTV72TLOGSJHTWKSVMKUFUFJU2M6QJWMDUOMO4RCC42ALTF2HIKW6DQPDU"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "15083903800",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 15:54:55.641519+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674013586862064871",
+                    "transaction_id": "5HRA4KKEALAEPC6BLF67JGFSKHYCYKEL6S62CEFXPMELHO4X4PMQ",
+                    "rounded_at": "2025-07-07 16:36:34+00",
+                    "processed_at": "2025-07-07 16:36:37.958985+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:36:38.065543+00",
+            "allocated_algo_amount": "15083903800"
+        },
+        {
+            "id": "3674013770729010937",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3673995707389402652",
+                    "account": {
+                        "id": "3573632259783178138",
+                        "address": "FISHERMANBPAHXQJEBJNIMMTBVNCOTXG6TUHYXQNE64FEJRVDTO3E3A43E"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "50000000",
+                    "committed_assets_amount_in_algo": "1146804820",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-07 14:14:32.362627+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "869965912",
+                            "committed_amount_in_algo": "897804821",
+                            "accepted_asset": {
+                                "name": "tAlgo",
+                                "organization": "Tinyman tAlgo",
+                                "logo": "accepted_assets/2025/06/27/e908634050cf4176a531a6319ef3e70a",
+                                "asset_id": 2537013734,
+                                "algo_ratio": 1.032
+                            }
+                        },
+                        {
+                            "committed_amount": "248999999",
+                            "committed_amount_in_algo": "248999999",
+                            "accepted_asset": {
+                                "name": "akitaALGO",
+                                "organization": "Myth dualSTAKE",
+                                "logo": "accepted_assets/2025/06/27/ce05041773b64f629f49f26a0e20098f",
+                                "asset_id": 2972970000,
+                                "algo_ratio": 1
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674013770599506845",
+                    "transaction_id": "SDMROYRDIA6N2WFDNSGEK3VBLQF5ICDQGBYWHP5NVWK6V35HBBAQ",
+                    "rounded_at": "2025-07-07 16:38:02+00",
+                    "processed_at": "2025-07-07 16:38:05.571655+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:38:05.639937+00",
+            "allocated_algo_amount": "1196804820"
+        },
+        {
+            "id": "3674014544553403157",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672937883327118712",
+                    "account": {
+                        "id": "3509120245312654660",
+                        "address": "FHWG4JF7J36JKNSIIMPW52P3MVU43GS3QKMXD27DTCQZCSTEMPMDCHIV24"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "116020245",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-07-01 18:07:42.542707+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674014544389012207",
+                    "transaction_id": "CXOQBPVWHFJCPOYBSB4MWESSTTUZX4EUEVM5VRGYHPPZI5PWH7ZA",
+                    "rounded_at": "2025-07-07 16:44:11+00",
+                    "processed_at": "2025-07-07 16:44:14.543823+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:44:14.628627+00",
+            "allocated_algo_amount": "116020245"
+        },
+        {
+            "id": "3674015124667666957",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672747689329484382",
+                    "account": {
+                        "id": "3424844961062244180",
+                        "address": "TKLWJU42O3VH5SHPSPUQYSQ5WB5JC2CZSKTOZZ76H2VIPIK5XFTAQ6LIZU"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "3309594170",
+                    "committed_assets_amount_in_algo": "0",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 16:56:10.976967+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": []
+                },
+                "transaction": {
+                    "id": "3674015124526053638",
+                    "transaction_id": "IFN2RWI4TCJN3GRPWI2KYMY2GKDE4TB3UPKWV3Z7DCCQ7DODOT5A",
+                    "rounded_at": "2025-07-07 16:48:47+00",
+                    "processed_at": "2025-07-07 16:48:51.174325+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:48:51.248347+00",
+            "allocated_algo_amount": "3309594170"
+        },
+        {
+            "id": "3674015235110692967",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672742360276431098",
+                    "account": {
+                        "id": "3672742360266287081",
+                        "address": "DUXPSTFRAWEADKSW67NJEMFZZIPK2GARJGMLLLFRZWQ67IKGNIXO4VSHEE"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "1000000",
+                    "committed_assets_amount_in_algo": "11560000000",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 16:13:49.887821+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "10000000000",
+                            "committed_amount_in_algo": "11560000000",
+                            "accepted_asset": {
+                                "name": "xAlgo",
+                                "organization": "FolksFinance xAlgo",
+                                "logo": "accepted_assets/2025/06/27/f20b06f195d546c1891366bb47655670",
+                                "asset_id": 1134696561,
+                                "algo_ratio": 1.156
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674015234960506331",
+                    "transaction_id": "Z7PJMFYJICZTY3N36EDXKTKOT3GP6BCFFWZNKUZGUUB5Y732MDJQ",
+                    "rounded_at": "2025-07-07 16:49:40+00",
+                    "processed_at": "2025-07-07 16:49:43.833664+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:49:43.914659+00",
+            "allocated_algo_amount": "11561000000"
+        },
+        {
+            "id": "3674016071874029915",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672752898683427906",
+                    "account": {
+                        "id": "3491925007100842671",
+                        "address": "D3S6VBVPDD2Y2SNYFAT65AL25KUCKMY5IYM7RK3N4LMJIW44G2OWKBRSOI"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "0",
+                    "committed_assets_amount_in_algo": "12590000000",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 17:37:34.990579+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "12590000000",
+                            "committed_amount_in_algo": "12590000000",
+                            "accepted_asset": {
+                                "name": "arbzALGO",
+                                "organization": "Myth dualSTAKE",
+                                "logo": "accepted_assets/2025/06/27/d5e262f8232e446aaca7754792d0e899",
+                                "asset_id": 3054299000,
+                                "algo_ratio": 1
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674016071729348361",
+                    "transaction_id": "MUSULCUR7L3YU7V7WRUDPIS2L6FLLW4JGBES34KYIUZVHMRVSGRQ",
+                    "rounded_at": "2025-07-07 16:56:19+00",
+                    "processed_at": "2025-07-07 16:56:22.837068+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:56:22.913318+00",
+            "allocated_algo_amount": "12590000000"
+        },
+        {
+            "id": "3674016189223529539",
+            "governor_voting_session": {
+                "governor": {
+                    "id": "3672762124583502006",
+                    "account": {
+                        "id": "3607871400521008466",
+                        "address": "D7K45MKGWOLFLSDSXM6S2M2IFZZNH37EABQTF2R3ZCCZYMO5ESUJC6KSLY"
+                    },
+                    "beneficiary_account": null,
+                    "xgov_controller_account": null,
+                    "committed_algo_amount": "30000000000",
+                    "committed_assets_amount_in_algo": "1287217596",
+                    "committed_algo_amount_for_extra_rewards": null,
+                    "is_eligible": true,
+                    "is_xgov": false,
+                    "not_eligible_reason": "",
+                    "registration_datetime": "2025-06-30 18:50:54.24302+00",
+                    "voted_voting_session_count": 1,
+                    "asset_commitments": [
+                        {
+                            "committed_amount": "3244924937",
+                            "committed_amount_in_algo": "846269093",
+                            "accepted_asset": {
+                                "name": "TinymanPool2.0 VEST-ALGO",
+                                "organization": "Tinyman",
+                                "logo": "accepted_assets/2025/06/27/4ae608f501114eb387fa52f2981e968d",
+                                "asset_id": 1002677148,
+                                "algo_ratio": 0.260797741
+                            }
+                        },
+                        {
+                            "committed_amount": "1234935397199",
+                            "committed_amount_in_algo": "440948502",
+                            "accepted_asset": {
+                                "name": "TinymanPool2.0 MEEP-ALGO",
+                                "organization": "Tinyman",
+                                "logo": "accepted_assets/2025/06/27/cae6d4740cc4470e950368bdcae28aef",
+                                "asset_id": 2582592350,
+                                "algo_ratio": 0.000357062
+                            }
+                        }
+                    ]
+                },
+                "transaction": {
+                    "id": "3674016189052188705",
+                    "transaction_id": "EROUKFIV7VY6U6URRPQPGVUIVQD4ZTQE3B2GAR2TRPRMMAY35AAQ",
+                    "rounded_at": "2025-07-07 16:57:15+00",
+                    "processed_at": "2025-07-07 16:57:18.779419+00"
+                }
+            },
+            "creation_datetime": "2025-07-07 16:57:18.870728+00",
+            "allocated_algo_amount": "31287217596"
+        }
+    ]
+}

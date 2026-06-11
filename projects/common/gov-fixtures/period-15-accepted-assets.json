@@ -1,0 +1,1400 @@
+{
+    "count": 199,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "name": "TinymanPool1.1 USDC-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/ef90198a839a48f9b422acf49088fed0",
+            "asset_id": 552647097,
+            "algo_ratio": 3.651455162
+        },
+        {
+            "name": "TinymanPool1.1 AKTA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/7f14a25af0734d289d5e4da3f4d80533",
+            "asset_id": 552662141,
+            "algo_ratio": 0.04884856243
+        },
+        {
+            "name": "TinymanPool1.1 STBL-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/38c60fc3960d419d9c8c507c5297ac78",
+            "asset_id": 552666290,
+            "algo_ratio": 3.071385044
+        },
+        {
+            "name": "TinymanPool1.1 goBTC-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/74fe7c37019a40f5a5cc7d72b4a0e8ae",
+            "asset_id": 552679552,
+            "algo_ratio": 94.3414282
+        },
+        {
+            "name": "TinymanPool1.1 THETA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/5524d6afc4a7469db4be74337dd15c8d",
+            "asset_id": 552680681,
+            "algo_ratio": 5.587899563
+        },
+        {
+            "name": "TinymanPool1.1 USDt-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/14e96fab83e941c89ef93363731eed7e",
+            "asset_id": 552719953,
+            "algo_ratio": 3.673248492
+        },
+        {
+            "name": "TinymanPool1.1 RIO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/481288b924464d3ea1dbe2fbacf37baa",
+            "asset_id": 552721091,
+            "algo_ratio": 0.7586321356
+        },
+        {
+            "name": "TinymanPool1.1 rUSD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f272972599394c81a866ec895f3d71e7",
+            "asset_id": 552921263,
+            "algo_ratio": 0.4933928746
+        },
+        {
+            "name": "TinymanPool1.1 LOUD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/854429bdce4b44f8b646ac07a90b5aaa",
+            "asset_id": 570806149,
+            "algo_ratio": 0.01679619521
+        },
+        {
+            "name": "AF-POOL-ALGO-USDC-25.0BP",
+            "organization": "Algofi",
+            "logo": "accepted_assets/2025/06/27/db5be93e7a7e44128304f7310f50356c",
+            "asset_id": 605975979,
+            "algo_ratio": 3.76951251
+        },
+        {
+            "name": "AF-POOL-ALGO-STBL-25.0BP",
+            "organization": "Algofi",
+            "logo": "accepted_assets/2025/06/27/4605555f1f394e82bdddcfff24e78b65",
+            "asset_id": 607645566,
+            "algo_ratio": 3.131227136
+        },
+        {
+            "name": "ALGO/USDC PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/d71b49dfd4ab479399d1196871f92f55",
+            "asset_id": 620996279,
+            "algo_ratio": 3.768883319
+        },
+        {
+            "name": "ALGO/goETH PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/5c21856044ba4c708fa50bac7b8a7277",
+            "asset_id": 645870723,
+            "algo_ratio": 14.30551277
+        },
+        {
+            "name": "ALGO/goBTC PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/5a209d2c639b4b599171cfe52f51ad3d",
+            "asset_id": 661744948,
+            "algo_ratio": 97.64557903
+        },
+        {
+            "name": "TinymanPool1.1 AQA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/e3d395dd1af040e0b526c568a3d145e4",
+            "asset_id": 798545008,
+            "algo_ratio": 0.1527035529
+        },
+        {
+            "name": "TinymanPool2.0 OPUL-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/633204b809254c88ab891dbeb3992eed",
+            "asset_id": 1002585637,
+            "algo_ratio": 0.004851621
+        },
+        {
+            "name": "TinymanPool2.0 USDt-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/884f09fd6f044a0686ce6852163071f3",
+            "asset_id": 1002587235,
+            "algo_ratio": 3.511131274
+        },
+        {
+            "name": "TinymanPool2.0 AKTA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/03bdb8bcdaa340b5bc30b3ef521bb5e8",
+            "asset_id": 1002588404,
+            "algo_ratio": 0.044450599
+        },
+        {
+            "name": "TinymanPool2.0 DEFLY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/cd648260e571494ba57bc9f114ac0211",
+            "asset_id": 1002590292,
+            "algo_ratio": 0.045161627
+        },
+        {
+            "name": "TinymanPool2.0 USDC-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/77202897906c4d11910912c7fa7d5774",
+            "asset_id": 1002590888,
+            "algo_ratio": 3.453497668
+        },
+        {
+            "name": "TinymanPool2.0 goETH-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/203435092ca44ad4bda127dad0900676",
+            "asset_id": 1002601206,
+            "algo_ratio": 13.30897776
+        },
+        {
+            "name": "TinymanPool2.0 OCTO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/71056e3122dd4761a93e695dc727b48d",
+            "asset_id": 1002607151,
+            "algo_ratio": 0.2111036694
+        },
+        {
+            "name": "TinymanPool2.0 chip-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f8d98c097e804471954eab3938d0bb68",
+            "asset_id": 1002609713,
+            "algo_ratio": 2.497255931
+        },
+        {
+            "name": "TinymanPool2.0 GEMS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/b040291f1a184444bdc7daa5bf9ebf6a",
+            "asset_id": 1002618216,
+            "algo_ratio": 0.222613834
+        },
+        {
+            "name": "TinymanPool2.0 LTBX-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f1f3386554a54794a2c71da116e2736a",
+            "asset_id": 1002618470,
+            "algo_ratio": 37.73486077
+        },
+        {
+            "name": "TinymanPool2.0 AO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/6b2cfc20612e473cb37a0b60bfdb2d78",
+            "asset_id": 1002618579,
+            "algo_ratio": 0.9538638168
+        },
+        {
+            "name": "TinymanPool2.0 ASASTATS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/da6a001da6cc4ce6b42b9fa6ce496e25",
+            "asset_id": 1002623676,
+            "algo_ratio": 0.01808153646
+        },
+        {
+            "name": "TinymanPool2.0 HDL-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/7c0bb69c5d7b4df9b0baabc36eb4166f",
+            "asset_id": 1002625846,
+            "algo_ratio": 0.1124214109
+        },
+        {
+            "name": "TinymanPool2.0 GMT-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/4e4ecbe6995b427f80e2c9f6d7afd403",
+            "asset_id": 1002628988,
+            "algo_ratio": 44.85458262
+        },
+        {
+            "name": "TinymanPool2.0 SCOUT-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/38df2a3054fb485b9a236fa725194539",
+            "asset_id": 1002634821,
+            "algo_ratio": 0.01802384547
+        },
+        {
+            "name": "TinymanPool2.0 VEST-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/4ae608f501114eb387fa52f2981e968d",
+            "asset_id": 1002677148,
+            "algo_ratio": 0.260797741
+        },
+        {
+            "name": "TinymanPool2.0 Butts-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/dff82dfa22924d4cbe99ef8718b1ca4a",
+            "asset_id": 1002680104,
+            "algo_ratio": 14.31569514
+        },
+        {
+            "name": "TinymanPool2.0 PARI-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/be9350072717402a818e10f597e158bf",
+            "asset_id": 1002711257,
+            "algo_ratio": 0.2859938796
+        },
+        {
+            "name": "TinymanPool2.0 CRSD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/04c151b0d9a5493394d016c2cf882686",
+            "asset_id": 1002712329,
+            "algo_ratio": 15.12809579
+        },
+        {
+            "name": "TinymanPool2.0 goBTC-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/511718bcecf44edfb93f5a42d95e8d0b",
+            "asset_id": 1002717371,
+            "algo_ratio": 90.40024761
+        },
+        {
+            "name": "TinymanPool2.0 ACORN-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/2956cd83a6a944bf876bac62b35a5eaa",
+            "asset_id": 1002736866,
+            "algo_ratio": 9.023903574
+        },
+        {
+            "name": "TinymanPool2.0 SHSA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/eec3fdbb80934b8098036389dd31c9f8",
+            "asset_id": 1002750267,
+            "algo_ratio": 0.082545355
+        },
+        {
+            "name": "TinymanPool2.0 Jimmy-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/6e0fe4b1ebea43ab9cf0cd98050399fb",
+            "asset_id": 1002985637,
+            "algo_ratio": 19.78274386
+        },
+        {
+            "name": "TinymanPool2.0 Block-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/575c3daf5876459da4bb0d48c5419ffb",
+            "asset_id": 1003051400,
+            "algo_ratio": 6.108600644
+        },
+        {
+            "name": "TinymanPool2.0 META-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/83e36aa6a0e8453aa9045325bf8675a5",
+            "asset_id": 1003103300,
+            "algo_ratio": 0.1078741679
+        },
+        {
+            "name": "TinymanPool2.0 Finite-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/861d2be99ed740f6832f3afaae85579b",
+            "asset_id": 1003300126,
+            "algo_ratio": 0.02213148084
+        },
+        {
+            "name": "TinymanPool2.0 SIGN-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/c7d03e95ed294db5865e5cca46eaeb78",
+            "asset_id": 1003538799,
+            "algo_ratio": 0.019709227
+        },
+        {
+            "name": "TinymanPool2.0 MemO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/70091bea2d1b471c8ec2f3c57e3f0ece",
+            "asset_id": 1004220909,
+            "algo_ratio": 0.5212197534
+        },
+        {
+            "name": "TinymanPool2.0 VYBE-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/b8ad707782f44f4bb6204054a996687f",
+            "asset_id": 1008153152,
+            "algo_ratio": 0.05046852735
+        },
+        {
+            "name": "TinymanPool2.0 FRY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/6abb0dc59b294e909dce2b688d210dab",
+            "asset_id": 1010208883,
+            "algo_ratio": 0.01132538511
+        },
+        {
+            "name": "TinymanPool2.0 RIO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/8d79bea9dc524f778b41a28efee539b8",
+            "asset_id": 1010479351,
+            "algo_ratio": 0.8861886067
+        },
+        {
+            "name": "TinymanPool2.0 xUSD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/bc3280ae16034ea6b59e25a2110562e2",
+            "asset_id": 1013581183,
+            "algo_ratio": 3.263756695
+        },
+        {
+            "name": "TinymanPool2.0 IAQ-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/38915e4eb7e94a5cbe6401b60b7588af",
+            "asset_id": 1017284319,
+            "algo_ratio": 6.939634773
+        },
+        {
+            "name": "TinymanPool2.0 DHARM-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/bfcf610d7c7941028e559a8318cd03e0",
+            "asset_id": 1027705550,
+            "algo_ratio": 0.042090747
+        },
+        {
+            "name": "TinymanPool2.0 GLIZZY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/714651cc9e8d4154842106be24b26698",
+            "asset_id": 1069377330,
+            "algo_ratio": 1.233640497
+        },
+        {
+            "name": "ALGO/USDC PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/67149c95972d4a61a52e52b8be7da858",
+            "asset_id": 1073557313,
+            "algo_ratio": 3.145241111
+        },
+        {
+            "name": "ALGO/DEFLY PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/6a511bec025f4831abf8a333713369f5",
+            "asset_id": 1073558659,
+            "algo_ratio": 0.045385766
+        },
+        {
+            "name": "ALGO/Finite PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/b40171db8c9e4ed0aa4336429d68ef58",
+            "asset_id": 1074140610,
+            "algo_ratio": 0.02090774106
+        },
+        {
+            "name": "ALGO/goBTC PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/8190e2b68c034c56b370a54d1173c2a2",
+            "asset_id": 1074982814,
+            "algo_ratio": 87.53429386
+        },
+        {
+            "name": "ALGO/VYBE PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/1b42125a6df348d1a1f7d69573f190c5",
+            "asset_id": 1075354885,
+            "algo_ratio": 0.044666803
+        },
+        {
+            "name": "ALGO/goETH PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/4737867ebd524e9fbf4bfdbeb7c5ce41",
+            "asset_id": 1076049171,
+            "algo_ratio": 13.12434163
+        },
+        {
+            "name": "ALGO/VEST PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/0035aa42941e46929a0b02b587158207",
+            "asset_id": 1076332142,
+            "algo_ratio": 0.254529191
+        },
+        {
+            "name": "TinymanPool2.0 COSG-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/0912e285437546d9814404f7a7a9ee3e",
+            "asset_id": 1077256563,
+            "algo_ratio": 0.04934271
+        },
+        {
+            "name": "TinymanPool2.0 Skynet-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/9a21add6b98b48ec81d6bbbee3af0a30",
+            "asset_id": 1083983281,
+            "algo_ratio": 0.058753876
+        },
+        {
+            "name": "ALGO/COSG PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/ebf51dd89371487fa4d7e5e685ec2647",
+            "asset_id": 1084145611,
+            "algo_ratio": 0.04895294904
+        },
+        {
+            "name": "TinymanPool2.0 PEPE-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/bdcea68165cf4d14830174b3ca215bb7",
+            "asset_id": 1096178705,
+            "algo_ratio": 0.1129633934
+        },
+        {
+            "name": "TinymanPool2.0 COOP-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/42e1385c794c46a38f2f36cd70ef861d",
+            "asset_id": 1103395709,
+            "algo_ratio": 0.4165239405
+        },
+        {
+            "name": "TinymanPool2.0 GOLD$-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/83d5410c6554416b852e14eda1e5cff1",
+            "asset_id": 1106522659,
+            "algo_ratio": 30.72554818
+        },
+        {
+            "name": "TinymanPool2.0 GRAMO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/98a7b7056aaa42a3821a13e1dea2e944",
+            "asset_id": 1127310252,
+            "algo_ratio": 20.46051747
+        },
+        {
+            "name": "xAlgo",
+            "organization": "FolksFinance xAlgo",
+            "logo": "accepted_assets/2025/06/27/f20b06f195d546c1891366bb47655670",
+            "asset_id": 1134696561,
+            "algo_ratio": 1.156
+        },
+        {
+            "name": "TinymanPool2.0 GORA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/3d89c7b6cd0d4e088e8c6f20b84889b1",
+            "asset_id": 1142106053,
+            "algo_ratio": 0.01353632939
+        },
+        {
+            "name": "TinymanPool2.0 SILVER$-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/3fb3d08d29114862ab9fd9b44c59b48c",
+            "asset_id": 1163602606,
+            "algo_ratio": 3.216303721
+        },
+        {
+            "name": "TinymanPool2.0 WAVAX-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/d3a48375a409413eaa4a7ab73566e5df",
+            "asset_id": 1171150976,
+            "algo_ratio": 1.119651774
+        },
+        {
+            "name": "mAlgo",
+            "organization": "Messina mAlgo",
+            "logo": "accepted_assets/2025/06/27/23b0abfa2c584c0e8cc561f086c3f454",
+            "asset_id": 1185173782,
+            "algo_ratio": 1.203
+        },
+        {
+            "name": "TinymanPool2.0 mALGO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/91d5317b0b7a4eca9f3aea1a6d791924",
+            "asset_id": 1189911961,
+            "algo_ratio": 1.147409785
+        },
+        {
+            "name": "TinymanPool2.0 EURS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/6cb4a94ddfc54ffea32d7f4f8ea36da2",
+            "asset_id": 1191737218,
+            "algo_ratio": 3.124704814
+        },
+        {
+            "name": "TinymanPool2.0 WBTC-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/11d9524ab08342238e4fb3e4ee106f39",
+            "asset_id": 1202790544,
+            "algo_ratio": 85.4656935
+        },
+        {
+            "name": "TinymanPool2.0 WETH-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/a01d225cc60442f1ae6b040e01a1492d",
+            "asset_id": 1202790943,
+            "algo_ratio": 12.73657362
+        },
+        {
+            "name": "ALGO/mALGO [SI] PACT LP TKN",
+            "organization": "Pact StableSwap",
+            "logo": "accepted_assets/2025/06/27/da37fe640a2a45469f5b0a5549a6290e",
+            "asset_id": 1205810615,
+            "algo_ratio": 19.23216986
+        },
+        {
+            "name": "TinymanPool2.0 SOL-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/a1e9c6407d3b421d88e5fe3d5efdef9e",
+            "asset_id": 1224151122,
+            "algo_ratio": 3.214367042
+        },
+        {
+            "name": "TinymanPool2.0 INUMOO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/12027a9e48754b9fbf769160cc398524",
+            "asset_id": 1227773811,
+            "algo_ratio": 39.6469639
+        },
+        {
+            "name": "TinymanPool2.0 xALGO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/1431d4acccea4d879e225192e8f1b914",
+            "asset_id": 1236838499,
+            "algo_ratio": 1.163118241
+        },
+        {
+            "name": "TinymanPool2.0 PGOLD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/96659fb0c489433092f6b8921974d65a",
+            "asset_id": 1237530024,
+            "algo_ratio": 0.1539954113
+        },
+        {
+            "name": "ALGO/Gold PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/4aee7ce6aafb48f6810b08d0d5760539",
+            "asset_id": 1244947363,
+            "algo_ratio": 24.82919816
+        },
+        {
+            "name": "TinymanPool2.0 LINK-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/5f0e583c87dc493b83bc248073de6e56",
+            "asset_id": 1262513667,
+            "algo_ratio": 0.9242932456
+        },
+        {
+            "name": "TinymanPool2.0 WBNB-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/6c8158880eed48ec9fd670b3889ea0ae",
+            "asset_id": 1265963787,
+            "algo_ratio": 6.318918434
+        },
+        {
+            "name": "ALGO/GoldDAO PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/89fa90fbf5144d2d8ed26a8c82dea290",
+            "asset_id": 1280304363,
+            "algo_ratio": 2.444132563
+        },
+        {
+            "name": "TinymanPool2.0 NIKO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/2adb6c6f0811485d919586b629ab79e4",
+            "asset_id": 1281337865,
+            "algo_ratio": 0.016158297
+        },
+        {
+            "name": "TinymanPool2.0 Barb-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/ec6b550e4c734ce8ad32bb1b911444a1",
+            "asset_id": 1292205411,
+            "algo_ratio": 0.02802331044
+        },
+        {
+            "name": "TinymanPool2.0 ORA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/dc6613104f254813a0616c484f24538c",
+            "asset_id": 1294765516,
+            "algo_ratio": 0.07704007
+        },
+        {
+            "name": "TinymanPool2.0 DAFFIR-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/961a0561ac334fc891e5d1022a503a36",
+            "asset_id": 1376105492,
+            "algo_ratio": 0.1564817815
+        },
+        {
+            "name": "TinymanPool2.0 GOAN-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/28e0765fd7604fc398041b2e88923919",
+            "asset_id": 1429323356,
+            "algo_ratio": 0.067858129
+        },
+        {
+            "name": "TinymanPool2.0 TRUMP-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/27bcaa51087d4009a785c67506c530cc",
+            "asset_id": 1459580193,
+            "algo_ratio": 2.545052754
+        },
+        {
+            "name": "TinymanPool2.0 A200-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/1270fc57e7fd497882552698d44b9708",
+            "asset_id": 1682897703,
+            "algo_ratio": 2.412237271
+        },
+        {
+            "name": "TinymanPool2.0 OTSDGFKD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/54c82c693af64bc4ab39a27d3ee9c1d5",
+            "asset_id": 1701856494,
+            "algo_ratio": 0.007774137
+        },
+        {
+            "name": "TinymanPool2.0 PiPhiN-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/b165f6983786422ba6731da14edc4c02",
+            "asset_id": 1707296920,
+            "algo_ratio": 95.89339191
+        },
+        {
+            "name": "TinymanPool2.0 FLOKI-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/1d2321ab9c2b44d8a3363b99c7c48725",
+            "asset_id": 1896445097,
+            "algo_ratio": 0.00207766
+        },
+        {
+            "name": "TinymanPool2.0 AAA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/0ed04a6d857a43de98fda877b90d27ca",
+            "asset_id": 2004411684,
+            "algo_ratio": 0.001229185
+        },
+        {
+            "name": "TinymanPool2.0 RUGNINJA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/d8075a2435bb4479801efb28709b9949",
+            "asset_id": 2156022094,
+            "algo_ratio": 0.000344919
+        },
+        {
+            "name": "TinymanPool2.0 $JAWS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f75da1b8a4e14d39a29c86775eb0c0c6",
+            "asset_id": 2156319893,
+            "algo_ratio": 0.000203546
+        },
+        {
+            "name": "TinymanPool2.0 FINU-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/54956e73f84c4ebd8ab8e485c15dd9dd",
+            "asset_id": 2160915645,
+            "algo_ratio": 0.000186021
+        },
+        {
+            "name": "TinymanPool2.0 BASED-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/78d4854b53d04ed5a816578e4d1c862a",
+            "asset_id": 2165489339,
+            "algo_ratio": 0.001086108
+        },
+        {
+            "name": "TinymanPool2.0 SHINO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/5890db4830b240a387ba9fa1fd6efc9f",
+            "asset_id": 2172355527,
+            "algo_ratio": 0.176664186
+        },
+        {
+            "name": "TinymanPool2.0 GCAT-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/8852108c173f41d8ba7e5e4230ef2f0e",
+            "asset_id": 2183999424,
+            "algo_ratio": 0.000148018
+        },
+        {
+            "name": "TinymanPool2.0 MOOJ-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/dd409d85e2c84b88bcd197a189e0532c",
+            "asset_id": 2187746505,
+            "algo_ratio": 0.02319142884
+        },
+        {
+            "name": "TinymanPool2.0 TINY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/c8e1f2a9a54a44dbb598b1c1b3f9f33f",
+            "asset_id": 2201078580,
+            "algo_ratio": 0.3196052126
+        },
+        {
+            "name": "TinymanPool2.0 TDLD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/a50554d189c5405a94fdf21b97ff95f5",
+            "asset_id": 2208306591,
+            "algo_ratio": 0.000442592
+        },
+        {
+            "name": "TinymanPool2.0 TINA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/d1e3a9e46c284db0af0b8bc28f94ea04",
+            "asset_id": 2218159348,
+            "algo_ratio": 0.000235937
+        },
+        {
+            "name": "TinymanPool2.0 MUSTARD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/02a9d70493fe428d8a6c05750fd21b99",
+            "asset_id": 2314771683,
+            "algo_ratio": 0.6609354612
+        },
+        {
+            "name": "aAlgo",
+            "organization": "Aramid Algo",
+            "logo": "",
+            "asset_id": 2320804780,
+            "algo_ratio": 1
+        },
+        {
+            "name": "TinymanPool2.0 aVoi-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/83479543e27446ae8f8f6fa6b32cec7c",
+            "asset_id": 2326338894,
+            "algo_ratio": 0.088209929
+        },
+        {
+            "name": "TinymanPool2.0 IPT-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f2f7eb006cd3448292849a9cd1f9ba88",
+            "asset_id": 2346461364,
+            "algo_ratio": 0.04536333246
+        },
+        {
+            "name": "TinymanPool2.0 BOOBS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/1666a5a507f6401ebe54f9d2a118bc4f",
+            "asset_id": 2353470560,
+            "algo_ratio": 0.000329164
+        },
+        {
+            "name": "TinymanPool2.0 TRAU-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/ea498d2f3d3346ddab1f034945105b0f",
+            "asset_id": 2358768774,
+            "algo_ratio": 0.1467927081
+        },
+        {
+            "name": "ALGO/TINY PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/233899267f494ba2bc8c21f9c7e55f36",
+            "asset_id": 2394433473,
+            "algo_ratio": 0.3138641887
+        },
+        {
+            "name": "cAlgo",
+            "organization": "CompX cAlgo",
+            "logo": "accepted_assets/2025/06/27/b4d3906015b24ba3b9f674a3c5e5af58",
+            "asset_id": 2400334372,
+            "algo_ratio": 1.021
+        },
+        {
+            "name": "TinymanPool2.0 COMPX-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/9854392a6741486ebedcf3a51f947f87",
+            "asset_id": 2408267020,
+            "algo_ratio": 0.1413765745
+        },
+        {
+            "name": "TinymanPool2.0 MARCUS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/bd3e3769dac34bc6a7a95f7d7946757f",
+            "asset_id": 2471006490,
+            "algo_ratio": 0.02743134879
+        },
+        {
+            "name": "TinymanPool2.0 PANDA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/c6d8f785f6d2492ea92c0d2147011754",
+            "asset_id": 2495701887,
+            "algo_ratio": 0.002112522
+        },
+        {
+            "name": "TinymanPool2.0 $monko-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/72d710770f1941f487e35738a291fa76",
+            "asset_id": 2506610885,
+            "algo_ratio": 0.002453761
+        },
+        {
+            "name": "TinymanPool2.0 SEVEN-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/b0a8e4903a1a4c00b59c24b480c29237",
+            "asset_id": 2507826318,
+            "algo_ratio": 13.70256444
+        },
+        {
+            "name": "tAlgo",
+            "organization": "Tinyman tAlgo",
+            "logo": "accepted_assets/2025/06/27/e908634050cf4176a531a6319ef3e70a",
+            "asset_id": 2537013734,
+            "algo_ratio": 1.032
+        },
+        {
+            "name": "TinymanPool2.0 TALGO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/d5a0b50d697a4ec68550625159b62344",
+            "asset_id": 2540571154,
+            "algo_ratio": 1.047365582
+        },
+        {
+            "name": "TinymanPool2.0 FRY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/52a9c078488c4ba5a1a6ee8a1cfebde1",
+            "asset_id": 2555287236,
+            "algo_ratio": 0.8331676231
+        },
+        {
+            "name": "TinymanPool2.0 GOON-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/7f62cc86bb2c458d9ca11b24b067ded3",
+            "asset_id": 2565183710,
+            "algo_ratio": 0.00331904
+        },
+        {
+            "name": "TinymanPool2.0 native-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/e3857ed72563443091eeaf416f2c2d60",
+            "asset_id": 2566152603,
+            "algo_ratio": 0.000242618
+        },
+        {
+            "name": "TinymanPool2.0 GONNA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/df96609b151148ecb1b929051d912904",
+            "asset_id": 2582511398,
+            "algo_ratio": 0.000265344
+        },
+        {
+            "name": "TinymanPool2.0 MEEP-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/cae6d4740cc4470e950368bdcae28aef",
+            "asset_id": 2582592350,
+            "algo_ratio": 0.000357062
+        },
+        {
+            "name": "TinymanPool2.0 STEAK-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/c9048d71ac3548df8e7759951d58e4a9",
+            "asset_id": 2595650577,
+            "algo_ratio": 0.081551831
+        },
+        {
+            "name": "TinymanPool2.0 EXA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/317a85f60ba142439cf586ebd3272565",
+            "asset_id": 2599974704,
+            "algo_ratio": 0.02331332274
+        },
+        {
+            "name": "TinymanPool2.0 ANGRY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/d1729990701a44608350bfc6e2af4fc9",
+            "asset_id": 2609035019,
+            "algo_ratio": 0.000210756
+        },
+        {
+            "name": "TinymanPool2.0 PHEZZIES-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/92aaf0b7fac44219b0e9ec2632ec43a8",
+            "asset_id": 2611667377,
+            "algo_ratio": 0.000226446
+        },
+        {
+            "name": "TinymanPool2.0 BUSK-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/708caee4561a4304978e387b4c3c0096",
+            "asset_id": 2611759212,
+            "algo_ratio": 0.006078415
+        },
+        {
+            "name": "TinymanPool2.0 SGLCSH-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f5febd39183645459a8c03b5591045d7",
+            "asset_id": 2613401616,
+            "algo_ratio": 0.000236187
+        },
+        {
+            "name": "TinymanPool2.0 ATARD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/5ee43c92c4474bcbb37fd2e00510c4c1",
+            "asset_id": 2614612656,
+            "algo_ratio": 0.00155622
+        },
+        {
+            "name": "TinymanPool2.0 DUGLY-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/2a48c00132424ec0a2d8f7f3faf382ac",
+            "asset_id": 2627795737,
+            "algo_ratio": 0.000280981
+        },
+        {
+            "name": "TinymanPool2.0 DOD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/dfbe84b848a54c9f9843324f5e2ba9b6",
+            "asset_id": 2630195967,
+            "algo_ratio": 0.000281317
+        },
+        {
+            "name": "TinymanPool2.0 $TURTLE-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/6dbbae632c99432ab4a33fc18db8d1c6",
+            "asset_id": 2636008363,
+            "algo_ratio": 0.000171419
+        },
+        {
+            "name": "TinymanPool2.0 iGA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/46af8b3994d64d4a9f3c940f85d6f920",
+            "asset_id": 2636045757,
+            "algo_ratio": 8.902518658
+        },
+        {
+            "name": "TinymanPool2.0 BRO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/a5bbacb6e9fa4138b1c364d2adb94d8b",
+            "asset_id": 2637131018,
+            "algo_ratio": 0.01098159886
+        },
+        {
+            "name": "TinymanPool2.0 FROGGO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/4691b39469ae4fb2a19878ff01433526",
+            "asset_id": 2637139287,
+            "algo_ratio": 0.008485186
+        },
+        {
+            "name": "TinymanPool2.0 BASILK-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/47a38ae1a47f4413ad36dae6a23a78f5",
+            "asset_id": 2637222764,
+            "algo_ratio": 0.000176703
+        },
+        {
+            "name": "TinymanPool2.0 HODL-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/82c68176f106451bbd1e7413acca224a",
+            "asset_id": 2637659718,
+            "algo_ratio": 0.000329621
+        },
+        {
+            "name": "TinymanPool2.0 ALGOGROK-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f7ad259d4a1249bf9cda8e37a33ef6a0",
+            "asset_id": 2645254223,
+            "algo_ratio": 0.002518953
+        },
+        {
+            "name": "TinymanPool2.0 REM-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/066065d60cc5410d89c18b3a45a8386d",
+            "asset_id": 2645397987,
+            "algo_ratio": 0.000152141
+        },
+        {
+            "name": "TinymanPool2.0 BALLSACK-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/0fc2ca9e391f47c9992874baf69b27e9",
+            "asset_id": 2656875858,
+            "algo_ratio": 0.000796935
+        },
+        {
+            "name": "TinymanPool2.0 SSS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/e3a0972cd4d740298f5accbf99ab17a7",
+            "asset_id": 2659896203,
+            "algo_ratio": 0.00015948
+        },
+        {
+            "name": "TinymanPool2.0 PONKO-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/f166344dbec24c7882065915783fe5e8",
+            "asset_id": 2660444093,
+            "algo_ratio": 0.026299565
+        },
+        {
+            "name": "TinymanPool2.0 Zorb-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/de3d35439bb04c0ea94bed82e5664157",
+            "asset_id": 2662370097,
+            "algo_ratio": 0.0001934
+        },
+        {
+            "name": "TinymanPool2.0 PANDA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/afad16a421534a7da1d720906f59b7cc",
+            "asset_id": 2664431255,
+            "algo_ratio": 0.000194535
+        },
+        {
+            "name": "TinymanPool2.0 Fish-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/43804ac952974c118f1aec5bb07d3e68",
+            "asset_id": 2667024351,
+            "algo_ratio": 0.000658452
+        },
+        {
+            "name": "TinymanPool2.0 FISHD-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/ad56a178293a4be5a433e17f4aac86d9",
+            "asset_id": 2667389516,
+            "algo_ratio": 0.000182425
+        },
+        {
+            "name": "TinymanPool2.0 WOOP-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/abdd572f7732448c8316a77af9d56154",
+            "asset_id": 2668116455,
+            "algo_ratio": 0.000310058
+        },
+        {
+            "name": "TinymanPool2.0 VIKING-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/87b25daae5554678b8b0f267d7e4035e",
+            "asset_id": 2670903205,
+            "algo_ratio": 0.005553315
+        },
+        {
+            "name": "TinymanPool2.0 AOG-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/3a7b83ae150543318a5923aa23530f1b",
+            "asset_id": 2682847219,
+            "algo_ratio": 0.000248244
+        },
+        {
+            "name": "TinymanPool2.0 Bigballs-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/eb4e564bb7f243e0808103853379a9e7",
+            "asset_id": 2686110158,
+            "algo_ratio": 0.000163809
+        },
+        {
+            "name": "TinymanPool2.0 BiGBaLLz-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/b3267b7a03084342b6b384ce8b2fda66",
+            "asset_id": 2686257430,
+            "algo_ratio": 0.000170349
+        },
+        {
+            "name": "TinymanPool2.0 ABBI-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/c19658189b894179b6b604f3d75337bd",
+            "asset_id": 2686333784,
+            "algo_ratio": 0.0167065277
+        },
+        {
+            "name": "TinymanPool2.0 WIT-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/7435e987a6194a9a8ea94ed6da1f3608",
+            "asset_id": 2727028400,
+            "algo_ratio": 0.005796482
+        },
+        {
+            "name": "TinymanPool2.0 HOOP-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/434a3f3be83d4d5f832ed74ec3667972",
+            "asset_id": 2739725881,
+            "algo_ratio": 0.025815115
+        },
+        {
+            "name": "TinymanPool2.0 ALPHA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/c780f9fa032e406a8fff5a40c12e992f",
+            "asset_id": 2741164994,
+            "algo_ratio": 0.1963701808
+        },
+        {
+            "name": "ALGO/USDC PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/fd592951c6444977b3941837d8fa1fe9",
+            "asset_id": 2757488621,
+            "algo_ratio": 2.453597448
+        },
+        {
+            "name": "ALGO/goBTC PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/e379688f1f07468d8111ac2e1965196f",
+            "asset_id": 2757532395,
+            "algo_ratio": 78.3454244
+        },
+        {
+            "name": "ALGO/Vote PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/45aa82f72e4648a5952ad70f06313e45",
+            "asset_id": 2757544471,
+            "algo_ratio": 0.401630261
+        },
+        {
+            "name": "ALGO/Finite PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/46605ac297ca4dc4a7c193eb115ba783",
+            "asset_id": 2757646122,
+            "algo_ratio": 0.019583714
+        },
+        {
+            "name": "ALGO/ASASTATS PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/ffc249188eee483a810340f5aff2d4bf",
+            "asset_id": 2757667448,
+            "algo_ratio": 0.01748538589
+        },
+        {
+            "name": "ALGO/Vote PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/bc87f97039834fba8f48c1ec551d4f29",
+            "asset_id": 2757683563,
+            "algo_ratio": 0.4010066501
+        },
+        {
+            "name": "ALGO/Vote PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/5ced65dc2684457ca4935a697f3d6a5e",
+            "asset_id": 2757687696,
+            "algo_ratio": 0.4019999657
+        },
+        {
+            "name": "ALGO/Vote PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/dd7a1822f2ab4385b9d3ba78a669314b",
+            "asset_id": 2757690773,
+            "algo_ratio": 0.4021218152
+        },
+        {
+            "name": "ALGO/cAlgo PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/264183af179f4b268b6b5bb0a5e37259",
+            "asset_id": 2839742295,
+            "algo_ratio": 1.03367797
+        },
+        {
+            "name": "ALGO/MARCUS PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/9bf23498ab104a209e028132ad758067",
+            "asset_id": 2841122683,
+            "algo_ratio": 0.02625504065
+        },
+        {
+            "name": "TinymanPool2.0 BLESS-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/ea1cb0ff94f3447789d877d812340d4a",
+            "asset_id": 2899766040,
+            "algo_ratio": 0.004520676
+        },
+        {
+            "name": "coopALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/e81864f2ddbe4060a4c3d80db52eb917",
+            "asset_id": 2933499000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "oraALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/0bcbadf567a949bca80003154e5d8e55",
+            "asset_id": 2933559000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "alphaALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/cb8d56d2974e4830bf41a1b9cce9466c",
+            "asset_id": 2944427000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "monkoALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/b327558149a24085954066bad7f56feb",
+            "asset_id": 2946655000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "ALGO/xUSD PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/a13b7164147b413fa30ae054bc1a51d8",
+            "asset_id": 2967083469,
+            "algo_ratio": 2.422623019
+        },
+        {
+            "name": "akitaALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/ce05041773b64f629f49f26a0e20098f",
+            "asset_id": 2972970000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "gobtcALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/9f169ca8c2a741288ff0524fd1e1cc91",
+            "asset_id": 2972980000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "marcusALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/4e2be2624959453bb9cc144306ddb4fb",
+            "asset_id": 2972990000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "vestALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/c9168c7a6b1046a2b647e5ed89e94ef4",
+            "asset_id": 2973970000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "woopALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/1e585ea6ae754a9092eb50276b1bedf1",
+            "asset_id": 2979140000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "fishALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/a8eb242b40124862a6b57acdf4d53208",
+            "asset_id": 2979151000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "cosgALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/bf9eb038c2dd4e72b7cf39918da47763",
+            "asset_id": 2979160000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "nikoALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/39fa05edb66c4fc59cbed6c044ac2e3b",
+            "asset_id": 2979170000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "finiteALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/1705a31e03794ac891c9798951ec4660",
+            "asset_id": 3012888000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "ALGO/$DONKO PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/e5665a0e9da8414b840c9a89a07a54f5",
+            "asset_id": 3014269284,
+            "algo_ratio": 0.3237496392
+        },
+        {
+            "name": "alcALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/c6c1a9092f734348b5c11359e1276dd1",
+            "asset_id": 3015240000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "goonALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/aa4db840d4034b88922a74ed24391d5b",
+            "asset_id": 3015250000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "ALGO/MemO PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/cb3b242d35f34d42a4fe8777dd4fd8d0",
+            "asset_id": 3020342744,
+            "algo_ratio": 0.4862035219
+        },
+        {
+            "name": "memoALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/3f3244d02d9a4261b991e062a6830d84",
+            "asset_id": 3028084000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "sackALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/4d483f1d92a54216ab183160f03c0d50",
+            "asset_id": 3029099000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "TinymanPool2.0 JUAN-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/b53ee29831214060aabb82848b78c8de",
+            "asset_id": 3033732204,
+            "algo_ratio": 0.009778872
+        },
+        {
+            "name": "juanALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/568b8fee8b44449aa8b0f442a67efc9a",
+            "asset_id": 3034430000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "TinymanPool2.0 MINE-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/cbfae679589a40c2a8ffc48a36c083ec",
+            "asset_id": 3045160873,
+            "algo_ratio": 28.33000332
+        },
+        {
+            "name": "a200ALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/80db867800994865a24bdba5c84c06ec",
+            "asset_id": 3049520000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "madALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/a10bd1f624dd466cbe2aaa3d79d98866",
+            "asset_id": 3049555000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "arbzALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "accepted_assets/2025/06/27/d5e262f8232e446aaca7754792d0e899",
+            "asset_id": 3054299000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "astatsALGO",
+            "organization": "Myth dualSTAKE",
+            "logo": "",
+            "asset_id": 3078300000,
+            "algo_ratio": 1
+        },
+        {
+            "name": "ALGO/U PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/eb6aa6457fe64082be47e41a6e0cc38d",
+            "asset_id": 3081858804,
+            "algo_ratio": 3.162309082
+        },
+        {
+            "name": "ALGO/POW PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/1929042ae6804171a24c98501681cc10",
+            "asset_id": 3087523751,
+            "algo_ratio": 0.1679262119
+        },
+        {
+            "name": "TinymanPool2.0 TROYA-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/e2ad6aca90844561a77a2b9e221e0dff",
+            "asset_id": 3087613630,
+            "algo_ratio": 0.000392868
+        },
+        {
+            "name": "ALGO/POW PACT LP Token",
+            "organization": "Pact",
+            "logo": "accepted_assets/2025/06/27/7d8c7ded5e2d4fb49d133cab4ee32bf6",
+            "asset_id": 3088984532,
+            "algo_ratio": 0.1711832212
+        },
+        {
+            "name": "TinymanPool2.0 $HTLIB-ALGO",
+            "organization": "Tinyman",
+            "logo": "accepted_assets/2025/06/27/2e648ead04fd4079b6d19182a52f2b5e",
+            "asset_id": 3090590081,
+            "algo_ratio": 0.002555567
+        }
+    ]
+}

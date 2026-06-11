@@ -1,0 +1,1022 @@
+{
+    "id": "3672753126700762478",
+    "account": {
+        "id": "3440089493088116479",
+        "address": "72LZKN7AOGKGOLIKPPF5RDAASVN5UPV4BIDLDFAOZCWW2N24K2U4NDSJNY"
+    },
+    "beneficiary_account": null,
+    "xgov_controller_account": null,
+    "committed_algo_amount": "134623696526",
+    "committed_assets_amount_in_algo": "0",
+    "committed_algo_amount_for_extra_rewards": null,
+    "is_eligible": true,
+    "is_xgov": false,
+    "not_eligible_reason": "",
+    "registration_datetime": "2025-06-30 17:39:23.717808+00",
+    "voted_voting_session_count": 1,
+    "asset_commitments": [],
+    "voting_session_history": [
+        {
+            "id": "18",
+            "title": "Period 15, Voting Session 1",
+            "slug": "period-15-voting-session-1",
+            "short_description": "xGov Council Election 2025",
+            "voting_start_datetime": "2025-07-07 16:00:00+00",
+            "voting_end_datetime": "2025-07-15 15:58:00+00",
+            "topic_count": 22,
+            "cooldown_end_datetime": "2025-07-15 15:58:50+00",
+            "votes": [
+                {
+                    "id": "3674009751581325538",
+                    "voted_options": [
+                        {
+                            "id": "3674009751607966661",
+                            "voted_option": {
+                                "id": "3672145628301864506",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "84",
+                        "title": "Robbie Baxter",
+                        "description_html": "<p><strong>Experience summary</strong></p>\n<p>Robbie has over 20 years of experience in the tech industry covering software development, engineering management, cloud architecture, database administration in the SaaS world. He has experience in bringing together diverse stakeholders, aligning on priorities to reach consensus and move complex initiatives forward. Robbie understands governance processes and community engagement, and regularly engages in community discussions on Discord, X and the Algorand Forum. He has published educational content related to blockchain and maintains ongoing involvement in the Algorand ecosystem.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-9.md\">Read Robbie&rsquo;s full application (PR-09) before voting</a> </p>\n<p><strong>Project affiliations</strong><br />\nArbitraz, Algorand Scavenger Hunt, BAJO</p>\n<p><strong>Social profiles</strong><br />\nX <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/fifthrace\">https://x.com/fifthrace</a><br />\nNFD <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/robbie.algo\">https://app.nf.domains/name/robbie.algo</a></p>\n<p>Do you support Robbie Baxter for the xGov Council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672145628301864506",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "79.17"
+                            },
+                            {
+                                "id": "3672145628303787231",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "12.95"
+                            },
+                            {
+                                "id": "3672145628304154618",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "7.88"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.15484+00"
+                },
+                {
+                    "id": "3674009751729839030",
+                    "voted_options": [
+                        {
+                            "id": "3674009751761342114",
+                            "voted_option": {
+                                "id": "3672146779154921651",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "85",
+                        "title": "Simon Belingar",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Simon is a full-stack developer, Cosmic Champs co-founder and has been active in the Algorand ecosystem since 2021. He has technical experience in VR, AR, metaverse, and gaming technologies, and understands the processes of ideation, bootstrapping, MVP development, fundraising, and project operations. He has participated in the xGov program since its early stages, regularly identifying risks and advocating for improvements. He has also promoted xGov participation among other projects through online and events engagement, and direct discussions with community members and the Algorand Foundation team. </p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-4.md\">Read Simon&rsquo;s full application (PR-04) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Cosmic Champs</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/SimonBelingar\">https://x.com/SimonBelingar</a></p>\n<p>Do you support Simon Berlingar for the xGov Council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672146658144714075",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "89.92"
+                            },
+                            {
+                                "id": "3672146658146285987",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "3.66"
+                            },
+                            {
+                                "id": "3672146779154921651",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "6.42"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.226122+00"
+                },
+                {
+                    "id": "3674009751848421515",
+                    "voted_options": [
+                        {
+                            "id": "3674009751870197564",
+                            "voted_option": {
+                                "id": "3672147238333775703",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "86",
+                        "title": "Patrick Bennett",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Patrick has been involved in the Algorand ecosystem since late 2019. He is a computer programmer with over four decades of experience in databases, systems programming, networking, cloud infrastructure and blockchain dApps. He has created the smart contracts for NFDs, the contracts and node daemon for Reti open-pooling, the Haydrops contracts, as well as all the backend services, public APIs and infrastructure for TxnLab projects. Patrick is an active contributor of the Algorand Discord, where he helps users and builders. He is also the creator and manager of the Algorand &lsquo;unofficial&rsquo; Telegram channel.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-11.md\">Read Patrick&rsquo;s full application (PR-11) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>TxnLab, NFDomains, Use-Wallet, Reti Pooling, Haydrops</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/patrickbennett\">https://x.com/patrickbennett</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/patrick-bennett\">https://www.linkedin.com/in/patrick-bennett</a><br />\nNDF <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/patrick.algo\">https://app.nf.domains/name/patrick.algo</a></p>\n<p>Do you support Patrick Bennett for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672147238333775703",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "91.47"
+                            },
+                            {
+                                "id": "3672147238336325535",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "5.48"
+                            },
+                            {
+                                "id": "3672147238336455549",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "3.05"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.282001+00"
+                },
+                {
+                    "id": "3674009751952491222",
+                    "voted_options": [
+                        {
+                            "id": "3674009751975771655",
+                            "voted_option": {
+                                "id": "3672147801561818058",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "87",
+                        "title": "Scott Bolasevich",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Scott has been part of the Algorand community since 2019. He is a full-stack developer with over 25 years experience in managing IT budgets and engineering teams. He has smart contract development experience and has built several applications (listed below). Scott is a fan of open-source and enjoys the process of sharing code with the community.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-16.md\">Read Scott&rsquo;s full application (PR-16) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>JimCoin, BlockCycle, BillyBigBeak, Gully, DollHairs, Peperium, Game Master Token, ButtCoin, MembersOnly, Skuli Frens, PressDotAlgo</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/FlippingMfer\">https://x.com/FlippingMfer</a><br />\nGithub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/flippingalgos\">https://github.com/flippingalgos</a></p>\n<p>Do you support Scott Bolasevich for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672147607837044810",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "3.59"
+                            },
+                            {
+                                "id": "3672147801561818058",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "86.79"
+                            },
+                            {
+                                "id": "3672147973292111742",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "9.62"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.331464+00"
+                },
+                {
+                    "id": "3674009752037519625",
+                    "voted_options": [
+                        {
+                            "id": "3674009752057017182",
+                            "voted_option": {
+                                "id": "3672148701221682967",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "88",
+                        "title": "Michael T Chuang",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Michael has been running his Algorand node since 2022, and recently he worked as an Android developer in the Pera Wallet team, also contributing to AlgoKit. He has over a decade of mobile development experience, working as tech lead in companies like, Marvel, Disney and ESPN, on Android and analytics projects. Michael has worked as a paid open-source contributor at various startups. He is also a part of the Algorand Dev Council and enjoys hopping on the Algofam X spaces. </p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-24.md\">Read Michael&rsquo;s full application (PR-24) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Pera wallet, Algokit</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/michaeltchuang\">https://x.com/michaeltchuang</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/michaeltchuang/\">https://www.linkedin.com/in/michaeltchuang/</a><br />\nNFD <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/michaeltchuang.algo\">https://app.nf.domains/name/michaeltchuang.algo</a><br />\nGitHub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/michaeltchuang\">https://github.com/michaeltchuang</a></p>\n<p>Do you support Michael T Chuang for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672148395114773973",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "82.43"
+                            },
+                            {
+                                "id": "3672148572141173265",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "11.75"
+                            },
+                            {
+                                "id": "3672148701221682967",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "5.82"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.373048+00"
+                },
+                {
+                    "id": "3674009752119430860",
+                    "voted_options": [
+                        {
+                            "id": "3674009752139185037",
+                            "voted_option": {
+                                "id": "3672149087193316434",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "89",
+                        "title": "Mohamed Ghiasi",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>MG is a technology architect and full stack developer with over 25 years experience in software development, architecture and design. He is an Algorand builder and has been in the ecosystem since 2020. MG wants to have a positive impact on the quality of xGov proposals, helping drive Algorand&rsquo;s decentralisation.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-23.md\">Read MG&rsquo;s full application (PR-23) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>GoPlausible, ThisDID, Algorand GPT, DID GPT, Algorand MCP, Ultrade MCP, Tinyman MCP, Vestige MCP</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/emg110\">https://x.com/emg110</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/emg110/\">https://www.linkedin.com/in/emg110/</a><br />\nGitHub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/emg110\">https://github.com/emg110</a></p>\n<p>Do you support Mohamed Ghiasi for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672149087193316434",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "85.96"
+                            },
+                            {
+                                "id": "3672149087193583391",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "9.94"
+                            },
+                            {
+                                "id": "3672149087196106750",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "4.09"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.411518+00"
+                },
+                {
+                    "id": "3674009752216848286",
+                    "voted_options": [
+                        {
+                            "id": "3674009752237690381",
+                            "voted_option": {
+                                "id": "3672150152729487061",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "90",
+                        "title": "Paul Hinrichsen",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Paul runs an Algorand node and has been an active participant in the governance program and community since late 2020. He has a background in traditional finance, and currently works for a startup that builds lending and deposit products. Paul has been a part of the broader crypto community since 2014. He has contributed feedback to governance and xGov proposals.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-12.md\">Read Paul&rsquo;s full application (PR-12) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>None</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/conscious_algo\">https://x.com/conscious_algo</a><br />\nForum <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://forum.algorand.org/u/conscious/summary\">https://forum.algorand.org/u/conscious/summary</a></p>\n<p>Do you support Paul Hinrichsen for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672150152729487061",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "74.94"
+                            },
+                            {
+                                "id": "3672150423843455957",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "9.94"
+                            },
+                            {
+                                "id": "3672150423845254606",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "15.12"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.458248+00"
+                },
+                {
+                    "id": "3674009752313202016",
+                    "voted_options": [
+                        {
+                            "id": "3674009752338238552",
+                            "voted_option": {
+                                "id": "3672151343778098281",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "91",
+                        "title": "Taras Himiak",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Taras joined the Algorand community in 2023 as an Algo holder and has participated in governance since GP8. Although Taras didn&rsquo;t list his professional experience, he has put his name forth to participate in the Algorand council because he believes in the Algorand technology&rsquo;s potential and wishes to actively contribute to the ecosystem.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-18.md\">Read Tasas&rsquo; full application (PR-18) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>None</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://twitter.com/GirnakT\">https://twitter.com/GirnakT</a><br />\nGithub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/Tarpoz\">https://github.com/Tarpoz</a></p>\n<p>Do you support Taras Himiak for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672151179063417870",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "2.99"
+                            },
+                            {
+                                "id": "3672151343778098281",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "83.45"
+                            },
+                            {
+                                "id": "3672151449595628846",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "13.56"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.503684+00"
+                },
+                {
+                    "id": "3674009752398547545",
+                    "voted_options": [
+                        {
+                            "id": "3674009752419088283",
+                            "voted_option": {
+                                "id": "3672151825617448107",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "92",
+                        "title": "Dr. Uro\u0161 Hudomalj",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Dr. Uro\u0161 is an engineer and founder with an academic background in engineering and PhD in mechatronics. He has been building in the Algorand ecosystem for the past 5 years with a primary focus in smart contracts. Most recently Dr. Uros founded Valar, the peer-to-peer staking platform. He wishes to help advance equitable and efficient governance in our ecosystem, runs multiple nodes and has participated in governance since our first referendum.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-22.md\">Read Dr. Uros full application (PR-22) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Valar, Certify, Block Anxiety, Block Tracker, IgoProtect</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/_uhudo\">https://x.com/_uhudo</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/uros-hudomalj/\">https://www.linkedin.com/in/uros-hudomalj/</a><br />\nGithub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/uhudo\">https://github.com/uhudo</a></p>\n<p>Do you support Dr Uro\u0161 Hudomalj for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672151725039487718",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "89.49"
+                            },
+                            {
+                                "id": "3672151825617448107",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "7.37"
+                            },
+                            {
+                                "id": "3672151901535361516",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "3.15"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.54438+00"
+                },
+                {
+                    "id": "3674009752488050053",
+                    "voted_options": [
+                        {
+                            "id": "3674009752503708419",
+                            "voted_option": {
+                                "id": "3672161790972086470",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "93",
+                        "title": "Andrew Kotulak",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Andrew has worked extensively in traditional finance before entering web3 and Algorand 5 years ago as a builder. He currently leads Pact, and was instrumental in its merge with Humble last year, as well as Discord&rsquo;s Algonauts server. Andrew has been an active participant in the Alforand Foundation DeFi committee, always bringing his passionate and informed views to the discussions.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-21.md\">Read Andrew&rsquo;s full application (PR-21) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Pact, Humble DeFi, Algonauts</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/AndrewMKotulak\">https://x.com/AndrewMKotulak</a></p>\n<p>Do you support Andrew Kotulak for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672161739290862195",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "51.73"
+                            },
+                            {
+                                "id": "3672161739291235540",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "35.33"
+                            },
+                            {
+                                "id": "3672161790972086470",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "12.95"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.586515+00"
+                },
+                {
+                    "id": "3674009752560207424",
+                    "voted_options": [
+                        {
+                            "id": "3674009752580733934",
+                            "voted_option": {
+                                "id": "3672163007227342029",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "94",
+                        "title": "Gabor Lipovszki",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Gabor joined the Algorand community in 2019. He is an electrical engineer with coding experience needed to technically evaluate grant proposals. He has built projects using PyTeal and TealScript. Gabor contributes often to the conversations in the Algorand forum.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-14.md\">Read Gabor&rsquo;s full application (PR-14) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>None</p>\n<p><strong>Social profiles</strong></p>\n<p>Forum <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://forum.algorand.co/u/maugli/summary\">https://forum.algorand.co/u/maugli/summary</a></p>\n<p>Do you support Gabor Lipovszki for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672163007225817984",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "42.96"
+                            },
+                            {
+                                "id": "3672163007226529311",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "30.88"
+                            },
+                            {
+                                "id": "3672163007227342029",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "26.17"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.622145+00"
+                },
+                {
+                    "id": "3674009752640326844",
+                    "voted_options": [
+                        {
+                            "id": "3674009752666268079",
+                            "voted_option": {
+                                "id": "3672163578957052908",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "95",
+                        "title": "Mohamed Majdalawieh",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Mohamed has been active in the Algorand ecosystem since 2020 and has deep knowledge of DeFi, NFTs, dApps and community projects. He holds an electrical engineering degree and has experience as a day trader.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-10.md\">Read Mohamed&rsquo;s full application (PR-10) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Angels of Ares, Fallen Order MMORPG, Samurai, Creator Tools, Fun Man Discord bot, Voiman Discord bot, Ninjaman Discord bot, Swapman Discord bot</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/TheAngelOfAres\">https://x.com/TheAngelOfAres</a><br />\nGitHub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/AngelOfAres\">https://github.com/AngelOfAres</a></p>\n<p>Do you support Mohamed Majdalawieh for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672163408247718167",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "2.08"
+                            },
+                            {
+                                "id": "3672163578957052908",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "88.30"
+                            },
+                            {
+                                "id": "3672163624184832097",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "9.62"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.659805+00"
+                },
+                {
+                    "id": "3674009752729999556",
+                    "voted_options": [
+                        {
+                            "id": "3674009752750195869",
+                            "voted_option": {
+                                "id": "3672163960546175380",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "96",
+                        "title": "Sean Menstell-Fraser",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Sean is a newcomer to the Algorand community, having joined in April 2025. He has a background in computer science with working experience in network engineering. He currently works as a project manager, interacting with a variety of stakeholders.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-19.md\">Read Sean&rsquo;s full application (PR-19) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>None</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/Sean3Algo\">https://x.com/Sean3Algo</a><br />\nNFD <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/sean3.algo\">https://app.nf.domains/name/sean3.algo</a></p>\n<p>Do you support Sean Menstell-Fraser for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672163960546175380",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "2.88"
+                            },
+                            {
+                                "id": "3672164041838210970",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "59.14"
+                            },
+                            {
+                                "id": "3672164093411779790",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "37.97"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.702568+00"
+                },
+                {
+                    "id": "3674009752852593021",
+                    "voted_options": [
+                        {
+                            "id": "3674009752875835233",
+                            "voted_option": {
+                                "id": "3672164794813216522",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "97",
+                        "title": "John Mizzoni",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>John joined the Algorand ecosystem in 2021. He has a professional background in finance and is the co-founder of TnxLab. John has consistently taken part in governance voting, contributing to the forum discussions. He has also led conversations about xGov and has a goal to help build trust in the xGov process by promoting transparency and long-term thinking, holding himself and the community to the highest standards.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-3.md\">Read John&rsquo;s full application (PR-03) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>TxnLab, NFDomains, Use-Wallet , Reti Pooling, Haydrops, Algotardio</p>\n<p><strong>Social profiles</strong></p>\n<p>X - <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/prob_fishing\">https://x.com/prob_fishing</a><br />\nNFD - <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/fisherman.algo\">https://app.nf.domains/name/fisherman.algo</a></p>\n<p>Do you support John Mizzoni for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672164794813216522",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "59.21"
+                            },
+                            {
+                                "id": "3672164794816089740",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "18.67"
+                            },
+                            {
+                                "id": "3672164893723343352",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "22.12"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.76098+00"
+                },
+                {
+                    "id": "3674009752946470513",
+                    "voted_options": [
+                        {
+                            "id": "3674009752962974918",
+                            "voted_option": {
+                                "id": "3672165233859284641",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "98",
+                        "title": "Kieran Nelson",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Kieran Nelson Kieran is a developer with over ten years of experience, transitioning from the games industry and consulting into blockchain and Web3. He has been actively building on Algorand since 2021, contributing through projects such as Algogator and, more recently, CompX. His background includes developing and leading enterprise-grade applications for major global companies, alongside managing teams and departments. In the Web3 space, Kieran champions transparency, openness, and a continuous learning approach. His technical expertise encompasses front-end React/Remix applications and Node.js backend development.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-5.md\">Read Kieran&rsquo;s full application (PR-05) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>CompX, weDev, Citrus Swap, Algogator, FruitClub, Neon Forge</p>\n<p><strong>Social profiles</strong></p>\n<p>X: <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/xxiled1\">https://x.com/xxiled1</a></p>\n<p>Do you support Kieran Nelson for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672165233858127234",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "80.37"
+                            },
+                            {
+                                "id": "3672165233859284641",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "11.03"
+                            },
+                            {
+                                "id": "3672165384800977406",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "8.60"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.805525+00"
+                },
+                {
+                    "id": "3674009753051121479",
+                    "voted_options": [
+                        {
+                            "id": "3674009753078434381",
+                            "voted_option": {
+                                "id": "3672165672474923912",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "99",
+                        "title": "Pawe\u0142 Pier\u015bcionek",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Pawel managed IT budgets and engineering teams in the telecom industries and his own startups for 25 years. He is currently fully dedicated to Algorand, running Nodely, and contributing to the ecosystem as much as possible. Pawel manages his businesses, sponsors open source projects and actively hunts and fixes bugs. His most recent experience includes running, tuning and contributing to Algorand core node infrastructure.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-15.md\">Read Pawel&rsquo;s full application (PR-15) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Algonode/Nodely, Supeer/Allo</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/Urthoo\">https://x.com/Urthoo</a><br />\nGithub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/urtho\">https://github.com/urtho</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/urtho\">https://www.linkedin.com/in/urtho</a></p>\n<p>Do you support Pawe\u0142 Pier\u015bcionek for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672165672474923912",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "91.55"
+                            },
+                            {
+                                "id": "3672165672475961082",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "5.67"
+                            },
+                            {
+                                "id": "3672165672478026789",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "2.78"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.855783+00"
+                },
+                {
+                    "id": "3674009753156480181",
+                    "voted_options": [
+                        {
+                            "id": "3674009753177894533",
+                            "voted_option": {
+                                "id": "3672166463330195787",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "100",
+                        "title": "Nicholas Shellabarger",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Nicholas is a full-stack developer and product builder who focuses on open-source infrastructure and decentralized apps.  He is the CTO of Pact and over the past year helped build several core projects on Voi network, which gave him a deep appreciation for the role of public goods. Nicholas has worked on tokenomics design, staking contracts, smart contracts libraries and contributed to the ARC-200 standard.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-7.md\">Read Nicholas&rsquo; full application (PR-07) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Pact, Humble, Nautilus, enVoi Naming Service, BUIDL Token<br />\n<strong>Voi Council Member</strong></p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/NicholasShella2\">https://x.com/NicholasShella2</a><br />\nenVoi <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.envoi.sh/#/shelly.voi\">https://app.envoi.sh/#/shelly.voi</a></p>\n<p>Do you support Nicholas Shellabarger for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672166355409835459",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "7.79"
+                            },
+                            {
+                                "id": "3672166463330195787",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "76.44"
+                            },
+                            {
+                                "id": "3672166463331525030",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "15.76"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.905403+00"
+                },
+                {
+                    "id": "3674009753233000628",
+                    "voted_options": [
+                        {
+                            "id": "3674009753263562384",
+                            "voted_option": {
+                                "id": "3672166893383175046",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "101",
+                        "title": "Ludo Scholtz",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Ludo is a full-stack developer and entrepreneur with 5 years of experience building on Algorand. He wishes to join the council to further strengthen decentralization on Algorand, bring forth new agreements for improvements, and advocate for open-source development that benefit the entire community. He is in principle against retroactive funding, and will advocate for equal treatment for all projects. </p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-1.md\">Read Ludo&rsquo;s full application (PR-01) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Biatec wallet and DEX, ASA Gold, Decentralized scheduler, Aramid Bridge, Multi-currency Invoicing, Explo dinos, Vote coin</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/EAlgonaut\">https://x.com/EAlgonaut</a><br />\nGithub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/scholtz\">https://github.com/scholtz</a></p>\n<p>Do you support Ludo Scholtz for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672166775203551624",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "13.50"
+                            },
+                            {
+                                "id": "3672166844847061714",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "67.06"
+                            },
+                            {
+                                "id": "3672166893383175046",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "19.44"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.942794+00"
+                },
+                {
+                    "id": "3674009753339722858",
+                    "voted_options": [
+                        {
+                            "id": "3674009753369489748",
+                            "voted_option": {
+                                "id": "3672167283528029707",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "102",
+                        "title": "Wilder Stubbs",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Wilder has over 4 years of experience with DAO-like organizations. He has been a member of the Algorand community and wishes to work with the community, advocating for and promoting long-term sustainable practices. Wilder will not audit contracts or critique technical approaches, but wants to bring his experience with DAO operations to Algorand.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-2.md\">Read Wilder&rsquo;s full application (PR-02) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Frostbits Solutions, Gems, ArcPay, PizzaDAO, Blapu, Coop, Aramid Finance, Voi</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/WilderStubbs\">https://x.com/WilderStubbs</a><br />\nGitHub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/Wild-er\">https://github.com/Wild-er</a></p>\n<p>Do you support Wilder Stubbs for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672167283524787057",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "8.43"
+                            },
+                            {
+                                "id": "3672167283527291348",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "76.46"
+                            },
+                            {
+                                "id": "3672167283528029707",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "15.11"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:09.9937+00"
+                },
+                {
+                    "id": "3674009753577606582",
+                    "voted_options": [
+                        {
+                            "id": "3674009753612786705",
+                            "voted_option": {
+                                "id": "3672167574767732850",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "103",
+                        "title": "Julian van der Welle",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Julian is an Algorand node runner with experience across a variety of industries. His professional background includes strategic project management, financial acumen and the ability to assess project viability. He is committed to advancing decentralization and is prepared to dedicate his time and attention to review proposals, participate in council deliberations and contribute to the xGov program.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-20.md\">Read Julian&rsquo;s full application (PR-20) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>None</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/Jdvanderwelle\">https://x.com/Jdvanderwelle</a><br />\nNFD <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/vanderwelle.algo\">https://app.nf.domains/name/vanderwelle.algo</a><br />\nGithub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/vanderwelle\">https://github.com/vanderwelle</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/julian-van-der-welle-6738049a/\">https://www.linkedin.com/in/julian-van-der-welle-6738049a/</a></p>\n<p>Do you support for Julian van der Welle the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672167574767732850",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "7.26"
+                            },
+                            {
+                                "id": "3672167574768952913",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "41.44"
+                            },
+                            {
+                                "id": "3672167613949741550",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "51.30"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:10.106982+00"
+                },
+                {
+                    "id": "3674009753704514673",
+                    "voted_options": [
+                        {
+                            "id": "3674009753730352057",
+                            "voted_option": {
+                                "id": "3672168275067581525",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "104",
+                        "title": "Joseph Wu",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Joseph has been a part of the Algorand ecosystem for 6 years, participating in governance, hackathons and the Algorand Drapper accelerator. He works with product development and management, with extensive experience in prototyping and validation in Algorand. He is an active contributor to blockchain organizations including the DC DAO, Virginia Blockchain Council and the Blockchain Policy Institute. </p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-6.md\">Read Joseph&rsquo;s full application (PR-06) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>Scrip Ledger, Rand Gallery, AlgoExplorer</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/scripledger_jw\">https://x.com/scripledger_jw</a><br />\nLinkedIn <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://www.linkedin.com/in/joseph-wu-293855106/\">https://www.linkedin.com/in/joseph-wu-293855106/</a><br />\nGitHub <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/josephwu95\">https://github.com/josephwu95</a></p>\n<p>Do you support Joseph Wu for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672168275066972950",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "41.02"
+                            },
+                            {
+                                "id": "3672168275067581525",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "34.01"
+                            },
+                            {
+                                "id": "3672168275069352582",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "24.97"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:10.167686+00"
+                },
+                {
+                    "id": "3674009753830564963",
+                    "voted_options": [
+                        {
+                            "id": "3674009753865329283",
+                            "voted_option": {
+                                "id": "3672168636284160847",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false
+                            },
+                            "allocated_algo_amount": 134623696526
+                        }
+                    ],
+                    "topic": {
+                        "id": "105",
+                        "title": "Naoki Yamamoto",
+                        "description_html": "<p><strong>Experience Summary</strong></p>\n<p>Naoki works in education administration, mostly tech support and accounting. He has been an active member of the Algorand ecosystem since 2021, with a focus on engaging with the Japanese Algorand community, through managing the Japanese Algorand Discord and social channel, which led him to take part in a Japanese government proof of concept project using the Algorand blockchain in 2023. Naoki wishes to contribute to decentralization by helping evaluate proposals that truly serve as public goods.</p>\n<p><a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://github.com/algorandfoundation/xGov/blob/main/Council/xgov_council-8.md\">Read Naoki&rsquo;s full application (PR-08) before voting</a></p>\n<p><strong>Project affiliations</strong></p>\n<p>None</p>\n<p><strong>Social profiles</strong></p>\n<p>X <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://x.com/aper_algo\">https://x.com/aper_algo</a><br />\nNFD <a target=\"_blank\" rel=\"noreferrer noopener\"  href=\"https://app.nf.domains/name/aper.algo\">https://app.nf.domains/name/aper.algo</a></p>\n<p>Do you support Naoki Yamamoto for the xGov council?</p>",
+                        "total_vote_count": 1394,
+                        "topic_options": [
+                            {
+                                "id": "3672168636284160847",
+                                "title": "Yes",
+                                "indicator": "a",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "69.53"
+                            },
+                            {
+                                "id": "3672168636284832912",
+                                "title": "No",
+                                "indicator": "b",
+                                "is_foundation_choice": false,
+                                "vote_percentage": "14.25"
+                            },
+                            {
+                                "id": "3672168636286107032",
+                                "title": "Abstain",
+                                "indicator": "c",
+                                "is_foundation_choice": true,
+                                "vote_percentage": "16.22"
+                            }
+                        ]
+                    },
+                    "creation_datetime": "2025-07-07 16:06:10.227409+00"
+                }
+            ]
+        }
+    ]
+}
