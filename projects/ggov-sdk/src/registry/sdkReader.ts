@@ -270,7 +270,8 @@ export class GGovRegistryReaderSDK {
   }
 
   getCommitteeSuperboxPageKey(committeeMetadata: CommitteeMetadata, page: number): string {
-    return `${this.getCommitteeSuperboxPrefix(committeeMetadata)}${page}`;
+    // superbox@2.0.0 delimits the prefix from the page index with `_` (data box name = `name + '_' + page`)
+    return `${this.getCommitteeSuperboxPrefix(committeeMetadata)}_${page}`;
   }
 
   async getCommitteeSuperboxDataLast(committeeId: CommitteeId): Promise<{ last?: StoredXGov; total: number }> {

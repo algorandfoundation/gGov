@@ -17,5 +17,18 @@ export async function deploy() {
     update: true,
   })
 
-  // TODO test if there are periods on the registry; if so, update them to the latest bytecode using sdk.updatePeriodApp
+  // If the registry already has periods, update each one's on-chain app code to the
+  // latest GGovPeriod bytecode bundled with this ggov-sdk build (createRegistry only
+  // refreshed the bytecode stored on the registry, not the already-deployed period apps).
+  const summaries = await sdk.getAllPeriodSummaries()
+  if (summaries.length === 0) {
+    console.log('Registry has no periods to update')
+  } else {
+    console.log(`Updating ${summaries.length} period app(s) to the latest GGovPeriod build`)
+    for (const { id } of summaries) {
+      const appId = await sdk.getPeriodAppId(id)
+      await sdk.updatePeriodApp({ periodId: id })
+      console.log(`Updated period app ${appId} (periodId ${id})`)
+    }
+  }
 }

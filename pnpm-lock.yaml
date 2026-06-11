@@ -12,8 +12,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(tslib@2.8.1)
       '@d13co/superbox':
-        specifier: ^1.1.0
-        version: 1.1.0(tslib@2.8.1)
+        specifier: ^2.0.0
+        version: 2.0.0(tslib@2.8.1)
       ggov-sdk:
         specifier: link:../ggov-sdk
         version: link:../ggov-sdk
@@ -112,9 +112,6 @@ importers:
       '@blockshake/defly-connect':
         specifier: ^1.2.1
         version: 1.2.1(algosdk@3.5.2)
-      '@d13co/open-in':
-        specifier: ^0.1.2
-        version: 0.1.2
       '@perawallet/connect':
         specifier: ^1.4.1
         version: 1.4.2(algosdk@3.5.2)
@@ -276,11 +273,6 @@ packages:
   '@algorandfoundation/algorand-typescript-testing@1.1.0':
     resolution: {integrity: sha512-2tyAqj/fbOugluMzsQaUPEpznbiPGfaF10AXz3VvwhbASPDjg8iS6TprdDEjPfFw4yiQ3IElpZ/bG0iztnKzMQ==}
 
-  '@algorandfoundation/algorand-typescript@1.0.0-alpha.91':
-    resolution: {integrity: sha512-f2BzH+ALtTRvUmxiBF4urgsBsXwqAlD6IqIVB/r634sOi2jmyPVjhVPB+cZAv2nzxx7lmKzt7HU6oxaW7es0PA==}
-    peerDependencies:
-      tslib: ^2.6.2
-
   '@algorandfoundation/algorand-typescript@1.1.0':
     resolution: {integrity: sha512-nH2aH3gH2mtW3ow6pjAgPVNjmYxIoYwP7Xh5SUQ2kKsQaP3QUs6I3c+EAAo+Hc5jqS8bF1T23MxpLeWbh+BbKQ==}
     peerDependencies:
@@ -436,11 +428,8 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
-  '@d13co/open-in@0.1.2':
-    resolution: {integrity: sha512-s2/p03vJLJnN46X6mAo1P2kERi0UGAubLwk8S5AI6vsEmxrxmfIvic/B01FM0+ygAQU23cIMRbY+qwbPsuyYag==}
-
-  '@d13co/superbox@1.1.0':
-    resolution: {integrity: sha512-EBZTrvSUYoXM2DxFzRETsmXaIrQo3DybMXT4drKUejM8z+AsPdeMcMQerBVSHqGHw4ff8/YNEd719Gp3UVIQEg==}
+  '@d13co/superbox@2.0.0':
+    resolution: {integrity: sha512-/AQ4yUBULg4qehgYDDnh3RkanFpNHaXtsVm9usKsCfuM1OMIWeVSKOKgl4OcFaR187MSTg6zaTXaTF7QFLrncw==}
     engines: {node: '>=22.0', npm: '>=9.0'}
 
   '@emnapi/runtime@1.11.0':
@@ -4685,10 +4674,6 @@ snapshots:
     transitivePeerDependencies:
       - tslib
 
-  '@algorandfoundation/algorand-typescript@1.0.0-alpha.91(tslib@2.8.1)':
-    dependencies:
-      tslib: 2.8.1
-
   '@algorandfoundation/algorand-typescript@1.1.0(tslib@2.8.1)':
     dependencies:
       tslib: 2.8.1
@@ -4871,11 +4856,9 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@d13co/open-in@0.1.2': {}
-
-  '@d13co/superbox@1.1.0(tslib@2.8.1)':
+  '@d13co/superbox@2.0.0(tslib@2.8.1)':
     dependencies:
-      '@algorandfoundation/algorand-typescript': 1.0.0-alpha.91(tslib@2.8.1)
+      '@algorandfoundation/algorand-typescript': 1.1.0(tslib@2.8.1)
     transitivePeerDependencies:
       - tslib
 

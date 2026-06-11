@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { GGovSDKProvider } from '@/hooks/useGGovSDK'
@@ -19,7 +19,13 @@ import AddTopic from '@/components/pages/manage/AddTopic'
 import Committees from '@/components/pages/vote/Committees'
 import CommitteeDetail from '@/components/pages/vote/CommitteeDetail'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      console.error(`Query failed [${JSON.stringify(query.queryKey)}]:`, error)
+    },
+  }),
+})
 
 let supportedWallets: SupportedWallet[]
 if (import.meta.env.VITE_ALGOD_NETWORK === 'localnet') {

@@ -210,6 +210,24 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeWithdrawALGOTxns,
   });
 
+  /**
+   * Delete the GGovRegistry app. Admin-only (the contract's deleteApplication baremethod
+   * checks the caller is the admin directly — no inner call). On deletion the AVM closes the
+   * registry app account and sends its residual ALGO to the deleting sender, so withdraw any
+   * meaningful balance first.
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup();
+    builder = builder.delete.bare({});
+    return builder;
+  }
+
+  deleteApplication = this.makeTxnExecutor({
+    maker: this.makeDeleteApplicationTxns,
+  });
+
   @requireWriter()
   @wrapErrors()
   makeUningestXGovsTxns({

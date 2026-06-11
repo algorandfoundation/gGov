@@ -21,7 +21,7 @@ import {
 import { abimethod, compileArc4, decodeArc4, encodeArc4, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { sbAppend, sbCreate, sbDeleteIndex, sbDeleteSuperbox, sbGetData } from '@d13co/superbox'
 import { SuperboxMeta } from '@d13co/superbox/smart_contracts/superbox/lib/types.algo'
-import { itoa, sbMetaBox } from '@d13co/superbox/smart_contracts/superbox/lib/utils.algo'
+import { sbDataBoxRef, sbMetaBox } from '@d13co/superbox/smart_contracts/superbox/lib/utils.algo'
 import {
   errAccountNotExists,
   errAccountOffsetMismatch,
@@ -648,8 +648,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
       if (page >= maxDataPages) {
         log(Bytes``) // no page at index; logging empty
       } else {
-        const dataBoxName = superboxPrefix + itoa(page) // TODO export dataBoxRef from superbox lib and use that instead of reconstructing name
-        log(Box<bytes>({ key: dataBoxName }).value)
+        log(sbDataBoxRef(superboxPrefix, page).value)
       }
     }
   }

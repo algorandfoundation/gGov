@@ -654,6 +654,34 @@ export class GGovSDK extends GGovReaderSDK {
 
   updatePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeUpdatePeriodAppTxns });
 
+  // ── Period: deleteApplication (admin-only, via registry C2C verifyAdmin) ──
+
+  /**
+   * Delete a deployed period app. Admin-only (the contract's deleteApplication baremethod
+   * inner-calls registry.verifyAdmin). On deletion the AVM closes the period app account and
+   * sends its residual ALGO to the deleting sender, so withdraw any meaningful balance first.
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeDeletePeriodAppTxns({
+    periodId: _periodId,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number;
+    client: GGovPeriodClient;
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup();
+    return builder.delete.bare({
+      note,
+      // 1 inner verifyAdmin (checkAdminCaller)
+      extraFee: (1000).microAlgo(),
+    });
+  }
+
+  deletePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeDeletePeriodAppTxns });
+
   // ── Period: withdrawALGO (admin-only, via registry C2C verifyAdmin) ──
 
   /**
