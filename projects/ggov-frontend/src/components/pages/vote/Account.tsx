@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe } from "@/hooks/queries";
@@ -16,9 +16,34 @@ import Address from "@/components/Address";
 
 export default function Account() {
   const { address } = useParams<{ address: string }>();
-  const { activeAddress } = useWallet();
+  const { activeAddress, activeWalletAccounts } = useWallet();
+  const navigate = useNavigate();
   const { sdk } = useGGovSDK();
   const isOwnAccount = !!address && !!activeAddress && address === activeAddress;
+  const hasMultipleAccounts = (activeWalletAccounts ?? []).length > 1;
+
+  // Offer to jump to the now-active account's page when the user switches wallet
+  // accounts while viewing what was their own account page.
+  const [showSwitchBanner, setShowSwitchBanner] = useState(false);
+  const prevActiveAddress = useRef(activeAddress);
+  useEffect(() => {
+    const previous = prevActiveAddress.current;
+    prevActiveAddress.current = activeAddress;
+    if (
+      hasMultipleAccounts &&
+      previous &&
+      activeAddress &&
+      previous !== activeAddress &&
+      address === previous &&
+      address !== activeAddress
+    ) {
+      setShowSwitchBanner(true);
+    }
+  }, [activeAddress, address, hasMultipleAccounts]);
+  // Once the viewed page matches the active account again the prompt is moot.
+  useEffect(() => {
+    if (address === activeAddress) setShowSwitchBanner(false);
+  }, [address, activeAddress]);
   const { data: committees = [], isLoading: loadingCommittees } = useCommitteeVotingPowers(address);
   const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address);
   const { data: delegation, isLoading: loadingDelegation } = useDelegation(isOwnAccount ? address : undefined);
@@ -42,6 +67,30 @@ export default function Account() {
       <h1 className="text-2xl font-bold">
         Account <Address address={address} width={8} long className="text-lg text-muted-foreground" />
       </h1>
+
+      {showSwitchBanner && activeAddress && (
+        <div className="rounded-lg border border-accent bg-accent/20 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-sm">
+            You switched accounts. View{" "}
+            <Address address={activeAddress} width={8} className="font-mono" />
+            's account page instead?
+          </p>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => {
+                setShowSwitchBanner(false);
+                navigate(`/account/${activeAddress}`);
+              }}
+            >
+              Switch to my account
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowSwitchBanner(false)}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className={isOwnAccount ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
         {isOwnAccount && (
