@@ -8,11 +8,13 @@ import {
   increaseBudgetIncrementCost,
   XGovCommitteeFile,
   GGovRegistrySDK,
+  GGovSDK,
 } from 'ggov-sdk'
 import {
   errCommitteeExists,
   errCommitteeIncomplete,
   errCommitteeNotExists,
+  errGGovDelegationExists,
   errIngestedVotesNotZero,
   errNumXGovsExceeded,
   errOutOfOrder,
@@ -23,6 +25,7 @@ import {
   errTotalVotesZero,
   errTotalXGovsExceeded,
   errUnauthorized,
+  errZeroVotes,
 } from '../base/errors.algo'
 import { committeesForTests } from './fixtures'
 import { deployRegistry, deployRegistryWithCommittee, deployRegistryWithTwoCommittees, transformedError } from '../common-tests'
@@ -403,6 +406,26 @@ describe('GGovRegistry contract', () => {
       )
     })
 
+    test('rejects zero-vote xGov', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const xGovAccounts = await Promise.all(
+        Array.from({ length: 2 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
+      )
+      // one member carries 0 votes; totals still add up but the zero-vote entry must be rejected
+      const committeeFile: XGovCommitteeFile = {
+        ...committeeTemplate,
+        totalMembers: 2,
+        totalVotes: 10,
+        registryId: 0,
+        xGovs: [
+          { address: xGovAccounts[0].toString(), votes: 10 },
+          { address: xGovAccounts[1].toString(), votes: 0 },
+        ],
+      }
+      await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errZeroVotes))
+    })
+
     test('works in multiple batches', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
@@ -557,6 +580,38 @@ describe('GGovRegistry contract', () => {
       const { sdk } = await deployRegistry(localnet, testAccount)
       const metadata = await sdk.getCommitteeMetadata(new Uint8Array(32))
       expect(metadata).toBeNull()
+    })
+  })
+
+  describe('mirrorXGovDelegation', () => {
+    const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
+      new GGovSDK({
+        algorand: localnet.algorand,
+        ggovRegistryAppId: appId,
+        writerAccount: {
+          sender: user,
+          signer: localnet.algorand.account.getSigner(user),
+        },
+      })
+
+    test('non-admin cannot mirrorXGovDelegation', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        userSDK(sdk.appId, nonAdmin).mirrorXGovDelegation({ account: xGovAccounts[0].toString() }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('refuses to overwrite an existing delegation', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 2)
+      const [delegator, delegatee] = xGovAccounts
+      // delegator (a known, ingested account) sets a local gGov delegation
+      await userSDK(sdk.appId, delegator).delegate({ delegatee: delegatee.toString() })
+      // admin attempting to mirror over the existing delegation must be rejected
+      await expect(
+        userSDK(sdk.appId, testAccount).mirrorXGovDelegation({ account: delegator.toString() }),
+      ).rejects.toThrow(transformedError(errGGovDelegationExists))
     })
   })
 

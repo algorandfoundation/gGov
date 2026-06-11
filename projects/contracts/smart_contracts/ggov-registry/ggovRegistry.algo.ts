@@ -29,6 +29,7 @@ import {
   errCommitteeIdOverflow,
   errCommitteeIncomplete,
   errCommitteeNotExists,
+  errGGovDelegationExists,
   errGGovNoDelegation,
   errGGovPeriodNotExists,
   errGGovSelfDelegate,
@@ -44,6 +45,7 @@ import {
   errTotalVotesZero,
   errTotalXGovsExceeded,
   errUnauthorized,
+  errZeroVotes,
 } from '../base/errors.algo'
 import {
   ACCOUNT_ID_WITH_VOTES_STORED_SIZE,
@@ -184,6 +186,8 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     let ingestedVotes = committee.ingestedVotes.asUint64()
     let writeBuffer = Bytes``
     for (const xGov of clone(xGovs)) {
+      // reject zero-vote xGovs; they carry no voting power and would skew totals/member counts
+      ensure(xGov.votes.asUint64() > 0, errZeroVotes)
       const gGovAccount = this.getOrCreateAccount(xGov.account)
       const accountId = gGovAccount.accountId
       // ensure xGovs are added in ascending order
@@ -320,8 +324,12 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     box.delete()
   }
 
-  /** Mirror delegation from the xGov registry's box (if present). */
+  /** Mirror delegation from the xGov registry's box (if present). Admin only. */
   public mirrorXGovDelegation(account: Account): void {
+    this.ensureCallerIsAdmin()
+    // never overwrite an existing gGov delegation; mirroring only seeds delegations not yet set locally
+    ensure(!this.delegations(account).exists, errGGovDelegationExists)
+
     const registry = compileArc4(XGovRegistryMock)
     const [xGovBox, exists] = registry.call.getXGovBox({
       appId: this.xGovRegistryApp.value,

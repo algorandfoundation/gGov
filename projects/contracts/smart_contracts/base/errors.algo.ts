@@ -8,6 +8,7 @@ export const errPeriodEndLessThanStart = 'ERR:PE_LT' // Period end must be great
 export const errIngestedVotesNotZero = 'ERR:IV_NZ' // Cannot unregister committee with ingested votes (votes must be zero)
 export const errTotalXGovsExceeded = 'ERR:TX_XC' // Total xGovs exceeded
 export const errTotalVotesExceeded = 'ERR:TV_XC' // Total votes exceeded
+export const errZeroVotes = 'ERR:V_Z' // xGov votes must be greater than zero
 export const errTotalVotesMismatch = 'ERR:TV_MM' // Total votes mismatch - ingested votes must equal total votes when finished
 export const errNumXGovsExceeded = 'ERR:NX_XC' // Number of xGovs to uningest exceeds total xGovs
 export const errOutOfOrder = 'ERR:OOO' // xGovs must be added in ascending order by account ID
@@ -79,3 +80,4 @@ export const errGGovVotePowerMismatch = 'ERR:GV_VP' // Vote sum != voting power
 export const errGGovCannotOverride = 'ERR:GV_OD' // Delegatee cannot override direct vote
 export const errGGovNoDelegation = 'ERR:GD_NX' // No delegation for account
 export const errGGovSelfDelegate = 'ERR:GD_SD' // Cannot delegate to self
+export const errGGovDelegationExists = 'ERR:GD_EX' // Delegation already exists for account

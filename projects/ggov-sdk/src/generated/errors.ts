@@ -11,6 +11,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:IV_NZ": "Cannot unregister committee with ingested votes (votes must be zero)",
   "ERR:TX_XC": "Total xGovs exceeded",
   "ERR:TV_XC": "Total votes exceeded",
+  "ERR:V_Z": "xGov votes must be greater than zero",
   "ERR:TV_MM": "Total votes mismatch - ingested votes must equal total votes when finished",
   "ERR:NX_XC": "Number of xGovs to uningest exceeds total xGovs",
   "ERR:OOO": "xGovs must be added in ascending order by account ID",
@@ -63,5 +64,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GV_VP": "Vote sum != voting power",
   "ERR:GV_OD": "Delegatee cannot override direct vote",
   "ERR:GD_NX": "No delegation for account",
-  "ERR:GD_SD": "Cannot delegate to self"
+  "ERR:GD_SD": "Cannot delegate to self",
+  "ERR:GD_EX": "Delegation already exists for account"
 };

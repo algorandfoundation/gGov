@@ -149,7 +149,7 @@ increment lastCommitteeId
 ```
 
 - `unregisterCommittee(committeeId)` - Delete committee. Must have no ingested votes
-- `ingestXGovs(committeeId, xGovs: [account, votes][])` - Ingest xGovs into a committee superbox (ascending account-ID order, dedup-enforced; verifies total votes on completion)
+- `ingestXGovs(committeeId, xGovs: [account, votes][])` - Ingest xGovs into a committee superbox (ascending account-ID order, dedup-enforced; zero-vote xGovs rejected; verifies total votes on completion)
 - `uningestXGovs(committeeId, xGovs: Account[])` - Remove the last N xGovs from a committee superbox (strictly descending offset order)
 - `setXGovRegistryApp(appId: Application)` - Set the xGov Registry Application ID
 - `setAdmin(newAdmin: Account)` - Transfer admin (zero address rejected)
@@ -176,7 +176,7 @@ store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false
 - `updatePeriodSummary(periodId, votingStart, votingEnd, numTopics, ready)` - Mirror a period's summary. Gated on `Global.callerApplicationId === storedAppId` — only the registered period app can update its own summary
 - `delegate(delegatee: Account)` - Delegate own gGov voting power (self-delegation rejected; delegator must be a known account)
 - `undelegate()` - Remove own delegation
-- `mirrorXGovDelegation(account: Account)` - Mirror a delegation from the xGov registry's box, if present (self-delegation skipped)
+- `mirrorXGovDelegation(account: Account)` - Admin-only: mirror a delegation from the xGov registry's box, if present (self-delegation skipped; refuses to overwrite an account's existing gGov delegation)
 
 ### Read Methods
 
@@ -517,6 +517,8 @@ ensure(ingested_accounts + xGovs.length <= committee.total_members)
 write_chunk: bytes of shape [id, votes][]
 // iterate xGovs
 foreach xGov in xGovs:
+  // reject zero-vote xGovs (no voting power)
+  assert votes > 0
   // get or create account id
   account_id = getOrCreateAccountId(account)
   // assert ascending ID ingestion for dedupe/uniqueness enforcement
