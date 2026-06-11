@@ -1,0 +1,22 @@
+{
+  "name": "ggov-committees",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Build and upload gGov committees derived from the published xGov candidate committees",
+  "scripts": {
+    "build": "tsx src/build.ts",
+    "upload": "tsx src/upload.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.0",
+    "algosdk": "^3.5.2",
+    "ggov-sdk": "file:../../ggov-sdk"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  }
+}
