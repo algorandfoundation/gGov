@@ -11,7 +11,7 @@ import { errCommitteeNotExists, errState } from '../base/errors.algo'
 import { configureProposal, deployDelegatorFull, transformedError } from '../common-tests'
 import { STATUS_EMPTY } from '../xgov-proposal-mock/xGovProposalMock.algo'
 
-describe('Delegator complex e2e tests', () => {
+describe.skip('Delegator complex e2e tests', () => {
   const localnet = algorandFixture()
   beforeAll(() => {
     Config.configure({

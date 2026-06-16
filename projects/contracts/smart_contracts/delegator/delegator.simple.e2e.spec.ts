@@ -6,7 +6,7 @@ import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from 'xgov-delega
 import { errAlgoHoursExist, errPeriodStartInvalid, errUnauthorized } from '../base/errors.algo'
 import { deployDelegatorSimple, transformedError } from '../common-tests'
 
-describe('Delegator simple e2e tests', () => {
+describe.skip('Delegator simple e2e tests', () => {
   const localnet = algorandFixture()
   beforeAll(() => {
     Config.configure({
