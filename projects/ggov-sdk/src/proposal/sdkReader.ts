@@ -2,13 +2,13 @@ import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
 import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
-import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "./registry";
-import { GGovRegistryClient, GGovPeriodSummary } from "./generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriod, GGovVoteRecord } from "./generated/GGovPeriodClient";
-import { getConstructorConfig } from "./networkConfig";
+import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
+import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
+import { GGovPeriodClient, GGovPeriod, GGovVoteRecord } from "../generated/GGovPeriodClient";
+import { getConstructorConfig } from "../networkConfig";
 import { BodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
-import { chunked } from "./util/chunked";
-import { errorTransformer, wrapErrors } from "./util/wrapErrors";
+import { chunked } from "../util/chunked";
+import { errorTransformer, wrapErrors } from "../util/wrapErrors";
 
 const EMPTY_PERIOD: GGovPeriod = {
   committeeId: new Uint8Array(32),

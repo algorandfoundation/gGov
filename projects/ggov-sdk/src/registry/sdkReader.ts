@@ -3,7 +3,7 @@ import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-
 import { ALGORAND_ZERO_ADDRESS_STRING, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
 import { CommitteeMetadata, GGovRegistryClient, GGovRegistryComposer, GGovAccount, SuperboxMeta } from "../generated/GGovRegistryClient";
-import { getConstructorConfig } from "./networkConfig";
+import { getConstructorConfig } from "../networkConfig";
 import { CommitteeId, AccountWithVotes, ReaderConstructorArgs, STORED_XGOV_BYTE_LENGTH, StoredXGov, XGovCommitteeFile } from "./types";
 import { chunk } from "../util/chunk";
 import { chunked } from "../util/chunked";

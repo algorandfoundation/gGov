@@ -1,9 +1,9 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
 import { Address } from "algosdk";
-import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "./registry";
-import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "./generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "./generated/GGovPeriodClient";
+import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "../registry";
+import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "../generated/GGovRegistryClient";
+import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "../generated/GGovPeriodClient";
 import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
@@ -16,10 +16,10 @@ import {
   SenderWithSigner,
   validateBodyJson,
 } from "./types";
-import { committeeIdToRaw } from "./util/comitteeId";
-import { chunk } from "./util/chunk";
-import { requireWriter } from "./util/requiresSender";
-import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
+import { committeeIdToRaw } from "../util/comitteeId";
+import { chunk } from "../util/chunk";
+import { requireWriter } from "../util/requiresSender";
+import { wrapErrors, wrapErrorsInternal } from "../util/wrapErrors";
 
 /** Algorand atomic group transaction limit. */
 const MAX_GROUP_SIZE = 16;
