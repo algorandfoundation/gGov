@@ -52,7 +52,7 @@ jobs:
         run: algokit project run build --project-name 'contracts'
 
       - name: Build SDK
-        run: algokit project run build --project-name 'ggov-sdk'
+        run: algokit project run build --project-name 'ggov-sdk' --project-name 'delegator-sdk'
 
       - name: Run tests
         shell: bash
