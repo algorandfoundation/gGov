@@ -1,1 +1,6 @@
 * text=auto eol=lf
+*.puya.map linguist-generated
+*.approval.teal linguist-generated
+*.arc32.json linguist-generated
+*.arc56.json linguist-generated
+**/artifacts/*/*Client.ts linguist-generated
