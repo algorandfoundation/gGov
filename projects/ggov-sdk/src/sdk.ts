@@ -595,31 +595,30 @@ export class GGovSDK extends GGovReaderSDK {
     voterAccount,
     topicVotes,
     note,
-    sender,
     client,
     builder,
   }: GGovPeriodContractArgs["vote(address,uint64[][])void"] & {
     periodId: bigint | number;
-    sender?: string;
     client: GGovPeriodClient;
   } & PeriodMethodBuilderArgs) {
     builder = builder ?? client.newGroup();
+
     const opts: any = {
       args: { voterAccount, topicVotes },
       note,
       // 1 inner getDelegate (when delegated) + 1 inner getXGovVotingPower
-      extraFee: (2000).microAlgo(),
+      extraFee: (1000).microAlgo(),
     };
-    if (sender) {
-      opts.sender = sender;
-      opts.signer = this.algorand.account.getSigner(sender);
-    }
-    // Delegated vote: the sender (delegatee) differs from the voter. The contract requires the
-    // delegator to be referenced in the accounts array (Txn.accounts[0]) so delegated votes are
-    // visible to indexers/explorers. For self-votes the contract doesn't check, so we omit it.
-    const effectiveSender = String(sender ?? this.writerAccount!.sender);
+    // The sender is always this SDK's writerAccount. Self-vote: writerAccount === voterAccount.
+    // Delegated vote: writerAccount is the delegatee and voterAccount is the delegator (someone who
+    // delegated to them). In the delegated case the contract requires the delegator to be referenced
+    // in the foreign-accounts array so the vote is visible to indexers/explorers; for self-votes it
+    // doesn't check, so we omit it. To cast a delegated vote, give the SDK a writerAccount whose
+    // signer is the delegatee and pass the delegator as voterAccount.
+    const effectiveSender = String(this.writerAccount!.sender);
     if (effectiveSender !== String(voterAccount)) {
       opts.accountReferences = [voterAccount];
+      opts.extraFee = (2000).microAlgo(); // +1 inner account ref for delegation check
     }
     return builder.vote(opts);
   }
