@@ -5,7 +5,7 @@ export * from "./proposal/types";
 export { GGovRegistryFactory, GGovRegistryClient } from "./generated/GGovRegistryClient";
 export { GGovPeriodFactory, GGovPeriodClient, type GGovPeriod, type GGovVoteRecord } from "./generated/GGovPeriodClient";
 
-// Registry SDK surface (merged from the former ggov-registry-sdk package).
+// Registry SDK surface.
 export {
   GGovRegistrySDK,
   GGovRegistryReaderSDK,

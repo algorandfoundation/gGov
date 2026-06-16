@@ -11,12 +11,7 @@ export type ConstructorArgsOptions =
       network: Network;
     }
   | {
-      ggovRegistryAppId: number | bigint;
-      readerAccount?: string;
-    }
-  /** @deprecated Use ggovRegistryAppId. Kept for backward compatibility. */
-  | {
-      ggovAppId: number | bigint;
+      registryAppId: number | bigint;
       readerAccount?: string;
     };
 

@@ -52,7 +52,7 @@ export class GGovSDK extends GGovReaderSDK {
         algorand: this.algorand,
         concurrency: this.concurrency,
         debug: this.debug,
-        registryAppId: this.ggovRegistryAppId,
+        registryAppId: this.registryAppId,
         readerAccount: undefined,
         writerAccount,
       });
@@ -170,9 +170,9 @@ export class GGovSDK extends GGovReaderSDK {
 
   /**
    * Set (or clear) an account's voting-power delegation. ABI-compatible with the xGov registry's
-   * `set_voting_account`. Replaces the former `delegate`/`undelegate` wrappers:
-   *  - delegate:   `setVotingAccount({ votingAddress })`
-   *  - undelegate: `setVotingAccount({})` (omitting `votingAddress` clears, i.e. vote-for-self)
+   * `set_voting_account`:
+   *  - delegate: `setVotingAccount({ votingAddress })`
+   *  - clear (vote for self): `setVotingAccount({})` (omitting `votingAddress`)
    *  - manage another account (as its current delegatee): `setVotingAccount({ account, votingAddress })`
    *
    * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
@@ -768,7 +768,7 @@ export class GGovSDK extends GGovReaderSDK {
 
     const sdk = new GGovSDK({
       algorand,
-      ggovRegistryAppId: appClient.appId,
+      registryAppId: appClient.appId,
       writerAccount: deployer,
     });
 

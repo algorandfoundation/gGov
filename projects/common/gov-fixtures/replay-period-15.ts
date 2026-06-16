@@ -293,7 +293,7 @@ async function main() {
     } else {
       console.log(`Attaching to existing GGovRegistry app ${REGISTRY_APP_ID}...`);
       // The DEPLOYER must already be this registry's operator (and admin for setReady).
-      sdk = new GGovSDK({ algorand, ggovRegistryAppId: REGISTRY_APP_ID, writerAccount: writer });
+      sdk = new GGovSDK({ algorand, registryAppId: REGISTRY_APP_ID, writerAccount: writer });
       registryAppId = REGISTRY_APP_ID;
       registryAppAddr = algosdk.getApplicationAddress(REGISTRY_APP_ID).toString();
     }
@@ -422,7 +422,7 @@ async function main() {
       async (addr, i) => {
         const voterSdk = new GGovSDK({
           algorand,
-          ggovRegistryAppId: registryAppId,
+          registryAppId: registryAppId,
           writerAccount: { sender: addr, signer: algorand.account.getSigner(addr) },
         });
         (voterSdk as any).periodAppCache.set(BigInt(periodId!), BigInt(periodAppId));

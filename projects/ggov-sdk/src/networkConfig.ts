@@ -22,30 +22,17 @@ export function getNetworkConfig(network: Network) {
 }
 
 /**
- * Resolves the registry app id and reader account from constructor args.
- *
- * Accepts either `{ network }` or an explicit app id under any of the accepted
- * field names: `registryAppId` (registry SDK), `ggovRegistryAppId` (proposal SDK),
- * or the deprecated `ggovAppId` alias.
+ * Resolves the registry app id and reader account from constructor args:
+ * either `{ network }` or an explicit `{ registryAppId }`.
  */
 export type ConstructorConfigArgs =
   | { network: Network }
-  | { registryAppId: number | bigint; readerAccount?: string }
-  | { ggovRegistryAppId: number | bigint; readerAccount?: string }
-  /** @deprecated Use ggovRegistryAppId. */
-  | { ggovAppId: number | bigint; readerAccount?: string };
+  | { registryAppId: number | bigint; readerAccount?: string };
 
 export function getConstructorConfig(args: ConstructorConfigArgs): { appId: bigint; readerAccount?: string } {
   if ("network" in args) {
     const config = getNetworkConfig(args.network);
     return { appId: config.registryAppId, readerAccount: config.readerAccount ?? defaultReaderAccount };
   }
-  const appIdRaw =
-    "registryAppId" in args
-      ? args.registryAppId
-      : "ggovRegistryAppId" in args
-        ? args.ggovRegistryAppId
-        : (args as { ggovAppId: number | bigint }).ggovAppId;
-  const r = "readerAccount" in args ? args.readerAccount : undefined;
-  return { appId: BigInt(appIdRaw), readerAccount: r ?? defaultReaderAccount };
+  return { appId: BigInt(args.registryAppId), readerAccount: args.readerAccount ?? defaultReaderAccount };
 }

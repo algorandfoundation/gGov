@@ -28,7 +28,7 @@ import { GGovSDK } from "..";
   // Writer-enabled SDK bound to the existing registry. Writer must be the registry admin.
   const sdk = new GGovSDK({
     algorand,
-    ggovRegistryAppId: registryAppId,
+    registryAppId: registryAppId,
     writerAccount: { sender: deployer.addr, signer: deployer.signer },
   });
   console.log(`Connected to registry app ${registryAppId} as ${deployer.addr}`);
