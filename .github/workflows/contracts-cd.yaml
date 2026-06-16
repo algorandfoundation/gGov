@@ -32,8 +32,8 @@ jobs:
       - name: Install algokit
         run: pipx install algokit
 
-      - name: Bootstrap dependencies
-        run: algokit project bootstrap all --ci --project-name 'contracts'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Configure git
         shell: bash
