@@ -9,11 +9,9 @@ import {
   errAccountNotExists,
   errGGovCannotOverride,
   errGGovHasVotes,
-  errGGovNoDelegation,
   errGGovNoOptions,
   errGGovNotReady,
   errGGovReady,
-  errGGovSelfDelegate,
   errGGovTopicIndexOOB,
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
@@ -599,7 +597,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
 
       const delegation = await sdk.getDelegation(voter.toString())
       expect(delegation.exists).toBe(true)
@@ -617,40 +615,25 @@ describe('GGovPeriod contract', () => {
       expect(record!.topicVotes[0]).toEqual([10, 0])
     })
 
-    test('Cannot self-delegate', async () => {
-      const { appClient, admin } = await deployWithCommittee(localnet)
-      const adminSDK = createUserSDK(localnet, appClient.appId, admin)
-      await expect(adminSDK.delegate({ delegatee: admin.toString() })).rejects.toThrow(
-        transformedError(errGGovSelfDelegate),
-      )
-    })
-
-    test('Random address (no gGov account) cannot delegate', async () => {
+    test('Random address (no gGov account) cannot set a voting account', async () => {
       const { appClient, xGovAccounts } = await deployWithCommittee(localnet)
       // a freshly generated account is not a committee member, so it has no gGov account
       const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const strangerSDK = createUserSDK(localnet, appClient.appId, stranger)
-      await expect(strangerSDK.delegate({ delegatee: xGovAccounts[0].toString() })).rejects.toThrow(
+      await expect(strangerSDK.setVotingAccount({ votingAddress: xGovAccounts[0].toString() })).rejects.toThrow(
         transformedError(errAccountNotExists),
       )
     })
 
-    test('Can undelegate', async () => {
+    test('Can clear a delegation (undelegate)', async () => {
       const { sdk, appClient, xGovAccounts } = await deployWithCommittee(localnet)
       const voter = xGovAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
-      await voterSDK.undelegate({})
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
+      await voterSDK.setVotingAccount({})
       const delegation = await sdk.getDelegation(voter.toString())
       expect(delegation.exists).toBe(false)
-    })
-
-    test('Undelegate fails without existing delegation', async () => {
-      const { appClient, xGovAccounts } = await deployWithCommittee(localnet)
-      const voter = xGovAccounts[0]
-      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await expect(voterSDK.undelegate({})).rejects.toThrow(transformedError(errGGovNoDelegation))
     })
 
     test('Delegatee cannot override direct vote', async () => {
@@ -661,7 +644,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
       await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
 
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
@@ -685,7 +668,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
 
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
       await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] })
@@ -707,7 +690,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
       await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
 
@@ -733,7 +716,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
       await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
       await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] })
@@ -755,7 +738,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
 
       expect(await sdk.getDelegators(delegatee.toString())).toEqual([voter.toString()])
       // forward index stays consistent with the reverse index
@@ -767,8 +750,8 @@ describe('GGovPeriod contract', () => {
       const [voterA, voterB] = xGovAccounts
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
-      await createUserSDK(localnet, appClient.appId, voterA).delegate({ delegatee: delegatee.toString() })
-      await createUserSDK(localnet, appClient.appId, voterB).delegate({ delegatee: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, voterA).setVotingAccount({ votingAddress: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, voterB).setVotingAccount({ votingAddress: delegatee.toString() })
 
       // insertion order preserved (delegate-call order)
       expect(await sdk.getDelegators(delegatee.toString())).toEqual([voterA.toString(), voterB.toString()])
@@ -780,8 +763,8 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
 
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
-      await voterSDK.undelegate({})
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
+      await voterSDK.setVotingAccount({})
 
       expect(await sdk.getDelegators(delegatee.toString())).toEqual([])
     })
@@ -792,10 +775,10 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterASDK = createUserSDK(localnet, appClient.appId, voterA)
-      await voterASDK.delegate({ delegatee: delegatee.toString() })
-      await createUserSDK(localnet, appClient.appId, voterB).delegate({ delegatee: delegatee.toString() })
+      await voterASDK.setVotingAccount({ votingAddress: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, voterB).setVotingAccount({ votingAddress: delegatee.toString() })
 
-      await voterASDK.undelegate({})
+      await voterASDK.setVotingAccount({})
 
       expect(await sdk.getDelegators(delegatee.toString())).toEqual([voterB.toString()])
     })
@@ -807,8 +790,8 @@ describe('GGovPeriod contract', () => {
       const delegateeB = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
 
-      await voterSDK.delegate({ delegatee: delegateeA.toString() })
-      await voterSDK.delegate({ delegatee: delegateeB.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegateeA.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegateeB.toString() })
 
       expect(await sdk.getDelegators(delegateeA.toString())).toEqual([])
       expect(await sdk.getDelegators(delegateeB.toString())).toEqual([voter.toString()])
@@ -820,8 +803,8 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
 
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
 
       expect(await sdk.getDelegators(delegatee.toString())).toEqual([voter.toString()])
     })
@@ -852,7 +835,7 @@ describe('GGovPeriod contract', () => {
       const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
       const voter = xGovAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await createUserSDK(localnet, appClient.appId, voter).delegate({ delegatee: delegatee.toString() })
+      await createUserSDK(localnet, appClient.appId, voter).setVotingAccount({ votingAddress: delegatee.toString() })
 
       const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
       expect(result.canVote).toBe(true)
@@ -870,7 +853,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
       await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
 
       const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
@@ -890,7 +873,7 @@ describe('GGovPeriod contract', () => {
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.delegate({ delegatee: delegatee.toString() })
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
       await createUserSDK(localnet, appClient.appId, delegatee).vote({
         periodId,
         voterAccount: voter.toString(),

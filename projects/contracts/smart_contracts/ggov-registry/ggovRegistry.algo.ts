@@ -30,7 +30,6 @@ import {
   errCommitteeIncomplete,
   errCommitteeNotExists,
   errGGovDelegationExists,
-  errGGovNoDelegation,
   errGGovPeriodNotExists,
   errGGovSelfDelegate,
   errIngestedVotesNotZero,
@@ -311,17 +310,25 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     return account === this.operator.value
   }
 
-  /** Delegate own voting power to $delegatee. */
-  public delegate(delegatee: Account): void {
-    this.addDelegation(Txn.sender, delegatee)
-  }
-
-  /** Remove own delegation. */
-  public undelegate(): void {
-    const box = this.delegations(Txn.sender)
-    ensure(box.exists, errGGovNoDelegation)
-    this.removeReverseDelegation(box.value, Txn.sender)
-    box.delete()
+  /**
+   * xGov-registry-compatible delegation entrypoint. The ABI selector equals the xGov registry's
+   * `set_voting_account(address,address)void`, so callers/tooling built for the xGov registry work
+   * unchanged against gGov. Maps xGov's (xgov_address, voting_address) onto gGov's (delegator,
+   * delegatee):
+   *  - `votingAddress === xgovAddress` is xGov's "vote for self" (no external delegation) and clears
+   *    any existing gGov delegation.
+   *  - otherwise records the delegation `xgovAddress → votingAddress`.
+   * Authorization matches xGov: the xgov_address itself OR its current delegatee may set it.
+   */
+  @abimethod({ name: 'set_voting_account' })
+  public setVotingAccount(xgovAddress: Account, votingAddress: Account): void {
+    ensure(this.accounts(xgovAddress).exists, errAccountNotExists) // xGov NOT_XGOV analog
+    this.ensureCallerCanManageDelegation(xgovAddress)
+    if (votingAddress === xgovAddress) {
+      this.removeDelegation(xgovAddress)
+    } else {
+      this.addDelegation(xgovAddress, votingAddress)
+    }
   }
 
   /** Mirror delegation from the xGov registry's box (if present). Admin only. */
@@ -360,6 +367,25 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     }
     fwd.value = delegatee
     this.addReverseDelegation(delegatee, delegator)
+  }
+
+  /**
+   * Caller may manage $delegator's delegation if they are the delegator themselves or its current
+   * delegatee. Reused by `setVotingAccount` to match the xGov registry's auth rule (xgov_address or
+   * current voting_address).
+   */
+  private ensureCallerCanManageDelegation(delegator: Account): void {
+    const box = this.delegations(delegator)
+    const isCurrentDelegatee = box.exists && box.value === Txn.sender
+    ensure(Txn.sender === delegator || isCurrentDelegatee, errUnauthorized)
+  }
+
+  /** Remove $delegator's delegation if present (idempotent), keeping the reverse index in sync. */
+  private removeDelegation(delegator: Account): void {
+    const box = this.delegations(delegator)
+    if (!box.exists) return
+    this.removeReverseDelegation(box.value, delegator)
+    box.delete()
   }
 
   /** Append $delegator to $delegatee's reverse delegation list. */

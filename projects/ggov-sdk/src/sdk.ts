@@ -157,43 +157,6 @@ export class GGovSDK extends GGovReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  makeDelegateTxns({
-    delegatee,
-    note,
-    sender,
-    builder,
-  }: GGovRegistryContractArgs["delegate(address)void"] & CommonMethodBuilderArgs & { sender?: string }) {
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    const opts: any = { args: { delegatee }, note };
-    if (sender) {
-      opts.sender = sender;
-      opts.signer = this.algorand.account.getSigner(sender);
-    }
-    return builder.delegate(opts);
-  }
-
-  delegate = this.makeRegistryTxnExecutor({ maker: this.makeDelegateTxns });
-
-  @requireWriter()
-  @wrapErrors()
-  makeUndelegateTxns({
-    note,
-    sender,
-    builder,
-  }: CommonMethodBuilderArgs & { sender?: string } = {}) {
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    const opts: any = { args: {}, note };
-    if (sender) {
-      opts.sender = sender;
-      opts.signer = this.algorand.account.getSigner(sender);
-    }
-    return builder.undelegate(opts);
-  }
-
-  undelegate = this.makeRegistryTxnExecutor({ maker: this.makeUndelegateTxns });
-
-  @requireWriter()
-  @wrapErrors()
   makeMirrorXGovDelegationTxns({
     account,
     note,
@@ -204,6 +167,38 @@ export class GGovSDK extends GGovReaderSDK {
   }
 
   mirrorXGovDelegation = this.makeRegistryTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns });
+
+  /**
+   * Set (or clear) an account's voting-power delegation. ABI-compatible with the xGov registry's
+   * `set_voting_account`. Replaces the former `delegate`/`undelegate` wrappers:
+   *  - delegate:   `setVotingAccount({ votingAddress })`
+   *  - undelegate: `setVotingAccount({})` (omitting `votingAddress` clears, i.e. vote-for-self)
+   *  - manage another account (as its current delegatee): `setVotingAccount({ account, votingAddress })`
+   *
+   * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeSetVotingAccountTxns({
+    votingAddress,
+    account,
+    note,
+    sender,
+    builder,
+  }: { votingAddress?: string; account?: string } & CommonMethodBuilderArgs & { sender?: string }) {
+    builder = builder ?? this.registryWriteClient!.newGroup();
+    const self = sender ?? String(this.writerAccount!.sender);
+    const xgovAddress = account ?? self;
+    const target = votingAddress ?? xgovAddress; // omitted target == clear ("vote for self")
+    const opts: any = { args: { xgovAddress, votingAddress: target }, note };
+    if (sender) {
+      opts.sender = sender;
+      opts.signer = this.algorand.account.getSigner(sender);
+    }
+    return builder.setVotingAccount(opts);
+  }
+
+  setVotingAccount = this.makeRegistryTxnExecutor({ maker: this.makeSetVotingAccountTxns });
 
   // ── Registry: uploadPeriodApprovalPartial (admin-only bytecode upload) ──
 

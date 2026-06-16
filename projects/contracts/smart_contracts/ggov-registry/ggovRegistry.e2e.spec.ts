@@ -11,6 +11,7 @@ import {
   GGovSDK,
 } from 'ggov-sdk'
 import {
+  errAccountNotExists,
   errCommitteeExists,
   errCommitteeIncomplete,
   errCommitteeNotExists,
@@ -607,11 +608,109 @@ describe('GGovRegistry contract', () => {
       const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 2)
       const [delegator, delegatee] = xGovAccounts
       // delegator (a known, ingested account) sets a local gGov delegation
-      await userSDK(sdk.appId, delegator).delegate({ delegatee: delegatee.toString() })
+      await userSDK(sdk.appId, delegator).setVotingAccount({ votingAddress: delegatee.toString() })
       // admin attempting to mirror over the existing delegation must be rejected
       await expect(
         userSDK(sdk.appId, testAccount).mirrorXGovDelegation({ account: delegator.toString() }),
       ).rejects.toThrow(transformedError(errGGovDelegationExists))
+    })
+  })
+
+  describe('setVotingAccount (xGov-compatible delegation)', () => {
+    const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
+      new GGovSDK({
+        algorand: localnet.algorand,
+        ggovRegistryAppId: appId,
+        writerAccount: {
+          sender: user,
+          signer: localnet.algorand.account.getSigner(user),
+        },
+      })
+
+    test('xGov sets their own voting account (account defaults to self) → delegation recorded', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      // no `account` arg → defaults to the signer (self)
+      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+
+      const delegation = await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())
+      expect(delegation.exists).toBe(true)
+      expect(delegation.delegatee).toBe(votingAddress.toString())
+      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([xgov.toString()])
+    })
+
+    test('current voting address can re-point the delegation via the `account` arg', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const newVotingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      // the current voting address (not the xGov) manages the xGov's delegation
+      await userSDK(sdk.appId, votingAddress).setVotingAccount({
+        account: xgov.toString(),
+        votingAddress: newVotingAddress.toString(),
+      })
+
+      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).delegatee).toBe(newVotingAddress.toString())
+      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
+      expect(await userSDK(sdk.appId, xgov).getDelegators(newVotingAddress.toString())).toEqual([xgov.toString()])
+    })
+
+    test('current voting address can clear the delegation (omitting votingAddress)', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      // delegatee clears the xGov's delegation; omitted votingAddress defaults to the managed account
+      await userSDK(sdk.appId, votingAddress).setVotingAccount({ account: xgov.toString() })
+
+      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
+      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
+    })
+
+    test('xGov can clear their own delegation (undelegate ergonomics: empty args)', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      // empty args → manage self, omit target → clear (replaces the former undelegate({}))
+      await userSDK(sdk.appId, xgov).setVotingAccount({})
+      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
+    })
+
+    test('clearing when no delegation exists is a no-op', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      await userSDK(sdk.appId, xgov).setVotingAccount({})
+      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
+    })
+
+    test('unauthorized third party cannot set another xGov’s voting account', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        userSDK(sdk.appId, stranger).setVotingAccount({
+          account: xgov.toString(),
+          votingAddress: votingAddress.toString(),
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('cannot set voting account for a non-existent gGov account', async () => {
+      const { sdk } = await deployRegistryWithCommittee(localnet, 1)
+      const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      // stranger manages their own (default-self) delegation but has no gGov account
+      await expect(
+        userSDK(sdk.appId, stranger).setVotingAccount({ votingAddress: votingAddress.toString() }),
+      ).rejects.toThrow(transformedError(errAccountNotExists))
     })
   })
 

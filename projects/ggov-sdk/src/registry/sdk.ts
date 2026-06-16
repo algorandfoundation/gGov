@@ -99,11 +99,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   }: Omit<GGovRegistryContractArgs["registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void"], "committeeId"> & {
     committeeId: string | Uint8Array;
   } & CommonMethodBuilderArgs) {
-    committeeId = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
+    const committeeRaw = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
     const { sender, signer } = this.writerAccount!;
     builder = builder ?? this.writeClient!.newGroup();
     return builder.registerCommittee({
-      args: { committeeId, periodStart, periodEnd, totalMembers, totalVotes, xGovRegistryId },
+      args: { committeeId: committeeRaw, periodStart, periodEnd, totalMembers, totalVotes, xGovRegistryId },
       sender,
       signer,
     });
@@ -116,11 +116,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   @requireWriter()
   @wrapErrors()
   makeUnregisterCommitteeTxns({ committeeId, builder }: { committeeId: string | Uint8Array } & CommonMethodBuilderArgs) {
-    committeeId = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
+    const committeeRaw = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
     const { sender, signer } = this.writerAccount!;
     builder = builder ?? this.writeClient!.newGroup();
     return builder.unregisterCommittee({
-      args: { committeeId },
+      args: { committeeId: committeeRaw },
       sender,
       signer,
     });
@@ -138,7 +138,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     builder,
   }: { committeeId: string | Uint8Array; xGovs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!;
-    committeeId = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
+    const committeeRaw = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
     builder = builder ?? this.writeClient!.newGroup();
     const xGovChunks = chunk(xGovs, 8);
     if (xGovChunks.length > 15) {
@@ -146,7 +146,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     }
     for (const xGovs of xGovChunks)
       builder = builder.ingestXGovs({
-        args: { committeeId, xGovs: xGovs.map(xGovToTuple) },
+        args: { committeeId: committeeRaw, xGovs: xGovs.map(xGovToTuple) },
         sender,
         signer,
       });
@@ -238,10 +238,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     committeeId: string | Uint8Array;
   } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!;
-    committeeId = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
+    const committeeRaw = typeof committeeId === "string" ? Buffer.from(committeeId, "base64") : committeeId;
     builder = builder ?? this.writeClient!.newGroup();
     return builder.uningestXGovs({
-      args: { committeeId, xGovs },
+      args: { committeeId: committeeRaw, xGovs },
       sender,
       signer,
     });

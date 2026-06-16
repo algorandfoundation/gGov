@@ -46,7 +46,7 @@ export function useDelegateMutation() {
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: (delegatee: string) => sdk!.delegate({ delegatee }),
+    mutationFn: (delegatee: string) => sdk!.setVotingAccount({ votingAddress: delegatee }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.delegation('') })
       queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
@@ -62,7 +62,7 @@ export function useUndelegateMutation() {
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: () => sdk!.undelegate({}),
+    mutationFn: () => sdk!.setVotingAccount({}),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation removed', data)
