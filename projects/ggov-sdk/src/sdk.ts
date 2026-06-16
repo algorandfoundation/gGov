@@ -614,6 +614,13 @@ export class GGovSDK extends GGovReaderSDK {
       opts.sender = sender;
       opts.signer = this.algorand.account.getSigner(sender);
     }
+    // Delegated vote: the sender (delegatee) differs from the voter. The contract requires the
+    // delegator to be referenced in the accounts array (Txn.accounts[0]) so delegated votes are
+    // visible to indexers/explorers. For self-votes the contract doesn't check, so we omit it.
+    const effectiveSender = String(sender ?? this.writerAccount!.sender);
+    if (effectiveSender !== String(voterAccount)) {
+      opts.accountReferences = [voterAccount];
+    }
     return builder.vote(opts);
   }
 

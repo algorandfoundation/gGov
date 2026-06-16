@@ -64,6 +64,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GV_VP": "Vote sum != voting power",
   "ERR:GV_OD": "Delegatee cannot override direct vote",
   "ERR:GD_NX": "No delegation for account",
+  "ERR:GD_NR": "Transaction malformed - no account reference to delegator",
   "ERR:GD_SD": "Cannot delegate to self",
   "ERR:GD_EX": "Delegation already exists for account"
 };
