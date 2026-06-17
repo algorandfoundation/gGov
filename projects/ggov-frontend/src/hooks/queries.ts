@@ -140,6 +140,62 @@ export function useVoteStatuses(periodId: number, accounts: string[]): Record<st
   return statuses
 }
 
+/**
+ * Full vote records for several accounts at once (shares cache with
+ * {@link useVoteStatuses}). Use when the `byDelegator` flag matters — e.g. to
+ * tell whether a delegator voted directly, which a delegate cannot override.
+ * Value per account: the record, `null` if not voted, `undefined` while loading.
+ */
+export function useVoteRecordMany(
+  periodId: number,
+  accounts: string[],
+): Record<string, GGovVoteRecord | null | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const results = useQueries({
+    queries: accounts.map((account) => ({
+      queryKey: queryKeys.voteRecord(periodId, account),
+      queryFn: () => readerSDK.getVotingRecord(BigInt(periodId), account),
+    })),
+  })
+  const out: Record<string, GGovVoteRecord | null | undefined> = {}
+  accounts.forEach((account, i) => {
+    out[account] = results[i]?.isSuccess ? results[i].data : undefined
+  })
+  return out
+}
+
+/**
+ * Voting eligibility + power for several accounts at once (one `canVote` read each).
+ * `senderAccount` is the wallet that would submit the vote (self, or the delegate).
+ * Value per account: `{ canVote, votingPower }`, or `undefined` while loading.
+ *
+ * `senderAccount` may be a single address (used for every account) or a map of
+ * account → sender, so e.g. each delegator is checked against its own delegatee.
+ */
+export function useCanVoteMany(
+  periodId: number,
+  accounts: string[],
+  senderAccount?: string | null | Record<string, string | undefined>,
+): Record<string, { canVote: boolean; votingPower: bigint } | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const senderFor = (account: string): string | undefined =>
+    senderAccount == null ? undefined : typeof senderAccount === 'string' ? senderAccount : senderAccount[account]
+  const results = useQueries({
+    queries: accounts.map((account) => {
+      const sender = senderFor(account)
+      return {
+        queryKey: queryKeys.canVote(periodId, account, sender ?? ''),
+        queryFn: () => readerSDK.canVote(BigInt(periodId), account, sender ?? undefined),
+      }
+    }),
+  })
+  const out: Record<string, { canVote: boolean; votingPower: bigint } | undefined> = {}
+  accounts.forEach((account, i) => {
+    out[account] = results[i]?.isSuccess ? results[i].data : undefined
+  })
+  return out
+}
+
 export function useDelegation(account: string | null | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
