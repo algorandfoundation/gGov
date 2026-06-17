@@ -22,7 +22,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
-import { Vote, Users, UserCircle, Settings, Sun, Moon, RefreshCw } from 'lucide-react'
+import { Vote, Users, UserCircle, Settings, Sun, Moon, RefreshCw, Home } from 'lucide-react'
 
 function AlgorandLogo({ className }: { className?: string }) {
   return (
@@ -127,6 +127,12 @@ export default function Layout() {
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
           <SidebarTrigger aria-label="Toggle sidebar" />
+          <Button asChild variant="ghost" size="icon" className="size-7 md:hidden" aria-label="Home" title="Home">
+            <Link to="/">
+              <Home />
+              <span className="sr-only">Home</span>
+            </Link>
+          </Button>
           <RefreshButton />
           <Separator orientation="vertical" className="h-4" />
         </header>
