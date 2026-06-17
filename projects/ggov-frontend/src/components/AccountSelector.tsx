@@ -185,7 +185,7 @@ export default function AccountSelector({ accounts, selected, onSelect, classNam
             {item.delegated?.map((child) => (
               <div key={child.address} className="relative pl-8">
                 <span
-                  className="pointer-events-none absolute left-2 top-4 select-none text-muted-foreground"
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 select-none text-muted-foreground"
                   aria-hidden="true"
                 >
                   ↪
