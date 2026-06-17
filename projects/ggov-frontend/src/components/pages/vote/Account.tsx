@@ -62,7 +62,7 @@ function DelegatorRow({
           />
           <Button
             size="sm"
-            disabled={!target || pending}
+            disabled={!target || active}
             onClick={() =>
               redelegateMutation.mutate(
                 { account: delegator, votingAddress: target },
