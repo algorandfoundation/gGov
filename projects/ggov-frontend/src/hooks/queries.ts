@@ -51,6 +51,9 @@ export function usePeriods() {
         ready: summary.ready,
       }))
     },
+    // Mutations (add/edit/set-ready) invalidate this key, so a modest staleTime
+    // just avoids refetching the list on every navigation back to it.
+    staleTime: 60_000,
   })
 }
 
@@ -272,19 +275,20 @@ export function useCommittees() {
     queryKey: queryKeys.committees,
     queryFn: async (): Promise<CommitteeOption[]> => {
       const ids = await readerSDK.getCommitteeIds()
+      // One batched simulate group instead of a serial metadata read per committee.
+      const metas = await readerSDK.registry.getCommitteesMetadata(ids)
       const options: CommitteeOption[] = []
-      for (const id of ids) {
-        const meta = await readerSDK.registry.getCommitteeMetadata(id)
-        if (meta) {
-          options.push({
-            id,
-            idBase64Url: toBase64Url(id),
-            periodStart: meta.periodStart,
-            periodEnd: meta.periodEnd,
-            totalMembers: meta.totalMembers,
-            totalVotes: meta.totalVotes,
-          })
-        }
+      for (let i = 0; i < ids.length; i++) {
+        const meta = metas[i]
+        if (!meta) continue
+        options.push({
+          id: ids[i],
+          idBase64Url: toBase64Url(ids[i]),
+          periodStart: meta.periodStart,
+          periodEnd: meta.periodEnd,
+          totalMembers: meta.totalMembers,
+          totalVotes: meta.totalVotes,
+        })
       }
       options.sort((a, b) => b.periodStart - a.periodStart)
       // Seed the per-committee cache so useCommittee() reads warm data instead of
@@ -294,6 +298,8 @@ export function useCommittees() {
       }
       return options
     },
+    // Committee metadata is effectively static historical data.
+    staleTime: 600_000,
   })
 }
 
@@ -320,6 +326,8 @@ export function useCommittee(idBase64Url: string | undefined) {
       }
     },
     enabled: !!idBase64Url,
+    // Committee metadata is effectively static historical data.
+    staleTime: 600_000,
   })
 }
 
@@ -364,22 +372,29 @@ export function useMyVotes(account: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.myVotes(account ?? ''),
     queryFn: async (): Promise<VoteEntry[]> => {
-      const results: VoteEntry[] = []
       const all = await readerSDK.getAllPeriods()
-      for (const { id, period } of all) {
-        try {
-          const record = await readerSDK.getVotingRecord(id, account!)
-          if (!record || record.topicVotes == null) continue
-          const body = await readerSDK.getPeriodBody(id)
-          const topicBodies = await Promise.all(
-            Array.from({ length: period.topics.length }, (_, ti) =>
-              readerSDK.getTopicBody(id, BigInt(ti)).catch(() => null)
-            )
-          )
-          results.push({ periodId: Number(id), period, record, body, topicBodies })
-        } catch { /* no vote for this period */ }
-      }
-      return results
+      // Resolve every period concurrently; per voted period, the body and topic
+      // bodies have no inter-dependency so they fetch in parallel too.
+      const entries = await Promise.all(
+        all.map(async ({ id, period }): Promise<VoteEntry | null> => {
+          try {
+            const record = await readerSDK.getVotingRecord(id, account!)
+            if (!record || record.topicVotes == null) return null
+            const [body, topicBodies] = await Promise.all([
+              readerSDK.getPeriodBody(id),
+              Promise.all(
+                Array.from({ length: period.topics.length }, (_, ti) =>
+                  readerSDK.getTopicBody(id, BigInt(ti)).catch(() => null)
+                )
+              ),
+            ])
+            return { periodId: Number(id), period, record, body, topicBodies }
+          } catch {
+            return null /* no vote for this period */
+          }
+        })
+      )
+      return entries.filter((e): e is VoteEntry => e !== null)
     },
     enabled: !!account,
   })
@@ -432,5 +447,7 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
       return readerSDK.registry.getCommitteeXGovs(bytes)
     },
     enabled: !!idBase64Url,
+    // A committee's membership is fixed once the committee exists.
+    staleTime: 600_000,
   })
 }

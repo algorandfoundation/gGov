@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@txnlab/use-wallet-react'
@@ -22,6 +22,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Vote, Users, UserCircle, Settings, Sun, Moon, RefreshCw, Home } from 'lucide-react'
 
 function AlgorandLogo({ className }: { className?: string }) {
@@ -137,7 +138,9 @@ export default function Layout() {
           <Separator orientation="vertical" className="h-4" />
         </header>
         <main className="flex-1 px-4 py-6">
-          <Outlet />
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <Outlet />
+          </Suspense>
         </main>
         <Footer />
       </SidebarInset>

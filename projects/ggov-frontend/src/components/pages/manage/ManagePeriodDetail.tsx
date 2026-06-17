@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
@@ -65,18 +65,28 @@ export default function ManagePeriodDetail() {
   // Ready transition dialog
   const [readyDialogOpen, setReadyDialogOpen] = useState(false)
 
+  // Seed the edit forms once per period, keyed on periodId rather than the
+  // query object identity — otherwise a background refetch (e.g. on window
+  // refocus) overwrites the operator's in-progress edits.
+  const seededEditPeriodId = useRef<number | null>(null)
   useEffect(() => {
-    if (period) {
+    if (period && seededEditPeriodId.current !== periodId) {
+      seededEditPeriodId.current = periodId
       setEditCommittee(toBase64Url(period.committeeId))
       setEditStart(toDatetimeLocalUTC(period.votingStart))
       setEditEnd(toDatetimeLocalUTC(period.votingEnd))
     }
-  }, [period])
+  }, [period, periodId])
 
+  const seededBodyPeriodId = useRef<number | null>(null)
   useEffect(() => {
-    setEditPeriodTitle(periodBody?.title ?? '')
-    setEditPeriodBody(periodBody?.body ?? '')
-  }, [periodBody])
+    // `periodBody` is `undefined` while loading, then `null` or the body object.
+    if (periodBody !== undefined && seededBodyPeriodId.current !== periodId) {
+      seededBodyPeriodId.current = periodId
+      setEditPeriodTitle(periodBody?.title ?? '')
+      setEditPeriodBody(periodBody?.body ?? '')
+    }
+  }, [periodBody, periodId])
 
   function handleEditPeriod() {
     if (!editCommittee || !editStart || !editEnd) return
@@ -324,6 +334,8 @@ export default function ManagePeriodDetail() {
         <div className="space-y-4">
           {period.topics.map(([options, tallies], topicIdx) => {
             const tb = topicBodies[topicIdx]
+            // Hoisted out of the options.map below so it's summed once, not per option.
+            const totalVotes = tallies.reduce((a, b) => a + b, 0)
             return (
               <Card key={topicIdx}>
                 <CardHeader className="pb-2">
@@ -373,7 +385,6 @@ export default function ManagePeriodDetail() {
                   <div className="space-y-1">
                     {options.map((option, optIdx) => {
                       const tally = tallies[optIdx] ?? 0
-                      const totalVotes = tallies.reduce((a, b) => a + b, 0)
                       const pct = totalVotes > 0 ? (tally / totalVotes) * 100 : 0
                       return (
                         <div key={optIdx} className="flex items-center justify-between text-sm">

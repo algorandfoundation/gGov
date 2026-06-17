@@ -132,7 +132,9 @@ export default function VotePeriodDetail() {
     if (selfCanVoteResult && !selfCanVote && selectedVoter === activeAddress && delegators.length > 0) {
       setSelectedVoter(delegators[0]);
     }
-  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, delegators]);
+    // `delegators` is rebuilt every render; depend on its first element (a stable
+    // primitive) so this fallback doesn't re-run on every render.
+  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, delegators[0]]);
 
   const votingForSelf = selectedVoter === activeAddress;
 
@@ -142,12 +144,17 @@ export default function VotePeriodDetail() {
   // Advanced mode: manual vote allocation
   const [topicVotes, setTopicVotes] = useState<number[][][]>([]);
 
+  // Seed ballot state once per period. Keying on periodId (not the `period`
+  // object identity) stops a background refetch — e.g. on window refocus — from
+  // wiping the voter's in-progress selections.
+  const seededBallotPeriodId = useRef<number | null>(null);
   useEffect(() => {
-    if (period) {
+    if (period && seededBallotPeriodId.current !== periodId) {
+      seededBallotPeriodId.current = periodId;
       setSimpleSelections(period.topics.map(() => -1));
       setTopicVotes(period.topics.map(([options]) => [options.map(() => 0)]));
     }
-  }, [period]);
+  }, [period, periodId]);
 
   if (isLoading) {
     return (
