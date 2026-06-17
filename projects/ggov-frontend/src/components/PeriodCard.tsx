@@ -19,20 +19,22 @@ export default function PeriodCard({ periodId, period, linkPrefix = '/vote' }: P
     <Link to={`${linkPrefix}/period/${periodId}`}>
       <Card className="hover:border-foreground/20 transition-colors">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-base">
               {body?.title}
             </CardTitle>
             <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-1 text-sm text-muted-foreground">
-            {body?.body && <ClampedMarkdown fadeFrom="from-card">{body.body}</ClampedMarkdown>}
-            <div>Voting: {formatTimestamp(period.votingStart)} — {formatTimestamp(period.votingEnd)}</div>
-            <div>{period.topics.length} topic{period.topics.length !== 1 ? 's' : ''}</div>
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground/80">
+            <span>{formatTimestamp(period.votingStart)} — {formatTimestamp(period.votingEnd)}</span>
+            <span className="shrink-0">{period.topics.length} topic{period.topics.length !== 1 ? 's' : ''}</span>
           </div>
-        </CardContent>
+        </CardHeader>
+        {body?.body && (
+          <CardContent>
+            <ClampedMarkdown fadeFrom="from-card" className="text-sm text-muted-foreground">{body.body}</ClampedMarkdown>
+          </CardContent>
+        )}
       </Card>
     </Link>
   )
