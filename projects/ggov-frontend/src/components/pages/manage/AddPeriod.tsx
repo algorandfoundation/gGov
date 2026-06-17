@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { fromDatetimeLocalUTC } from '@/utils/time'
+import { TxButtonContent } from '@/components/TxButtonContent'
 
 export default function AddPeriod() {
   const { sdk } = useGGovSDK()
@@ -126,8 +127,14 @@ export default function AddPeriod() {
               />
             </div>
 
-            <Button type="submit" disabled={addPeriodMutation.isPending}>
-              {addPeriodMutation.isPending ? 'Creating...' : 'Create period'}
+            <Button type="submit" disabled={addPeriodMutation.isPending} aria-busy={addPeriodMutation.isPending}>
+              <TxButtonContent
+                pending={addPeriodMutation.isPending}
+                success={addPeriodMutation.isSuccess}
+                idleLabel="Create period"
+                pendingLabel="Creating…"
+                confirmedLabel="Created"
+              />
             </Button>
           </form>
         </CardContent>

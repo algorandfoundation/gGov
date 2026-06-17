@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Address from '@/components/Address'
+import { TxButtonContent } from '@/components/TxButtonContent'
 
 export default function Delegation() {
   const { sdk } = useGGovSDK()
@@ -50,8 +51,15 @@ export default function Delegation() {
                 size="sm"
                 onClick={() => undelegateMutation.mutate()}
                 disabled={submitting}
+                aria-busy={undelegateMutation.isPending}
               >
-                {undelegateMutation.isPending ? 'Removing...' : 'Remove delegation'}
+                <TxButtonContent
+                  pending={undelegateMutation.isPending}
+                  success={undelegateMutation.isSuccess}
+                  idleLabel="Remove delegation"
+                  pendingLabel="Removing…"
+                  confirmedLabel="Removed"
+                />
               </Button>
             </div>
           ) : (
@@ -79,8 +87,15 @@ export default function Delegation() {
             <Button
               onClick={() => delegateMutation.mutate(delegateeInput)}
               disabled={submitting || !delegateeInput || !sdk}
+              aria-busy={delegateMutation.isPending}
             >
-              {delegateMutation.isPending ? 'Delegating...' : 'Delegate'}
+              <TxButtonContent
+                pending={delegateMutation.isPending}
+                success={delegateMutation.isSuccess}
+                idleLabel="Delegate"
+                pendingLabel="Delegating…"
+                confirmedLabel="Delegated"
+              />
             </Button>
           </div>
         </CardContent>

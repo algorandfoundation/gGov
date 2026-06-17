@@ -4,6 +4,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { GGovSDK, GGovReaderSDK } from 'ggov-sdk'
 import { getAlgodConfigFromViteEnvironment } from '@/utils/network'
+import { wrapSignerWithPhase } from '@/lib/transactionPhase'
 
 interface GGovSDKContextValue {
   readerSDK: GGovReaderSDK
@@ -42,7 +43,7 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
       concurrency: 8,
       writerAccount: {
         sender: activeAddress,
-        signer: transactionSigner,
+        signer: wrapSignerWithPhase(transactionSigner),
       },
     })
   }, [activeAddress, transactionSigner])
