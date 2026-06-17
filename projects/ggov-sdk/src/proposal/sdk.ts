@@ -1,9 +1,9 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
 import { Address } from "algosdk";
-import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "./registry";
-import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "./generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "./generated/GGovPeriodClient";
+import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "../registry";
+import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "../generated/GGovRegistryClient";
+import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "../generated/GGovPeriodClient";
 import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
@@ -16,10 +16,10 @@ import {
   SenderWithSigner,
   validateBodyJson,
 } from "./types";
-import { committeeIdToRaw } from "./util/comitteeId";
-import { chunk } from "./util/chunk";
-import { requireWriter } from "./util/requiresSender";
-import { wrapErrors, wrapErrorsInternal } from "./util/wrapErrors";
+import { committeeIdToRaw } from "../util/comitteeId";
+import { chunk } from "../util/chunk";
+import { requireWriter } from "../util/requiresSender";
+import { wrapErrors, wrapErrorsInternal } from "../util/wrapErrors";
 
 /** Algorand atomic group transaction limit. */
 const MAX_GROUP_SIZE = 16;
@@ -52,7 +52,7 @@ export class GGovSDK extends GGovReaderSDK {
         algorand: this.algorand,
         concurrency: this.concurrency,
         debug: this.debug,
-        registryAppId: this.ggovRegistryAppId,
+        registryAppId: this.registryAppId,
         readerAccount: undefined,
         writerAccount,
       });
@@ -170,9 +170,9 @@ export class GGovSDK extends GGovReaderSDK {
 
   /**
    * Set (or clear) an account's voting-power delegation. ABI-compatible with the xGov registry's
-   * `set_voting_account`. Replaces the former `delegate`/`undelegate` wrappers:
-   *  - delegate:   `setVotingAccount({ votingAddress })`
-   *  - undelegate: `setVotingAccount({})` (omitting `votingAddress` clears, i.e. vote-for-self)
+   * `set_voting_account`:
+   *  - delegate: `setVotingAccount({ votingAddress })`
+   *  - clear (vote for self): `setVotingAccount({})` (omitting `votingAddress`)
    *  - manage another account (as its current delegatee): `setVotingAccount({ account, votingAddress })`
    *
    * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
@@ -595,31 +595,30 @@ export class GGovSDK extends GGovReaderSDK {
     voterAccount,
     topicVotes,
     note,
-    sender,
     client,
     builder,
   }: GGovPeriodContractArgs["vote(address,uint64[][])void"] & {
     periodId: bigint | number;
-    sender?: string;
     client: GGovPeriodClient;
   } & PeriodMethodBuilderArgs) {
     builder = builder ?? client.newGroup();
+
     const opts: any = {
       args: { voterAccount, topicVotes },
       note,
       // 1 inner getDelegate (when delegated) + 1 inner getXGovVotingPower
-      extraFee: (2000).microAlgo(),
+      extraFee: (1000).microAlgo(),
     };
-    if (sender) {
-      opts.sender = sender;
-      opts.signer = this.algorand.account.getSigner(sender);
-    }
-    // Delegated vote: the sender (delegatee) differs from the voter. The contract requires the
-    // delegator to be referenced in the accounts array (Txn.accounts[0]) so delegated votes are
-    // visible to indexers/explorers. For self-votes the contract doesn't check, so we omit it.
-    const effectiveSender = String(sender ?? this.writerAccount!.sender);
+    // The sender is always this SDK's writerAccount. Self-vote: writerAccount === voterAccount.
+    // Delegated vote: writerAccount is the delegatee and voterAccount is the delegator (someone who
+    // delegated to them). In the delegated case the contract requires the delegator to be referenced
+    // in the foreign-accounts array so the vote is visible to indexers/explorers; for self-votes it
+    // doesn't check, so we omit it. To cast a delegated vote, give the SDK a writerAccount whose
+    // signer is the delegatee and pass the delegator as voterAccount.
+    const effectiveSender = String(this.writerAccount!.sender);
     if (effectiveSender !== String(voterAccount)) {
       opts.accountReferences = [voterAccount];
+      opts.extraFee = (2000).microAlgo(); // +1 inner account ref for delegation check
     }
     return builder.vote(opts);
   }
@@ -769,7 +768,7 @@ export class GGovSDK extends GGovReaderSDK {
 
     const sdk = new GGovSDK({
       algorand,
-      ggovRegistryAppId: appClient.appId,
+      registryAppId: appClient.appId,
       writerAccount: deployer,
     });
 

@@ -31,7 +31,7 @@ async function main() {
 
   const sdk = new GGovReaderSDK({
     algorand,
-    ggovRegistryAppId: APP_ID,
+    registryAppId: APP_ID,
   });
 
   console.log(`GGovRegistry App ID: ${APP_ID}`);

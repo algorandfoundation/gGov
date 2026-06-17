@@ -30,7 +30,7 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
 
   const readerSDK = useMemo(() => {
     const algorand = createAlgorandClient()
-    return new GGovReaderSDK({ algorand, ggovRegistryAppId: appId })
+    return new GGovReaderSDK({ algorand, registryAppId: appId })
   }, [])
 
   const sdk = useMemo(() => {
@@ -38,7 +38,7 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
     const algorand = createAlgorandClient()
     return new GGovSDK({
       algorand,
-      ggovRegistryAppId: appId,
+      registryAppId: appId,
       writerAccount: {
         sender: activeAddress,
         signer: transactionSigner,

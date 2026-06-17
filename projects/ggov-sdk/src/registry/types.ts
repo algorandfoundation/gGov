@@ -1,9 +1,10 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { Account, Address, TransactionSigner } from "algosdk";
+import { Address } from "algosdk";
 import { GGovRegistryArgs, GGovRegistryComposer } from "../generated/GGovRegistryClient";
-import { SendSingleTransactionResult, SendAtomicTransactionComposerResults } from "@algorandfoundation/algokit-utils/types/transaction";
+import { Network, SenderWithSigner } from "../types";
 
-export type Network = "mainnet" | "testnet";
+// Re-export shared primitives so existing imports from this module keep working.
+export type { Network, SenderWithSigner, SendResult, CommitteeId } from "../types";
 
 export type ConstructorArgsOptions =
   | {
@@ -13,11 +14,6 @@ export type ConstructorArgsOptions =
       registryAppId: number | bigint;
       readerAccount?: string;
     };
-
-export type SenderWithSigner = {
-  sender: Address | string;
-  signer: TransactionSigner;
-};
 
 export type ConstructorArgs = {
   writerAccount?: SenderWithSigner;
@@ -52,12 +48,8 @@ type Votes = number
 export type StoredXGov = [ID, Votes]
 export const STORED_XGOV_BYTE_LENGTH = 8; // 4 bytes for ID + 4 bytes for Votes
 
-export type CommitteeId = Uint8Array | Buffer | string
-
 export interface CommonMethodBuilderArgs {
   builder?: GGovRegistryComposer<any>
 }
-
-export type SendResult = SendSingleTransactionResult | SendAtomicTransactionComposerResults
 
 export type GGovRegistryContractArgs = GGovRegistryArgs["obj"];

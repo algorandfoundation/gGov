@@ -51,7 +51,7 @@ async function deployRegistryWithoutBytecode(localnet: ReturnType<typeof algoran
   await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (10).algos())
   const sdk = new GGovSDK({
     algorand: localnet.algorand,
-    ggovRegistryAppId: appClient.appId,
+    registryAppId: appClient.appId,
     writerAccount: {
       sender: admin,
       signer: localnet.algorand.account.getSigner(admin),
@@ -64,7 +64,7 @@ async function deployRegistryWithoutBytecode(localnet: ReturnType<typeof algoran
 function createUserSDK(localnet: ReturnType<typeof algorandFixture>, appId: bigint, user: Address) {
   return new GGovSDK({
     algorand: localnet.algorand,
-    ggovRegistryAppId: appId,
+    registryAppId: appId,
     writerAccount: {
       sender: user,
       signer: localnet.algorand.account.getSigner(user),

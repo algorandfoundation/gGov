@@ -2,13 +2,13 @@ import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
 import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
-import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "./registry";
-import { GGovRegistryClient, GGovPeriodSummary } from "./generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriod, GGovVoteRecord } from "./generated/GGovPeriodClient";
-import { getConstructorConfig } from "./networkConfig";
+import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
+import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
+import { GGovPeriodClient, GGovPeriod, GGovVoteRecord } from "../generated/GGovPeriodClient";
+import { getConstructorConfig } from "../networkConfig";
 import { BodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
-import { chunked } from "./util/chunked";
-import { errorTransformer, wrapErrors } from "./util/wrapErrors";
+import { chunked } from "../util/chunked";
+import { errorTransformer, wrapErrors } from "../util/wrapErrors";
 
 const EMPTY_PERIOD: GGovPeriod = {
   committeeId: new Uint8Array(32),
@@ -33,7 +33,7 @@ export class GGovReaderSDK {
   /** Composed registry reader SDK (committee registry + operator + delegations + periods). */
   public registry: GGovRegistryReaderSDK;
   /** Registry app ID. */
-  public ggovRegistryAppId: bigint;
+  public registryAppId: bigint;
   public concurrency: number;
   public debug?: boolean;
   protected readerAccount?: string;
@@ -47,7 +47,7 @@ export class GGovReaderSDK {
     this.algorand = algorand;
     algorand.setSuggestedParamsCacheTimeout(6000);
     algorand.registerErrorTransformer(errorTransformer);
-    this.ggovRegistryAppId = appId;
+    this.registryAppId = appId;
     this.concurrency = concurrency;
     this.debug = debug;
     this.readerAccount = readerAccount;
@@ -62,7 +62,7 @@ export class GGovReaderSDK {
 
   /** Convenience accessor — same as `registry.appId`. */
   get appId(): bigint {
-    return this.ggovRegistryAppId;
+    return this.registryAppId;
   }
 
   /** Registry read client. */
@@ -310,7 +310,7 @@ export class GGovReaderSDK {
 
   /** Get all delegations by scanning delegation box keys and batch-fetching delegatees. */
   async getAllDelegations(): Promise<Map<string, string>> {
-    const boxNames = await this.algorand.app.getBoxNames(this.ggovRegistryAppId);
+    const boxNames = await this.algorand.app.getBoxNames(this.registryAppId);
     const accounts = boxNames
       .filter(({ nameRaw }) => nameRaw[0] === 0x64 && nameRaw.length === 33) // 'd' prefix + 32-byte address
       .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString());
@@ -321,7 +321,7 @@ export class GGovReaderSDK {
 
   /** List committee IDs registered on the registry (box-name scan). */
   async getCommitteeIds(): Promise<Uint8Array[]> {
-    const boxNames = await this.algorand.app.getBoxNames(this.ggovRegistryAppId);
+    const boxNames = await this.algorand.app.getBoxNames(this.registryAppId);
     return boxNames
       .filter(({ nameRaw }) => nameRaw[0] === 99 && nameRaw.length === 33) // 'c' prefix
       .map(({ nameRaw }) => nameRaw.slice(1));

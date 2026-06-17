@@ -111,11 +111,13 @@ const GROUP_SIZE = 16; // Algorand atomic-group limit; fund / close out in group
 
 // Per-voter funding — "just enough to transact", reclaimed by the end-of-run close-out.
 // NB: the SDK's opcode-budget pre-simulate temporarily sets the first txn's fee to
-// 543_210 µAlgo. Because each voter is the sender of their own vote, the voter must hold
-// more than that (+ its 100_000 min balance) or the pre-simulate overspends, reports
-// appBudgetConsumed=0, and the auto budget-increase is silently skipped — making the real
-// 22-topic vote fail at the 700-opcode cap. So fund each voter just over that bar, plus a
-// little headroom for the vote + close-out fees. Override with VOTER_FUND (µAlgo).
+// 543_210 µAlgo. Each voter votes through its own SDK (writerAccount = the voter), so the
+// voter is the sender of both its vote and the prepended opcode-budget-increase txn. The
+// voter must therefore hold more than the pre-sim bar (+ its 100_000 min balance) or the
+// pre-simulate overspends, reports appBudgetConsumed=0, and the auto budget-increase is
+// silently skipped — making the real 22-topic vote fail at the 700-opcode cap. So fund each
+// voter just over that bar, plus a little headroom for the vote + budget-increase +
+// close-out fees. Override with VOTER_FUND (µAlgo).
 const VOTER_PRESIM_BAR_UALGO = 543_210n + 100_000n; // pre-sim first-txn fee + min balance = 643_210
 const VOTER_FUND_UALGO = process.env.VOTER_FUND ? BigInt(process.env.VOTER_FUND) : VOTER_PRESIM_BAR_UALGO + 16_790n; // 660_000
 const APP_MBR_PER_VOTER_UALGO = 220_000n; // one account box (registry) / vote box (period)
@@ -244,14 +246,16 @@ async function main() {
   console.log(`Connecting (${USE_ENV ? "fromEnvironment" : "localnet"})...`);
   const algorand = USE_ENV ? AlgorandClient.fromEnvironment() : AlgorandClient.fromConfig(LOCALNET_CONFIG);
 
-  // The DEPLOYER account is the single funder, registry operator/admin and SDK writer; it
-  // pays for voter funding, app MBR and the per-vote opcode-budget-increase fee (~0.037 ALGO
-  // each), and receives every voter's close-out at the end. On a remote network it comes from
-  // DEPLOYER_MNEMONIC; on localnet it is created and auto-funded from the dispenser.
+  // The DEPLOYER account is the single funder, registry operator/admin and setup SDK writer; it
+  // pays for voter funding and app MBR, and receives every voter's close-out at the end. Each
+  // voter now pays its own vote + opcode-budget-increase fees out of its VOTER_FUND balance (it
+  // votes through its own SDK), so those fees still trace back to the deployer via that funding.
+  // On a remote network the deployer comes from DEPLOYER_MNEMONIC; on localnet it is created and
+  // auto-funded from the dispenser.
   const totalNeeded =
-    BigInt(NUM_VOTERS) * VOTER_FUND_UALGO + // voter accounts
+    BigInt(NUM_VOTERS) * VOTER_FUND_UALGO + // voter accounts (cover their own vote + budget-increase fees)
     2n * (BigInt(NUM_VOTERS) * APP_MBR_PER_VOTER_UALGO + APP_MBR_BASE_UALGO) + // registry + period boxes
-    BigInt(Math.ceil(NUM_VOTERS * 0.06) + 30) * 1_000_000n + // budget-increase fees
+    BigInt(Math.ceil(NUM_VOTERS * 0.06) + 30) * 1_000_000n + // working headroom (voters self-pay budget-increase)
     50_000_000n; // working buffer + own min balance
 
   const deployer = await algorand.account.fromEnvironment("DEPLOYER", microAlgos(totalNeeded));
@@ -289,7 +293,7 @@ async function main() {
     } else {
       console.log(`Attaching to existing GGovRegistry app ${REGISTRY_APP_ID}...`);
       // The DEPLOYER must already be this registry's operator (and admin for setReady).
-      sdk = new GGovSDK({ algorand, ggovRegistryAppId: REGISTRY_APP_ID, writerAccount: writer });
+      sdk = new GGovSDK({ algorand, registryAppId: REGISTRY_APP_ID, writerAccount: writer });
       registryAppId = REGISTRY_APP_ID;
       registryAppAddr = algosdk.getApplicationAddress(REGISTRY_APP_ID).toString();
     }
@@ -407,16 +411,25 @@ async function main() {
     }
 
     // ── Cast votes ──────────────────────────────────────────────────────────
+    // Each voter votes through its own SDK (writerAccount = the voter), so the voter is the
+    // sender of both its vote and the auto-prepended opcode-budget-increase txn. Per-voter
+    // instances are concurrency-safe (no shared mutable writerAccount); the period-app-id cache
+    // is primed so each instance skips an otherwise-redundant getPeriodApp read.
     console.log(`\nCasting ${NUM_VOTERS} ballots (concurrency ${CONCURRENCY})...`);
     await pool(
       voters,
       CONCURRENCY,
       async (addr, i) => {
-        await sdk.vote({
+        const voterSdk = new GGovSDK({
+          algorand,
+          registryAppId: registryAppId,
+          writerAccount: { sender: addr, signer: algorand.account.getSigner(addr) },
+        });
+        (voterSdk as any).periodAppCache.set(BigInt(periodId!), BigInt(periodAppId));
+        await voterSdk.vote({
           periodId: periodId!,
           voterAccount: addr,
           topicVotes: ballots[i],
-          sender: addr,
           note: randomNote(),
         });
       },

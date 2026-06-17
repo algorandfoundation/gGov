@@ -50,7 +50,7 @@ const MAX_AVAILABLE_BALANCE = algo(10).microAlgo;
 
   const sdk = new GGovSDK({
     algorand,
-    ggovRegistryAppId: registryAppId,
+    registryAppId: registryAppId,
     writerAccount: { sender: deployer.addr, signer: deployer.signer },
   });
   console.log(`Connected to registry app ${registryAppId} as ${deployer.addr}`);

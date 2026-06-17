@@ -588,7 +588,7 @@ describe('GGovRegistry contract', () => {
     const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
       new GGovSDK({
         algorand: localnet.algorand,
-        ggovRegistryAppId: appId,
+        registryAppId: appId,
         writerAccount: {
           sender: user,
           signer: localnet.algorand.account.getSigner(user),
@@ -620,7 +620,7 @@ describe('GGovRegistry contract', () => {
     const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
       new GGovSDK({
         algorand: localnet.algorand,
-        ggovRegistryAppId: appId,
+        registryAppId: appId,
         writerAccount: {
           sender: user,
           signer: localnet.algorand.account.getSigner(user),

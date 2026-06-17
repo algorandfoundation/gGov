@@ -1,11 +1,11 @@
-export * from "./sdk";
-export * from "./sdkReader";
+export * from "./proposal/sdk";
+export * from "./proposal/sdkReader";
 export * from "./constants";
-export * from "./types";
+export * from "./proposal/types";
 export { GGovRegistryFactory, GGovRegistryClient } from "./generated/GGovRegistryClient";
 export { GGovPeriodFactory, GGovPeriodClient, type GGovPeriod, type GGovVoteRecord } from "./generated/GGovPeriodClient";
 
-// Registry SDK surface (merged from the former ggov-registry-sdk package).
+// Registry SDK surface.
 export {
   GGovRegistrySDK,
   GGovRegistryReaderSDK,

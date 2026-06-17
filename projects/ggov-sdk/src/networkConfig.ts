@@ -1,17 +1,19 @@
-import { ConstructorArgsOptions } from "./types";
-
-export type Network = "mainnet" | "testnet";
+import { Network } from "./types";
 
 const defaultReaderAccount = "A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE";
 
-const networkConfigs: Record<Network, { ggovRegistryAppId: bigint; readerAccount: string }> = {
-  mainnet: {
-    ggovRegistryAppId: 0n, // TODO: set after deployment
+const networkConfigs: Record<Network, { registryAppId: bigint; readerAccount: string }> = {
+  localnet: {
+    registryAppId: 1002n,
     readerAccount: defaultReaderAccount,
   },
   testnet: {
-    ggovRegistryAppId: 0n, // TODO: set after deployment
+    registryAppId: 764235366n,
     readerAccount: defaultReaderAccount,
+  },
+  mainnet: {
+    registryAppId: 0n, // TODO: set after mainnet deployment
+    readerAccount: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
   },
 };
 
@@ -19,14 +21,18 @@ export function getNetworkConfig(network: Network) {
   return networkConfigs[network];
 }
 
-export function getConstructorConfig(args: ConstructorArgsOptions): { appId: bigint; readerAccount?: string } {
+/**
+ * Resolves the registry app id and reader account from constructor args:
+ * either `{ network }` or an explicit `{ registryAppId }`.
+ */
+export type ConstructorConfigArgs =
+  | { network: Network }
+  | { registryAppId: number | bigint; readerAccount?: string };
+
+export function getConstructorConfig(args: ConstructorConfigArgs): { appId: bigint; readerAccount?: string } {
   if ("network" in args) {
-    const { network } = args;
-    const config = getNetworkConfig(network);
-    return { appId: config.ggovRegistryAppId, readerAccount: config.readerAccount ?? defaultReaderAccount };
+    const config = getNetworkConfig(args.network);
+    return { appId: config.registryAppId, readerAccount: config.readerAccount ?? defaultReaderAccount };
   }
-  // Normalise: accept both ggovRegistryAppId (new) and ggovAppId (deprecated alias)
-  const appIdRaw = "ggovRegistryAppId" in args ? args.ggovRegistryAppId : (args as { ggovAppId: number | bigint }).ggovAppId;
-  const r = "readerAccount" in args ? args.readerAccount : undefined;
-  return { appId: BigInt(appIdRaw), readerAccount: r ?? defaultReaderAccount };
+  return { appId: BigInt(args.registryAppId), readerAccount: args.readerAccount ?? defaultReaderAccount };
 }
