@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe } from "@/hooks/queries";
-import { useDelegateMutation, useUndelegateMutation } from "@/hooks/mutations";
+import { useDelegateMutation, useUndelegateMutation, useRedelegateMutation } from "@/hooks/mutations";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,56 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { formatTimestamp } from "@/utils/time";
 import Address from "@/components/Address";
+
+/**
+ * One row of the "Delegated to You" list. As the delegatee, the active wallet may redirect this
+ * incoming delegation onward to a third address (the contract lets a current delegatee re-set the
+ * delegator's voting account). Submitting moves the delegator off this list onto the new delegatee.
+ */
+function DelegatorRow({
+  delegator,
+  redelegateMutation,
+}: {
+  delegator: string;
+  redelegateMutation: ReturnType<typeof useRedelegateMutation>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [target, setTarget] = useState("");
+  const pending = redelegateMutation.isPending && redelegateMutation.variables?.account === delegator;
+
+  return (
+    <div className="space-y-2 border-b border-border pb-2 last:border-0 last:pb-0">
+      <div className="flex items-center justify-between gap-2">
+        <Address address={delegator} to width={8} className="text-sm text-primary hover:underline" />
+        <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
+          {open ? "Cancel" : "Re-delegate"}
+        </Button>
+      </div>
+      {open && (
+        <div className="flex gap-2">
+          <Input
+            name={`redelegate-${delegator}`}
+            placeholder="Forward to address..."
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+          />
+          <Button
+            size="sm"
+            disabled={!target || pending}
+            onClick={() =>
+              redelegateMutation.mutate(
+                { account: delegator, votingAddress: target },
+                { onSuccess: () => { setTarget(""); setOpen(false); } },
+              )
+            }
+          >
+            {pending ? "Redirecting..." : "Confirm"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Account() {
   const { address } = useParams<{ address: string }>();
@@ -46,12 +96,19 @@ export default function Account() {
   }, [address, activeAddress]);
   const { data: committees = [], isLoading: loadingCommittees } = useCommitteeVotingPowers(address);
   const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address);
-  const { data: delegation, isLoading: loadingDelegation } = useDelegation(isOwnAccount ? address : undefined);
+  const { data: delegation, isLoading: loadingDelegation } = useDelegation(address);
   const { data: delegators = [], isLoading: loadingDelegators } = useDelegatedToMe(address);
   const delegateMutation = useDelegateMutation();
   const undelegateMutation = useUndelegateMutation();
+  const redelegateMutation = useRedelegateMutation();
   const [delegateeInput, setDelegateeInput] = useState("");
   const submitting = delegateMutation.isPending || undelegateMutation.isPending;
+
+  // The editable delegation card is only useful to accounts that actually hold voting power in some
+  // committee (delegating zero power is pointless) or that have received delegations. Other accounts'
+  // delegation is shown read-only as account status.
+  const canSelfDelegate = committees.length > 0 || delegators.length > 0;
+  const showDelegationCard = isOwnAccount ? canSelfDelegate : true;
 
   if (!address) {
     return (
@@ -92,8 +149,8 @@ export default function Account() {
         </div>
       )}
 
-      <div className={isOwnAccount ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
-        {isOwnAccount && (
+      <div className={showDelegationCard ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
+        {showDelegationCard && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Delegation</CardTitle>
@@ -101,6 +158,16 @@ export default function Account() {
             <CardContent>
               {loadingDelegation ? (
                 <Skeleton className="h-10" />
+              ) : !isOwnAccount ? (
+                // Read-only delegation status when viewing another account.
+                delegation?.exists ? (
+                  <p className="text-sm">
+                    Delegates voting power to:{" "}
+                    <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Votes for itself (no delegation).</p>
+                )
               ) : delegation?.exists ? (
                 <div className="space-y-3">
                   <p className="text-sm">
@@ -183,14 +250,19 @@ export default function Account() {
             <p className="text-sm text-muted-foreground">No accounts have delegated to this address.</p>
           ) : (
             <div className="space-y-2">
-              {delegators.map((addr) => (
-                <div key={addr}>
-                  <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
-                </div>
-              ))}
+              {delegators.map((addr) =>
+                isOwnAccount ? (
+                  <DelegatorRow key={addr} delegator={addr} redelegateMutation={redelegateMutation} />
+                ) : (
+                  <div key={addr}>
+                    <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
+                  </div>
+                ),
+              )}
               {isOwnAccount && (
                 <p className="text-xs text-muted-foreground pt-1">
-                  You can vote on their behalf from an active period's vote page.
+                  You can vote on their behalf from an active period's vote page, or re-delegate their voting
+                  power onward to another address.
                 </p>
               )}
             </div>

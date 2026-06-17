@@ -5,6 +5,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { useGlobalState } from '@/hooks/queries'
 import { useTheme } from '@/hooks/useTheme'
 import ConnectWallet from '@/components/ConnectWallet'
+import Footer from '@/components/Footer'
 import { Button } from '@/components/ui/button'
 import {
   Sidebar,
@@ -132,6 +133,7 @@ export default function Layout() {
         <main className="flex-1 px-4 py-6">
           <Outlet />
         </main>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   )

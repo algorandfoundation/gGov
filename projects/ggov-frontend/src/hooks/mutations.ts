@@ -71,6 +71,30 @@ export function useUndelegateMutation() {
   })
 }
 
+/**
+ * Redirect a delegation that was made *to* the signer onward to a third address. The signer must be
+ * `account`'s current delegatee — the contract's `set_voting_account` allows the xgov_address itself
+ * or its current voting_address to set it. After this the delegator moves off the signer's reverse
+ * list onto the new delegatee's, so refresh both reverse indexes and the forward delegation.
+ */
+export function useRedelegateMutation() {
+  const { sdk } = useGGovSDK()
+  const queryClient = useQueryClient()
+  const { showError } = useErrorDialog()
+
+  return useMutation({
+    mutationFn: (args: { account: string; votingAddress: string }) =>
+      sdk!.setVotingAccount({ account: args.account, votingAddress: args.votingAddress }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        predicate: (q) => ['delegation', 'delegatedToMe', 'allDelegations'].includes(q.queryKey[0] as string),
+      })
+      txnSuccessToast('Delegation redirected', data)
+    },
+    onError: showError,
+  })
+}
+
 export function useAddPeriodMutation() {
   const { sdk } = useGGovSDK()
   const queryClient = useQueryClient()

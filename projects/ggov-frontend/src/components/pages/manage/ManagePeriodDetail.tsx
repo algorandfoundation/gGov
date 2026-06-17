@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
+import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
 
 export default function ManagePeriodDetail() {
@@ -152,7 +153,7 @@ export default function ManagePeriodDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
-        <Link to="/manage" className="text-muted-foreground hover:text-foreground">&larr;</Link>
+        <BackButton to="/manage" />
         <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
         <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
         <span

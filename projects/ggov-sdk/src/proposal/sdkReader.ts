@@ -4,7 +4,7 @@ import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
 import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
 import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriod, GGovVoteRecord } from "../generated/GGovPeriodClient";
+import { GGovPeriodClient, GGovPeriodComposer, GGovPeriod, GGovVoteRecord } from "../generated/GGovPeriodClient";
 import { getConstructorConfig } from "../networkConfig";
 import { BodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
 import { chunked } from "../util/chunked";
@@ -16,6 +16,15 @@ const EMPTY_PERIOD: GGovPeriod = {
   votingEnd: 0,
   topics: [],
 };
+
+/** Per-address voting eligibility + power, as returned by `canVote`/`canVoteMany`. */
+export interface CanVoteResult {
+  canVote: boolean;
+  votingPower: bigint;
+}
+
+/** Max `canVote` app calls packed into a single simulate group (Algorand 16-txn group limit). */
+const CAN_VOTE_GROUP_SIZE = 16;
 
 export interface PeriodSummaryWithId {
   id: bigint;
@@ -170,7 +179,7 @@ export class GGovReaderSDK {
     periodId: bigint | number,
     voterAccount: string,
     senderAccount?: string,
-  ): Promise<{ canVote: boolean; votingPower: bigint }> {
+  ): Promise<CanVoteResult> {
     const client = await this.getPeriodReadClient(periodId);
     const { return: result } = await client.send.canVote({
       args: { voterAccount, senderAccount: senderAccount ?? voterAccount },
@@ -178,6 +187,56 @@ export class GGovReaderSDK {
       extraFee: (2000).microAlgo(),
     });
     return { canVote: result![0], votingPower: result![1] };
+  }
+
+  /**
+   * Voting eligibility + power for many accounts in one period, keyed by voter address. Packs
+   * up to 16 `canVote` app calls (one per address) into each simulate group, then simulates the
+   * groups in parallel with `pMap` bounded by `this.concurrency`.
+   *
+   * `senderAccount` is the wallet that would submit the vote (self, or the delegate). Pass a
+   * single address to use it for every account, or a map of account → sender to check each
+   * voter against its own sender; omit to default each voter's sender to itself.
+   */
+  async canVoteMany(
+    periodId: bigint | number,
+    voterAccounts: string[],
+    senderAccount?: string | Record<string, string | undefined>,
+  ): Promise<Map<string, CanVoteResult>> {
+    const senderFor = (voter: string): string =>
+      senderAccount == null
+        ? voter
+        : typeof senderAccount === "string"
+          ? senderAccount
+          : senderAccount[voter] ?? voter;
+    const pairs = voterAccounts.map((voterAccount) => ({ voterAccount, senderAccount: senderFor(voterAccount) }));
+    const results = await this._canVoteManyChunked(periodId, pairs);
+    return new Map(voterAccounts.map((voterAccount, i) => [voterAccount, results[i]]));
+  }
+
+  /**
+   * One simulate group of up to 16 `canVote` calls. `@chunked` splits larger inputs into
+   * 16-call groups and runs them through `pMap` at `this.concurrency`, flattening the results
+   * back in order.
+   */
+  @chunked(CAN_VOTE_GROUP_SIZE, 1)
+  @wrapErrors()
+  protected async _canVoteManyChunked(
+    periodId: bigint | number,
+    pairs: { voterAccount: string; senderAccount: string }[],
+  ): Promise<CanVoteResult[]> {
+    if (pairs.length === 0) return [];
+    const client = await this.getPeriodReadClient(periodId);
+    let builder: GGovPeriodComposer<any> = client.newGroup();
+    for (const { voterAccount, senderAccount } of pairs) {
+      builder = builder.canVote({
+        args: { voterAccount, senderAccount },
+        // each canVote does 2 inner calls to the registry — cover their fees via pooling
+        extraFee: (2000).microAlgo(),
+      });
+    }
+    const { returns } = await builder.simulate(SIMULATE_PARAMS);
+    return (returns ?? []).map((result: any) => ({ canVote: result![0], votingPower: result![1] }));
   }
 
   /** Read the body JSON for a period from its per-period app. */

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useAddTopicMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
+import BackButton from '@/components/BackButton'
 
 export default function AddTopic() {
   const { periodId: pidParam } = useParams<{ periodId: string }>()
@@ -46,7 +47,7 @@ export default function AddTopic() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Link to={`/manage/period/${periodId}`} className="text-muted-foreground hover:text-foreground">&larr;</Link>
+        <BackButton to={`/manage/period/${periodId}`} />
         <h1 className="text-2xl font-bold">Add Topic to Period #{periodId}</h1>
       </div>
 
