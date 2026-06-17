@@ -28,7 +28,7 @@ export default function Committees() {
             <TableRow>
               <TableHead>Rounds</TableHead>
               <TableHead className="text-right">Members</TableHead>
-              <TableHead className="text-right">Total Votes</TableHead>
+              <TableHead className="text-right">Total votes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

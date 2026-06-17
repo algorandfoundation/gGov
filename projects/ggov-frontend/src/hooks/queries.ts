@@ -192,8 +192,10 @@ export function useCanVoteMany(
     queryFn: async () => {
       const results = await readerSDK.canVoteMany(BigInt(periodId), accounts, senderAccount ?? undefined)
       // Seed the per-account `canVote` cache so singular `useCanVote` reads hit warm data.
+      // When no sender is given the SDK defaults each voter's sender to itself, so seed under
+      // that effective sender (the account) — matching how `useCanVote` keys the self case.
       accounts.forEach((account) => {
-        queryClient.setQueryData(queryKeys.canVote(periodId, account, senderFor(account) ?? ''), results.get(account))
+        queryClient.setQueryData(queryKeys.canVote(periodId, account, senderFor(account) ?? account), results.get(account))
       })
       return results
     },

@@ -44,7 +44,7 @@ function AppSidebar() {
     { to: '/', label: 'Vote', icon: Vote },
     { to: '/committees', label: 'Committees', icon: Users },
     ...(activeAddress
-      ? [{ to: `/account/${activeAddress}`, label: 'My Account', icon: UserCircle }]
+      ? [{ to: `/account/${activeAddress}`, label: 'My account', icon: UserCircle }]
       : []),
     ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
   ]

@@ -1,6 +1,10 @@
 const footerLinks = [
   { href: 'https://algorand.co/algorand-foundation/disclaimer', label: 'Disclaimer' },
+<<<<<<< feat/branding
+  { href: 'https://algorand.co/algorand-foundation/privacy-policy', label: 'Privacy policy' },
+=======
   { href: 'https://algorand.co/algorand-foundation/privacy-policy', label: 'Privacy Policy' },
+>>>>>>> main
   { href: 'https://github.com/algorandfoundation/gGov', label: 'GitHub' },
 ]
 

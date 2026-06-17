@@ -149,7 +149,7 @@ export default function Account() {
         </div>
       )}
 
-      <div className={showDelegationCard ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {showDelegationCard && (
           <Card>
             <CardHeader>
@@ -175,13 +175,13 @@ export default function Account() {
                     <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
                   </p>
                   <Button variant="destructive" size="sm" onClick={() => undelegateMutation.mutate()} disabled={submitting}>
-                    {undelegateMutation.isPending ? "Removing..." : "Remove Delegation"}
+                    {undelegateMutation.isPending ? "Removing..." : "Remove delegation"}
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">No active delegation.</p>
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="delegate-to">Delegate to</Label>
                     <Input
                       id="delegate-to"
@@ -202,7 +202,7 @@ export default function Account() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Voting Power by Committee</CardTitle>
+            <CardTitle className="text-base">Voting power by committee</CardTitle>
           </CardHeader>
           <CardContent>
             {loadingCommittees ? (
@@ -217,8 +217,8 @@ export default function Account() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Committee (Rounds)</TableHead>
-                    <TableHead className="text-right">Voting Power</TableHead>
+                    <TableHead>Committee (rounds)</TableHead>
+                    <TableHead className="text-right">Voting power</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -237,96 +237,96 @@ export default function Account() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{isOwnAccount ? "Delegated to You" : "Delegators"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingDelegators ? (
-            <Skeleton className="h-10" />
-          ) : delegators.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No accounts have delegated to this address.</p>
-          ) : (
-            <div className="space-y-2">
-              {delegators.map((addr) =>
-                isOwnAccount ? (
-                  <DelegatorRow key={addr} delegator={addr} redelegateMutation={redelegateMutation} />
-                ) : (
-                  <div key={addr}>
-                    <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
-                  </div>
-                ),
-              )}
-              {isOwnAccount && (
-                <p className="text-xs text-muted-foreground pt-1">
-                  You can vote on their behalf from an active period's vote page, or re-delegate their voting
-                  power onward to another address.
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Votes Cast</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingVotes ? (
-            <div className="space-y-2">
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-10" />
-              ))}
-            </div>
-          ) : votes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No votes cast yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {votes.map(({ periodId, period, record, body, topicBodies }) => (
-                <Card key={periodId}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Link to={`/vote/period/${periodId}`} className="text-sm font-medium text-primary hover:underline">
-                          {body?.title ?? `Period #${periodId}`}
-                        </Link>
-                        <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
-                      </div>
-                      {record.byDelegator && <span className="text-xs text-muted-foreground">Voted by delegator</span>}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{isOwnAccount ? "Delegated to you" : "Delegators"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingDelegators ? (
+              <Skeleton className="h-10" />
+            ) : delegators.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No accounts have delegated to this address.</p>
+            ) : (
+              <div className="space-y-2">
+                {delegators.map((addr) =>
+                  isOwnAccount ? (
+                    <DelegatorRow key={addr} delegator={addr} redelegateMutation={redelegateMutation} />
+                  ) : (
+                    <div key={addr}>
+                      <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {record.topicVotes.map((topicVoteCounts, ti) => {
-                      const options = period.topics[ti]?.[0] ?? [];
-                      const total = topicVoteCounts.reduce((a, b) => a + b, 0);
-                      const nonZero = topicVoteCounts
-                        .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, votes: v }))
-                        .filter((entry) => entry.votes > 0);
-                      if (nonZero.length === 0) return null;
-                      return (
-                        <div key={ti} className="mb-2">
-                          <span className="text-sm font-medium">{topicBodies[ti]?.title ?? `Topic ${ti + 1}`}:</span>{" "}
-                          <span className="text-sm text-muted-foreground">
-                            {nonZero
-                              .map((e) => {
-                                const pct = total > 0 ? ((e.votes / total) * 100).toFixed(1) : "0.0";
-                                return `${e.label} (${e.votes} votes, ${pct}%)`;
-                              })
-                              .join(", ")}
-                          </span>
+                  ),
+                )}
+                {isOwnAccount && (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    You can vote on their behalf from an active period's vote page, or re-delegate their voting
+                    power onward to another address.
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Votes cast</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingVotes ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-10" />
+                ))}
+              </div>
+            ) : votes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No votes cast yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {votes.map(({ periodId, period, record, body, topicBodies }) => (
+                  <Card key={periodId}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Link to={`/vote/period/${periodId}`} className="text-sm font-medium text-primary hover:underline">
+                            {body?.title ?? `Period #${periodId}`}
+                          </Link>
+                          <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
                         </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                        {record.byDelegator && <span className="text-xs text-muted-foreground">Voted by delegator</span>}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {record.topicVotes.map((topicVoteCounts, ti) => {
+                        const options = period.topics[ti]?.[0] ?? [];
+                        const total = topicVoteCounts.reduce((a, b) => a + b, 0);
+                        const nonZero = topicVoteCounts
+                          .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, votes: v }))
+                          .filter((entry) => entry.votes > 0);
+                        if (nonZero.length === 0) return null;
+                        return (
+                          <div key={ti} className="mb-2">
+                            <span className="text-sm font-medium">{topicBodies[ti]?.title ?? `Topic ${ti + 1}`}:</span>{" "}
+                            <span className="text-sm text-muted-foreground">
+                              {nonZero
+                                .map((e) => {
+                                  const pct = total > 0 ? ((e.votes / total) * 100).toFixed(1) : "0.0";
+                                  return `${e.label} (${e.votes} votes, ${pct}%)`;
+                                })
+                                .join(", ")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

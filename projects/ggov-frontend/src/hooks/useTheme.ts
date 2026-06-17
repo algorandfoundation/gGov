@@ -5,7 +5,8 @@ type Theme = 'light' | 'dark'
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem('theme') as Theme | null
   if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // DESIGN: light and bright is the default; dark mode is opt-in, never the default.
+  return 'light'
 }
 
 export function useTheme() {

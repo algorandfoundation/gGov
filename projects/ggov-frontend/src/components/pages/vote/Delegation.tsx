@@ -35,7 +35,7 @@ export default function Delegation() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Current Delegation</CardTitle>
+          <CardTitle className="text-base">Current delegation</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -51,7 +51,7 @@ export default function Delegation() {
                 onClick={() => undelegateMutation.mutate()}
                 disabled={submitting}
               >
-                {undelegateMutation.isPending ? 'Removing...' : 'Remove Delegation'}
+                {undelegateMutation.isPending ? 'Removing...' : 'Remove delegation'}
               </Button>
             </div>
           ) : (
@@ -62,12 +62,12 @@ export default function Delegation() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Set Delegation</CardTitle>
+          <CardTitle className="text-base">Set delegation</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="delegatee-address">Delegatee Address</Label>
+              <Label htmlFor="delegatee-address">Delegatee address</Label>
               <Input
                 id="delegatee-address"
                 name="delegatee-address"

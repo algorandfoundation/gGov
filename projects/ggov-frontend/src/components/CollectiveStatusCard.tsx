@@ -44,7 +44,7 @@ export default function CollectiveStatusCard({
           label: periodEnded ? "Was not eligible to vote" : "Not eligible to vote",
         }
       : pending === 0
-        ? { tone: "border-primary/20 bg-primary/5 text-foreground", icon: CheckCircle2, label: "All accounts voted" }
+        ? { tone: "border-success/30 bg-success/10 text-success-foreground", icon: CheckCircle2, label: "All accounts voted" }
         : periodEnded
           ? {
               tone: "border-border bg-muted/40 text-muted-foreground",
@@ -52,7 +52,7 @@ export default function CollectiveStatusCard({
               label: `${votedAccounts}/${eligibleAccounts} account${plural(eligibleAccounts)} voted`,
             }
           : {
-              tone: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+              tone: "border-warning/40 bg-warning/15 text-warning-foreground",
               icon: AlertTriangle,
               label: `${pending}/${eligibleAccounts} account${plural(eligibleAccounts)} need to vote`,
             };
@@ -61,12 +61,12 @@ export default function CollectiveStatusCard({
   return (
     <Card className={className}>
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-base">Collective Status</CardTitle>
-        <Wallet className="size-5 text-primary" />
+        <CardTitle className="text-base">Collective status</CardTitle>
+        <Wallet className="size-5 text-algo-teal" />
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Voting Power</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total voting power</p>
           <p className="text-2xl font-bold tabular-nums">{totalVotingPower.toLocaleString()}</p>
           <div className="mt-1 flex items-center gap-1.5 text-sm text-primary">
             <Network className="size-4" />

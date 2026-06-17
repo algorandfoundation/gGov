@@ -20,9 +20,9 @@ export default function ManagePeriods() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Manage Periods</h1>
+        <h1 className="text-2xl font-bold">Manage periods</h1>
         <Link to="/manage/add-period">
-          <Button>Add Period</Button>
+          <Button>Add period</Button>
         </Link>
       </div>
 
@@ -37,8 +37,8 @@ export default function ManagePeriods() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Committee (Rounds)</TableHead>
-              <TableHead>Voting Window</TableHead>
+              <TableHead>Committee (rounds)</TableHead>
+              <TableHead>Voting window</TableHead>
               <TableHead>Topics</TableHead>
               <TableHead>Ready</TableHead>
               <TableHead>Status</TableHead>
@@ -59,8 +59,8 @@ export default function ManagePeriods() {
                     className={
                       'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
                       (ready
-                        ? 'bg-green-500/20 text-green-700 dark:text-green-300'
-                        : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300')
+                        ? 'bg-success/15 text-success-foreground'
+                        : 'bg-warning/15 text-warning-foreground')
                     }
                   >
                     {ready ? 'Ready' : 'Draft'}

@@ -43,7 +43,7 @@ export default function AddPeriod() {
   if (!sdk) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Add Period</h1>
+        <h1 className="text-2xl font-bold">Add period</h1>
         <p className="text-muted-foreground">Connect your wallet to create a period.</p>
       </div>
     )
@@ -51,11 +51,11 @@ export default function AddPeriod() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Add Period</h1>
+      <h1 className="text-2xl font-bold">Add period</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">New Governance Period</CardTitle>
+          <CardTitle className="text-base">New governance period</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,7 +81,7 @@ export default function AddPeriod() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="voting-start">Voting Start (UTC)</Label>
+                <Label htmlFor="voting-start">Voting start (UTC)</Label>
                 <Input
                   id="voting-start"
                   name="voting-start"
@@ -92,7 +92,7 @@ export default function AddPeriod() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="voting-end">Voting End (UTC)</Label>
+                <Label htmlFor="voting-end">Voting end (UTC)</Label>
                 <Input
                   id="voting-end"
                   name="voting-end"
@@ -127,7 +127,7 @@ export default function AddPeriod() {
             </div>
 
             <Button type="submit" disabled={addPeriodMutation.isPending}>
-              {addPeriodMutation.isPending ? 'Creating...' : 'Create Period'}
+              {addPeriodMutation.isPending ? 'Creating...' : 'Create period'}
             </Button>
           </form>
         </CardContent>
