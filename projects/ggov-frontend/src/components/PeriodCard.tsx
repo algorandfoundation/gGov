@@ -25,9 +25,9 @@ export default function PeriodCard({ periodId, period, linkPrefix = '/vote' }: P
             </CardTitle>
             <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
           </div>
-          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground/80">
-            <span>{formatTimestamp(period.votingStart)} — {formatTimestamp(period.votingEnd)}</span>
+          <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground/80 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
             <span className="shrink-0">{period.topics.length} topic{period.topics.length !== 1 ? 's' : ''}</span>
+            <span className="order-first sm:order-none">{formatTimestamp(period.votingStart)} — {formatTimestamp(period.votingEnd)}</span>
           </div>
         </CardHeader>
         {body?.body && (
