@@ -334,6 +334,8 @@ export default function ManagePeriodDetail() {
         <div className="space-y-4">
           {period.topics.map(([options, tallies], topicIdx) => {
             const tb = topicBodies[topicIdx]
+            // Hoisted out of the options.map below so it's summed once, not per option.
+            const totalVotes = tallies.reduce((a, b) => a + b, 0)
             return (
               <Card key={topicIdx}>
                 <CardHeader className="pb-2">
@@ -383,7 +385,6 @@ export default function ManagePeriodDetail() {
                   <div className="space-y-1">
                     {options.map((option, optIdx) => {
                       const tally = tallies[optIdx] ?? 0
-                      const totalVotes = tallies.reduce((a, b) => a + b, 0)
                       const pct = totalVotes > 0 ? (tally / totalVotes) * 100 : 0
                       return (
                         <div key={optIdx} className="flex items-center justify-between text-sm">

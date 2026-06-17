@@ -8,9 +8,16 @@ export default function VotePeriods() {
 
   // Voters only see periods the operator has marked ready, latest first.
   const readyPeriods = periods.filter((p) => p.ready).sort((a, b) => b.id - a.id)
-  const active = readyPeriods.filter((p) => periodStatus(p.period.votingStart, p.period.votingEnd) === 'active')
-  const upcoming = readyPeriods.filter((p) => periodStatus(p.period.votingStart, p.period.votingEnd) === 'upcoming')
-  const past = readyPeriods.filter((p) => periodStatus(p.period.votingStart, p.period.votingEnd) === 'ended')
+  // Bucket in a single pass — periodStatus() reads the clock, so compute it once per period.
+  const active: typeof readyPeriods = []
+  const upcoming: typeof readyPeriods = []
+  const past: typeof readyPeriods = []
+  for (const p of readyPeriods) {
+    const status = periodStatus(p.period.votingStart, p.period.votingEnd)
+    if (status === 'active') active.push(p)
+    else if (status === 'upcoming') upcoming.push(p)
+    else past.push(p)
+  }
 
   const sections = [
     { label: 'Active', items: active },

@@ -51,6 +51,9 @@ export function usePeriods() {
         ready: summary.ready,
       }))
     },
+    // Mutations (add/edit/set-ready) invalidate this key, so a modest staleTime
+    // just avoids refetching the list on every navigation back to it.
+    staleTime: 60_000,
   })
 }
 
@@ -295,6 +298,8 @@ export function useCommittees() {
       }
       return options
     },
+    // Committee metadata is effectively static historical data.
+    staleTime: 600_000,
   })
 }
 
@@ -321,6 +326,8 @@ export function useCommittee(idBase64Url: string | undefined) {
       }
     },
     enabled: !!idBase64Url,
+    // Committee metadata is effectively static historical data.
+    staleTime: 600_000,
   })
 }
 
@@ -440,5 +447,7 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
       return readerSDK.registry.getCommitteeXGovs(bytes)
     },
     enabled: !!idBase64Url,
+    // A committee's membership is fixed once the committee exists.
+    staleTime: 600_000,
   })
 }

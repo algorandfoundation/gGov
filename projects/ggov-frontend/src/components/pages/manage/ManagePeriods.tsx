@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { usePeriods, useCommittees } from '@/hooks/queries'
 import { Button } from '@/components/ui/button'
@@ -11,9 +12,15 @@ export default function ManagePeriods() {
   const { data: periods = [], isLoading } = usePeriods()
   const { data: committees = [] } = useCommittees()
 
+  // Index committees by id once, so each table row is an O(1) lookup rather than
+  // a linear scan (O(periods × committees) across the whole table).
+  const committeeById = useMemo(
+    () => new Map(committees.map((c) => [c.idBase64Url, c])),
+    [committees],
+  )
+
   function committeeRounds(committeeId: Uint8Array): string {
-    const key = toBase64Url(committeeId)
-    const c = committees.find((c) => c.idBase64Url === key)
+    const c = committeeById.get(toBase64Url(committeeId))
     return c ? `${c.periodStart} — ${c.periodEnd}` : '—'
   }
 

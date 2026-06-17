@@ -48,7 +48,6 @@ export function useDelegateMutation() {
   return useMutation({
     mutationFn: (delegatee: string) => sdk!.setVotingAccount({ votingAddress: delegatee }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.delegation('') })
       queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation set', data)
     },
