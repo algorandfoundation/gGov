@@ -21,6 +21,7 @@ import PeriodAppExplorerLink from "@/components/PeriodAppExplorerLink";
 import { formatTimestamp, periodStatus, type PeriodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
+import { TxButtonContent } from "@/components/TxButtonContent";
 
 function VoteAllocationSummary({ allocated, power }: { allocated: number; power: number }) {
   const remaining = power - allocated;
@@ -380,8 +381,14 @@ export default function VotePeriodDetail() {
       )}
 
       {showVoteForm && (
-        <Button onClick={submitVote} disabled={voteMutation.isPending || !canSubmit}>
-          {voteMutation.isPending ? "Submitting..." : "Submit vote"}
+        <Button onClick={submitVote} disabled={voteMutation.isPending || !canSubmit} aria-busy={voteMutation.isPending}>
+          <TxButtonContent
+            pending={voteMutation.isPending}
+            success={voteMutation.isSuccess}
+            idleLabel="Submit vote"
+            pendingLabel="Voting…"
+            confirmedLabel="Voted"
+          />
         </Button>
       )}
     </div>

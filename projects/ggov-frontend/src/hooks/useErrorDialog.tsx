@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { CopyButton } from '@/components/ui/copy-button'
+import { getErrorMessage, isUserRejectionError } from '@/lib/errors'
 
 interface ErrorDialogContextValue {
   showError: (err: unknown) => void
@@ -13,7 +16,12 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null)
 
   const showError = useCallback((err: unknown) => {
-    setError(err instanceof Error ? err : new Error(String(err)))
+    // User cancelled the signing prompt — not a failure worth a modal.
+    if (isUserRejectionError(err)) {
+      toast('Signing cancelled')
+      return
+    }
+    setError(err instanceof Error ? err : new Error(getErrorMessage(err)))
   }, [])
 
   const clearError = useCallback(() => setError(null), [])
@@ -31,6 +39,7 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
               </div>
             </DialogHeader>
             <DialogFooter>
+              <CopyButton value={error.message} size="default">Copy error</CopyButton>
               <Button onClick={clearError}>Close</Button>
             </DialogFooter>
           </DialogContent>

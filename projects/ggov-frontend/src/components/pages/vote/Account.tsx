@@ -13,6 +13,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { formatTimestamp } from "@/utils/time";
 import Address from "@/components/Address";
+import { TxButtonContent } from "@/components/TxButtonContent";
 
 /**
  * One row of the "Delegated to You" list. As the delegatee, the active wallet may redirect this
@@ -53,9 +54,10 @@ function DelegatorRow({
             size="sm"
             className="w-full @lg:w-auto"
             disabled={active}
+            aria-busy={removing}
             onClick={() => redelegateMutation.mutate({ account: delegator, votingAddress: delegator })}
           >
-            {removing ? "Removing..." : "Remove delegation"}
+            <TxButtonContent pending={removing} idleLabel="Remove delegation" pendingLabel="Removing…" />
           </Button>
         </div>
       </div>
@@ -70,6 +72,7 @@ function DelegatorRow({
           <Button
             size="sm"
             disabled={!target || active}
+            aria-busy={pending}
             onClick={() =>
               redelegateMutation.mutate(
                 { account: delegator, votingAddress: target },
@@ -77,7 +80,7 @@ function DelegatorRow({
               )
             }
           >
-            {pending ? "Redirecting..." : "Confirm"}
+            <TxButtonContent pending={pending} idleLabel="Confirm" pendingLabel="Redirecting…" />
           </Button>
         </div>
       )}
@@ -202,8 +205,14 @@ export default function Account() {
                     Delegated to:{" "}
                     <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
                   </p>
-                  <Button variant="destructive" size="sm" onClick={() => undelegateMutation.mutate()} disabled={submitting}>
-                    {undelegateMutation.isPending ? "Removing..." : "Remove delegation"}
+                  <Button variant="destructive" size="sm" onClick={() => undelegateMutation.mutate()} disabled={submitting} aria-busy={undelegateMutation.isPending}>
+                    <TxButtonContent
+                      pending={undelegateMutation.isPending}
+                      success={undelegateMutation.isSuccess}
+                      idleLabel="Remove delegation"
+                      pendingLabel="Removing…"
+                      confirmedLabel="Removed"
+                    />
                   </Button>
                 </div>
               ) : showDelegateForm ? (
@@ -219,8 +228,14 @@ export default function Account() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={() => delegateMutation.mutate(delegateeInput)} disabled={submitting || !delegateeInput || !sdk}>
-                      {delegateMutation.isPending ? "Delegating..." : "Delegate"}
+                    <Button onClick={() => delegateMutation.mutate(delegateeInput)} disabled={submitting || !delegateeInput || !sdk} aria-busy={delegateMutation.isPending}>
+                      <TxButtonContent
+                        pending={delegateMutation.isPending}
+                        success={delegateMutation.isSuccess}
+                        idleLabel="Delegate"
+                        pendingLabel="Delegating…"
+                        confirmedLabel="Delegated"
+                      />
                     </Button>
                     <Button
                       variant="outline"

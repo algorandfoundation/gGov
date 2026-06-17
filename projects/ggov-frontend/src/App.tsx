@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { GGovSDKProvider } from '@/hooks/useGGovSDK'
 import { ErrorDialogProvider } from '@/hooks/useErrorDialog'
+import { confirmPhase, resetPhase } from '@/lib/transactionPhase'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from '@/utils/network'
 import Layout from '@/components/Layout'
 import VotePeriods from '@/components/pages/vote/VotePeriods'
@@ -23,6 +24,21 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       console.error(`Query failed [${JSON.stringify(query.queryKey)}]:`, error)
+    },
+  }),
+  // Drive the global transaction phase from every transaction mutation's lifecycle
+  // so buttons can flash signing → sending → confirmed without each mutation opting
+  // in. Mutations that don't submit a transaction can set
+  // `meta: { skipTransactionPhase: true }` to stay out of this (today all do).
+  mutationCache: new MutationCache({
+    onMutate: (_vars, mutation) => {
+      if (!mutation.meta?.skipTransactionPhase) resetPhase() // clear any stale 'confirmed' from a prior run
+    },
+    onError: (_err, _vars, _ctx, mutation) => {
+      if (!mutation.meta?.skipTransactionPhase) resetPhase()
+    },
+    onSuccess: (_data, _vars, _ctx, mutation) => {
+      if (!mutation.meta?.skipTransactionPhase) confirmPhase() // 'confirmed' flash, then auto-resets to idle
     },
   }),
 })

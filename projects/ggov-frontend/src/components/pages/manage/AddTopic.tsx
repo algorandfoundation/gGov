@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import BackButton from '@/components/BackButton'
+import { TxButtonContent } from '@/components/TxButtonContent'
 
 export default function AddTopic() {
   const { periodId: pidParam } = useParams<{ periodId: string }>()
@@ -126,8 +127,18 @@ export default function AddTopic() {
               </div>
             </div>
 
-            <Button type="submit" disabled={addTopicMutation.isPending || options.filter((o) => o.trim()).length < 2}>
-              {addTopicMutation.isPending ? 'Adding...' : 'Add topic'}
+            <Button
+              type="submit"
+              disabled={addTopicMutation.isPending || options.filter((o) => o.trim()).length < 2}
+              aria-busy={addTopicMutation.isPending}
+            >
+              <TxButtonContent
+                pending={addTopicMutation.isPending}
+                success={addTopicMutation.isSuccess}
+                idleLabel="Add topic"
+                pendingLabel="Adding…"
+                confirmedLabel="Added"
+              />
             </Button>
           </form>
         </CardContent>

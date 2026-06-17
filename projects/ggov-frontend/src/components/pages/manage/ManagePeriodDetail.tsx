@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
+import { TxButtonContent } from '@/components/TxButtonContent'
 
 export default function ManagePeriodDetail() {
   const { periodId: pidParam } = useParams<{ periodId: string }>()
@@ -172,13 +173,14 @@ export default function ManagePeriodDetail() {
             variant={ready ? 'outline' : 'default'}
             onClick={() => setReadyDialogOpen(true)}
             disabled={setReadyMutation.isPending || (ready && hasVotes)}
+            aria-busy={setReadyMutation.isPending}
             title={ready && hasVotes ? 'Cannot revert to draft: votes have already been cast' : undefined}
           >
-            {setReadyMutation.isPending
-              ? 'Saving...'
-              : ready
-                ? 'Revert to draft'
-                : 'Mark ready'}
+            <TxButtonContent
+              pending={setReadyMutation.isPending}
+              idleLabel={ready ? 'Revert to draft' : 'Mark ready'}
+              pendingLabel="Saving…"
+            />
           </Button>
         )}
       </div>
@@ -239,8 +241,14 @@ export default function ManagePeriodDetail() {
                   />
                 </div>
               </div>
-              <Button size="sm" onClick={handleEditPeriod} disabled={editPeriodMutation.isPending}>
-                {editPeriodMutation.isPending ? 'Saving...' : 'Save changes'}
+              <Button size="sm" onClick={handleEditPeriod} disabled={editPeriodMutation.isPending} aria-busy={editPeriodMutation.isPending}>
+                <TxButtonContent
+                  pending={editPeriodMutation.isPending}
+                  success={editPeriodMutation.isSuccess}
+                  idleLabel="Save changes"
+                  pendingLabel="Saving…"
+                  confirmedLabel="Saved"
+                />
               </Button>
             </div>
           ) : (
@@ -282,8 +290,14 @@ export default function ManagePeriodDetail() {
                   placeholder="Period description..."
                 />
               </div>
-              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending}>
-                {uploadPeriodBodyMutation.isPending ? 'Saving...' : periodBody ? 'Update body' : 'Add body'}
+              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending} aria-busy={uploadPeriodBodyMutation.isPending}>
+                <TxButtonContent
+                  pending={uploadPeriodBodyMutation.isPending}
+                  success={uploadPeriodBodyMutation.isSuccess}
+                  idleLabel={periodBody ? 'Update body' : 'Add body'}
+                  pendingLabel="Saving…"
+                  confirmedLabel="Saved"
+                />
               </Button>
             </>
           ) : periodBody && (
@@ -342,8 +356,13 @@ export default function ManagePeriodDetail() {
                               }
                             }}
                             disabled={removeTopicMutation.isPending}
+                            aria-busy={removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx}
                           >
-                            Remove
+                            <TxButtonContent
+                              pending={removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx}
+                              idleLabel="Remove"
+                              pendingLabel="Removing…"
+                            />
                           </Button>
                         </>
                       )}
@@ -409,8 +428,14 @@ export default function ManagePeriodDetail() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingTopic(null)}>Cancel</Button>
-              <Button onClick={handleEditTopic} disabled={editTopicMutation.isPending}>
-                {editTopicMutation.isPending ? 'Saving...' : 'Save'}
+              <Button onClick={handleEditTopic} disabled={editTopicMutation.isPending} aria-busy={editTopicMutation.isPending}>
+                <TxButtonContent
+                  pending={editTopicMutation.isPending}
+                  success={editTopicMutation.isSuccess}
+                  idleLabel="Save"
+                  pendingLabel="Saving…"
+                  confirmedLabel="Saved"
+                />
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -474,12 +499,13 @@ export default function ManagePeriodDetail() {
                 )
               }
               disabled={setReadyMutation.isPending}
+              aria-busy={setReadyMutation.isPending}
             >
-              {setReadyMutation.isPending
-                ? 'Saving...'
-                : ready
-                  ? 'Revert to draft'
-                  : 'Mark ready'}
+              <TxButtonContent
+                pending={setReadyMutation.isPending}
+                idleLabel={ready ? 'Revert to draft' : 'Mark ready'}
+                pendingLabel="Saving…"
+              />
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -518,8 +544,14 @@ export default function ManagePeriodDetail() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingTopicBody(null)}>Cancel</Button>
-              <Button onClick={handleSaveTopicBody} disabled={uploadTopicBodyMutation.isPending}>
-                {uploadTopicBodyMutation.isPending ? 'Saving...' : 'Save'}
+              <Button onClick={handleSaveTopicBody} disabled={uploadTopicBodyMutation.isPending} aria-busy={uploadTopicBodyMutation.isPending}>
+                <TxButtonContent
+                  pending={uploadTopicBodyMutation.isPending}
+                  success={uploadTopicBodyMutation.isSuccess}
+                  idleLabel="Save"
+                  pendingLabel="Saving…"
+                  confirmedLabel="Saved"
+                />
               </Button>
             </DialogFooter>
           </DialogContent>

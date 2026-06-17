@@ -108,8 +108,9 @@ export function useAddPeriodMutation() {
       title?: string
       body?: string
     }) => {
-      const hasBody = !!args.title?.trim()
-      const progress = signingProgress(hasBody ? 2 : 1)
+      // A body is only uploaded (a second signed group) when a title is provided.
+      const willUploadBody = !!args.title?.trim()
+      const progress = signingProgress(willUploadBody ? 2 : 1)
       try {
         progress.step('Creating period')
         const periodId = await sdk!.addPeriod({
@@ -118,7 +119,7 @@ export function useAddPeriodMutation() {
           votingEnd: args.votingEnd,
         }) as bigint
 
-        if (hasBody) {
+        if (willUploadBody) {
           progress.step('Uploading period body')
           await sdk!.uploadPeriodBody({
             periodId,
@@ -193,8 +194,9 @@ export function useAddTopicMutation() {
       title?: string
       body?: string
     }) => {
-      const hasBody = !!args.title?.trim()
-      const progress = signingProgress(hasBody ? 2 : 1)
+      // A body is only uploaded (a second signed group) when a title is provided.
+      const willUploadBody = !!args.title?.trim()
+      const progress = signingProgress(willUploadBody ? 2 : 1)
       try {
         progress.step('Adding topic')
         const topicIndex = await sdk!.addTopic({
@@ -202,7 +204,7 @@ export function useAddTopicMutation() {
           options: args.options,
         }) as bigint
 
-        if (hasBody) {
+        if (willUploadBody) {
           progress.step('Uploading topic body')
           await sdk!.uploadTopicBody({
             periodId: BigInt(args.periodId),
