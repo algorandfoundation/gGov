@@ -37,9 +37,9 @@ function OptionBar({ pct, emphasize }: { pct: number; emphasize?: boolean }) {
 }
 
 /**
- * Stitch-style voting topic: a card with a header band (badge + total votes)
- * and option rows rendered as bordered cards with live tallies. Supports
- * read-only results, single-select voting, and advanced manual allocation.
+ * Stitch-style voting topic: a card with a header band and option rows
+ * rendered as bordered cards with live tallies. Supports read-only results,
+ * single-select voting, and advanced manual allocation.
  */
 export default function TopicVoteCard({
   title,
