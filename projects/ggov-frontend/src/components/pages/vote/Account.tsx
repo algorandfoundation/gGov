@@ -117,6 +117,11 @@ export default function Account() {
   const redelegateMutation = useRedelegateMutation();
   const [delegateeInput, setDelegateeInput] = useState("");
   const [showDelegateForm, setShowDelegateForm] = useState(false);
+
+  useEffect(() => {
+    setShowDelegateForm(false);
+    setDelegateeInput("");
+  }, [address]);
   const submitting = delegateMutation.isPending || undelegateMutation.isPending;
 
   // The editable delegation card is only useful to accounts that actually hold voting power in some
