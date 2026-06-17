@@ -210,7 +210,14 @@ export default function Account() {
                     <Button onClick={() => delegateMutation.mutate(delegateeInput)} disabled={submitting || !delegateeInput || !sdk}>
                       {delegateMutation.isPending ? "Delegating..." : "Delegate"}
                     </Button>
-                    <Button variant="outline" onClick={() => setShowDelegateForm(false)} disabled={submitting}>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowDelegateForm(false);
+                        setDelegateeInput("");
+                      }}
+                      disabled={submitting}
+                    >
                       Cancel
                     </Button>
                   </div>
