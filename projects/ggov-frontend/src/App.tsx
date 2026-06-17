@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { lazy, useMemo } from 'react'
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -10,15 +10,17 @@ import { confirmPhase, resetPhase } from '@/lib/transactionPhase'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from '@/utils/network'
 import Layout from '@/components/Layout'
 import VotePeriods from '@/components/pages/vote/VotePeriods'
-import VotePeriodDetail from '@/components/pages/vote/VotePeriodDetail'
-import Delegation from '@/components/pages/vote/Delegation'
-import Account from '@/components/pages/vote/Account'
-import ManagePeriods from '@/components/pages/manage/ManagePeriods'
-import ManagePeriodDetail from '@/components/pages/manage/ManagePeriodDetail'
-import AddPeriod from '@/components/pages/manage/AddPeriod'
-import AddTopic from '@/components/pages/manage/AddTopic'
-import Committees from '@/components/pages/vote/Committees'
-import CommitteeDetail from '@/components/pages/vote/CommitteeDetail'
+// Lazy-load the heavier routes so the landing view's chunk doesn't carry the
+// TipTap editor (Add/Manage screens) or react-markdown (detail screens).
+const VotePeriodDetail = lazy(() => import('@/components/pages/vote/VotePeriodDetail'))
+const Delegation = lazy(() => import('@/components/pages/vote/Delegation'))
+const Account = lazy(() => import('@/components/pages/vote/Account'))
+const ManagePeriods = lazy(() => import('@/components/pages/manage/ManagePeriods'))
+const ManagePeriodDetail = lazy(() => import('@/components/pages/manage/ManagePeriodDetail'))
+const AddPeriod = lazy(() => import('@/components/pages/manage/AddPeriod'))
+const AddTopic = lazy(() => import('@/components/pages/manage/AddTopic'))
+const Committees = lazy(() => import('@/components/pages/vote/Committees'))
+const CommitteeDetail = lazy(() => import('@/components/pages/vote/CommitteeDetail'))
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
