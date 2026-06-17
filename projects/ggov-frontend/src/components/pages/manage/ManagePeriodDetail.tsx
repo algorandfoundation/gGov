@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
@@ -65,18 +65,28 @@ export default function ManagePeriodDetail() {
   // Ready transition dialog
   const [readyDialogOpen, setReadyDialogOpen] = useState(false)
 
+  // Seed the edit forms once per period, keyed on periodId rather than the
+  // query object identity — otherwise a background refetch (e.g. on window
+  // refocus) overwrites the operator's in-progress edits.
+  const seededEditPeriodId = useRef<number | null>(null)
   useEffect(() => {
-    if (period) {
+    if (period && seededEditPeriodId.current !== periodId) {
+      seededEditPeriodId.current = periodId
       setEditCommittee(toBase64Url(period.committeeId))
       setEditStart(toDatetimeLocalUTC(period.votingStart))
       setEditEnd(toDatetimeLocalUTC(period.votingEnd))
     }
-  }, [period])
+  }, [period, periodId])
 
+  const seededBodyPeriodId = useRef<number | null>(null)
   useEffect(() => {
-    setEditPeriodTitle(periodBody?.title ?? '')
-    setEditPeriodBody(periodBody?.body ?? '')
-  }, [periodBody])
+    // `periodBody` is `undefined` while loading, then `null` or the body object.
+    if (periodBody !== undefined && seededBodyPeriodId.current !== periodId) {
+      seededBodyPeriodId.current = periodId
+      setEditPeriodTitle(periodBody?.title ?? '')
+      setEditPeriodBody(periodBody?.body ?? '')
+    }
+  }, [periodBody, periodId])
 
   function handleEditPeriod() {
     if (!editCommittee || !editStart || !editEnd) return
