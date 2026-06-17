@@ -166,7 +166,7 @@ export default function AccountSelector({ accounts, selected, onSelect, classNam
 
   return (
     <div className={cn("space-y-3", className)}>
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Account Selection</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Account selection</h3>
       <div
         className="grid grid-cols-1 gap-2"
         role="radiogroup"

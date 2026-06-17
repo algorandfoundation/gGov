@@ -4,8 +4,97 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Self-hosted brand fonts (Algorand Foundation) ───────────────────────────
+ * Aeonik = display / headlines / CTAs. Inter = body (and Aeonik fallback).
+ * Files live in /public/fonts and are served from the site root. */
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-LightItalic.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-RegularItalic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-BoldItalic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-MediumItalic.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-BoldItalic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Aeonik", "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -22,6 +111,12 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -31,6 +126,7 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --color-algo-teal: var(--algo-teal);
+  --color-algo-blue: var(--algo-blue);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -45,84 +141,98 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Algorand Foundation Brand Kit
- * Primary:  Mine Shaft #242424
- * White:    #FFFFFF
- * Accent:   Caribbean Green #00BEA5
- */
+/* Algorand brand system — see DESIGN.md
+ * Primary:  Blue #2D2DF1 (interactive), Teal #17CAC6 (accent)
+ * Neutral:  deep navy #001324 + Slate tints (#E5E7E9 … #001324)
+ * Accent:   Orange #FF7F48, Yellow #FFE248, Green #01DC94 (sparing)
+ * Approach: light and bright; dark mode is offered but never the default. */
 
 :root {
-  --background: oklch(0.99 0.002 175);
-  --foreground: oklch(0.216 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.216 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.216 0 0);
-  --primary: oklch(0.714 0.14 175);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.955 0.02 175);
-  --secondary-foreground: oklch(0.216 0 0);
-  --muted: oklch(0.955 0.015 175);
-  --muted-foreground: oklch(0.5 0.01 175);
-  --accent: oklch(0.94 0.03 175);
-  --accent-foreground: oklch(0.216 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.912 0.01 175);
-  --input: oklch(0.912 0.01 175);
-  --ring: oklch(0.714 0.14 175);
-  --algo-teal: oklch(0.714 0.14 175);
-  --chart-1: oklch(0.714 0.14 175);
-  --chart-2: oklch(0.62 0.12 185);
-  --chart-3: oklch(0.55 0.1 195);
-  --chart-4: oklch(0.78 0.12 165);
-  --chart-5: oklch(0.65 0.15 170);
+  --background: #ffffff;
+  --foreground: #001324;
+  --card: #ffffff;
+  --card-foreground: #001324;
+  --popover: #ffffff;
+  --popover-foreground: #001324;
+  --primary: #2d2df1;
+  --primary-foreground: #ffffff;
+  --secondary: #e5e7e9;
+  --secondary-foreground: #001324;
+  --muted: #e5e7e9;
+  --muted-foreground: #66717c;
+  --accent: #e5e7e9;
+  --accent-foreground: #001324;
+  --destructive: #d92d20;
+  --destructive-foreground: #ffffff;
+  --success: #01dc94;
+  --success-foreground: #03543f;
+  --warning: #ffe248;
+  --warning-foreground: #713f12;
+  --info: #17cac6;
+  --info-foreground: #035e5b;
+  --border: #ccd0d3;
+  --input: #ccd0d3;
+  --ring: #2d2df1;
+  --algo-teal: #17cac6;
+  --algo-blue: #2d2df1;
+  --chart-1: #2d2df1;
+  --chart-2: #17cac6;
+  --chart-3: #5858f0;
+  --chart-4: #45d5d1;
+  --chart-5: #8080f3;
   --radius: 0.625rem;
-  --sidebar: oklch(0.97 0.005 175);
-  --sidebar-foreground: oklch(0.216 0 0);
-  --sidebar-primary: oklch(0.714 0.14 175);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.03 175);
-  --sidebar-accent-foreground: oklch(0.216 0 0);
-  --sidebar-border: oklch(0.912 0.01 175);
-  --sidebar-ring: oklch(0.714 0.14 175);
+  --sidebar: #f4f6f6;
+  --sidebar-foreground: #001324;
+  --sidebar-primary: #2d2df1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e5e7e9;
+  --sidebar-accent-foreground: #001324;
+  --sidebar-border: #ccd0d3;
+  --sidebar-ring: #2d2df1;
 }
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.216 0 0);
-  --foreground: oklch(0.96 0 0);
-  --card: oklch(0.26 0.005 175);
-  --card-foreground: oklch(0.96 0 0);
-  --popover: oklch(0.26 0.005 175);
-  --popover-foreground: oklch(0.96 0 0);
-  --primary: oklch(0.714 0.14 175);
-  --primary-foreground: oklch(0.216 0 0);
-  --secondary: oklch(0.3 0.02 175);
-  --secondary-foreground: oklch(0.96 0 0);
-  --muted: oklch(0.3 0.02 175);
-  --muted-foreground: oklch(0.65 0.01 175);
-  --accent: oklch(0.32 0.025 175);
-  --accent-foreground: oklch(0.96 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.33 0.015 175);
-  --input: oklch(0.33 0.015 175);
-  --ring: oklch(0.714 0.14 175);
-  --algo-teal: oklch(0.714 0.14 175);
-  --chart-1: oklch(0.714 0.14 175);
-  --chart-2: oklch(0.62 0.12 185);
-  --chart-3: oklch(0.78 0.12 165);
-  --chart-4: oklch(0.55 0.15 190);
-  --chart-5: oklch(0.65 0.15 170);
-  --sidebar: oklch(0.24 0.005 175);
-  --sidebar-foreground: oklch(0.96 0 0);
-  --sidebar-primary: oklch(0.714 0.14 175);
-  --sidebar-primary-foreground: oklch(0.216 0 0);
-  --sidebar-accent: oklch(0.32 0.025 175);
-  --sidebar-accent-foreground: oklch(0.96 0 0);
-  --sidebar-border: oklch(0.33 0.015 175);
-  --sidebar-ring: oklch(0.714 0.14 175);
+  --background: #001324;
+  --foreground: #e5e7e9;
+  --card: #192a39;
+  --card-foreground: #e5e7e9;
+  --popover: #192a39;
+  --popover-foreground: #e5e7e9;
+  --primary: #6c6cf1;
+  --primary-foreground: #ffffff;
+  --secondary: #334250;
+  --secondary-foreground: #e5e7e9;
+  --muted: #192a39;
+  --muted-foreground: #99a1a7;
+  --accent: #334250;
+  --accent-foreground: #e5e7e9;
+  --destructive: #f0716a;
+  --destructive-foreground: #ffffff;
+  --success: #01dc94;
+  --success-foreground: #6ee7b7;
+  --warning: #ffe248;
+  --warning-foreground: #fde68a;
+  --info: #45d5d1;
+  --info-foreground: #5eead4;
+  --border: #334250;
+  --input: #334250;
+  --ring: #6c6cf1;
+  --algo-teal: #45d5d1;
+  --algo-blue: #6c6cf1;
+  --chart-1: #6c6cf1;
+  --chart-2: #45d5d1;
+  --chart-3: #8080f3;
+  --chart-4: #74dfdd;
+  --chart-5: #9595f5;
+  --sidebar: #00182e;
+  --sidebar-foreground: #e5e7e9;
+  --sidebar-primary: #6c6cf1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334250;
+  --sidebar-accent-foreground: #e5e7e9;
+  --sidebar-border: #334250;
+  --sidebar-ring: #6c6cf1;
 }
 
 @layer base {
@@ -131,8 +241,13 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.3; /* DESIGN: body 130% */
   }
+  /* DESIGN: headlines set in Aeonik Bold, 100% line-height */
   h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1;
     text-wrap: balance;
   }
 }

@@ -177,15 +177,15 @@ export default function ManagePeriodDetail() {
             {setReadyMutation.isPending
               ? 'Saving...'
               : ready
-                ? 'Revert to Draft'
-                : 'Mark Ready'}
+                ? 'Revert to draft'
+                : 'Mark ready'}
           </Button>
         )}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Period Details</CardTitle>
+          <CardTitle className="text-base">Period details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm">
@@ -219,7 +219,7 @@ export default function ManagePeriodDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-voting-start">Voting Start (UTC)</Label>
+                  <Label htmlFor="edit-voting-start">Voting start (UTC)</Label>
                   <Input
                     id="edit-voting-start"
                     name="edit-voting-start"
@@ -229,7 +229,7 @@ export default function ManagePeriodDetail() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-voting-end">Voting End (UTC)</Label>
+                  <Label htmlFor="edit-voting-end">Voting end (UTC)</Label>
                   <Input
                     id="edit-voting-end"
                     name="edit-voting-end"
@@ -240,7 +240,7 @@ export default function ManagePeriodDetail() {
                 </div>
               </div>
               <Button size="sm" onClick={handleEditPeriod} disabled={editPeriodMutation.isPending}>
-                {editPeriodMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {editPeriodMutation.isPending ? 'Saving...' : 'Save changes'}
               </Button>
             </div>
           ) : (
@@ -257,7 +257,7 @@ export default function ManagePeriodDetail() {
       {/* Period Body */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Period Body</CardTitle>
+          <CardTitle className="text-base">Period body</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {sdk ? (
@@ -283,7 +283,7 @@ export default function ManagePeriodDetail() {
                 />
               </div>
               <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending}>
-                {uploadPeriodBodyMutation.isPending ? 'Saving...' : periodBody ? 'Update Body' : 'Add Body'}
+                {uploadPeriodBodyMutation.isPending ? 'Saving...' : periodBody ? 'Update body' : 'Add body'}
               </Button>
             </>
           ) : periodBody && (
@@ -300,7 +300,7 @@ export default function ManagePeriodDetail() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Topics ({period.topics.length})</h2>
         <Link to={`/manage/period/${periodId}/add-topic`}>
-          <Button variant="outline" size="sm">Add Topic</Button>
+          <Button variant="outline" size="sm">Add topic</Button>
         </Link>
       </div>
 
@@ -325,13 +325,13 @@ export default function ManagePeriodDetail() {
                     <div className="flex gap-1">
                       {sdk && (
                         <Button variant="ghost" size="sm" onClick={() => openEditTopicBody(topicIdx)}>
-                          {tb ? 'Edit Body' : 'Add Body'}
+                          {tb ? 'Edit body' : 'Add body'}
                         </Button>
                       )}
                       {canEdit && (
                         <>
                           <Button variant="ghost" size="sm" onClick={() => openEditTopic(topicIdx)}>
-                            Edit Options
+                            Edit options
                           </Button>
                           <Button
                             variant="ghost"
@@ -478,8 +478,8 @@ export default function ManagePeriodDetail() {
               {setReadyMutation.isPending
                 ? 'Saving...'
                 : ready
-                  ? 'Revert to Draft'
-                  : 'Mark Ready'}
+                  ? 'Revert to draft'
+                  : 'Mark ready'}
             </Button>
           </DialogFooter>
         </DialogContent>

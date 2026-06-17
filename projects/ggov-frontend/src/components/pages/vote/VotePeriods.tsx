@@ -21,7 +21,7 @@ export default function VotePeriods() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Governance Periods</h1>
+        <h1 className="text-2xl font-bold">Governance periods</h1>
         <div className="grid gap-4 grid-cols-1">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
         </div>
@@ -31,7 +31,7 @@ export default function VotePeriods() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Governance Periods</h1>
+      <h1 className="text-2xl font-bold">Governance periods</h1>
       {sections.length === 0 ? (
         <p className="text-muted-foreground">No governance periods found.</p>
       ) : (

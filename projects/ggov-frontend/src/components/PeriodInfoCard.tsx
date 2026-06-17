@@ -36,14 +36,14 @@ export default function PeriodInfoCard({
 }: PeriodInfoCardProps) {
   const stats = [
     { label: "Topics", value: topics, icon: ListChecks },
-    { label: "Eligible Governors", value: eligibleGovernors, icon: Users, href: committeeHref },
-    { label: "Votes Cast", value: votesCast, icon: Vote },
+    { label: "Eligible governors", value: eligibleGovernors, icon: Users, href: committeeHref },
+    { label: "Votes cast", value: votesCast, icon: Vote },
   ];
 
   return (
     <Card className={className}>
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-base">Period Information</CardTitle>
+        <CardTitle className="text-base">Period information</CardTitle>
         <PeriodStatusBadge votingStart={votingStart} votingEnd={votingEnd} />
       </CardHeader>
       <CardContent className="space-y-4">

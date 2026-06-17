@@ -330,10 +330,10 @@ export default function VotePeriodDetail() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
               {votingForSelf ? (
-                "Your Vote Record"
+                "Your vote record"
               ) : (
                 <>
-                  Vote Record — <Address address={selectedVoter!} width={6} copy={false} tooltip={false} />
+                  Vote record — <Address address={selectedVoter!} width={6} copy={false} tooltip={false} />
                 </>
               )}
             </CardTitle>
@@ -419,7 +419,7 @@ export default function VotePeriodDetail() {
 
       {showVoteForm && (
         <Button onClick={submitVote} disabled={voteMutation.isPending || !canSubmit}>
-          {voteMutation.isPending ? "Submitting..." : "Submit Vote"}
+          {voteMutation.isPending ? "Submitting..." : "Submit vote"}
         </Button>
       )}
     </div>

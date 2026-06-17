@@ -38,7 +38,7 @@ export default function AddTopic() {
   if (!sdk) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Add Topic</h1>
+        <h1 className="text-2xl font-bold">Add topic</h1>
         <p className="text-muted-foreground">Connect your wallet to add a topic.</p>
       </div>
     )
@@ -48,12 +48,12 @@ export default function AddTopic() {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <BackButton to={`/manage/period/${periodId}`} />
-        <h1 className="text-2xl font-bold">Add Topic to Period #{periodId}</h1>
+        <h1 className="text-2xl font-bold">Add topic to period #{periodId}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">New Topic</CardTitle>
+          <CardTitle className="text-base">New topic</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,7 +80,7 @@ export default function AddTopic() {
             </div>
 
             <div className="space-y-3">
-              <Label>Vote Options</Label>
+              <Label>Vote options</Label>
               {options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <Input
@@ -112,7 +112,7 @@ export default function AddTopic() {
                   size="sm"
                   onClick={() => setOptions([...options, ''])}
                 >
-                  Add Option
+                  Add option
                 </Button>
                 <span className="text-xs text-muted-foreground">or</span>
                 <Button
@@ -127,7 +127,7 @@ export default function AddTopic() {
             </div>
 
             <Button type="submit" disabled={addTopicMutation.isPending || options.filter((o) => o.trim()).length < 2}>
-              {addTopicMutation.isPending ? 'Adding...' : 'Add Topic'}
+              {addTopicMutation.isPending ? 'Adding...' : 'Add topic'}
             </Button>
           </form>
         </CardContent>
