@@ -1,7 +1,7 @@
 const footerLinks = [
   { href: 'https://algorand.co/algorand-foundation/disclaimer', label: 'Disclaimer' },
   { href: 'https://algorand.co/algorand-foundation/privacy-policy', label: 'Privacy Policy' },
-  { href: 'https://github.com/algorandfoundation/gGov', label: 'Github' },
+  { href: 'https://github.com/algorandfoundation/gGov', label: 'GitHub' },
 ]
 
 export default function Footer() {
