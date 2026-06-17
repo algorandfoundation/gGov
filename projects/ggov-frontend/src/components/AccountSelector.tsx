@@ -115,7 +115,7 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
               className={cn(
                 "h-2 w-2 rounded-full",
                 meta.dot,
-                status === "eligible" && "animate-bounce [animation-duration:0.5s]",
+                status === "eligible" && "motion-safe:animate-bounce motion-safe:[animation-duration:0.5s]",
               )}
             />
             <span className="text-xs text-muted-foreground">Status: {statusLabel}</span>
