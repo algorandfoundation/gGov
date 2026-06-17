@@ -8,6 +8,7 @@ import { XGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
   errGGovCannotOverride,
+  errGGovDelegationNoAcctRef,
   errGGovHasVotes,
   errGGovNoOptions,
   errGGovNotReady,
@@ -613,6 +614,34 @@ describe('GGovPeriod contract', () => {
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.byDelegator).toBe(true)
       expect(record!.topicVotes[0]).toEqual([10, 0])
+    })
+
+    test('Delegated vote without the delegator account reference is rejected', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
+
+      // Call the period client directly so we can omit the account reference the SDK adds for
+      // delegated votes. The contract must reject it (Txn.accounts[0] !== delegator).
+      const appId = await sdk.getPeriodAppId(periodId)
+      const rawClient = new GGovPeriodClient({
+        algorand: localnet.algorand,
+        appId,
+        defaultSender: delegatee.toString(),
+        defaultSigner: localnet.algorand.account.getSigner(delegatee),
+      })
+      await expect(
+        rawClient.send.vote({
+          args: { voterAccount: voter.toString(), topicVotes: [[10, 0]] },
+          extraFee: (2000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errGGovDelegationNoAcctRef))
     })
 
     test('Random address (no gGov account) cannot set a voting account', async () => {

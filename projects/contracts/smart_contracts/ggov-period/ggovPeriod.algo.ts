@@ -22,6 +22,7 @@ import { BaseContract } from '../base/base.algo'
 import {
   errAlreadyInit,
   errGGovCannotOverride,
+  errGGovDelegationNoAcctRef,
   errGGovHasVotes,
   errGGovNoDelegation,
   errGGovNoOptions,
@@ -283,6 +284,10 @@ export class GGovPeriodContract extends BaseContract {
       }).returnValue
       ensure(delegate !== Global.zeroAddress, errGGovNoDelegation)
       ensure(delegate === Txn.sender, errGGovNoDelegation)
+      // If the sender is a delegatee, ensure the voterAccount is in the foreign-accounts array so
+      // delegated voting can be "seen" in indexers, explorers, etc. Index 0 is the sender, so the
+      // first referenced foreign account is Txn.accounts(1).
+      ensure(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
       isDelegated = true
     }
 
