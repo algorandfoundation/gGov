@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils";
 export type TopicVoteMode = "upcoming" | "results" | "select" | "advanced";
 
 interface TopicVoteCardProps {
-  /** Short badge shown in the header band, e.g. "G12.1". */
-  badge: string;
   title?: string;
   /** Markdown topic description. */
   body?: string;
@@ -39,12 +37,11 @@ function OptionBar({ pct, emphasize }: { pct: number; emphasize?: boolean }) {
 }
 
 /**
- * Stitch-style voting topic: a card with a header band (badge + total votes)
- * and option rows rendered as bordered cards with live tallies. Supports
- * read-only results, single-select voting, and advanced manual allocation.
+ * Stitch-style voting topic: a card with a header band and option rows
+ * rendered as bordered cards with live tallies. Supports read-only results,
+ * single-select voting, and advanced manual allocation.
  */
 export default function TopicVoteCard({
-  badge,
   title,
   body,
   options,
@@ -64,15 +61,14 @@ export default function TopicVoteCard({
 
   return (
     <section className="overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary/30">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/50 px-4 py-3">
-        <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{badge}</span>
-        {mode !== "upcoming" && (
-          <span className="text-xs tabular-nums text-muted-foreground">{totalVotes.toLocaleString()} votes</span>
-        )}
+      <div className="flex items-baseline justify-between gap-3 border-b bg-muted/50 px-4 py-3">
+        {title && <h2 className="min-w-0 text-base font-semibold text-foreground">{title}</h2>}
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          T.{String(topicIdx + 1).padStart(2, "0")}
+        </span>
       </div>
 
-      <div className="p-6">
-        {title && <h2 className="mb-2 text-lg font-semibold text-foreground">{title}</h2>}
+      <div className="p-6 pt-4">
         {body && <ClampedMarkdown lines={5} fadeFrom="from-card" className="mb-5 text-sm text-muted-foreground">{body}</ClampedMarkdown>}
 
         {mode === "upcoming" ? (
@@ -148,7 +144,7 @@ export default function TopicVoteCard({
                   key={optIdx}
                   type="button"
                   onClick={() => onSelect?.(optIdx)}
-                  className={cn(boxClass, "block w-full text-left hover:bg-muted/50")}
+                  className={cn(boxClass, "block w-full cursor-pointer text-left hover:bg-muted/50")}
                 >
                   {inner}
                 </button>

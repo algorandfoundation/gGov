@@ -280,7 +280,7 @@ export default function VotePeriodDetail() {
 
       {isActive && activeAddress && voterAccounts.length >= 1 && (
         <AccountSelector
-          className="max-w-2xl"
+          className="mx-auto max-w-2xl"
           selected={selectedVoter}
           onSelect={handleSelectVoter}
           accounts={walletAddresses.map<AccountSelectorItem>((addr) => ({
@@ -304,17 +304,25 @@ export default function VotePeriodDetail() {
         />
       )}
 
-      {activeAddress && eligibility && !voteRecord && (
+      {activeAddress && (voteRecord || eligibility) && (
         <div className="text-center text-sm">
-          <span className={eligibility.muted ? "text-muted-foreground" : "font-bold"}>
-            {votingForSelf ? (
-              eligibility.self
-            ) : (
-              <>
-                <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility.suffix}
-              </>
-            )}
-          </span>
+          {voteRecord ? (
+            <span className="text-muted-foreground">
+              {isActive
+                ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
+                : `Voting closed on ${formatTimestamp(period.votingEnd)}.`}
+            </span>
+          ) : (
+            <span className={eligibility!.muted ? "text-muted-foreground" : "font-bold"}>
+              {votingForSelf ? (
+                eligibility!.self
+              ) : (
+                <>
+                  <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility!.suffix}
+                </>
+              )}
+            </span>
+          )}
         </div>
       )}
 
@@ -325,51 +333,6 @@ export default function VotePeriodDetail() {
         </div>
       )}
 
-      {voteRecord && (
-        <Card className="max-w-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">
-              {votingForSelf ? (
-                "Your vote record"
-              ) : (
-                <>
-                  Vote record — <Address address={selectedVoter!} width={6} copy={false} tooltip={false} />
-                </>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {voteRecord.byDelegator && <p className="text-sm text-muted-foreground mb-2">Voted by delegator.</p>}
-            {voteRecord.topicVotes.map((votes, ti) => {
-              const options = period.topics[ti]?.[0] ?? [];
-              const total = votes.reduce((a, b) => a + b, 0);
-              const nonZero = votes
-                .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, votes: v }))
-                .filter((entry) => entry.votes > 0);
-              if (nonZero.length === 0) return null;
-              return (
-                <div key={ti} className="mb-2">
-                  <span className="text-sm font-medium">{topicBodies[ti]?.title}:</span>{" "}
-                  <span className="text-sm text-muted-foreground">
-                    {nonZero
-                      .map((e) => {
-                        const pct = total > 0 ? ((e.votes / total) * 100).toFixed(1) : "0.0";
-                        return `${e.label} (${e.votes} votes, ${pct}%)`;
-                      })
-                      .join(", ")}
-                  </span>
-                </div>
-              );
-            })}
-            <p className="text-sm text-muted-foreground">
-              {isActive
-                ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
-                : `Voting closed on ${formatTimestamp(period.votingEnd)}.`}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
       <Separator />
 
       <div className="flex items-center justify-between">
@@ -377,7 +340,7 @@ export default function VotePeriodDetail() {
         {showVoteForm && (
           <button
             type="button"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => setAdvancedMode((v) => !v)}
           >
             {advancedMode ? "Simple mode" : "Advanced mode"}
@@ -396,7 +359,6 @@ export default function VotePeriodDetail() {
               <TopicVoteCard
                 key={topicIdx}
                 topicIdx={topicIdx}
-                badge={`G${periodId}.${topicIdx + 1}`}
                 title={tb?.title}
                 body={tb?.body}
                 options={options}
@@ -440,6 +402,39 @@ export default function VotePeriodDetail() {
         ) : (
           <Skeleton className="h-40" />
         )
+      )}
+      {voteRecord && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> vote record
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {voteRecord.byDelegator && <p className="text-sm text-muted-foreground mb-2">Voted by delegator.</p>}
+            {voteRecord.topicVotes.map((votes, ti) => {
+              const options = period.topics[ti]?.[0] ?? [];
+              const total = votes.reduce((a, b) => a + b, 0);
+              const nonZero = votes
+                .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, votes: v }))
+                .filter((entry) => entry.votes > 0);
+              if (nonZero.length === 0) return null;
+              return (
+                <div key={ti} className="mb-2">
+                  <span className="text-sm font-medium">{topicBodies[ti]?.title}:</span>{" "}
+                  <span className="text-sm text-muted-foreground">
+                    {nonZero
+                      .map((e) => {
+                        const pct = total > 0 ? ((e.votes / total) * 100).toFixed(1) : "0.0";
+                        return `${e.label} (${e.votes} votes, ${pct}%)`;
+                      })
+                      .join(", ")}
+                  </span>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
       <PeriodInfoCard
         votingStart={period.votingStart}

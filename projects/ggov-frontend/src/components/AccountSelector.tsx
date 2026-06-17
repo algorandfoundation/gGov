@@ -85,7 +85,7 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
       ref={(el) => registerRef(item.address, el)}
       onClick={() => onSelect(item.address)}
       className={cn(
-        "flex w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition-all",
+        "flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 text-left transition-all",
         isSelected
           ? "border-2 border-primary bg-primary/5"
           : "border-border hover:bg-muted/50 hover:border-foreground/20",
@@ -185,7 +185,7 @@ export default function AccountSelector({ accounts, selected, onSelect, classNam
             {item.delegated?.map((child) => (
               <div key={child.address} className="relative pl-8">
                 <span
-                  className="pointer-events-none absolute left-2 top-4 select-none text-muted-foreground"
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 select-none text-muted-foreground"
                   aria-hidden="true"
                 >
                   ↪
