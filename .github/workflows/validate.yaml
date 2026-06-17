@@ -4,7 +4,7 @@ on: [pull_request]
 
 
 jobs:
-  xgov-delegator-contracts-ci:
-    name: Run xgov-delegator-contracts validation
-    uses: ./.github/workflows/xgov-delegator-contracts-ci.yaml
+  contracts-ci:
+    name: Run contracts validation
+    uses: ./.github/workflows/contracts-ci.yaml
 

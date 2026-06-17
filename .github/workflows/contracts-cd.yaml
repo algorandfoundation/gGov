@@ -1,4 +1,4 @@
-name: Release xgov-delegator-contracts
+name: Release contracts
 
 on:
   workflow_call:
@@ -6,18 +6,23 @@ on:
 jobs:
   deploy-testnet:
     runs-on: "ubuntu-latest"
-    
+
     environment: contract-testnet
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache: 'pnpm'
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -27,8 +32,8 @@ jobs:
       - name: Install algokit
         run: pipx install algokit
 
-      - name: Bootstrap dependencies
-        run: algokit project bootstrap all --project-name 'xgov-delegator-contracts'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Configure git
         shell: bash
@@ -36,8 +41,11 @@ jobs:
           # set git user and email as test invoke git
           git config --global user.email "actions@github.com" && git config --global user.name "github-actions"
 
+      - name: Build SDK
+        run: algokit project run build --project-name 'ggov-sdk'
+
       - name: Deploy to testnet
-        run: algokit project deploy testnet --project-name 'xgov-delegator-contracts'
+        run: algokit project deploy testnet --project-name 'contracts'
         env:
           # This is the account that becomes the creator of the contract
           DEPLOYER_MNEMONIC: ${{ secrets.DEPLOYER_MNEMONIC }}
