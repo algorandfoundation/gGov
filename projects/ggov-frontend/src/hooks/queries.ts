@@ -1,4 +1,4 @@
-import { useQuery, useQueries } from '@tanstack/react-query'
+import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes } from 'ggov-sdk'
 
@@ -17,6 +17,7 @@ export const queryKeys = {
   periodBody: (id: number) => ['periodBody', id] as const,
   topicBodies: (id: number) => ['topicBodies', id] as const,
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
+  canVoteMany: (periodId: number, key: string) => ['canVoteMany', periodId, key] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
   delegation: (account: string) => ['delegation', account] as const,
   allDelegations: ['allDelegations'] as const,
@@ -178,20 +179,27 @@ export function useCanVoteMany(
   senderAccount?: string | null | Record<string, string | undefined>,
 ): Record<string, { canVote: boolean; votingPower: bigint } | undefined> {
   const { readerSDK } = useGGovSDK()
+  const queryClient = useQueryClient()
   const senderFor = (account: string): string | undefined =>
     senderAccount == null ? undefined : typeof senderAccount === 'string' ? senderAccount : senderAccount[account]
-  const results = useQueries({
-    queries: accounts.map((account) => {
-      const sender = senderFor(account)
-      return {
-        queryKey: queryKeys.canVote(periodId, account, sender ?? ''),
-        queryFn: () => readerSDK.canVote(BigInt(periodId), account, sender ?? undefined),
-      }
-    }),
+  // One batched read (16 canVote calls per simulate group) instead of one query per account.
+  // Stable, order-independent cache key built from each (account, sender) pair.
+  const senderKey = accounts.map((account) => `${account}:${senderFor(account) ?? ''}`).join(',')
+  const { data } = useQuery({
+    queryKey: queryKeys.canVoteMany(periodId, senderKey),
+    queryFn: async () => {
+      const results = await readerSDK.canVoteMany(BigInt(periodId), accounts, senderAccount ?? undefined)
+      // Seed the per-account `canVote` cache so singular `useCanVote` reads hit warm data.
+      accounts.forEach((account) => {
+        queryClient.setQueryData(queryKeys.canVote(periodId, account, senderFor(account) ?? ''), results.get(account))
+      })
+      return results
+    },
+    enabled: accounts.length > 0,
   })
   const out: Record<string, { canVote: boolean; votingPower: bigint } | undefined> = {}
-  accounts.forEach((account, i) => {
-    out[account] = results[i]?.isSuccess ? results[i].data : undefined
+  accounts.forEach((account) => {
+    out[account] = data?.get(account)
   })
   return out
 }
