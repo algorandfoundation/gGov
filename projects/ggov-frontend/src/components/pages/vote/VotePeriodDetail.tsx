@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany } from "@/hooks/queries";
+import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
 import Address from "@/components/Address";
 import AccountSelector, { AccountSelectorItem } from "@/components/AccountSelector";
 import TopicVoteCard from "@/components/TopicVoteCard";
+import SidebarLayout from "@/components/SidebarLayout";
+import CollectiveStatusCard from "@/components/CollectiveStatusCard";
+import PeriodInfoCard from "@/components/PeriodInfoCard";
+import BackButton from "@/components/BackButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -14,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClampedMarkdown } from "@/components/ui/clamped-markdown";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import PeriodAppExplorerLink from "@/components/PeriodAppExplorerLink";
-import { formatTimestamp, periodStatus } from "@/utils/time";
+import { formatTimestamp, periodStatus, type PeriodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +33,28 @@ function VoteAllocationSummary({ allocated, power }: { allocated: number; power:
           : `${allocated} / ${power} votes allocated (${-remaining} over)`}
     </div>
   );
+}
+
+/**
+ * Tense-adjusted eligibility wording for the connected voter. `self` is the full
+ * sentence when voting for yourself; `suffix` follows an `<Address>` when voting
+ * for someone else; `muted` styles it as secondary rather than emphasised.
+ */
+function eligibilityCopy(status: PeriodStatus, canVote: boolean): { self: string; suffix: string; muted: boolean } {
+  if (canVote) {
+    if (status === "active") return { self: "You are eligible to vote", suffix: "is eligible to vote", muted: false };
+    if (status === "upcoming")
+      return {
+        self: "You'll be eligible to vote when voting opens",
+        suffix: "will be eligible to vote when voting opens",
+        muted: false,
+      };
+    return { self: "Voting has closed — you did not vote in this period", suffix: "did not vote in this period", muted: true };
+  }
+  if (status === "active") return { self: "You cannot vote in this period", suffix: "cannot vote in this period", muted: true };
+  if (status === "upcoming")
+    return { self: "You are not eligible to vote in this period", suffix: "is not eligible to vote in this period", muted: true };
+  return { self: "You were not eligible to vote in this period", suffix: "were not eligible to vote in this period", muted: true };
 }
 
 export default function VotePeriodDetail() {
@@ -55,6 +81,10 @@ export default function VotePeriodDetail() {
   const { data: period, isLoading } = usePeriod(periodId);
   const { data: periodBody } = usePeriodBody(periodId);
   const { data: topicBodies = [] } = useTopicBodies(periodId, period?.topics.length ?? 0);
+  // The period's committee drives the eligible-governor count and the
+  // window-independent voting power used for non-active display.
+  const committeeIdB64 = period ? toBase64Url(period.committeeId) : undefined;
+  const { data: committee } = useCommittee(committeeIdB64);
 
   // Group every delegation that targets one of the wallet's accounts, so each
   // account shows its delegated accounts up front — no need to switch to it.
@@ -76,6 +106,10 @@ export default function VotePeriodDetail() {
   // Vote status for every selectable account, to badge those that haven't voted yet.
   const voterAccounts = Array.from(new Set([...walletAddresses, ...allDelegators]));
   const voteStatuses = useVoteStatuses(periodId, voterAccounts);
+  // Window-independent voting power per account (the registry doesn't gate on the
+  // voting window, unlike canVote), so the sidebar shows real standing in
+  // upcoming/ended periods too.
+  const xgovPowers = useXGovVotingPowers(committeeIdB64, voterAccounts);
   // Records for delegators expose `byDelegator`, telling us when a delegator
   // voted directly (a state the delegate cannot override).
   const delegatorRecords = useVoteRecordMany(periodId, allDelegators);
@@ -130,6 +164,7 @@ export default function VotePeriodDetail() {
   const status = periodStatus(period.votingStart, period.votingEnd);
   const isActive = status === "active";
   const isUpcoming = status === "upcoming";
+  const isEnded = status === "ended";
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;
 
@@ -196,39 +231,60 @@ export default function VotePeriodDetail() {
   const advancedValid = advancedTopicTotals.length > 0 && advancedTopicTotals.every((t) => t === power);
   const canSubmit = advancedMode ? advancedValid : canSubmitSimple;
 
-  return (
+  // Aggregate standing across every account the wallet can act for (its own
+  // accounts plus any delegators), shown in the Collective Status sidebar card.
+  // Uses registry voting power so it's correct in non-active periods too.
+  let collectiveVotingPower = 0n;
+  let collectiveEligible = 0;
+  let collectiveVoted = 0;
+  for (const addr of voterAccounts) {
+    const vp = xgovPowers[addr] ?? 0;
+    if (vp > 0) {
+      collectiveVotingPower += BigInt(vp);
+      collectiveEligible++;
+      if (voteStatuses[addr]) collectiveVoted++;
+    }
+  }
+  // `xgovPowers` is `undefined` per account until its query settles. Treating that
+  // as 0 would briefly render the card's "Not eligible to vote" state before the
+  // powers load, so hold the card back until every voter account has resolved.
+  const collectiveStatusReady = voterAccounts.every((addr) => xgovPowers[addr] !== undefined);
+
+  // Eligibility wording: during the active window canVote is authoritative (it
+  // also reflects delegation/override rules); outside it canVote returns false
+  // for everyone, so fall back to registry voting power.
+  const selectedVoterPower = selectedVoter ? xgovPowers[selectedVoter] ?? 0 : 0;
+  const eligibleToVote = isActive ? !!canVoteResult?.canVote : selectedVoterPower > 0;
+  const eligibility = canVoteResult ? eligibilityCopy(status, eligibleToVote) : null;
+
+  // Total voting power exercised in the period. A voter spreads their full power
+  // across each topic, so any topic's tally sum reflects total participation; we
+  // take the max so a not-yet-tallied topic doesn't understate it.
+  const periodVotesCast = period.topics.reduce(
+    (max, [, tallies]) => Math.max(max, tallies.reduce((a, b) => a + b, 0)),
+    0,
+  );
+
+  // The committee's member count is the number of eligible governors.
+  const eligibleGovernors = committee?.totalMembers;
+
+  const mainContent = (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-          &larr; Back
-        </Link>
-      </div>
-
-      <div className="flex items-center gap-3">
+        <BackButton to="/" />
         <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
         <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
       </div>
 
-      {periodBody?.body && <ClampedMarkdown>{periodBody.body}</ClampedMarkdown>}
+      {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
 
-      <div className="text-sm text-muted-foreground">
-        Voting: {formatTimestamp(period.votingStart)} — {formatTimestamp(period.votingEnd)}
-      </div>
-
-      <div className="text-sm text-muted-foreground">
-        <Link to={`/committees/${toBase64Url(period.committeeId)}`} className="text-primary hover:underline">
-          View committee
-        </Link>
-      </div>
-
-      {activeAddress && voterAccounts.length >= 1 && (
+      {isActive && activeAddress && voterAccounts.length >= 1 && (
         <AccountSelector
           className="max-w-2xl"
           selected={selectedVoter}
           onSelect={handleSelectVoter}
           accounts={walletAddresses.map<AccountSelectorItem>((addr) => ({
             address: addr,
-            label: addr === activeAddress ? "You" : undefined,
             votingPower: walletEligibility[addr]?.votingPower,
             canVote: walletEligibility[addr]?.canVote,
             hasVoted: voteStatuses[addr],
@@ -248,29 +304,17 @@ export default function VotePeriodDetail() {
         />
       )}
 
-      {activeAddress && canVoteResult && !voteRecord && (
-        <div className="text-sm">
-          {canVoteResult.canVote ? (
-            <span className="font-bold">
-              {votingForSelf ? (
-                "You are eligible to vote"
-              ) : (
-                <>
-                  <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> is eligible to vote
-                </>
-              )}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">
-              {votingForSelf ? (
-                "You cannot vote in this period"
-              ) : (
-                <>
-                  <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> cannot vote in this period
-                </>
-              )}
-            </span>
-          )}
+      {activeAddress && eligibility && !voteRecord && (
+        <div className="text-center text-sm">
+          <span className={eligibility.muted ? "text-muted-foreground" : "font-bold"}>
+            {votingForSelf ? (
+              eligibility.self
+            ) : (
+              <>
+                <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility.suffix}
+              </>
+            )}
+          </span>
         </div>
       )}
 
@@ -318,7 +362,9 @@ export default function VotePeriodDetail() {
               );
             })}
             <p className="text-sm text-muted-foreground">
-              <span className="">You can change your vote until {formatTimestamp(period.votingEnd)}</span>
+              {isActive
+                ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
+                : `Voting closed on ${formatTimestamp(period.votingEnd)}.`}
             </p>
           </CardContent>
         </Card>
@@ -376,10 +422,36 @@ export default function VotePeriodDetail() {
           {voteMutation.isPending ? "Submitting..." : "Submit Vote"}
         </Button>
       )}
-
-      <div className="pt-4">
-        <PeriodAppExplorerLink periodId={periodId} />
-      </div>
     </div>
   );
+
+  const sidebar = (
+    <div className="space-y-6">
+      {activeAddress && !isUpcoming && (
+        collectiveStatusReady ? (
+          <CollectiveStatusCard
+            totalVotingPower={collectiveVotingPower}
+            connectedAccounts={voterAccounts.length}
+            eligibleAccounts={collectiveEligible}
+            votedAccounts={collectiveVoted}
+            hasDelegations={allDelegators.length > 0}
+            periodEnded={isEnded}
+          />
+        ) : (
+          <Skeleton className="h-40" />
+        )
+      )}
+      <PeriodInfoCard
+        votingStart={period.votingStart}
+        votingEnd={period.votingEnd}
+        topics={period.topics.length}
+        votesCast={periodVotesCast}
+        eligibleGovernors={eligibleGovernors}
+        committeeHref={committeeIdB64 ? `/committees/${committeeIdB64}` : undefined}
+        footer={<PeriodAppExplorerLink periodId={periodId} />}
+      />
+    </div>
+  );
+
+  return <SidebarLayout sidebar={sidebar}>{mainContent}</SidebarLayout>;
 }

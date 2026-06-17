@@ -58,6 +58,9 @@ export default function TopicVoteCard({
   topicIdx,
 }: TopicVoteCardProps) {
   const totalVotes = tallies.reduce((a, b) => a + b, 0);
+  // Highlight the leading option even when it's under 50%; if several options
+  // tie for the lead, all of them are highlighted.
+  const leadingTally = Math.max(0, ...tallies);
 
   return (
     <section className="overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary/30">
@@ -70,7 +73,7 @@ export default function TopicVoteCard({
 
       <div className="p-6">
         {title && <h2 className="mb-2 text-lg font-semibold text-foreground">{title}</h2>}
-        {body && <ClampedMarkdown fadeFrom="from-card" className="mb-5 text-sm text-muted-foreground">{body}</ClampedMarkdown>}
+        {body && <ClampedMarkdown lines={5} fadeFrom="from-card" className="mb-5 text-sm text-muted-foreground">{body}</ClampedMarkdown>}
 
         {mode === "upcoming" ? (
           <p className="text-sm text-muted-foreground">Options: {options.join(", ")}</p>
@@ -80,6 +83,7 @@ export default function TopicVoteCard({
               const tally = tallies[optIdx] ?? 0;
               const pct = totalVotes > 0 ? (tally / totalVotes) * 100 : 0;
               const isSelected = selectedOption === optIdx;
+              const isLeading = totalVotes > 0 && tally === leadingTally;
 
               const inner = (
                 <>
@@ -111,7 +115,7 @@ export default function TopicVoteCard({
                       {pct.toFixed(1)}%
                     </span>
                   </div>
-                  <OptionBar pct={pct} emphasize={isSelected || pct >= 50} />
+                  <OptionBar pct={pct} emphasize={isSelected || isLeading} />
                   <div className="mt-1 flex justify-end">
                     <span className="text-xs tabular-nums text-muted-foreground">{tally.toLocaleString()} votes</span>
                   </div>

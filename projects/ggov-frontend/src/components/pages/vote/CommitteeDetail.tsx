@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Download } from 'lucide-react'
 import { useCommittees, useCommitteeMembers } from '@/hooks/queries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import Address from '@/components/Address'
+import BackButton from '@/components/BackButton'
 
 const PAGE_SIZE = 25
 
@@ -43,10 +44,9 @@ export default function CommitteeDetail() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Link to="/committees" className="text-sm text-muted-foreground hover:text-foreground">&larr; Back</Link>
+        <BackButton to="/committees" />
+        <h1 className="text-2xl font-bold">Committee</h1>
       </div>
-
-      <h1 className="text-2xl font-bold">Committee</h1>
 
       {committee && (
         <div className="flex items-end justify-between gap-3">

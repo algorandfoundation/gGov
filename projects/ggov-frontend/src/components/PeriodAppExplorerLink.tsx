@@ -26,7 +26,7 @@ export default function PeriodAppExplorerLink({ periodId, className }: { periodI
       rel="noreferrer"
       className={cn('inline-flex items-center gap-1 text-sm text-primary hover:underline', className)}
     >
-      View period app #{appId.toString()} on {explorer.siteName}
+      View period app #{appId.toString()}
       <ExternalLink className="h-3.5 w-3.5" />
     </a>
   )

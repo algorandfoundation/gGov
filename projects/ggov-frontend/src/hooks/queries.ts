@@ -23,9 +23,11 @@ export const queryKeys = {
   allDelegations: ['allDelegations'] as const,
   delegatedToMe: (account: string) => ['delegatedToMe', account] as const,
   committees: ['committees'] as const,
+  committee: (id: string) => ['committee', id] as const,
   myVotes: (account: string) => ['myVotes', account] as const,
   committeeVotingPowers: (account: string) => ['committeeVotingPowers', account] as const,
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
+  xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
 }
 
 export function useGlobalState() {
@@ -263,6 +265,7 @@ export function fromBase64Url(str: string): Uint8Array {
 
 export function useCommittees() {
   const { readerSDK } = useGGovSDK()
+  const queryClient = useQueryClient()
   return useQuery({
     queryKey: queryKeys.committees,
     queryFn: async (): Promise<CommitteeOption[]> => {
@@ -282,9 +285,68 @@ export function useCommittees() {
         }
       }
       options.sort((a, b) => b.periodStart - a.periodStart)
+      // Seed the per-committee cache so useCommittee() reads warm data instead of
+      // issuing its own metadata fetch.
+      for (const option of options) {
+        queryClient.setQueryData(queryKeys.committee(option.idBase64Url), option)
+      }
       return options
     },
   })
+}
+
+/**
+ * Single committee by id, backed by the same cache key {@link useCommittees}
+ * seeds — so once the list has loaded this resolves instantly, and on a cold
+ * load it fetches just this committee's metadata.
+ */
+export function useCommittee(idBase64Url: string | undefined) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.committee(idBase64Url ?? ''),
+    queryFn: async (): Promise<CommitteeOption | null> => {
+      const bytes = fromBase64Url(idBase64Url!)
+      const meta = await readerSDK.registry.getCommitteeMetadata(bytes)
+      if (!meta) return null
+      return {
+        id: bytes,
+        idBase64Url: idBase64Url!,
+        periodStart: meta.periodStart,
+        periodEnd: meta.periodEnd,
+        totalMembers: meta.totalMembers,
+        totalVotes: meta.totalVotes,
+      }
+    },
+    enabled: !!idBase64Url,
+  })
+}
+
+/**
+ * Window-independent xGov voting power for several accounts in one committee,
+ * read from the registry (unlike {@link useCanVoteMany}, which returns 0 outside
+ * the voting window). One readonly call per account, cached per (committee, account).
+ * Value per account: the power, or `undefined` while loading.
+ */
+export function useXGovVotingPowers(
+  committeeIdBase64Url: string | undefined,
+  accounts: string[],
+): Record<string, number | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const results = useQueries({
+    queries: accounts.map((account) => ({
+      queryKey: queryKeys.xgovVotingPower(committeeIdBase64Url ?? '', account),
+      queryFn: async () => {
+        const [power] = await readerSDK.registry.getXGovVotingPowers([fromBase64Url(committeeIdBase64Url!)], account)
+        return power ?? 0
+      },
+      enabled: !!committeeIdBase64Url,
+    })),
+  })
+  const out: Record<string, number | undefined> = {}
+  accounts.forEach((account, i) => {
+    out[account] = results[i]?.isSuccess ? results[i].data : undefined
+  })
+  return out
 }
 
 interface VoteEntry {
