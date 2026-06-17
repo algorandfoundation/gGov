@@ -74,7 +74,7 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
   const meta = STATUS_META[status];
   const isSelected = selected === item.address;
   const disabled = isDisabled(item, delegated);
-  const statusLabel = status === "locked" ? meta.label : delegated ? `Delegated · ${meta.label}` : meta.label;
+  const statusLabel = status === "locked" ? meta.label : delegated ? `${meta.label} · Delegated` : meta.label;
   return (
     <button
       type="button"
@@ -111,7 +111,13 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
             {item.label ?? <Address address={item.address} width={8} copy={false} tooltip={false} />}
           </p>
           <div className="mt-1 flex items-center gap-2">
-            <span className={cn("h-2 w-2 rounded-full", meta.dot)} />
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                meta.dot,
+                status === "eligible" && "motion-safe:animate-bounce motion-safe:[animation-duration:0.5s]",
+              )}
+            />
             <span className="text-xs text-muted-foreground">Status: {statusLabel}</span>
           </div>
         </div>

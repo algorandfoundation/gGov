@@ -35,16 +35,23 @@ function DelegatorRow({
   const pending = active && !removing;
 
   return (
-    <div className="space-y-2 border-b border-border pb-2 last:border-0 last:pb-0">
-      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="@container space-y-2 border-b border-border pb-2 last:border-0 last:pb-0">
+      <div className="flex flex-col items-start gap-2 @lg:flex-row @lg:items-center @lg:justify-between">
         <Address address={delegator} to width={8} className="text-sm text-primary hover:underline" />
-        <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)} disabled={removing}>
+        <div className="flex w-full flex-col gap-2 @lg:w-auto @lg:flex-row @lg:shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full @lg:w-auto"
+            onClick={() => setOpen((v) => !v)}
+            disabled={removing}
+          >
             {open ? "Cancel" : "Re-delegate"}
           </Button>
           <Button
             variant="destructive"
             size="sm"
+            className="w-full @lg:w-auto"
             disabled={active}
             onClick={() => redelegateMutation.mutate({ account: delegator, votingAddress: delegator })}
           >
@@ -312,11 +319,11 @@ export default function Account() {
         </div>
       </div>
 
-      <Card>
-          <CardHeader>
+      <Card className="border-0 shadow-none">
+          <CardHeader className="p-0">
             <CardTitle className="text-base">Votes cast</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 pt-4">
             {loadingVotes ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
@@ -326,7 +333,7 @@ export default function Account() {
             ) : votes.length === 0 ? (
               <p className="text-sm text-muted-foreground">No votes cast yet.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {votes.map(({ periodId, period, record, body, topicBodies }) => (
                   <Card key={periodId}>
                     <CardHeader className="pb-2">
