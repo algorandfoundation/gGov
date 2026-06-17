@@ -28,15 +28,29 @@ function DelegatorRow({
 }) {
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState("");
-  const pending = redelegateMutation.isPending && redelegateMutation.variables?.account === delegator;
+  const active = redelegateMutation.isPending && redelegateMutation.variables?.account === delegator;
+  // Distinguish redirecting onward from undoing: undoing points the delegator's voting account back
+  // at itself, so its votingAddress equals the delegator.
+  const removing = active && redelegateMutation.variables?.votingAddress === delegator;
+  const pending = active && !removing;
 
   return (
     <div className="space-y-2 border-b border-border pb-2 last:border-0 last:pb-0">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Address address={delegator} to width={8} className="text-sm text-primary hover:underline" />
-        <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
-          {open ? "Cancel" : "Re-delegate"}
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)} disabled={removing}>
+            {open ? "Cancel" : "Re-delegate"}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={active}
+            onClick={() => redelegateMutation.mutate({ account: delegator, votingAddress: delegator })}
+          >
+            {removing ? "Removing..." : "Remove delegation"}
+          </Button>
+        </div>
       </div>
       {open && (
         <div className="flex gap-2">
@@ -102,6 +116,7 @@ export default function Account() {
   const undelegateMutation = useUndelegateMutation();
   const redelegateMutation = useRedelegateMutation();
   const [delegateeInput, setDelegateeInput] = useState("");
+  const [showDelegateForm, setShowDelegateForm] = useState(false);
   const submitting = delegateMutation.isPending || undelegateMutation.isPending;
 
   // The editable delegation card is only useful to accounts that actually hold voting power in some
@@ -121,10 +136,6 @@ export default function Account() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        Account <Address address={address} width={8} long className="text-lg text-muted-foreground" />
-      </h1>
-
       {showSwitchBanner && activeAddress && (
         <div className="rounded-lg border border-accent bg-accent/20 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p className="text-sm">
@@ -149,7 +160,12 @@ export default function Account() {
         </div>
       )}
 
+      <h1 className="text-2xl font-bold">
+        Account <Address address={address} width={8} long className="text-lg text-muted-foreground" />
+      </h1>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="space-y-6">
         {showDelegationCard && (
           <Card>
             <CardHeader>
@@ -169,7 +185,7 @@ export default function Account() {
                   <p className="text-sm text-muted-foreground">Votes for itself (no delegation).</p>
                 )
               ) : delegation?.exists ? (
-                <div className="space-y-3">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                   <p className="text-sm">
                     Delegated to:{" "}
                     <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
@@ -178,9 +194,8 @@ export default function Account() {
                     {undelegateMutation.isPending ? "Removing..." : "Remove delegation"}
                   </Button>
                 </div>
-              ) : (
+              ) : showDelegateForm ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">No active delegation.</p>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="delegate-to">Delegate to</Label>
                     <Input
@@ -191,8 +206,20 @@ export default function Account() {
                       onChange={(e) => setDelegateeInput(e.target.value)}
                     />
                   </div>
-                  <Button onClick={() => delegateMutation.mutate(delegateeInput)} disabled={submitting || !delegateeInput || !sdk}>
-                    {delegateMutation.isPending ? "Delegating..." : "Delegate"}
+                  <div className="flex gap-2">
+                    <Button onClick={() => delegateMutation.mutate(delegateeInput)} disabled={submitting || !delegateeInput || !sdk}>
+                      {delegateMutation.isPending ? "Delegating..." : "Delegate"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowDelegateForm(false)} disabled={submitting}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground">No active delegation.</p>
+                  <Button size="sm" onClick={() => setShowDelegateForm(true)}>
+                    Delegate
                   </Button>
                 </div>
               )}
@@ -200,6 +227,39 @@ export default function Account() {
           </Card>
         )}
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{isOwnAccount ? "Delegated to you" : "Delegators"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingDelegators ? (
+              <Skeleton className="h-10" />
+            ) : delegators.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No accounts have delegated to this address.</p>
+            ) : (
+              <div className="space-y-4">
+                {delegators.map((addr) =>
+                  isOwnAccount ? (
+                    <DelegatorRow key={addr} delegator={addr} redelegateMutation={redelegateMutation} />
+                  ) : (
+                    <div key={addr}>
+                      <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
+                    </div>
+                  ),
+                )}
+                {isOwnAccount && (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    You can vote on their behalf from an active period's vote page, or re-delegate their voting
+                    power onward to another address.
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        </div>
+
+        <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Voting power by committee</CardTitle>
@@ -237,39 +297,10 @@ export default function Account() {
             )}
           </CardContent>
         </Card>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{isOwnAccount ? "Delegated to you" : "Delegators"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingDelegators ? (
-              <Skeleton className="h-10" />
-            ) : delegators.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No accounts have delegated to this address.</p>
-            ) : (
-              <div className="space-y-2">
-                {delegators.map((addr) =>
-                  isOwnAccount ? (
-                    <DelegatorRow key={addr} delegator={addr} redelegateMutation={redelegateMutation} />
-                  ) : (
-                    <div key={addr}>
-                      <Address address={addr} to width={8} className="text-sm text-primary hover:underline" />
-                    </div>
-                  ),
-                )}
-                {isOwnAccount && (
-                  <p className="text-xs text-muted-foreground pt-1">
-                    You can vote on their behalf from an active period's vote page, or re-delegate their voting
-                    power onward to another address.
-                  </p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
+      <Card>
           <CardHeader>
             <CardTitle className="text-base">Votes cast</CardTitle>
           </CardHeader>
@@ -326,7 +357,6 @@ export default function Account() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }
