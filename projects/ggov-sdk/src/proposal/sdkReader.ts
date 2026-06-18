@@ -165,13 +165,13 @@ export class GGovReaderSDK {
     const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[]);
     if (logs.length === 0) return null;
 
-    const [byDelegator] = GGovReaderSDK.VOTE_RECORD_META_TYPE.decode(new Uint8Array(logs[0])) as [boolean, bigint];
+    const [isDelegated] = GGovReaderSDK.VOTE_RECORD_META_TYPE.decode(new Uint8Array(logs[0])) as [boolean, bigint];
     const topicVotes = logs.slice(1).map((log) => {
       const [votes] = GGovReaderSDK.VOTE_RECORD_TOPIC_TYPE.decode(new Uint8Array(log)) as [bigint[]];
       return votes.map((v) => Number(v));
     });
     if (topicVotes.length === 0) return null;
-    return { byDelegator, topicVotes };
+    return { isDelegated, topicVotes };
   }
 
   @wrapErrors()
@@ -388,6 +388,17 @@ export class GGovReaderSDK {
 
   /** Read all registry global state. */
   getGlobalState() {
-    return this.registryReadClient.state.global.getAll();
+    return this.registry.getGlobalState();
+  }
+
+  /** Read all global state of a period (proposal) app, plus the current network round. */
+  async getPeriodGlobalState(periodId: bigint | number) {
+    const client = await this.getPeriodReadClient(periodId);
+    // TODO not atomic, could simulate a logGlobalState to get the current round atomically
+    const [state, status] = await Promise.all([
+      client.state.global.getAll(),
+      this.algorand.client.algod.status().do(),
+    ]);
+    return { ...state, currentRound: status.lastRound };
   }
 }

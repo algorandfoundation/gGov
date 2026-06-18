@@ -148,7 +148,7 @@ export function useVoteStatuses(periodId: number, accounts: string[]): Record<st
 
 /**
  * Full vote records for several accounts at once (shares cache with
- * {@link useVoteStatuses}). Use when the `byDelegator` flag matters — e.g. to
+ * {@link useVoteStatuses}). Use when the `isDelegated` flag matters — e.g. to
  * tell whether a delegator voted directly, which a delegate cannot override.
  * Value per account: the record, `null` if not voted, `undefined` while loading.
  */

@@ -359,7 +359,7 @@ export default function Account() {
                           </Link>
                           <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
                         </div>
-                        {record.byDelegator && <span className="text-xs text-muted-foreground">Voted by delegator</span>}
+                        {record.isDelegated && <span className="text-xs text-muted-foreground">Voted by delegator</span>}
                       </div>
                     </CardHeader>
                     <CardContent>

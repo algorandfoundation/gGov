@@ -190,6 +190,16 @@ export class GGovRegistryReaderSDK {
     return admin!;
   }
 
+  /** Read all registry global state, plus the current network round. */
+  async getGlobalState() {
+    // TODO not atomic, could simulate a logGlobalState to get the current round atomically
+    const [state, status] = await Promise.all([
+      this.readClient.state.global.getAll(),
+      this.algorand.client.algod.status().do(),
+    ]);
+    return { ...state, currentRound: status.lastRound };
+  }
+
   async getCommitteeMetadata(committeeId: CommitteeId, mustBeComplete: boolean = false): Promise<CommitteeMetadata | null> {
     const { return: committeeMetadata } = await this.readClient.send.getCommitteeMetadata({
       args: { committeeId: committeeIdToRaw(committeeId), mustBeComplete },

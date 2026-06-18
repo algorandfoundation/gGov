@@ -1,7 +1,8 @@
 import { Config } from '@algorandfoundation/algokit-utils'
 import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
-import { Address } from 'algosdk'
+import { createHash } from 'node:crypto'
+import { ABIType, Address, encodeAddress, getApplicationAddress } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
 import { XGovCommitteeFile } from 'ggov-sdk'
@@ -14,6 +15,7 @@ import {
   errGGovNotReady,
   errGGovReady,
   errGGovTopicIndexOOB,
+  errGGovUnvotable,
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
   errGGovVotingNotStarted,
@@ -141,8 +143,9 @@ describe('GGovPeriod contract', () => {
       const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       await sdk.setOperator({ account: operator.toString() })
 
-      const state = await sdk.registryWriteClient!.state.global.getAll()
+      const state = await sdk.getGlobalState()
       expect(state.operator).toBeDefined()
+      expect(state.currentRound).toBeGreaterThan(0n)
     })
 
     test('Non-admin cannot set operator', async () => {
@@ -499,7 +502,7 @@ describe('GGovPeriod contract', () => {
       expect(period.topics[1][1]).toEqual([4, 4, 2])
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(false)
+      expect(record!.isDelegated).toBe(false)
       expect(record!.topicVotes[0]).toEqual([7, 3])
       expect(record!.topicVotes[1]).toEqual([4, 4, 2])
     })
@@ -612,7 +615,7 @@ describe('GGovPeriod contract', () => {
       })
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(true)
+      expect(record!.isDelegated).toBe(true)
       expect(record!.topicVotes[0]).toEqual([10, 0])
     })
 
@@ -683,7 +686,7 @@ describe('GGovPeriod contract', () => {
 
       // The rejected override must leave the voter's direct vote and the tallies untouched.
       const record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(false)
+      expect(record!.isDelegated).toBe(false)
       expect(record!.topicVotes[0]).toEqual([10, 0])
       const period = await sdk.getPeriod(periodId)
       expect(period.topics[0][1]).toEqual([10, 0])
@@ -701,11 +704,11 @@ describe('GGovPeriod contract', () => {
 
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
       await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] })
-      // Re-voting on behalf overrides the delegatee's own prior delegated vote (byDelegator stays true).
+      // Re-voting on behalf overrides the delegatee's own prior delegated vote (isDelegated stays true).
       await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[1, 9]] })
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(true)
+      expect(record!.isDelegated).toBe(true)
       expect(record!.topicVotes[0]).toEqual([1, 9])
       const period = await sdk.getPeriod(periodId)
       expect(period.topics[0][1]).toEqual([1, 9])
@@ -725,13 +728,13 @@ describe('GGovPeriod contract', () => {
 
       // Record is the delegated vote before the voter steps in.
       let record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(true)
+      expect(record!.isDelegated).toBe(true)
       expect(record!.topicVotes[0]).toEqual([10, 0])
 
-      // Voter votes directly: byDelegator flips to false and the tally reflects only the new vote.
+      // Voter votes directly: isDelegated flips to false and the tally reflects only the new vote.
       await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] })
       record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(false)
+      expect(record!.isDelegated).toBe(false)
       expect(record!.topicVotes[0]).toEqual([0, 10])
       const period = await sdk.getPeriod(periodId)
       expect(period.topics[0][1]).toEqual([0, 10])
@@ -754,7 +757,7 @@ describe('GGovPeriod contract', () => {
       expect(period.topics[0][1]).toEqual([0, 10])
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
-      expect(record!.byDelegator).toBe(false)
+      expect(record!.isDelegated).toBe(false)
     })
   })
 
@@ -909,7 +912,7 @@ describe('GGovPeriod contract', () => {
         topicVotes: [[10, 0]],
       })
 
-      // The existing record is a delegated vote (byDelegator=true), so the delegatee may re-vote.
+      // The existing record is a delegated vote (isDelegated=true), so the delegatee may re-vote.
       const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
       expect(result.canVote).toBe(true)
       expect(result.votingPower).toBe(10n)
@@ -1394,6 +1397,277 @@ describe('GGovPeriod contract', () => {
       await expect(
         sdk.withdrawPeriodALGO({ periodId, receiver: receiver.toString(), amount: (100).algos().microAlgo }),
       ).rejects.toThrow()
+    })
+  })
+
+  // ── Maximum number of topics ─────────────────────────────────────
+  describe('maximum number of topics', () => {
+    // A vote() must submit a vote row for *every* topic — the contract enforces
+    // `topicVotes.length === numTopics` — and on every vote it emits the ARC-28 `GGovVoteCast`
+    // event, which carries the full per-topic vote breakdown. A single application call may log at
+    // most MaxLogSize = 1024 bytes, so the encoded event is the binding limit. The event is a
+    // 4-byte ARC-28 prefix + ARC-4 (address,address,bool,uint64,uint32[][]): a 75-byte head
+    // (32+32+1+8 + a 2-byte offset) + the topicVotes tail (2-byte array header + one row per
+    // topic). With `k` options each row encodes to (4 + 4·k) bytes (2 offset + 2 length + k×uint32):
+    //   4 + 75 + 2 + (4 + 4·k)·N ≤ 1024
+    // k=2 (Yes/No) → N ≤ 78; k=3 (Yes/No/Abstain) → N ≤ 58. Verified with algosdk's encoder + on-chain.
+    // Other ceilings sit higher, so they never bind: the vote's app args (MaxAppTotalArgLen = 2048)
+    // allow 167 (2-option) topics, and the 32 KB box ceiling allows thousands to be *stored*. The
+    // 1024-byte event log is what caps a *votable* period.
+    //
+    // setReady() recomputes this size up-front and refuses to ready a period whose vote event would
+    // overflow, so an over-max period is rejected at ready time rather than discovered at vote time.
+
+    /** Deploy a period carrying `numTopics` topics of `options`, funded for box MBR, window open. NOT readied. */
+    async function buildPeriodWithTopics(
+      sdk: GGovSDK,
+      committeeId: Uint8Array,
+      options: string[],
+      numTopics: number,
+    ): Promise<bigint> {
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({ committeeId, votingStart: now + 100000n, votingEnd: now + 200000n })
+      // addTopic sends no MBR top-up, so pre-fund the period app above the box MBR it will accrue.
+      const appId = await sdk.getPeriodAppId(periodId)
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(appId), (12).algos())
+      for (let i = 0; i < numTopics; i++) {
+        // Unique note per call so otherwise-identical addTopic txns get distinct txids.
+        await sdk.addTopic({ periodId, options, note: `addTopic-${i}` })
+      }
+      // Open the voting window (still editable because ready=false).
+      await sdk.editPeriod({ periodId, committeeId, votingStart: now - 600n, votingEnd: now + 3600n })
+      return periodId
+    }
+
+    /** A vote row that allocates all of the voter's power (10) to the first option. */
+    const voteRow = (numOptions: number) => Array.from({ length: numOptions }, (_, i) => (i === 0 ? 10 : 0))
+
+    describe.each([
+      { label: 'Yes/No (2 options)', options: ['Yes', 'No'], max: 78 },
+      { label: 'Yes/No/Abstain (3 options)', options: ['Yes', 'No', 'Abstain'], max: 58 },
+    ])('$label', ({ options, max }) => {
+      test(
+        `a period at the maximum (${max}) topics can be readied and voted across all topics`,
+        async () => {
+          const { sdk, committeeId, xGovAccounts, appClient, admin } = await deployWithCommittee(localnet, 1, 10)
+          await sdk.setOperator({ account: admin.toString() })
+          const periodId = await buildPeriodWithTopics(sdk, committeeId, options, max)
+          // At the maximum, the vote event still fits in 1024 bytes, so setReady is allowed.
+          await sdk.setReady({ periodId, ready: true })
+
+          const voter = xGovAccounts[0] // voting power = votesPerMember = 10
+          const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+          const row = voteRow(options.length) // sums to the voter's power (10)
+          const topicVotes = Array.from({ length: max }, () => row)
+          await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes })
+
+          // Full record + tallies round-trip across all topics (reads use per-topic log lines via
+          // simulate, which is not subject to the 1024-byte execution log limit).
+          const record = await sdk.getVotingRecord(periodId, voter.toString())
+          expect(record!.topicVotes.length).toBe(max)
+          expect(record!.topicVotes[0]).toEqual(row)
+          expect(record!.topicVotes[max - 1]).toEqual(row)
+
+          const period = await sdk.getPeriod(periodId)
+          expect(period.topics.length).toBe(max)
+          expect(period.topics[0][1]).toEqual(row)
+        },
+        600_000,
+      )
+
+      test(
+        `a period with one over the maximum (${max + 1}) topics cannot be readied (vote event would exceed the 1024-byte log limit)`,
+        async () => {
+          const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 1, 10)
+          await sdk.setOperator({ account: admin.toString() })
+          const periodId = await buildPeriodWithTopics(sdk, committeeId, options, max + 1)
+
+          // setReady rejects up-front: the GGovVoteCast event for max+1 topics would exceed 1024
+          // bytes, so this period could never be voted on. Caught here instead of at vote time.
+          await expect(sdk.setReady({ periodId, ready: true })).rejects.toThrow(transformedError(errGGovUnvotable))
+        },
+        600_000,
+      )
+    })
+  })
+
+  // ── ARC-28 events ────────────────────────────────────────────────
+  describe('ARC-28 events', () => {
+    // An ARC-28 event is logged as a 4-byte prefix — the first 4 bytes of sha512_256 of the event
+    // signature `Name(type1,type2,...)` (note: no return type, unlike an ABI method selector) —
+    // followed by the ARC-4-encoded args. We recompute that prefix and decode the matching log line.
+    const eventSelector = (name: string, argTypes: string[]): Uint8Array =>
+      Uint8Array.from(createHash('sha512-256').update(`${name}(${argTypes.join(',')})`).digest()).slice(0, 4)
+
+    const collectLogs = (result: any): Uint8Array[] => {
+      const confs = result.confirmations ?? (result.confirmation ? [result.confirmation] : [])
+      return confs.flatMap((c: any) => (c.logs ?? []) as Uint8Array[])
+    }
+
+    /** Find the single ARC-28 event of `name` in a send result and return its decoded args. */
+    const decodeEvent = (result: any, name: string, argTypes: string[]): any[] => {
+      const selector = eventSelector(name, argTypes)
+      const tuple = ABIType.from(`(${argTypes.join(',')})`)
+      for (const logBytes of collectLogs(result)) {
+        if (logBytes.length >= 4 && selector.every((b, i) => logBytes[i] === b)) {
+          return tuple.decode(logBytes.slice(4)) as any[]
+        }
+      }
+      throw new Error(`ARC-28 event ${name} not found in transaction logs`)
+    }
+    const addr = (v: any): string => (typeof v === 'string' ? v : encodeAddress(v as Uint8Array))
+
+    const VOTE_CAST = ['address', 'address', 'bool', 'uint64', 'uint32[][]']
+    const DELEGATION = ['address', 'address', 'address']
+
+    test('vote() emits GGovVoteCast with the voter, sender, updateVote flag, power and votes', async () => {
+      const { sdk, committeeId, xGovAccounts, appClient, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [
+        ['Yes', 'No'],
+        ['A', 'B', 'C'],
+      ])
+
+      const voter = xGovAccounts[0] // self-vote: sender === voter, voting power 10
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+
+      const first = await voterSDK.vote({
+        periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [
+          [10, 0],
+          [10, 0, 0],
+        ],
+      })
+      const [evVoter, evSender, evUpdate, evPower, evVotes] = decodeEvent(first, 'GGovVoteCast', VOTE_CAST)
+      expect(addr(evVoter)).toBe(voter.toString())
+      expect(addr(evSender)).toBe(voter.toString())
+      expect(evUpdate).toBe(false) // first vote → not an update
+      expect(Number(evPower)).toBe(10)
+      expect((evVotes as bigint[][]).map((r) => r.map(Number))).toEqual([
+        [10, 0],
+        [10, 0, 0],
+      ])
+
+      // Re-voting on the same record flips updateVote to true.
+      const second = await voterSDK.vote({
+        periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [
+          [0, 10],
+          [0, 10, 0],
+        ],
+      })
+      const [, , evUpdate2, , evVotes2] = decodeEvent(second, 'GGovVoteCast', VOTE_CAST)
+      expect(evUpdate2).toBe(true)
+      expect((evVotes2 as bigint[][]).map((r) => r.map(Number))).toEqual([
+        [0, 10],
+        [0, 10, 0],
+      ])
+    })
+
+    test('setVotingAccount() emits GGovDelegationSet on delegate and re-delegate', async () => {
+      const { xGovAccounts, appClient } = await deployWithCommittee(localnet)
+      const voter = xGovAccounts[0]
+      const delegatee1 = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const delegatee2 = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+
+      const set = await voterSDK.setVotingAccount({ votingAddress: delegatee1.toString() })
+      const [d, prev, to] = decodeEvent(set, 'GGovDelegationSet', DELEGATION)
+      expect(addr(d)).toBe(voter.toString())
+      expect(addr(prev)).toBe(encodeAddress(new Uint8Array(32))) // zero address: no prior delegation
+      expect(addr(to)).toBe(delegatee1.toString())
+
+      // Re-delegating carries the previous delegatee.
+      const redirect = await voterSDK.setVotingAccount({ votingAddress: delegatee2.toString() })
+      const [d2, prev2, to2] = decodeEvent(redirect, 'GGovDelegationSet', DELEGATION)
+      expect(addr(d2)).toBe(voter.toString())
+      expect(addr(prev2)).toBe(delegatee1.toString())
+      expect(addr(to2)).toBe(delegatee2.toString())
+    })
+
+    test('setVotingAccount() (clear) emits GGovDelegationCleared with the previous delegatee', async () => {
+      const { xGovAccounts, appClient } = await deployWithCommittee(localnet)
+      const voter = xGovAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+
+      await voterSDK.setVotingAccount({ votingAddress: delegatee.toString() })
+      // Clearing (vote-for-self) removes the delegation.
+      const cleared = await voterSDK.setVotingAccount({})
+      const [d, prev] = decodeEvent(cleared, 'GGovDelegationCleared', ['address', 'address'])
+      expect(addr(d)).toBe(voter.toString())
+      expect(addr(prev)).toBe(delegatee.toString())
+    })
+  })
+
+  // ── firstVotingRound / lastVotingRound global state ───────────────
+  describe('voting rounds (firstVotingRound / lastVotingRound)', () => {
+    // vote() records the round of the *first* vote (written once, when firstVotingRound is still 0)
+    // and the round of the *most recent* vote (rewritten every call) into the period's global state,
+    // so an indexer can range-scan exactly the blocks in which voting happened. Both keys are
+    // initialised to 0 at creation and stay 0 until the first vote writes them (round is never 0).
+
+    /** Confirmed round of a send result's transaction group (every txn in the group shares it). */
+    const confirmedRound = (result: any): bigint => {
+      const confs = result.confirmations ?? (result.confirmation ? [result.confirmation] : [])
+      return BigInt(confs[confs.length - 1].confirmedRound)
+    }
+
+    test('both rounds are 0 before any vote', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+
+      const g = await sdk.getPeriodGlobalState(periodId)
+      expect(g.firstVotingRound).toBe(0n)
+      expect(g.lastVotingRound).toBe(0n)
+      // currentRound reflects the live network round (always past genesis here).
+      expect(g.currentRound).toBeGreaterThan(0n)
+    })
+
+    test('first vote sets both rounds; a later voter advances only lastVotingRound', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 2, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+
+      // First vote → firstVotingRound and lastVotingRound both set to this round.
+      const voter0 = xGovAccounts[0]
+      const sdk0 = createUserSDK(localnet, appClient.appId, voter0)
+      const r0 = confirmedRound(await sdk0.vote({ periodId, voterAccount: voter0.toString(), topicVotes: [[10, 0]] }))
+
+      const afterFirst = await sdk.getPeriodGlobalState(periodId)
+      expect(afterFirst.firstVotingRound).toBe(r0)
+      expect(afterFirst.lastVotingRound).toBe(r0)
+
+      // A second voter in a later block advances lastVotingRound but leaves firstVotingRound put.
+      const voter1 = xGovAccounts[1]
+      const sdk1 = createUserSDK(localnet, appClient.appId, voter1)
+      const r1 = confirmedRound(await sdk1.vote({ periodId, voterAccount: voter1.toString(), topicVotes: [[0, 10]] }))
+      expect(r1).toBeGreaterThan(r0)
+
+      const afterSecond = await sdk.getPeriodGlobalState(periodId)
+      expect(afterSecond.firstVotingRound).toBe(r0) // unchanged by later votes
+      expect(afterSecond.lastVotingRound).toBe(r1) // tracks the most recent vote
+      // currentRound is read live, so it's at least the round of the latest vote.
+      expect(afterSecond.currentRound).toBeGreaterThanOrEqual(r1)
+    })
+
+    test('a re-vote by the same account advances only lastVotingRound', async () => {
+      const { sdk, appClient, committeeId, xGovAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
+      await sdk.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+
+      const voter = xGovAccounts[0]
+      const voterSDK = createUserSDK(localnet, appClient.appId, voter)
+      const r0 = confirmedRound(await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] }))
+      const r1 = confirmedRound(await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[3, 7]] }))
+      expect(r1).toBeGreaterThan(r0)
+
+      const g = await sdk.getPeriodGlobalState(periodId)
+      expect(g.firstVotingRound).toBe(r0)
+      expect(g.lastVotingRound).toBe(r1)
     })
   })
 })

@@ -8,6 +8,7 @@ import {
   Bytes,
   clone,
   contract,
+  emit,
   err,
   Global,
   GlobalState,
@@ -28,6 +29,7 @@ import {
   errGGovNoOptions,
   errGGovNotReady,
   errGGovReady,
+  errGGovUnvotable,
   errGGovTopicIndexOOB,
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
@@ -46,6 +48,7 @@ import {
   GGovTopic,
   GGovTopicOptions,
   GGovTopicVotes,
+  GGovVoteCast,
   GGovVoteRecord,
   GGovVoteRecordMeta,
 } from '../base/types.algo'
@@ -66,6 +69,10 @@ export class GGovPeriodContract extends BaseContract {
   ready = GlobalState<boolean>({ initialValue: false })
   /** Committee ID this period votes against (lives in registry) */
   committeeId = GlobalState<CommitteeId>()
+  /** First actual voting round. Used for efficient indexer lookups. 0 until the first vote is cast. */
+  firstVotingRound = GlobalState<uint64>({ initialValue: 0 })
+  /** Last actual voting round. Used for efficient indexer lookups. 0 until the first vote is cast. */
+  lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
 
   /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). */
   topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
@@ -218,9 +225,23 @@ export class GGovPeriodContract extends BaseContract {
   /** Set the ready flag. Once ready=true, edits are blocked and voting becomes possible. Operator only. */
   public setReady(ready: boolean): void {
     this.ensureCallerIsOperator()
-    // If setting ready=false, ensure no votes have been cast yet (only votes box loaded — options skipped)
-    if (!ready) {
-      const votesArr = clone(this.topicVotesArr.value)
+    const votesArr = clone(this.topicVotesArr.value)
+    if (ready) {
+      // A vote() must submit a row for every topic and emits the ARC-28 GGovVoteCast event carrying
+      // the full per-topic breakdown. A single app call may log at most 1024 bytes, so if that event
+      // would overflow, the period could never be voted on. The encoded size depends only on the
+      // topic/option shape (known now), so reject readiness up-front rather than at vote time.
+      //
+      // GGovVoteCast = 4-byte ARC-28 prefix + ARC-4 (address,address,bool,uint64,uint32[][]):
+      //   81 bytes fixed = 4 prefix + 75 head (32+32+1+8 + 2-byte tail offset) + 2-byte outer count,
+      //   plus per topic (4 + 4·numOptions) = 2-byte element offset + 2-byte row length + numOptions·uint32.
+      let logSize: uint64 = 81
+      for (let i: uint64 = 0; i < votesArr.length; i++) {
+        logSize += 4 + 4 * votesArr[i].votes.length
+      }
+      ensure(logSize <= 1024, errGGovUnvotable)
+    } else {
+      // ensure no votes have been cast yet (only votes box loaded — options skipped)
       for (let i: uint64 = 0; i < votesArr.length; i++) {
         const tallies = clone(votesArr[i].votes)
         for (let j: uint64 = 0; j < tallies.length; j++) {
@@ -269,21 +290,29 @@ export class GGovPeriodContract extends BaseContract {
   }
 
   // ── Voting ───────────────────────────────────────────────────────
-
-  public vote(voterAccount: Account, topicVotes: uint64[][]): void {
+  /**
+   * Public voting method. Period must be ready=true and within the voting window.
+   * Sender can be the voter (not delegated) or the delegatee (delegated). Delegation is verified via an inner-call to the registry.
+   * Votes are tallied into global topic vote counts, and the voter's individual vote record is updated.
+   * Re-votes are allowed and will overwrite the previous vote; if re-voting via delegation, the delegation override guard applies (a delegatee cannot override a direct vote by the delegator). 
+   * @param voterAccount Account with voting power
+   * @param topicVotes Votes per topic, parallel to the period's topics/options. Each topic's votes are an array of Uint32, parallel to that topic's options, with the count of votes for each option. The sum of every topic's votes must equal the voter's total voting power (enforced in code, not ABI).
+   */
+  public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
     ensure(this.ready.value, errGGovNotReady)
     ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
+    
+    const newTopicVotes = clone(topicVotes) // renaming for clarity. noop in approval
 
     // Delegation check (inner-call registry)
     let isDelegated = false
     if (Txn.sender !== voterAccount) {
-      const delegate = compileArc4(GGovRegistryContract).call.getDelegate({
+      const expectedDelegatee = compileArc4(GGovRegistryContract).call.getDelegate({
         appId: Application(this.registryApp.value),
         args: [voterAccount],
       }).returnValue
-      ensure(delegate !== Global.zeroAddress, errGGovNoDelegation)
-      ensure(delegate === Txn.sender, errGGovNoDelegation)
+      ensure(expectedDelegatee === Txn.sender, errGGovNoDelegation)
       // If the sender is a delegatee, ensure the voterAccount is in the foreign-accounts array so
       // delegated voting can be "seen" in indexers, explorers, etc. Index 0 is the sender, so the
       // first referenced foreign account is Txn.accounts(1).
@@ -297,58 +326,63 @@ export class GGovPeriodContract extends BaseContract {
       args: [this.committeeId.value, voterAccount],
     }).returnValue
 
-    // Hot path: load only the votes box. Option strings stay on-chain.
-    const votesArr = clone(this.topicVotesArr.value)
-    ensure(topicVotes.length === votesArr.length, errGGovVoteMismatch)
+    // Global topic votes
+    const globalVotesArr = clone(this.topicVotesArr.value)
+    ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
 
-    for (let i: uint64 = 0; i < topicVotes.length; i++) {
-      const topicVote = clone(topicVotes[i])
-      ensure(topicVote.length === votesArr[i].votes.length, errGGovVoteMismatch)
-      let voteSum: uint64 = 0
-      for (let j: uint64 = 0; j < topicVote.length; j++) {
-        voteSum += topicVote[j]
-      }
-      ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
-    }
-
+    // if voter record box exists, it is a re-vote; subtract old votes from global tallies
+    // If the existing record is by original votes (isDelegated=false), a delegatee cannot override it.
     const voteRecordBox = this.voteRecords(voterAccount)
-
-    // Handle existing record: subtract old votes from tallies
     if (voteRecordBox.exists) {
       const existingRecord = clone(voteRecordBox.value)
-      if (isDelegated && !existingRecord.byDelegator) {
+      if (isDelegated && !existingRecord.isDelegated) {
         log(errGGovCannotOverride)
         err()
       }
       for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
         const oldTopicVotes = clone(existingRecord.topicVotes[i])
-        const currentVotes = clone(votesArr[i].votes)
+        const currentVotes = clone(globalVotesArr[i].votes)
         const subtractedVotes: Uint32[] = []
         for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
           subtractedVotes.push(u32(currentVotes[j].asUint64() - oldTopicVotes[j].asUint64()))
         }
-        votesArr[i] = { votes: clone(subtractedVotes) }
+        globalVotesArr[i] = { votes: clone(subtractedVotes) }
       }
     }
 
-    // Add new votes
-    const newTopicVotes: Uint32[][] = []
-    for (let i: uint64 = 0; i < topicVotes.length; i++) {
-      const topicVote = clone(topicVotes[i])
-      const currentVotes = clone(votesArr[i].votes)
-      const newVotes: Uint32[] = []
-      const recordRow: Uint32[] = []
+    // Tally new votes & check that the sum of each topic's votes equals the voter's total voting power
+    for (let i: uint64 = 0; i < newTopicVotes.length; i++) {
+      const topicVote = clone(newTopicVotes[i])
+      ensure(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
+      let voteSum: uint64 = 0
+      const currentGlobalVotes = clone(globalVotesArr[i].votes)
+      const nextGlobalVotes: Uint32[] = []
       for (let j: uint64 = 0; j < topicVote.length; j++) {
-        newVotes.push(u32(currentVotes[j].asUint64() + topicVote[j]))
-        recordRow.push(u32(topicVote[j]))
+        nextGlobalVotes.push(u32(currentGlobalVotes[j].asUint64() + topicVote[j].asUint64()))
+        voteSum += topicVote[j].asUint64()
       }
-      votesArr[i] = { votes: clone(newVotes) }
-      newTopicVotes.push(clone(recordRow))
+      ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
+      globalVotesArr[i] = { votes: clone(nextGlobalVotes) }
     }
 
-    this.topicVotesArr.value = clone(votesArr)
+    // emit event - BEFORE writing voteRecordBox; firstVote works without new var assignment
+    emit<GGovVoteCast>({
+      voter: voterAccount,
+      sender: Txn.sender,
+      updateVote: voteRecordBox.exists,
+      votingPower: votingPower.asUint64(),
+      topicVotes: clone(newTopicVotes),
+    })
+
+    // Update actual voting rounds in global storage
+    if (this.firstVotingRound.value === 0) {
+      this.firstVotingRound.value = Global.round
+    }
+    this.lastVotingRound.value = Global.round
+
+    this.topicVotesArr.value = clone(globalVotesArr)
     voteRecordBox.value = {
-      byDelegator: isDelegated,
+      isDelegated: isDelegated,
       topicVotes: clone(newTopicVotes),
     }
   }
@@ -368,10 +402,10 @@ export class GGovPeriodContract extends BaseContract {
       if (delegate === Global.zeroAddress) return [false, 0]
       if (delegate !== senderAccount) return [false, 0]
       // Mirror vote()'s override guard: a delegatee cannot override a vote the voter cast
-      // directly. If a direct vote record (byDelegator=false) already exists, the delegatee
+      // directly. If a direct vote record (isDelegated=false) already exists, the delegatee
       // is not eligible — surface that here so canVote agrees with what vote() will enforce.
       const recordBox = this.voteRecords(voterAccount)
-      if (recordBox.exists && !recordBox.value.byDelegator) return [false, 0]
+      if (recordBox.exists && !recordBox.value.isDelegated) return [false, 0]
     }
 
     const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({
@@ -447,7 +481,7 @@ export class GGovPeriodContract extends BaseContract {
     if (!box.exists) return
     const record = clone(box.value)
     const meta: GGovVoteRecordMeta = {
-      byDelegator: record.byDelegator,
+      isDelegated: record.isDelegated,
       numTopics: u32(record.topicVotes.length),
     }
     log(encodeArc4(meta))

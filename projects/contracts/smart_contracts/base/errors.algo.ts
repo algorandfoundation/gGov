@@ -69,6 +69,7 @@ export const errGGovVotingEnded = 'ERR:GP_EN' // Voting period ended
 export const errGGovHasVotes = 'ERR:GP_VE' // Cannot modify: votes exist
 export const errGGovReady = 'ERR:GP_RD' // Cannot modify: period is marked ready
 export const errGGovNotReady = 'ERR:GP_NR' // Cannot vote: period is not marked ready
+export const errGGovUnvotable = 'ERR:GP_UV' // Cannot ready: vote event would exceed the 1024-byte log limit
 
 // gGov topic
 export const errGGovTopicIndexOOB = 'ERR:GT_OB' // Topic index out of bounds

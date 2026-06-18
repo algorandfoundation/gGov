@@ -597,7 +597,7 @@ export class GGovSDK extends GGovReaderSDK {
     note,
     client,
     builder,
-  }: GGovPeriodContractArgs["vote(address,uint64[][])void"] & {
+  }: GGovPeriodContractArgs["vote(address,uint32[][])void"] & {
     periodId: bigint | number;
     client: GGovPeriodClient;
   } & PeriodMethodBuilderArgs) {
