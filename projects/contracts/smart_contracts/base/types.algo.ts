@@ -162,7 +162,7 @@ export function getEmptyGGovPeriodSummary(): GGovPeriodSummary {
 
 /** Topic options — stored in topicOptionsArr; mutated only during editable phase. */
 export type GGovTopicOptions = {
-  options: string[] // we have a tiny penalty in opcode + on-chain storage for storing this as a struct instead of bare Uint32[], but we prefer the shape safety and readability of a struct with a named field over a bare array
+  options: string[] // we have a tiny penalty in opcode + on-chain storage for storing this as a struct instead of bare string[], but we prefer the shape safety and readability of a struct with a named field over a bare array
 }
 
 /** Topic vote tallies — stored in topicVotesArr; mutated on every vote(). */
