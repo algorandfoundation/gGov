@@ -80,6 +80,8 @@ export function usePeriodBody(periodId: number) {
   return useQuery({
     queryKey: queryKeys.periodBody(periodId),
     queryFn: () => readerSDK.getPeriodBody(BigInt(periodId)),
+    // Callers without a known period yet pass a negative id; skip the lookup.
+    enabled: periodId >= 0,
     // Body is effectively immutable once uploaded; mutations that change it
     // (useUploadPeriodBodyMutation) invalidate this key, overriding staleTime.
     staleTime: 3_600_000,

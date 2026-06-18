@@ -9,6 +9,7 @@ import { ErrorDialogProvider } from '@/hooks/useErrorDialog'
 import { confirmPhase, resetPhase } from '@/lib/transactionPhase'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from '@/utils/network'
 import Layout from '@/components/Layout'
+import Home from '@/components/pages/Home'
 import VotePeriods from '@/components/pages/vote/VotePeriods'
 // Lazy-load the heavier routes so the landing view's chunk doesn't carry the
 // TipTap editor (Add/Manage screens) or react-markdown (detail screens).
@@ -97,7 +98,8 @@ export default function App() {
             <BrowserRouter>
               <Routes>
                 <Route element={<Layout />}>
-                  <Route index element={<VotePeriods />} />
+                  <Route index element={<Home />} />
+                  <Route path="vote" element={<VotePeriods />} />
                   <Route path="vote/period/:periodId" element={<VotePeriodDetail />} />
                   <Route path="vote/delegation" element={<Delegation />} />
                   <Route path="account/:address" element={<Account />} />
