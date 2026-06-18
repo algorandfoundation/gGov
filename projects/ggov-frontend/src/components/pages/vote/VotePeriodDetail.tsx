@@ -279,7 +279,7 @@ export default function VotePeriodDetail() {
   const mainContent = (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <BackButton to="/" />
+        <BackButton to="/vote" />
         <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
         <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
       </div>

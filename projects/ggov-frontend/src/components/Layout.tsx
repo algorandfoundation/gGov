@@ -42,7 +42,7 @@ function AppSidebar() {
   const isOperator = !!activeAddress && !!globalState?.operator && activeAddress === globalState.operator
 
   const navItems = [
-    { to: '/', label: 'Vote', icon: Vote },
+    { to: '/vote', label: 'Vote', icon: Vote },
     { to: '/committees', label: 'Committees', icon: Users },
     ...(activeAddress
       ? [{ to: `/account/${activeAddress}`, label: 'My account', icon: UserCircle }]
