@@ -672,6 +672,22 @@ describe('GGovRegistry contract', () => {
       expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
     })
 
+    test('setting votingAddress to the zero address clears the delegation', async () => {
+      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(true)
+
+      // votingAddress == ZERO_ADDRESS is treated as "clear", same as omitting it / self-delegation
+      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: ALGORAND_ZERO_ADDRESS_STRING })
+
+      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
+      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
+    })
+
     test('xGov can clear their own delegation (undelegate ergonomics: empty args)', async () => {
       const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
       const [xgov] = xGovAccounts

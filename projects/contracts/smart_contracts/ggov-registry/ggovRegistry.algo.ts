@@ -327,7 +327,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   public setVotingAccount(xgovAddress: Account, votingAddress: Account): void {
     ensure(this.accounts(xgovAddress).exists, errAccountNotExists) // xGov NOT_XGOV analog
     this.ensureCallerCanManageDelegation(xgovAddress)
-    if (votingAddress === xgovAddress) {
+    if (votingAddress === xgovAddress || votingAddress === Global.zeroAddress) {
       this.removeDelegation(xgovAddress)
     } else {
       this.addDelegation(xgovAddress, votingAddress)
@@ -360,16 +360,17 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   private addDelegation(delegator: Account, delegatee: Account): void {
     ensure(delegator !== delegatee, errGGovSelfDelegate)
+    ensure(delegator !== Global.zeroAddress, errGGovSelfDelegate)
     // only existing accounts can delegate; prevents spamming delegations from random addresses and keeps reverse index clean
     ensure(this.accounts(delegator).exists, errAccountNotExists)
     let previousDelegatee = Global.zeroAddress
-    const fwd = this.delegations(delegator)
-    if (fwd.exists) {
-      previousDelegatee = fwd.value
+    const fwdBox = this.delegations(delegator)
+    if (fwdBox.exists) {
+      previousDelegatee = fwdBox.value
       if (previousDelegatee === delegatee) return // unchanged; reverse index already correct
       this.removeReverseDelegation(previousDelegatee, delegator)
     }
-    fwd.value = delegatee
+    fwdBox.value = delegatee
     this.addReverseDelegation(delegatee, delegator)
     emit<GGovDelegationSet>({ delegator, previousDelegatee, delegatee })
   }
