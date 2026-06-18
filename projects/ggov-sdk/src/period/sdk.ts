@@ -92,9 +92,15 @@ export class GGovSDK extends GGovReaderSDK {
     };
   };
 
-  // Registry writes/reads (committee, operator, delegation, setVotingAccount, addPeriod,
-  // uploadPeriodApprovalProgram, createRegistry, …) live on GGovRegistrySDK. Reach them via
-  // `this.registry.X(...)`.
+  // ── Registry passthrough (end-user delegation write) ─────────────
+  // setVotingAccount is the one registry write an end user performs — delegating or clearing
+  // their OWN voting power — so it's forwarded for ergonomics. Admin/operator/bootstrap writes
+  // (setOperator, setAdmin, addPeriod, committee ingest, withdrawALGO, uploadPeriodApprovalProgram,
+  // createRegistry, …) stay on `this.registry`. The end-user delegation READS (getDelegation,
+  // getDelegators) are forwarded on GGovReaderSDK and inherited here.
+
+  /** Delegate (or clear) the signer's own voting power. See GGovRegistrySDK.setVotingAccount. */
+  setVotingAccount = (args: Parameters<GGovRegistrySDK["setVotingAccount"]>[0]) => this.registry.setVotingAccount(args);
 
   // ── Period: editPeriod ───────────────────────────────────────────
 

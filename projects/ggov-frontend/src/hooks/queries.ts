@@ -217,7 +217,7 @@ export function useDelegation(account: string | null | undefined) {
     queryKey: queryKeys.delegation(account ?? ''),
     queryFn: async () => {
       try {
-        return await readerSDK.registry.getDelegation(account!)
+        return await readerSDK.getDelegation(account!)
       } catch {
         return { delegatee: '', exists: false }
       }
@@ -240,7 +240,7 @@ export function useDelegatedToMe(account: string | null | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.delegatedToMe(account ?? ''),
-    queryFn: (): Promise<string[]> => readerSDK.registry.getDelegators(account!),
+    queryFn: (): Promise<string[]> => readerSDK.getDelegators(account!),
     enabled: !!account,
   })
 }

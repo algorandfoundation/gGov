@@ -75,6 +75,15 @@ export class GGovReaderSDK {
     return this.registry.readClient as unknown as GGovRegistryClient;
   }
 
+  // ── Registry passthroughs (end-user delegation reads) ────────────
+  // A voter self-services their own delegation, so these are forwarded for ergonomics (no `.registry`).
+  // Admin/analytics/committee reads (getAllDelegations, getCommitteeIds, getCommittee*, …) stay on `.registry`.
+
+  /** "Who am I delegating my voting power to?" */
+  getDelegation = (...args: Parameters<GGovRegistryReaderSDK["getDelegation"]>) => this.registry.getDelegation(...args);
+  /** "Who has delegated their voting power to me?" */
+  getDelegators = (...args: Parameters<GGovRegistryReaderSDK["getDelegators"]>) => this.registry.getDelegators(...args);
+
   // ── Period app resolution ────────────────────────────────────────
 
   /** Resolve the on-chain app ID for a periodId. Throws if the period is unknown. */
