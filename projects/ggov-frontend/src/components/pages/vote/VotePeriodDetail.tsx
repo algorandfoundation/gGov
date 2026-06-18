@@ -111,8 +111,8 @@ export default function VotePeriodDetail() {
   // voting window, unlike canVote), so the sidebar shows real standing in
   // upcoming/ended periods too.
   const xgovPowers = useXGovVotingPowers(committeeIdB64, voterAccounts);
-  // Records for delegators expose `byDelegator`, telling us when a delegator
-  // voted directly (a state the delegate cannot override).
+  // Records for delegators expose `isDelegated`, telling us when a delegator
+  // voted directly (a state the delegatee cannot override).
   const delegatorRecords = useVoteRecordMany(periodId, allDelegators);
   // Eligibility + voting power. Own wallet accounts vote as themselves (sender =
   // voter); each delegator is checked against the account it delegated to.
@@ -305,7 +305,7 @@ export default function VotePeriodDetail() {
                 canVote: delegatorEligibility[d]?.canVote,
                 hasVoted: voteStatuses[d],
                 // Voted for itself (not via a delegate) → the delegate can't override.
-                votedDirectly: record != null && record.topicVotes != null && !record.byDelegator,
+                votedDirectly: record != null && record.topicVotes != null && !record.isDelegated,
               };
             }),
           }))}
@@ -334,7 +334,7 @@ export default function VotePeriodDetail() {
         </div>
       )}
 
-      {isActive && !votingForSelf && voteRecord && !voteRecord.byDelegator && (
+      {isActive && !votingForSelf && voteRecord && !voteRecord.isDelegated && (
         <div className="max-w-lg rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so you cannot vote on their
           behalf. A delegate cannot override a vote the account holder cast themselves.
@@ -425,7 +425,7 @@ export default function VotePeriodDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {voteRecord.byDelegator && <p className="text-sm text-muted-foreground mb-2">Voted by delegator.</p>}
+            {voteRecord.isDelegated && <p className="text-sm text-muted-foreground mb-2">Voted by delegator.</p>}
             {voteRecord.topicVotes.map((votes, ti) => {
               const options = period.topics[ti]?.[0] ?? [];
               const total = votes.reduce((a, b) => a + b, 0);

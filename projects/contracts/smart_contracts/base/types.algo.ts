@@ -162,21 +162,21 @@ export function getEmptyGGovPeriodSummary(): GGovPeriodSummary {
 
 /** Topic options — stored in topicOptionsArr; mutated only during editable phase. */
 export type GGovTopicOptions = {
-  options: string[]
+  options: string[] // we have a tiny penalty in opcode + on-chain storage for storing this as a struct instead of bare Uint32[], but we prefer the shape safety and readability of a struct with a named field over a bare array
 }
 
 /** Topic vote tallies — stored in topicVotesArr; mutated on every vote(). */
 export type GGovTopicVotes = {
-  votes: Uint32[]
+  votes: Uint32[] // same choice as GGovTopicOptions
 }
 
-/** Merged read shape returned by GGovPeriod.getPeriod(). Composed from the two arrays above. */
+/** Merged read shape returned by GGovPeriod.getPeriod(). Composed from GGovTopicOptions and GGovTopicVotes. */
 export type GGovTopic = {
   options: string[]
   votes: Uint32[]
 }
 
-/** Period - stored in BoxMap<Uint32, GGovPeriod> */
+/** Period - stored in BoxMap<Uint32, GGovPeriod>. Not always safe to return as ABI, can exceed 1KB */
 export type GGovPeriod = {
   committeeId: CommitteeId
   votingStart: Uint32
@@ -198,7 +198,7 @@ export type GGovPeriodMeta = {
 
 /** Vote record per account per period */
 export type GGovVoteRecord = {
-  byDelegator: boolean
+  isDelegated: boolean
   topicVotes: Uint32[][]
 }
 
@@ -210,7 +210,7 @@ export type GGovVoteRecord = {
  * getVotingRecord() overflows once topicVotes grows large.
  */
 export type GGovVoteRecordMeta = {
-  byDelegator: boolean
+  isDelegated: boolean
   numTopics: Uint32
 }
 
@@ -225,7 +225,42 @@ export function getEmptyGGovPeriod(): GGovPeriod {
 
 export function getEmptyGGovVoteRecord(): GGovVoteRecord {
   return {
-    byDelegator: false,
+    isDelegated: false,
     topicVotes: [] as Uint32[][],
   }
+}
+
+/*
+ * ARC-28 events. Field order is significant: it defines the on-chain event ABI, so append new
+ * fields rather than reordering. The type name is the event name used to derive the 4-byte prefix.
+ */
+
+/** Emitted by GGovPeriod.vote() whenever a vote is cast or updated. IMPORTANT: Size must be kept in sync with Period.setReady calculations */
+export type GGovVoteCast = {
+  /** Account whose voting power was cast */
+  voter: Account
+  /** Transaction sender: equals `voter` for self-votes, the delegatee for delegated votes */
+  sender: Account
+  // isDelegated is not logged, implicit from voter != sender
+  /** Whether this is an update to an existing vote (true) or the first vote (false) */
+  updateVote: boolean
+  /** Total voting power applied (sum of every option across every topic) */
+  votingPower: uint64
+  /** Votes cast this call per topic, parallel to the period's topics/options */
+  topicVotes: Uint32[][]
+  // not adding global vote state intentionally, it would limit the number of topics/options we can support (via 1KB log limit)
+}
+
+/** Emitted by GGovRegistry when a delegation is first set or changed (delegator → delegatee). previousDelegate will be zero address when setting delegation for the first time. */
+export type GGovDelegationSet = {
+  delegator: Account
+  previousDelegatee: Account
+  delegatee: Account
+}
+
+/** Emitted by GGovRegistry when a delegation is cleared. */
+export type GGovDelegationCleared = {
+  delegator: Account
+  /** Delegatee the delegation pointed at before being cleared */
+  previousDelegatee: Account
 }

@@ -58,6 +58,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GP_VE": "Cannot modify: votes exist",
   "ERR:GP_RD": "Cannot modify: period is marked ready",
   "ERR:GP_NR": "Cannot vote: period is not marked ready",
+  "ERR:GP_UV": "Cannot ready: vote event would exceed the 1024-byte log limit",
   "ERR:GT_OB": "Topic index out of bounds",
   "ERR:GT_NO": "Topic must have at least one option",
   "ERR:GV_MM": "Vote array length mismatch",

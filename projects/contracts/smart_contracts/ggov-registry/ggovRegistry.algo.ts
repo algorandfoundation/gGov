@@ -9,6 +9,7 @@ import {
   clone,
   compile,
   contract,
+  emit,
   Global,
   GlobalState,
   gtxn,
@@ -52,6 +53,8 @@ import {
   AccountWithVotes,
   CommitteeId,
   CommitteeMetadata,
+  GGovDelegationCleared,
+  GGovDelegationSet,
   GGovPeriodSummary,
   getEmptyCommitteeMetadata,
   getEmptyGGovPeriodSummary,
@@ -95,7 +98,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * keyed by the delegatee, instead of scanning every forward delegation.
    *
    * TODO this is a plain box holding a dynamic `Account[]`, so a single delegatee's list is
-   * bounded by the 32KB box ceiling (~1024 addresses) and every add/remove rewrites the whole box.
+   * bounded by the 32KB box ceiling (~1023 addresses) and every add/remove rewrites the whole box.
    * If a delegatee can accrue many delegators, consider migrating this to a superbox.
    */
   reverseDelegations = BoxMap<Account, Account[]>({ keyPrefix: 'D' })
@@ -206,7 +209,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     // ensure we did not exceed total votes
     ensure(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
 
-    log(sbAppend(superboxName, writeBuffer))
+    sbAppend(superboxName, writeBuffer)
 
     committee.ingestedVotes = u32(ingestedVotes)
     // if we are finished, ensure total votes match
@@ -359,14 +362,16 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     ensure(delegator !== delegatee, errGGovSelfDelegate)
     // only existing accounts can delegate; prevents spamming delegations from random addresses and keeps reverse index clean
     ensure(this.accounts(delegator).exists, errAccountNotExists)
+    let previousDelegatee = Global.zeroAddress
     const fwd = this.delegations(delegator)
     if (fwd.exists) {
-      const previousDelegatee = fwd.value
+      previousDelegatee = fwd.value
       if (previousDelegatee === delegatee) return // unchanged; reverse index already correct
       this.removeReverseDelegation(previousDelegatee, delegator)
     }
     fwd.value = delegatee
     this.addReverseDelegation(delegatee, delegator)
+    emit<GGovDelegationSet>({ delegator, previousDelegatee, delegatee })
   }
 
   /**
@@ -384,8 +389,10 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   private removeDelegation(delegator: Account): void {
     const box = this.delegations(delegator)
     if (!box.exists) return
-    this.removeReverseDelegation(box.value, delegator)
+    const previousDelegatee = box.value
+    this.removeReverseDelegation(previousDelegatee, delegator)
     box.delete()
+    emit<GGovDelegationCleared>({ delegator, previousDelegatee })
   }
 
   /** Append $delegator to $delegatee's reverse delegation list. */
