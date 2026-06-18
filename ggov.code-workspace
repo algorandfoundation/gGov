@@ -5,10 +5,19 @@
       "name": "ROOT"
     },
     {
-      "path": "./projects/xgov-delegator-contracts"
+      "path": "./projects/contracts"
     },
     {
-      "path": "./projects/xgov-delegator-frontend"
+      "path": "./projects/ggov-frontend"
+    },
+    {
+      "path": "./projects/ggov-sdk"
+    },
+    {
+      "path": "./projects/delegator-sdk"
+    },
+    {
+      "path": "./projects/common"
     }
   ],
   "settings": {
@@ -21,7 +30,7 @@
   "extensions": {
     "recommendations": ["joshx.workspace-terminals"]
   },
-  
+
   "tasks": {
     "version": "2.0.0",
     "tasks": [
@@ -56,9 +65,9 @@
         "configurations": [
           {
             "name": "Deploy contracts",
-            "folder": "xgov-delegator-contracts"
+            "folder": "contracts"
           },
-          { "name": "Run dApp", "folder": "xgov-delegator-frontend" }
+          { "name": "Run dApp", "folder": "ggov-frontend" }
         ],
         "presentation": {
           "hidden": false,
@@ -67,4 +76,4 @@
       }
     ]
   }
-  }
+}
