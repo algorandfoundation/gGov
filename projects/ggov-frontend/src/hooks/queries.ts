@@ -34,7 +34,7 @@ export function useGlobalState() {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.globalState,
-    queryFn: () => readerSDK.getGlobalState(),
+    queryFn: () => readerSDK.registry.getGlobalState(),
     staleTime: 60_000,
   })
 }
@@ -217,7 +217,7 @@ export function useDelegation(account: string | null | undefined) {
     queryKey: queryKeys.delegation(account ?? ''),
     queryFn: async () => {
       try {
-        return await readerSDK.getDelegation(account!)
+        return await readerSDK.registry.getDelegation(account!)
       } catch {
         return { delegatee: '', exists: false }
       }
@@ -230,7 +230,7 @@ export function useAllDelegations() {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.allDelegations,
-    queryFn: () => readerSDK.getAllDelegations(),
+    queryFn: () => readerSDK.registry.getAllDelegations(),
     staleTime: 600_000,
   })
 }
@@ -240,7 +240,7 @@ export function useDelegatedToMe(account: string | null | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.delegatedToMe(account ?? ''),
-    queryFn: (): Promise<string[]> => readerSDK.getDelegators(account!),
+    queryFn: (): Promise<string[]> => readerSDK.registry.getDelegators(account!),
     enabled: !!account,
   })
 }
@@ -274,7 +274,7 @@ export function useCommittees() {
   return useQuery({
     queryKey: queryKeys.committees,
     queryFn: async (): Promise<CommitteeOption[]> => {
-      const ids = await readerSDK.getCommitteeIds()
+      const ids = await readerSDK.registry.getCommitteeIds()
       // One batched simulate group instead of a serial metadata read per committee.
       const metas = await readerSDK.registry.getCommitteesMetadata(ids)
       const options: CommitteeOption[] = []
@@ -412,7 +412,7 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.committeeVotingPowers(account ?? ''),
     queryFn: async (): Promise<CommitteeVotingPower[]> => {
-      const ids = await readerSDK.getCommitteeIds()
+      const ids = await readerSDK.registry.getCommitteeIds()
       // Two batched simulate groups instead of 2 serial on-chain reads per committee.
       const [metas, powers] = await Promise.all([
         readerSDK.registry.getCommitteesMetadata(ids),

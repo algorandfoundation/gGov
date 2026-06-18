@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 
 // Use require for packages that have CJS dist but ESM source issues
 const { AlgorandClient } = require("@algorandfoundation/algokit-utils");
-const { GGovSDK } = require("../../ggov-sdk/dist/sdk.js");
+const { GGovSDK, GGovRegistrySDK } = require("../../ggov-sdk/dist/index.js");
 const algosdk = require("algosdk");
 
 interface XGovCommitteeFile {
@@ -132,8 +132,8 @@ async function main() {
 
   // ── Deploy GGovRegistry contract ──────────────────────────────────
 
-  console.log("\nDeploying GGovRegistry contract via GGovSDK.createRegistry()...");
-  const { sdk, appClient } = await GGovSDK.createRegistry({
+  console.log("\nDeploying GGovRegistry contract via GGovRegistrySDK.createRegistry()...");
+  const { appClient } = await GGovRegistrySDK.createRegistry({
     algorand,
     deployer: {
       sender: deployerAddr,
@@ -141,6 +141,12 @@ async function main() {
     },
     operatorAccount: deployerAddr,
     initialFundingAlgos: 50n,
+  });
+  // Combined SDK for period ops; registry ops go through sdk.registry.
+  const sdk = new GGovSDK({
+    algorand,
+    registryAppId: appClient.appId,
+    writerAccount: { sender: deployerAddr, signer: algorand.account.getSigner(deployerAddr) },
   });
   const appId = appClient.appId;
   console.log(`GGovRegistry deployed! App ID: ${appId}`);
@@ -192,7 +198,7 @@ async function main() {
   };
 
   console.log("Uploading committee file...");
-  const committeeId = await sdk.uploadCommitteeFile(committeeFile);
+  const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile);
   const committeeHex = Array.from(committeeId as Uint8Array)
     .map((b: number) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -207,7 +213,7 @@ async function main() {
   const now = BigInt(Math.floor(Date.now() / 1000));
 
   // First create with future start so we can add topics
-  const periodId = await sdk.addPeriod({
+  const periodId = await sdk.registry.addPeriod({
     committeeId,
     votingStart: now + 10000n,
     votingEnd: now + 20000n,
@@ -284,7 +290,7 @@ async function main() {
   // ── Create an UPCOMING period ─────────────────────────────────────
 
   console.log("\nCreating upcoming voting period...");
-  const period2Id = await sdk.addPeriod({
+  const period2Id = await sdk.registry.addPeriod({
     committeeId,
     votingStart: now + 86400n * 14n, // starts in 14 days
     votingEnd: now + 86400n * 28n, // ends in 28 days

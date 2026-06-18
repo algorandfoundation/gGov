@@ -1,7 +1,7 @@
-export * from "./proposal/sdk";
-export * from "./proposal/sdkReader";
+export * from "./period/sdk";
+export * from "./period/sdkReader";
 export * from "./constants";
-export * from "./proposal/types";
+export * from "./period/types";
 export { GGovRegistryFactory, GGovRegistryClient } from "./generated/GGovRegistryClient";
 export { GGovPeriodFactory, GGovPeriodClient, type GGovPeriod, type GGovVoteRecord } from "./generated/GGovPeriodClient";
 

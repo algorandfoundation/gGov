@@ -50,6 +50,7 @@ export const STORED_XGOV_BYTE_LENGTH = 8; // 4 bytes for ID + 4 bytes for Votes
 
 export interface CommonMethodBuilderArgs {
   builder?: GGovRegistryComposer<any>
+  note?: string | Uint8Array
 }
 
 export type GGovRegistryContractArgs = GGovRegistryArgs["obj"];

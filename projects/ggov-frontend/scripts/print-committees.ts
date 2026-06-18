@@ -9,7 +9,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { AlgorandClient } = require("@algorandfoundation/algokit-utils");
-const { GGovReaderSDK } = require("../../ggov-sdk/dist/sdkReader.js");
+const { GGovReaderSDK } = require("../../ggov-sdk/dist/index.js");
 
 const KMD_TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const APP_ID = Number(process.env.VITE_GGOV_REGISTRY_APP_ID || process.env.VITE_GGOV_APP_ID || 1002);
@@ -44,7 +44,7 @@ async function main() {
   console.log(`Operator:    ${operator}\n`);
 
   // Get all committee IDs
-  const committeeIds: Uint8Array[] = await sdk.getCommitteeIds();
+  const committeeIds: Uint8Array[] = await sdk.registry.getCommitteeIds();
   console.log(`Found ${committeeIds.length} committee(s)\n`);
 
   for (const committeeId of committeeIds) {

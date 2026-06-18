@@ -8,7 +8,6 @@ import {
   increaseBudgetIncrementCost,
   XGovCommitteeFile,
   GGovRegistrySDK,
-  GGovSDK,
 } from 'ggov-sdk'
 import {
   errAccountNotExists,
@@ -42,6 +41,28 @@ describe('GGovRegistry contract', () => {
     registerDebugEventHandlers()
   })
   beforeEach(localnet.newScope)
+
+  describe('deployment configuration', () => {
+    // GGovRegistrySDK.createRegistry() is the production deploy path. It hard-codes
+    // extraProgramPages: 3 so the approval program can grow toward the AVM ceiling
+    // without ever needing a redeploy. The registry's global schema is declared by the
+    // contract itself and sits exactly at the AVM hard cap of 64 (44 uints + 20 bytes);
+    // these two assertions guard against either drifting silently on a contract change.
+    test('registry deploys with extraProgramPages=3 and a global schema summing to 64', async () => {
+      const { testAccount: admin } = localnet.context
+      // createRegistry pays the registry MBR + box MBR + initial funding out of the
+      // deployer's balance; top the test admin up so it can cover the transfers + fees.
+      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
+      const { appClient } = await GGovRegistrySDK.createRegistry({
+        algorand: localnet.algorand,
+        deployer: { sender: admin, signer: localnet.algorand.account.getSigner(admin) },
+      })
+
+      const appInfo = await localnet.algorand.app.getById(appClient.appId)
+      expect(appInfo.extraProgramPages).toBe(3)
+      expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
+    })
+  })
 
   describe('increaseBudget opcode cost', () => {
     for (let i = 0; i < 3; i++) {
@@ -586,7 +607,7 @@ describe('GGovRegistry contract', () => {
 
   describe('mirrorXGovDelegation', () => {
     const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
-      new GGovSDK({
+      new GGovRegistrySDK({
         algorand: localnet.algorand,
         registryAppId: appId,
         writerAccount: {
@@ -618,7 +639,7 @@ describe('GGovRegistry contract', () => {
 
   describe('setVotingAccount (xGov-compatible delegation)', () => {
     const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
-      new GGovSDK({
+      new GGovRegistrySDK({
         algorand: localnet.algorand,
         registryAppId: appId,
         writerAccount: {
