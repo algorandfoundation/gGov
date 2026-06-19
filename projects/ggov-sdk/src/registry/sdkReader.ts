@@ -233,7 +233,7 @@ export class GGovRegistryReaderSDK {
       builder = builder.logCommitteeMetadata({ args: { committeeIds: committeeIdChunk } });
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) => {
       const meta = getABIDecodedValue(new Uint8Array(log!), "CommitteeMetadata", this.readClient.appSpec.structs) as CommitteeMetadata;
       return meta.periodEnd === 0 ? null : meta;
@@ -346,7 +346,7 @@ export class GGovRegistryReaderSDK {
       builder = builder.logAccounts({ args: { accounts: accountChunk } });
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
       getABIDecodedValue(new Uint8Array(log!), "GGovAccount", this.readClient.appSpec.structs) as GGovAccount,
     );
@@ -358,9 +358,10 @@ export class GGovRegistryReaderSDK {
   @chunked(128)
   @wrapErrors()
   async getPeriodSummaries(periodIds: bigint[]): Promise<GGovPeriodSummary[]> {
+    if (periodIds.length === 0) return [];
     const builder = this.readClient.newGroup().logPeriodSummaries({ args: { periodIds } });
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
       getABIDecodedValue(new Uint8Array(log!), "GGovPeriodSummary", this.readClient.appSpec.structs) as GGovPeriodSummary,
     );
@@ -406,9 +407,10 @@ export class GGovRegistryReaderSDK {
   @chunked(128)
   @wrapErrors()
   async getDelegations(accounts: string[]): Promise<string[]> {
+    if (accounts.length === 0) return [];
     const builder = this.readClient.newGroup().logDelegations({ args: { accounts } });
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
       getABIDecodedValue(new Uint8Array(log!), "address", this.readClient.appSpec.structs) as string,
     );
