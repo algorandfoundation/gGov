@@ -6,7 +6,6 @@ import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
   CommitteeId,
-  CommonMethodBuilderArgs,
   ConstructorArgs,
   GGovPeriodContractArgs,
   PeriodMethodBuilderArgs,
