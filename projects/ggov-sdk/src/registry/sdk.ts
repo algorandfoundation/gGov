@@ -188,16 +188,16 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  makeRewindLastPeriodIdTxns({ newLastPeriodId, builder }: GGovRegistryContractArgs["rewindLastPeriodId(uint64)void"] & CommonMethodBuilderArgs) {
+  makeSetLastPeriodIdTxns({ newLastPeriodId, builder }: GGovRegistryContractArgs["setLastPeriodId(uint64)void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup();
-    // A downward rewind reads the period boxes in the reclaimed range; AlgoKit populates the
+    // A downward move reads the period boxes in the reclaimed range; AlgoKit populates the
     // box references automatically. A forward seed (the legacy case) reads no boxes.
-    builder = builder.rewindLastPeriodId({ args: { newLastPeriodId } });
+    builder = builder.setLastPeriodId({ args: { newLastPeriodId } });
     return builder;
   }
 
-  rewindLastPeriodId = this.makeTxnExecutor({
-    maker: this.makeRewindLastPeriodIdTxns,
+  setLastPeriodId = this.makeTxnExecutor({
+    maker: this.makeSetLastPeriodIdTxns,
   });
 
   @requireWriter()
@@ -528,7 +528,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       // Seed the counter so the first createPeriod issues firstPeriodId. Done before setOperator,
       // and the operator is the only role that can create periods, so no period can be created
       // in between.
-      await sdk.rewindLastPeriodId({ newLastPeriodId: BigInt(firstPeriodId) - 1n });
+      await sdk.setLastPeriodId({ newLastPeriodId: BigInt(firstPeriodId) - 1n });
     }
 
     if (xGovRegistryAppId !== undefined) {

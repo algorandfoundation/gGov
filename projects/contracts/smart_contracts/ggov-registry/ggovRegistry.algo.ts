@@ -579,7 +579,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * orphaned. Periods are only ever created up to the current lastPeriodId, so ids above it
    * cannot exist — a forward move therefore reads no boxes.
    */
-  public rewindLastPeriodId(newLastPeriodId: uint64): void {
+  public setLastPeriodId(newLastPeriodId: uint64): void {
     this.ensureCallerIsAdmin()
     const cur = this.lastPeriodId.value
     for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {

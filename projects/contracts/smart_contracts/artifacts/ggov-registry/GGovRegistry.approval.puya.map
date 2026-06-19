@@ -176,7 +176,7 @@
       "stack_out": []
     },
     "259": {
-      "op": "pushbytess 0xd50bc43d 0xf30cf84d 0xd32179d2 0xe3fbc0de 0x89b1e876 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x386ebbd0 0xc326bb9b 0x1524c2f6 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0xca284903 0x6f31967a 0xc60713f2 0xa220b9f9 0x4118ecbf // method \"registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void\", method \"unregisterCommittee(byte[32])void\", method \"ingestXGovs(byte[32],(address,uint32)[])void\", method \"uningestXGovs(byte[32],address[])void\", method \"setXGovRegistryApp(uint64)void\", method \"setAdmin(address)void\", method \"withdrawALGO(address,uint64)void\", method \"verifyAdmin(address)bool\", method \"setOperator(address)void\", method \"verifyOperator(address)bool\", method \"set_voting_account(address,address)void\", method \"mirrorXGovDelegation(address)void\", method \"getDelegation(address)(address,bool)\", method \"getDelegate(address)address\", method \"logDelegators(address)void\", method \"logDelegations(address[])void\", method \"uploadPeriodApprovalPartial(uint64,byte[],bool)void\", method \"createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)\", method \"rewindLastPeriodId(uint64)void\", method \"updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void\", method \"removePeriodSummary(uint32)void\", method \"getPeriodApp(uint64)uint64\", method \"getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)\", method \"logPeriodSummaries(uint64[])void\", method \"getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)\", method \"logCommitteeMetadata(byte[32][])void\", method \"logCommitteePages(byte[32],bool,uint64,uint64)void\", method \"getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)\", method \"getXGovVotingPower(byte[32],address)uint32\", method \"tryGetXGovVotingPower(byte[32],address)uint32\", method \"getAccount(address)(uint32,(uint16,uint16)[])\", method \"logAccounts(address[])void\", method \"increaseBudget(uint64)void\"",
+      "op": "pushbytess 0xd50bc43d 0xf30cf84d 0xd32179d2 0xe3fbc0de 0x89b1e876 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x386ebbd0 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0xca284903 0x6f31967a 0xc60713f2 0xa220b9f9 0x4118ecbf // method \"registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void\", method \"unregisterCommittee(byte[32])void\", method \"ingestXGovs(byte[32],(address,uint32)[])void\", method \"uningestXGovs(byte[32],address[])void\", method \"setXGovRegistryApp(uint64)void\", method \"setAdmin(address)void\", method \"withdrawALGO(address,uint64)void\", method \"verifyAdmin(address)bool\", method \"setOperator(address)void\", method \"verifyOperator(address)bool\", method \"set_voting_account(address,address)void\", method \"mirrorXGovDelegation(address)void\", method \"getDelegation(address)(address,bool)\", method \"getDelegate(address)address\", method \"logDelegators(address)void\", method \"logDelegations(address[])void\", method \"uploadPeriodApprovalPartial(uint64,byte[],bool)void\", method \"createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)\", method \"setLastPeriodId(uint64)void\", method \"updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void\", method \"removePeriodSummary(uint32)void\", method \"getPeriodApp(uint64)uint64\", method \"getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)\", method \"logPeriodSummaries(uint64[])void\", method \"getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)\", method \"logCommitteeMetadata(byte[32][])void\", method \"logCommitteePages(byte[32],bool,uint64,uint64)void\", method \"getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)\", method \"getXGovVotingPower(byte[32],address)uint32\", method \"tryGetXGovVotingPower(byte[32],address)uint32\", method \"getAccount(address)(uint32,(uint16,uint16)[])\", method \"logAccounts(address[])void\", method \"increaseBudget(uint64)void\"",
       "defined_out": [
         "Method(createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64))",
         "Method(getAccount(address)(uint32,(uint16,uint16)[]))",
@@ -198,8 +198,8 @@
         "Method(mirrorXGovDelegation(address)void)",
         "Method(registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void)",
         "Method(removePeriodSummary(uint32)void)",
-        "Method(rewindLastPeriodId(uint64)void)",
         "Method(setAdmin(address)void)",
+        "Method(setLastPeriodId(uint64)void)",
         "Method(setOperator(address)void)",
         "Method(setXGovRegistryApp(uint64)void)",
         "Method(set_voting_account(address,address)void)",
@@ -231,7 +231,7 @@
         "Method(logDelegations(address[])void)",
         "Method(uploadPeriodApprovalPartial(uint64,byte[],bool)void)",
         "Method(createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64))",
-        "Method(rewindLastPeriodId(uint64)void)",
+        "Method(setLastPeriodId(uint64)void)",
         "Method(updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void)",
         "Method(removePeriodSummary(uint32)void)",
         "Method(getPeriodApp(uint64)uint64)",
@@ -271,8 +271,8 @@
         "Method(mirrorXGovDelegation(address)void)",
         "Method(registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void)",
         "Method(removePeriodSummary(uint32)void)",
-        "Method(rewindLastPeriodId(uint64)void)",
         "Method(setAdmin(address)void)",
+        "Method(setLastPeriodId(uint64)void)",
         "Method(setOperator(address)void)",
         "Method(setXGovRegistryApp(uint64)void)",
         "Method(set_voting_account(address,address)void)",
@@ -305,7 +305,7 @@
         "Method(logDelegations(address[])void)",
         "Method(uploadPeriodApprovalPartial(uint64,byte[],bool)void)",
         "Method(createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64))",
-        "Method(rewindLastPeriodId(uint64)void)",
+        "Method(setLastPeriodId(uint64)void)",
         "Method(updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void)",
         "Method(removePeriodSummary(uint32)void)",
         "Method(getPeriodApp(uint64)uint64)",
@@ -324,7 +324,7 @@
       ]
     },
     "429": {
-      "op": "match registerCommittee unregisterCommittee ingestXGovs uningestXGovs setXGovRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod rewindLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getXGovVotingPower tryGetXGovVotingPower getAccount logAccounts increaseBudget",
+      "op": "match registerCommittee unregisterCommittee ingestXGovs uningestXGovs setXGovRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod setLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getXGovVotingPower tryGetXGovVotingPower getAccount logAccounts increaseBudget",
       "stack_out": []
     },
     "497": {
@@ -63123,9 +63123,9 @@
       "op": "b createPeriod_ternary_merge@4"
     },
     "3972": {
-      "subroutine": "smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.rewindLastPeriodId[routing]",
+      "subroutine": "smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.setLastPeriodId[routing]",
       "params": {},
-      "block": "rewindLastPeriodId",
+      "block": "setLastPeriodId",
       "stack_in": [],
       "op": "txna ApplicationArgs 1",
       "defined_out": [
@@ -63307,7 +63307,7 @@
       ]
     },
     "3996": {
-      "block": "rewindLastPeriodId_while_top@2",
+      "block": "setLastPeriodId_while_top@2",
       "stack_in": [
         "newLastPeriodId#0",
         "cur#0",
@@ -63353,7 +63353,7 @@
       ]
     },
     "4000": {
-      "op": "bz rewindLastPeriodId_after_while@4",
+      "op": "bz setLastPeriodId_after_while@4",
       "stack_out": [
         "newLastPeriodId#0",
         "cur#0",
@@ -63450,7 +63450,7 @@
       ]
     },
     "4014": {
-      "op": "bz rewindLastPeriodId_after_if_else@7",
+      "op": "bz setLastPeriodId_after_if_else@7",
       "stack_out": [
         "newLastPeriodId#0",
         "cur#0",
@@ -63483,7 +63483,7 @@
       "op": "err"
     },
     "4029": {
-      "block": "rewindLastPeriodId_after_if_else@7",
+      "block": "setLastPeriodId_after_if_else@7",
       "stack_in": [
         "newLastPeriodId#0",
         "cur#0",
@@ -63535,10 +63535,10 @@
       ]
     },
     "4034": {
-      "op": "b rewindLastPeriodId_while_top@2"
+      "op": "b setLastPeriodId_while_top@2"
     },
     "4037": {
-      "block": "rewindLastPeriodId_after_while@4",
+      "block": "setLastPeriodId_after_while@4",
       "stack_in": [
         "newLastPeriodId#0",
         "cur#0",

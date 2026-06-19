@@ -247,9 +247,9 @@ describe('GGovPeriod contract', () => {
     })
   })
 
-  // ── rewindLastPeriodId / contiguous period ids ───────────────────
+  // ── setLastPeriodId / contiguous period ids ───────────────────
 
-  describe('rewindLastPeriodId / contiguous period ids', () => {
+  describe('setLastPeriodId / contiguous period ids', () => {
     test('firstPeriodId seeds the first period id (contiguous after a legacy system)', async () => {
       // Legacy system ran periods 1..15; new periods should continue at 16.
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 3, 10, 16n)
@@ -269,9 +269,9 @@ describe('GGovPeriod contract', () => {
       }
     })
 
-    test('rewindLastPeriodId forward-seeds the counter; next period is newLastPeriodId + 1', async () => {
+    test('setLastPeriodId forward-seeds the counter; next period is newLastPeriodId + 1', async () => {
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
-      await sdk.registry.rewindLastPeriodId({ newLastPeriodId: 15n })
+      await sdk.registry.setLastPeriodId({ newLastPeriodId: 15n })
       await sdk.registry.setOperator({ account: admin.toString() })
 
       const now = BigInt(Math.floor(Date.now() / 1000))
@@ -284,7 +284,7 @@ describe('GGovPeriod contract', () => {
       const { appClient } = await deployRegistryAndSDK(localnet, admin)
       const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const nonAdminSDK = createUserSDK(localnet, appClient.appId, nonAdmin)
-      await expect(nonAdminSDK.registry.rewindLastPeriodId({ newLastPeriodId: 15n })).rejects.toThrow(
+      await expect(nonAdminSDK.registry.setLastPeriodId({ newLastPeriodId: 15n })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
@@ -297,7 +297,7 @@ describe('GGovPeriod contract', () => {
       const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
       expect(periodId).toBe(1n)
       // Rewinding to 0 would re-issue id 1, which is live → reject.
-      await expect(sdk.registry.rewindLastPeriodId({ newLastPeriodId: 0n })).rejects.toThrow(
+      await expect(sdk.registry.setLastPeriodId({ newLastPeriodId: 0n })).rejects.toThrow(
         transformedError(errPeriodInRange),
       )
     })
@@ -311,7 +311,7 @@ describe('GGovPeriod contract', () => {
       expect(periodId).toBe(1n)
       // Deleting drops the summary box, so the id is free to re-issue.
       await sdk.deletePeriodApp({ periodId })
-      await sdk.registry.rewindLastPeriodId({ newLastPeriodId: 0n })
+      await sdk.registry.setLastPeriodId({ newLastPeriodId: 0n })
       const reissued = await sdk.registry.addPeriod({ committeeId, votingStart: now + 200n, votingEnd: now + 3800n })
       expect(reissued).toBe(1n)
     })
@@ -438,6 +438,44 @@ describe('GGovPeriod contract', () => {
       // Period survives the rejected deletion.
       const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
       expect(BigInt(summary!.appId)).toBeGreaterThan(0n)
+    })
+
+    test('Deletes every period box (paged) and reclaims their MBR to the admin', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      // Over-fund the period app so it can hold the period body + all topic-body box MBR.
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(periodAppId), (3).algos())
+
+      // >8 topics each with an uploaded body, plus a period body → 'o','t','P' + 9×'T' = 12 boxes,
+      // so topic-body cleanup spans multiple batches (>8 box refs per txn is impossible).
+      const NUM_TOPICS = 9
+      for (let i = 0; i < NUM_TOPICS; i++) {
+        await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
+      }
+      await sdk.uploadPeriodBody({ periodId, body: { title: 'Period', body: 'Period description body.' } })
+      for (let i = 0; i < NUM_TOPICS; i++) {
+        await sdk.uploadTopicBody({ periodId, topicIndex: i, body: { title: `Topic ${i}`, body: `Body ${i}.` } })
+      }
+
+      // Sanity: all boxes are present before deletion.
+      expect((await localnet.algorand.app.getBoxNames(periodAppId)).length).toBe(3 + NUM_TOPICS)
+
+      const adminBefore = (await localnet.algorand.client.algod.accountInformation(admin.toString()).do()).amount
+
+      await sdk.deletePeriodApp({ periodId })
+
+      // Every box is gone — none left to lock MBR.
+      expect((await localnet.algorand.app.getBoxNames(periodAppId)).length).toBe(0)
+      // Registry summary dropped.
+      const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(BigInt(summary!.appId)).toBe(0n)
+      // The swept app-account balance (base + all freed box MBR) lands with the admin, net of fees.
+      const adminAfter = (await localnet.algorand.client.algod.accountInformation(admin.toString()).do()).amount
+      expect(adminAfter).toBeGreaterThan(adminBefore)
     })
   })
 
@@ -1493,8 +1531,9 @@ describe('GGovPeriod contract', () => {
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, admin)
       await expect(
-        // 1 inner verifyAdmin (checkAdminCaller) + 1 inner removePeriodSummary
-        client.send.delete.bare({ extraFee: (2000).microAlgo() }),
+        // deletes 'o'/'t'/'P' boxes (must be referenced); 1 inner verifyAdmin + 1 inner
+        // removePeriodSummary + 1 inner sweep payment
+        client.send.delete.bare({ boxReferences: ['o', 't', 'P'], extraFee: (3000).microAlgo() }),
       ).resolves.toBeDefined()
     })
   })

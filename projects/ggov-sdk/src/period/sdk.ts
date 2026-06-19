@@ -6,7 +6,6 @@ import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
   CommitteeId,
-  CommonMethodBuilderArgs,
   ConstructorArgs,
   GGovPeriodContractArgs,
   PeriodMethodBuilderArgs,
@@ -14,10 +13,14 @@ import {
   validateBodyJson,
 } from "./types";
 import { committeeIdToRaw } from "../util/comitteeId";
+import { asciiBoxName, topicBodyBoxName } from "../util/boxNames";
 import { chunk } from "../util/chunk";
 import { requireWriter } from "../util/requiresSender";
 import { wrapErrors, wrapErrorsInternal } from "../util/wrapErrors";
 import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES } from "../constants";
+
+/** Max box references per transaction (AVM limit) — caps how many topic bodies one deleteTopicBodies call may delete. */
+const MAX_BOX_REFS_PER_TXN = 8;
 
 export class GGovSDK extends GGovReaderSDK {
   public writerAccount?: SenderWithSigner;
@@ -194,7 +197,6 @@ export class GGovSDK extends GGovReaderSDK {
     periodId: _periodId,
     startOffset,
     data,
-    last,
     note,
     client,
     builder,
@@ -202,12 +204,11 @@ export class GGovSDK extends GGovReaderSDK {
     periodId: bigint | number;
     startOffset: bigint | number;
     data: Uint8Array;
-    last: boolean;
     client: GGovPeriodClient;
   } & PeriodMethodBuilderArgs) {
     builder = builder ?? client.newGroup();
     return builder.uploadPeriodBodyPartial({
-      args: { startOffset, data, last },
+      args: { startOffset, data },
       note,
       extraFee: (1000).microAlgo(),
     });
@@ -224,7 +225,6 @@ export class GGovSDK extends GGovReaderSDK {
     topicIndex,
     startOffset,
     data,
-    last,
     note,
     client,
     builder,
@@ -233,12 +233,11 @@ export class GGovSDK extends GGovReaderSDK {
     topicIndex: bigint | number;
     startOffset: bigint | number;
     data: Uint8Array;
-    last: boolean;
     client: GGovPeriodClient;
   } & PeriodMethodBuilderArgs) {
     builder = builder ?? client.newGroup();
     return builder.uploadTopicBodyPartial({
-      args: { topicIndex, startOffset, data, last },
+      args: { topicIndex, startOffset, data },
       note,
       extraFee: (1000).microAlgo(),
     });
@@ -268,12 +267,10 @@ export class GGovSDK extends GGovReaderSDK {
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup();
       for (const { index, data: chunkData } of group) {
-        const isLast = index === chunks.length - 1;
         builder = await this.makeUploadPeriodBodyPartialTxns({
           periodId,
           startOffset: index * BODY_CHUNK_BYTES,
           data: new Uint8Array(chunkData),
-          last: isLast,
           note,
           client,
           builder,
@@ -307,13 +304,11 @@ export class GGovSDK extends GGovReaderSDK {
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup();
       for (const { index, data: chunkData } of group) {
-        const isLast = index === chunks.length - 1;
         builder = await this.makeUploadTopicBodyPartialTxns({
           periodId,
           topicIndex,
           startOffset: index * BODY_CHUNK_BYTES,
           data: new Uint8Array(chunkData),
-          last: isLast,
           note,
           client,
           builder,
@@ -444,35 +439,77 @@ export class GGovSDK extends GGovReaderSDK {
 
   updatePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeUpdatePeriodAppTxns });
 
-  // ── Period: deleteApplication (admin-only, via registry C2C verifyAdmin) ──
+  // ── Period: deleteApplication (admin-only, !ready) — full box cleanup + ALGO reclaim ──
 
   /**
-   * Delete a deployed period app. Admin-only and only while the period is not ready (the
-   * contract's deleteApplication baremethod inner-calls registry.verifyAdmin, then enforces
-   * !ready). On deletion the period inner-calls registry.removePeriodSummary to drop its summary
-   * box, and the AVM closes the period app account and sends its residual ALGO to the deleting
-   * sender, so withdraw any meaningful balance first.
+   * Delete a deployed period app and reclaim ALL of its box min-balance. Admin-only and only while
+   * the period is not ready (the contract's deleteApplication baremethod inner-calls
+   * registry.verifyAdmin, then enforces !ready).
+   *
+   * Deleting an app does NOT delete its boxes — the box MBR would be locked forever — so this first
+   * clears every per-topic body box ('T'+index) in batches of {@link MAX_BOX_REFS_PER_TXN} (the AVM
+   * box-reference limit), then the final delete deletes the always-present option/vote boxes
+   * ('o','t') and the optional period body ('P'), inner-calls registry.removePeriodSummary to drop
+   * the summary box, and sweeps the whole app-account balance (base + freed box MBR) back to the
+   * deleting admin via closeRemainderTo. No prior withdrawal is needed.
    */
   @requireWriter()
   @wrapErrors()
-  makeDeletePeriodAppTxns({
-    periodId: _periodId,
+  async deletePeriodApp({
+    periodId,
     note,
-    client,
-    builder,
   }: {
     periodId: bigint | number;
-    client: GGovPeriodClient;
-  } & PeriodMethodBuilderArgs) {
-    builder = builder ?? client.newGroup();
-    return builder.delete.bare({
-      note,
-      // 1 inner verifyAdmin (checkAdminCaller) + 1 inner removePeriodSummary
-      extraFee: (2000).microAlgo(),
-    });
-  }
+    note?: string | Uint8Array;
+  }): Promise<void> {
+    const client = await this.getPeriodWriteClient(periodId);
+    const appId = await this.getPeriodAppId(periodId);
 
-  deletePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeDeletePeriodAppTxns });
+    // Enumerate existing boxes. 'o'/'t' (options/votes) are always present; 'P' is the optional
+    // period body; each topic that uploaded a body has a 'T'+uint32 box. 'v' (vote records) cannot
+    // exist while !ready. Anything else is unexpected — refuse rather than silently strand its MBR.
+    const topicBodyIndexes: number[] = [];
+    for (const { nameRaw } of await this.algorand.app.getBoxNames(appId)) {
+      const tag = nameRaw[0];
+      if (tag === 0x54 /* 'T' */ && nameRaw.length === 5) {
+        topicBodyIndexes.push(new DataView(nameRaw.buffer, nameRaw.byteOffset, nameRaw.byteLength).getUint32(1));
+      } else if (tag === 0x6f /* 'o' */ || tag === 0x74 /* 't' */ || (tag === 0x50 /* 'P' */ && nameRaw.length === 1)) {
+        // handled by the final delete txn
+      } else {
+        throw new Error(
+          `Period ${periodId} (app ${appId}) has an unexpected box 0x${[...nameRaw].map((b) => b.toString(16).padStart(2, "0")).join("")}; refusing to delete`,
+        );
+      }
+    }
+
+    // Paged cleanup of topic-body boxes: <=8 box references per txn, <=MAX_GROUP_SIZE txns per group.
+    const groups = chunk(chunk(topicBodyIndexes, MAX_BOX_REFS_PER_TXN), MAX_GROUP_SIZE);
+    for (const group of groups) {
+      let builder: GGovPeriodComposer<any> = client.newGroup();
+      for (const indexes of group) {
+        builder = builder.deleteTopicBodies({
+          args: { topicIndexes: indexes.map((i) => BigInt(i)) },
+          boxReferences: indexes.map(topicBodyBoxName),
+          note,
+          // 1 inner verifyAdmin (checkAdminCaller)
+          extraFee: (1000).microAlgo(),
+        });
+      }
+      await builder.send();
+    }
+
+    // Final delete: deletes 'o'/'t'/'P' (all referenced — box_del requires the ref even when the box
+    // is absent), drops the registry summary, and sweeps the balance via closeRemainderTo.
+    await client
+      .newGroup()
+      .delete.bare({
+        note,
+        boxReferences: [asciiBoxName("o"), asciiBoxName("t"), asciiBoxName("P")],
+        // 1 inner verifyAdmin (checkAdminCaller) + 1 inner removePeriodSummary + 1 inner sweep payment
+        extraFee: (3000).microAlgo(),
+      })
+      .send();
+  }
 
   // ── Period: withdrawALGO (admin-only, via registry C2C verifyAdmin) ──
 
