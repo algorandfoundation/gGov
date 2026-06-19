@@ -47,7 +47,6 @@ const REBUILD_HINT = [
   'Rebuild the contracts and SDKs so the generated clients match:',
   '  pnpm --filter smart_contracts build',
   '  pnpm --filter ggov-sdk build',
-  '  pnpm --filter xgov-delegator-sdk build',
 ].join('\n')
 
 export class GeneratedClientsOutOfSyncError extends Error {
