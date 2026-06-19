@@ -9,14 +9,17 @@
  * Producing fresh blocks drags the chain clock *forward* to now, but block timestamps are
  * monotonic non-decreasing, so blocks can never move the clock *backward*. Hence:
  *   - chain BEHIND wall-clock  -> fixable by spamming txns (this script)
- *   - chain AHEAD of wall-clock -> not fixable; LocalNet must be reset
+ *   - chain AHEAD of wall-clock -> not fixable; LocalNet must be reset.
+ *
+ * Chain ahead of wall clock is not a frequent concern, would normally only happen if
+ * the host machine moved its clock backwards significantly after transacting on localnet.
  *
  * Reused by the vitest globalSetup and runnable manually:  pnpm --filter smart_contracts sync-clock
  */
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 /** Drift magnitude (seconds) at/under which we auto-sync; above this we hard-fail. */
 export const LOCALNET_CLOCK_FAIL_THRESHOLD_S = 24 * 60 * 60 // 24 hours
@@ -46,6 +49,8 @@ export interface SyncClockOptions {
 }
 
 export interface SyncClockResult {
+  /** What was done: nothing (already in tolerance), genesis left untouched, or blocks minted. */
+  action: 'already-synced' | 'left-at-genesis' | 'synced'
   /** Drift (now - chainTs) before syncing. Positive = chain behind wall-clock. */
   initialDriftSeconds: number
   /** Drift after syncing. */
@@ -55,7 +60,7 @@ export interface SyncClockResult {
 
 const nowSeconds = () => Math.floor(Date.now() / 1000)
 
-export async function getLatestBlockTimestamp(algorand: AlgorandClient): Promise<number> {
+async function getLatestBlock(algorand: AlgorandClient): Promise<{ round: bigint; timestamp: number }> {
   const { algod } = algorand.client
   const { lastRound } = await algod.status().do()
   const {
@@ -63,7 +68,11 @@ export async function getLatestBlockTimestamp(algorand: AlgorandClient): Promise
       header: { timestamp },
     },
   } = await algod.block(lastRound).headerOnly(true).do()
-  return Number(timestamp)
+  return { round: lastRound, timestamp: Number(timestamp) }
+}
+
+async function getLatestBlockTimestamp(algorand: AlgorandClient): Promise<number> {
+  return (await getLatestBlock(algorand)).timestamp
 }
 
 function formatDrift(seconds: number): string {
@@ -87,12 +96,30 @@ export async function syncLocalNetClock(opts: SyncClockOptions = {}): Promise<Sy
   const maxBlocks = opts.maxBlocks ?? MAX_SYNC_POLL_BLOCKS
   const log = opts.log ?? (() => {})
 
-  let chainTs = await getLatestBlockTimestamp(algorand)
+  const latest = await getLatestBlock(algorand)
+  let chainTs = latest.timestamp
   const initialDrift = nowSeconds() - chainTs
 
   // Already in sync.
   if (Math.abs(initialDrift) <= toleranceS) {
-    return { initialDriftSeconds: initialDrift, finalDriftSeconds: initialDrift, blocksProduced: 0 }
+    return {
+      action: 'already-synced',
+      initialDriftSeconds: initialDrift,
+      finalDriftSeconds: initialDrift,
+      blocksProduced: 0,
+    }
+  }
+
+  // A freshly reset LocalNet is at genesis (round 0, timestamp 0 ≈ 1970). Leave it untouched at
+  // block 0 — the first real transaction will stamp its block with wall-clock time, so minting a
+  // sync block here would only burn a round.
+  if (latest.round === 0n) {
+    return {
+      action: 'left-at-genesis',
+      initialDriftSeconds: initialDrift,
+      finalDriftSeconds: initialDrift,
+      blocksProduced: 0,
+    }
   }
 
   // Too far gone to auto-correct.
@@ -141,7 +168,7 @@ export async function syncLocalNetClock(opts: SyncClockOptions = {}): Promise<Sy
     const drift = nowSeconds() - chainTs
     if (Math.abs(drift) <= toleranceS) {
       log(`Synced LocalNet clock in ${blocksProduced} block(s) (was ${formatDrift(initialDrift)}).`)
-      return { initialDriftSeconds: initialDrift, finalDriftSeconds: drift, blocksProduced }
+      return { action: 'synced', initialDriftSeconds: initialDrift, finalDriftSeconds: drift, blocksProduced }
     }
   }
 
@@ -157,11 +184,13 @@ const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === re
 if (invokedDirectly) {
   syncLocalNetClock({ log: (m) => console.log(m) })
     .then((r) => {
-      console.log(
-        r.blocksProduced === 0
-          ? `LocalNet clock already in sync (${r.initialDriftSeconds}s drift).`
-          : `Done. Final drift ${r.finalDriftSeconds}s after ${r.blocksProduced} block(s).`,
-      )
+      if (r.action === 'synced') {
+        console.log(`Done. Final drift ${r.finalDriftSeconds}s after ${r.blocksProduced} block(s).`)
+      } else if (r.action === 'already-synced') {
+        console.log(`LocalNet clock already in sync (${r.initialDriftSeconds}s drift).`)
+      } else {
+        console.log('LocalNet is freshly reset (genesis); leaving at block 0 (first txn will set wall-clock).')
+      }
       process.exit(0)
     })
     .catch((err) => {
