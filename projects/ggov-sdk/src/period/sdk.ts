@@ -29,16 +29,10 @@ export class GGovSDK extends GGovReaderSDK {
   constructor({ writerAccount, ...rest }: ConstructorArgs) {
     super(rest);
     this.writerAccount = writerAccount;
-    if (writerAccount) {
-      this.registry = new GGovRegistrySDK({
-        algorand: this.algorand,
-        concurrency: this.concurrency,
-        debug: this.debug,
-        registryAppId: this.registryAppId,
-        readerAccount: undefined,
-        writerAccount,
-      });
-    }
+    this.registry = new GGovRegistrySDK({
+      writerAccount,
+      ...rest,
+    });
   }
 
   // ── Period client cache ──────────────────────────────────────────
