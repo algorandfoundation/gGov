@@ -167,6 +167,9 @@ cython_debug/
 # NPM
 node_modules
 
+# vibekit / agents 
+.mcp.json
+
 
 /TODO
 /BACKLOG
