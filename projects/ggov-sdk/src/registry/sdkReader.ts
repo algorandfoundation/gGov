@@ -373,6 +373,7 @@ export class GGovRegistryReaderSDK {
    */
   @wrapErrors()
   async getAllPeriodSummaries(): Promise<PeriodSummaryWithId[]> {
+    // TODO change to use firstPeriodId to lastPeriodId, rather than assuming 1..lastPeriodId
     const { lastPeriodId } = await this.getGlobalState();
     const count = Number(lastPeriodId ?? 0);
     if (count === 0) return [];
