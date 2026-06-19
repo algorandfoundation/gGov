@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   esbuild: {},
   test: {
+    globalSetup: ['./vitest.globalSetup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
     coverage: {
