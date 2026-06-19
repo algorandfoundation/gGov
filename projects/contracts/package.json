@@ -13,6 +13,8 @@
     "format": "prettier --write .",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
+    "sync-clock": "tsx scripts/sync-localnet-clock.ts",
+    "check-clients": "tsx scripts/check-generated-clients.ts",
     "check-types": "tsc --noEmit"
   },
   "engines": {
