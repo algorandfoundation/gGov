@@ -2,7 +2,7 @@ import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
 import { ALGORAND_ZERO_ADDRESS_STRING, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
-import { CommitteeMetadata, GGovRegistryClient, GGovRegistryComposer, GGovAccount, SuperboxMeta } from "../generated/GGovRegistryClient";
+import { CommitteeMetadata, GGovRegistryClient, GGovRegistryComposer, GGovAccount, SuperboxMeta, GGovPeriodSummary, APP_SPEC } from "../generated/GGovRegistryClient";
 import { getConstructorConfig } from "../networkConfig";
 import { CommitteeId, AccountWithVotes, ReaderConstructorArgs, STORED_XGOV_BYTE_LENGTH, StoredXGov, XGovCommitteeFile } from "./types";
 import { chunk } from "../util/chunk";
@@ -11,11 +11,19 @@ import { committeeIdToRaw } from "../util/comitteeId";
 import { errorTransformer, wrapErrors } from "../util/wrapErrors";
 import { SIMULATE_PARAMS } from "../util/increaseBudget";
 
+/** A registry period summary paired with its periodId. */
+export interface PeriodSummaryWithId {
+  id: bigint;
+  summary: GGovPeriodSummary;
+}
+
 const PARTIAL_COMMITTEE_SIMULATE_CALLS = 16; // 16 simulate calls per fast-get
 const PARTIAL_COMMITTEE_FIRST_DATA_PAGE_LENGTH = 6; // first fast-get call retrieves 6 data pages, because 2x refs needed for sb meta + committee meta
 const PARTIAL_COMMITTEE_SECOND_DATA_PAGE_LENGTH = 7; // subsequent calls retrieve 7 data pages, because 1x ref needed for sb meta
 
 export class GGovRegistryReaderSDK {
+  static APP_SPEC = APP_SPEC;
+
   public algorand: AlgorandClient;
   public appId: bigint;
   public readClient: GGovRegistryClient;
@@ -225,7 +233,7 @@ export class GGovRegistryReaderSDK {
       builder = builder.logCommitteeMetadata({ args: { committeeIds: committeeIdChunk } });
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) => {
       const meta = getABIDecodedValue(new Uint8Array(log!), "CommitteeMetadata", this.readClient.appSpec.structs) as CommitteeMetadata;
       return meta.periodEnd === 0 ? null : meta;
@@ -338,9 +346,92 @@ export class GGovRegistryReaderSDK {
       builder = builder.logAccounts({ args: { accounts: accountChunk } });
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
       getABIDecodedValue(new Uint8Array(log!), "GGovAccount", this.readClient.appSpec.structs) as GGovAccount,
     );
+  }
+
+  // ── Period summaries (registry-stored) ───────────────────────────
+
+  /** Fetch per-period summaries (appId, votingStart, votingEnd, numTopics) in one round trip. */
+  @chunked(128)
+  @wrapErrors()
+  async getPeriodSummaries(periodIds: bigint[]): Promise<GGovPeriodSummary[]> {
+    if (periodIds.length === 0) return [];
+    const builder = this.readClient.newGroup().logPeriodSummaries({ args: { periodIds } });
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
+    return logs.map((log) =>
+      getABIDecodedValue(new Uint8Array(log!), "GGovPeriodSummary", this.readClient.appSpec.structs) as GGovPeriodSummary,
+    );
+  }
+
+  /**
+   * All live period summaries on the registry, paired with their periodId.
+   * Enumerates 1..lastPeriodId and filters out deleted periods (summary.appId === 0).
+   */
+  @wrapErrors()
+  async getAllPeriodSummaries(): Promise<PeriodSummaryWithId[]> {
+    const { lastPeriodId } = await this.getGlobalState();
+    const count = Number(lastPeriodId ?? 0);
+    if (count === 0) return [];
+    const ids = Array.from({ length: count }, (_, i) => BigInt(i + 1));
+    const summaries = await this.getPeriodSummaries(ids);
+    return ids
+      .map((id, i) => ({ id, summary: summaries[i] }))
+      .filter(({ summary }) => summary && BigInt(summary.appId) !== 0n);
+  }
+
+  // ── Delegations ──────────────────────────────────────────────────
+
+  @wrapErrors()
+  async getDelegation(account: string): Promise<{ delegatee: string; exists: boolean }> {
+    const { return: result } = await this.readClient.send.getDelegation({ args: { account } });
+    return { delegatee: result![0], exists: result![1] };
+  }
+
+  /** Reverse lookup: addresses that have delegated to $delegatee (empty if none), one per log line. */
+  @wrapErrors()
+  async getDelegators(delegatee: string): Promise<string[]> {
+    const builder = this.readClient.newGroup().logDelegators({ args: { delegatee } });
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
+    // A confirmation with no logs surfaces as an undefined `logs` field — coalesce so the empty
+    // reverse list (box deleted) yields [] rather than a single undefined entry.
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
+    return logs.map((log) =>
+      getABIDecodedValue(new Uint8Array(log!), "address", this.readClient.appSpec.structs) as string,
+    );
+  }
+
+  @chunked(128)
+  @wrapErrors()
+  async getDelegations(accounts: string[]): Promise<string[]> {
+    if (accounts.length === 0) return [];
+    const builder = this.readClient.newGroup().logDelegations({ args: { accounts } });
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
+    return logs.map((log) =>
+      getABIDecodedValue(new Uint8Array(log!), "address", this.readClient.appSpec.structs) as string,
+    );
+  }
+
+  /** Get all delegations by scanning delegation box keys and batch-fetching delegatees. */
+  async getAllDelegations(): Promise<Map<string, string>> {
+    const boxNames = await this.algorand.app.getBoxNames(this.appId);
+    const accounts = boxNames
+      .filter(({ nameRaw }) => nameRaw[0] === 0x64 && nameRaw.length === 33) // 'd' prefix + 32-byte address
+      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString());
+    if (accounts.length === 0) return new Map();
+    const delegatees = await this.getDelegations(accounts);
+    return new Map(accounts.map((account, i) => [account, delegatees[i]]));
+  }
+
+  /** List committee IDs registered on the registry (box-name scan). */
+  async getCommitteeIds(): Promise<Uint8Array[]> {
+    const boxNames = await this.algorand.app.getBoxNames(this.appId);
+    return boxNames
+      .filter(({ nameRaw }) => nameRaw[0] === 99 && nameRaw.length === 33) // 'c' prefix
+      .map(({ nameRaw }) => nameRaw.slice(1));
   }
 }

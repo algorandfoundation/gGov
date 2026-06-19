@@ -66,7 +66,7 @@ export class XGovDelegatorReaderSDK {
       builder = builder.logCommitteeMetadata({ args: { committeeIds: committeeIdChunk } });
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
       getABIDecodedValue(new Uint8Array(log!), "DelegatorCommittee", this.readClient.appSpec.structs) as DelegatorCommittee
     );
@@ -81,7 +81,7 @@ export class XGovDelegatorReaderSDK {
     if (proposalIds.length === 0) return [];
     const builder = this.readClient.newGroup().logProposalMetadata({ args: { proposalIds } });
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
+    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
       getABIDecodedValue(new Uint8Array(log!), "DelegatorProposal", this.readClient.appSpec.structs) as DelegatorProposal
     );

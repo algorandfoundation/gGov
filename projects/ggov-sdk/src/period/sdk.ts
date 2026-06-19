@@ -1,9 +1,7 @@
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
 import { Address } from "algosdk";
-import { GGovRegistrySDK, SendResult, createTxnExecutor, executeTxns } from "../registry";
-import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from "../generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriodComposer, GGovPeriodFactory } from "../generated/GGovPeriodClient";
+import { GGovRegistrySDK, SendResult, executeTxns } from "../registry";
+import { GGovPeriodClient, GGovPeriodComposer } from "../generated/GGovPeriodClient";
 import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
@@ -11,7 +9,6 @@ import {
   CommonMethodBuilderArgs,
   ConstructorArgs,
   GGovPeriodContractArgs,
-  GGovRegistryContractArgs,
   PeriodMethodBuilderArgs,
   SenderWithSigner,
   validateBodyJson,
@@ -20,26 +17,11 @@ import { committeeIdToRaw } from "../util/comitteeId";
 import { chunk } from "../util/chunk";
 import { requireWriter } from "../util/requiresSender";
 import { wrapErrors, wrapErrorsInternal } from "../util/wrapErrors";
-
-/** Algorand atomic group transaction limit. */
-const MAX_GROUP_SIZE = 16;
-
-/**
- * Default MBR (µAlgo) sent from operator to registry per createPeriod call.
- * Covers the spawned period app's account MBR: 100k base + 7*28.5k global ints +
- * 3*50k global bytes + 3*100k extra pages ≈ 750k. 1 ALGO buys a healthy buffer
- * and keeps the math stable if the period schema grows into its reserved slots.
- */
-const DEFAULT_PERIOD_MBR_MICROALGOS = 1_000_000n;
-
-/** Body chunk size for partial-upload txns. */
-const BODY_CHUNK_BYTES = 2000;
+import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES } from "../constants";
 
 export class GGovSDK extends GGovReaderSDK {
   public writerAccount?: SenderWithSigner;
-  /** Registry write client. */
-  public registryWriteClient?: GGovRegistryClient;
-  /** Composed registry SDK (writer-enabled). Provides committee/operator/delegation writes. */
+  /** Composed registry SDK (writer-enabled). Reach registry writes/reads via `sdk.registry.X`. */
   declare public registry: GGovRegistrySDK;
   /** periodId → cached writer client. */
   protected periodWriteClientCache: Map<bigint, GGovPeriodClient> = new Map();
@@ -47,17 +29,10 @@ export class GGovSDK extends GGovReaderSDK {
   constructor({ writerAccount, ...rest }: ConstructorArgs) {
     super(rest);
     this.writerAccount = writerAccount;
-    if (writerAccount) {
-      this.registry = new GGovRegistrySDK({
-        algorand: this.algorand,
-        concurrency: this.concurrency,
-        debug: this.debug,
-        registryAppId: this.registryAppId,
-        readerAccount: undefined,
-        writerAccount,
-      });
-      this.registryWriteClient = this.registry.writeClient!;
-    }
+    this.registry = new GGovRegistrySDK({
+      writerAccount,
+      ...rest,
+    });
   }
 
   // ── Period client cache ──────────────────────────────────────────
@@ -79,15 +54,6 @@ export class GGovSDK extends GGovReaderSDK {
   }
 
   // ── Executor factories ───────────────────────────────────────────
-
-  /** Registry-side executor (single registry client). */
-  private makeRegistryTxnExecutor = createTxnExecutor(
-    this,
-    () => this.registryWriteClient!.newGroup(),
-    wrapErrorsInternal,
-    () => this.writerAccount,
-    () => this.algorand.client.algod,
-  );
 
   /**
    * Period-side executor factory. Resolves the per-period client at call time, binds the
@@ -120,192 +86,15 @@ export class GGovSDK extends GGovReaderSDK {
     };
   };
 
-  // ── Pass-throughs to composed registry SDK ───────────────────────
-  // Inherited registry admin writes. Wrap to keep call signatures stable.
+  // ── Registry passthrough (end-user delegation write) ─────────────
+  // setVotingAccount is the one registry write an end user performs — delegating or clearing
+  // their OWN voting power — so it's forwarded for ergonomics. Admin/operator/bootstrap writes
+  // (setOperator, setAdmin, addPeriod, committee ingest, withdrawALGO, uploadPeriodApprovalProgram,
+  // createRegistry, …) stay on `this.registry`. The end-user delegation READS (getDelegation,
+  // getDelegators) are forwarded on GGovReaderSDK and inherited here.
 
-  uploadCommitteeFile = (...args: Parameters<GGovRegistrySDK["uploadCommitteeFile"]>) =>
-    this.registry.uploadCommitteeFile(...args);
-  registerCommittee = (args: Parameters<GGovRegistrySDK["registerCommittee"]>[0]) =>
-    this.registry.registerCommittee(args);
-  unregisterCommittee = (args: Parameters<GGovRegistrySDK["unregisterCommittee"]>[0]) =>
-    this.registry.unregisterCommittee(args);
-  ingestXGovs = (args: Parameters<GGovRegistrySDK["ingestXGovs"]>[0]) => this.registry.ingestXGovs(args);
-  uningestXGovs = (args: Parameters<GGovRegistrySDK["uningestXGovs"]>[0]) => this.registry.uningestXGovs(args);
-  uningestCommitteeXGovs = (args: Parameters<GGovRegistrySDK["uningestCommitteeXGovs"]>[0]) =>
-    this.registry.uningestCommitteeXGovs(args);
-  setXGovRegistryApp = (args: Parameters<GGovRegistrySDK["setXGovRegistryApp"]>[0]) =>
-    this.registry.setXGovRegistryApp(args);
-  setAdmin = (args: Parameters<GGovRegistrySDK["setAdmin"]>[0]) => this.registry.setAdmin(args);
-  getAdmin = () => this.registry.getAdmin();
-
-  // ── Registry: setOperator ────────────────────────────────────────
-
-  @requireWriter()
-  @wrapErrors()
-  makeSetOperatorTxns({
-    account,
-    note,
-    builder,
-  }: GGovRegistryContractArgs["setOperator(address)void"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    return builder.setOperator({ args: { account }, note });
-  }
-
-  setOperator = this.makeRegistryTxnExecutor({ maker: this.makeSetOperatorTxns });
-
-  // ── Registry: delegation ─────────────────────────────────────────
-
-  @requireWriter()
-  @wrapErrors()
-  makeMirrorXGovDelegationTxns({
-    account,
-    note,
-    builder,
-  }: GGovRegistryContractArgs["mirrorXGovDelegation(address)void"] & CommonMethodBuilderArgs) {
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    return builder.mirrorXGovDelegation({ args: { account }, note });
-  }
-
-  mirrorXGovDelegation = this.makeRegistryTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns });
-
-  /**
-   * Set (or clear) an account's voting-power delegation. ABI-compatible with the xGov registry's
-   * `set_voting_account`:
-   *  - delegate: `setVotingAccount({ votingAddress })`
-   *  - clear (vote for self): `setVotingAccount({})` (omitting `votingAddress`)
-   *  - manage another account (as its current delegatee): `setVotingAccount({ account, votingAddress })`
-   *
-   * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
-   */
-  @requireWriter()
-  @wrapErrors()
-  makeSetVotingAccountTxns({
-    votingAddress,
-    account,
-    note,
-    sender,
-    builder,
-  }: { votingAddress?: string; account?: string } & CommonMethodBuilderArgs & { sender?: string }) {
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    const self = sender ?? String(this.writerAccount!.sender);
-    const xgovAddress = account ?? self;
-    const target = votingAddress ?? xgovAddress; // omitted target == clear ("vote for self")
-    const opts: any = { args: { xgovAddress, votingAddress: target }, note };
-    if (sender) {
-      opts.sender = sender;
-      opts.signer = this.algorand.account.getSigner(sender);
-    }
-    return builder.setVotingAccount(opts);
-  }
-
-  setVotingAccount = this.makeRegistryTxnExecutor({ maker: this.makeSetVotingAccountTxns });
-
-  // ── Registry: uploadPeriodApprovalPartial (admin-only bytecode upload) ──
-
-  @requireWriter()
-  @wrapErrors()
-  makeUploadPeriodApprovalPartialTxns({
-    startOffset,
-    data,
-    last,
-    note,
-    builder,
-  }: {
-    startOffset: bigint | number;
-    data: Uint8Array;
-    last: boolean;
-  } & CommonMethodBuilderArgs) {
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    return builder.uploadPeriodApprovalPartial({
-      args: { startOffset, data, last },
-      note,
-    });
-  }
-
-  uploadPeriodApprovalPartial = this.makeRegistryTxnExecutor({
-    maker: this.makeUploadPeriodApprovalPartialTxns,
-  });
-
-  /** Upload the full GGovPeriod approval bytecode, chunked into groups of up to 16 txns. */
-  @requireWriter()
-  @wrapErrors()
-  async uploadPeriodApprovalProgram({
-    bytecode,
-    note,
-  }: {
-    bytecode: Uint8Array;
-    note?: string | Uint8Array;
-  }): Promise<void> {
-    const chunks = chunk(Array.from(bytecode), BODY_CHUNK_BYTES);
-    const groups = chunk(
-      chunks.map((c, i) => ({ index: i, data: c })),
-      MAX_GROUP_SIZE,
-    );
-    for (const group of groups) {
-      let builder: GGovRegistryComposer<any> = this.registryWriteClient!.newGroup();
-      for (const { index, data: chunkData } of group) {
-        const isLast = index === chunks.length - 1;
-        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
-        builder = await this.makeUploadPeriodApprovalPartialTxns({
-          startOffset: index * BODY_CHUNK_BYTES,
-          data: new Uint8Array(chunkData),
-          last: isLast,
-          note,
-          builder,
-        });
-      }
-      await builder.send();
-    }
-  }
-
-  // ── Registry: addPeriod (paired payment + createPeriod) ──────────
-
-  @requireWriter()
-  @wrapErrors()
-  async makeAddPeriodTxns({
-    committeeId,
-    votingStart,
-    votingEnd,
-    mbrAmount,
-    note,
-    builder,
-  }: {
-    committeeId: CommitteeId;
-    votingStart: bigint | number;
-    votingEnd: bigint | number;
-    mbrAmount?: bigint | number;
-  } & CommonMethodBuilderArgs) {
-    const writer = this.writerAccount!;
-    const mbr = BigInt(mbrAmount ?? DEFAULT_PERIOD_MBR_MICROALGOS);
-    const mbrPayment = await this.algorand.createTransaction.payment({
-      sender: writer.sender,
-      receiver: this.registryWriteClient!.appAddress,
-      amount: { microAlgo: mbr } as any,
-    } as any);
-    builder = builder ?? this.registryWriteClient!.newGroup();
-    return builder.createPeriod({
-      args: {
-        committeeId: committeeIdToRaw(committeeId),
-        votingStart,
-        votingEnd,
-        mbrPayment,
-      },
-      note,
-      extraFee: (3000).microAlgo(),
-    });
-  }
-
-  addPeriod = this.makeRegistryTxnExecutor<typeof this.makeAddPeriodTxns, bigint>({
-    maker: this.makeAddPeriodTxns,
-    returnTransformer: (result) => {
-      const returns = (result as any).returns ?? [];
-      const tup = returns[returns.length - 1] ?? returns[0];
-      const periodId = BigInt(Array.isArray(tup) ? tup[0] : tup);
-      const newAppId = BigInt(Array.isArray(tup) ? tup[1] : 0);
-      if (newAppId !== 0n) this.periodAppCache.set(periodId, newAppId);
-      return periodId;
-    },
-  });
+  /** Delegate (or clear) the signer's own voting power. See GGovRegistrySDK.setVotingAccount. */
+  setVotingAccount = (args: Parameters<GGovRegistrySDK["setVotingAccount"]>[0]) => this.registry.setVotingAccount(args);
 
   // ── Period: editPeriod ───────────────────────────────────────────
 
@@ -716,74 +505,6 @@ export class GGovSDK extends GGovReaderSDK {
   }
 
   withdrawPeriodALGO = this.makePeriodTxnExecutor({ maker: this.makeWithdrawPeriodALGOTxns });
-
-  // ── Bootstrap: deploy + fund + upload approval bytecode + optional setup ──
-
-  /**
-   * Deploy a fresh `GGovRegistry` app, seed its MBR, upload the GGovPeriod approval
-   * bytecode into the registry's approval box, and optionally configure the xGov registry
-   * app id and operator account. Returns the writer-enabled SDK bound to the new app.
-   *
-   * The period bytecode is compiled at runtime from `GGovPeriodFactory`, so the version
-   * uploaded matches the version exported by this `ggov-sdk` build.
-   */
-  static async createRegistry({
-    algorand,
-    deployer,
-    operatorAccount,
-    xGovRegistryAppId,
-    initialFundingAlgos,
-    update = false,
-  }: {
-    algorand: AlgorandClient;
-    deployer: SenderWithSigner;
-    operatorAccount?: string | Address;
-    xGovRegistryAppId?: bigint | number;
-    initialFundingAlgos?: bigint | number;
-    update?: boolean
-  }): Promise<{ sdk: GGovSDK; appClient: GGovRegistryClient }> {
-    const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-      defaultSender: deployer.sender,
-      defaultSigner: deployer.signer,
-    });
-    const { appClient } = await factory.deploy({
-      onUpdate: update ? "update" : "append",
-      onSchemaBreak: update ? "fail" : "append",
-    });
-
-    // Seed the registry's account: covers base MBR + 1 approval box (~3.3 ALGO at 8KB).
-    const fundingAlgos = BigInt(initialFundingAlgos ?? 10n);
-    await algorand.send.payment({
-      sender: deployer.sender,
-      receiver: appClient.appAddress,
-      amount: fundingAlgos.algo(),
-    });
-
-    // Compile the current GGovPeriod approval bytecode (no app deployed; just bytes).
-    const periodFactory = algorand.client.getTypedAppFactory(GGovPeriodFactory, {
-      defaultSender: deployer.sender,
-      defaultSigner: deployer.signer,
-    });
-    const compiled = await periodFactory.appFactory.compile();
-
-    const sdk = new GGovSDK({
-      algorand,
-      registryAppId: appClient.appId,
-      writerAccount: deployer,
-    });
-
-    await sdk.uploadPeriodApprovalProgram({ bytecode: compiled.approvalProgram });
-
-    if (xGovRegistryAppId !== undefined) {
-      await sdk.setXGovRegistryApp({ appId: BigInt(xGovRegistryAppId) });
-    }
-    if (operatorAccount !== undefined) {
-      const op = typeof operatorAccount === "string" ? operatorAccount : operatorAccount.toString();
-      await sdk.setOperator({ account: op });
-    }
-
-    return { sdk, appClient };
-  }
 }
 
 function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {

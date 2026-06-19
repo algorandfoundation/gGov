@@ -112,7 +112,7 @@ export function useAddPeriodMutation() {
       const progress = signingProgress(willUploadBody ? 2 : 1)
       try {
         progress.step('Creating period')
-        const periodId = await sdk!.addPeriod({
+        const periodId = await sdk!.registry.addPeriod({
           committeeId: args.committeeId,
           votingStart: args.votingStart,
           votingEnd: args.votingEnd,

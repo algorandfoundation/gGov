@@ -1,7 +1,7 @@
 import { Address, TransactionSigner } from "algosdk";
 import { SendSingleTransactionResult, SendAtomicTransactionComposerResults } from "@algorandfoundation/algokit-utils/types/transaction";
 
-/** Shared primitives used by both the proposal and registry SDKs. */
+/** Shared primitives used by both the period and registry SDKs. */
 
 export type Network = "localnet" | "testnet" | "mainnet";
 

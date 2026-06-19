@@ -4,9 +4,8 @@ import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing
 import { Account, Address } from 'algosdk'
 import {
   calculateCommitteeId,
-  GGovRegistryFactory,
-  XGovCommitteeFile,
   GGovRegistrySDK,
+  XGovCommitteeFile,
 } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
@@ -31,28 +30,21 @@ export function transformedError(errCode: string) {
 }
 
 export const deployRegistry = async (localnet: AlgorandFixture, account: Address) => {
-  const factory = localnet.algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-    defaultSender: account,
+  // Deploy through the production path (GGovRegistrySDK.createRegistry) so every test exercises the
+  // real deploy config: extraProgramPages: 3, global schema at the AVM cap, and the GGovPeriod
+  // approval bytecode uploaded. createRegistry pays the registry MBR + initial funding out of
+  // the deployer's balance, so top `account` up first (the app address is funded internally).
+  await localnet.algorand.account.ensureFundedFromEnvironment(account, (25).algos())
+  const signer = localnet.algorand.account.getSigner(account)
+
+  const { sdk, appClient } = await GGovRegistrySDK.createRegistry({
+    algorand: localnet.algorand,
+    deployer: { sender: account, signer },
   })
-
-  const { appClient } = await factory.deploy({
-    onUpdate: 'append',
-    onSchemaBreak: 'append',
-  })
-
-  await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (10).algos())
-
-  const sender = account
-  const signer = localnet.algorand.account.getSigner(sender)
 
   return {
     client: appClient,
-    sdk: new GGovRegistrySDK({
-      algorand: localnet.algorand,
-      registryAppId: appClient.appId,
-      writerAccount: { sender, signer },
-      debug: false,
-    }),
+    sdk,
   }
 }
 

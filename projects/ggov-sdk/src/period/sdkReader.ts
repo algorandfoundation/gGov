@@ -1,10 +1,9 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { getABIDecodedValue } from "@algorandfoundation/algokit-utils/types/app-arc56";
-import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
+import { ABIType, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
 import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
 import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriodComposer, GGovPeriod, GGovVoteRecord } from "../generated/GGovPeriodClient";
+import { GGovPeriodClient, GGovPeriodComposer, GGovPeriod, GGovVoteRecord, APP_SPEC as PERIOD_APP_SPEC } from "../generated/GGovPeriodClient";
 import { getConstructorConfig } from "../networkConfig";
 import { BodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
 import { chunked } from "../util/chunked";
@@ -26,11 +25,6 @@ export interface CanVoteResult {
 /** Max `canVote` app calls packed into a single simulate group (Algorand 16-txn group limit). */
 const CAN_VOTE_GROUP_SIZE = 16;
 
-export interface PeriodSummaryWithId {
-  id: bigint;
-  summary: GGovPeriodSummary;
-}
-
 export interface PeriodWithSummary {
   id: bigint;
   period: GGovPeriod;
@@ -38,6 +32,8 @@ export interface PeriodWithSummary {
 }
 
 export class GGovReaderSDK {
+  static PERIOD_APP_SPEC = PERIOD_APP_SPEC;
+
   public algorand: AlgorandClient;
   /** Composed registry reader SDK (committee registry + operator + delegations + periods). */
   public registry: GGovRegistryReaderSDK;
@@ -78,6 +74,15 @@ export class GGovReaderSDK {
   get registryReadClient(): GGovRegistryClient {
     return this.registry.readClient as unknown as GGovRegistryClient;
   }
+
+  // ── Registry passthroughs (end-user delegation reads) ────────────
+  // A voter self-services their own delegation, so these are forwarded for ergonomics (no `.registry`).
+  // Admin/analytics/committee reads (getAllDelegations, getCommitteeIds, getCommittee*, …) stay on `.registry`.
+
+  /** "Who am I delegating my voting power to?" */
+  getDelegation = (...args: Parameters<GGovRegistryReaderSDK["getDelegation"]>) => this.registry.getDelegation(...args);
+  /** "Who has delegated their voting power to me?" */
+  getDelegators = (...args: Parameters<GGovRegistryReaderSDK["getDelegators"]>) => this.registry.getDelegators(...args);
 
   // ── Period app resolution ────────────────────────────────────────
 
@@ -267,29 +272,13 @@ export class GGovReaderSDK {
     }
   }
 
-  // ── Registry reads ──────────────────────────────────────────────
+  // ── Spanning reads (registry summaries + per-period apps) ────────
 
-  /** Fetch per-period summaries (appId, votingStart, votingEnd, numTopics) in one round trip. */
-  @chunked(128)
-  @wrapErrors()
-  async getPeriodSummaries(periodIds: bigint[]): Promise<GGovPeriodSummary[]> {
-    const builder = this.registryReadClient.newGroup().logPeriodSummaries({ args: { periodIds } });
-    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
-    return logs.map((log) =>
-      getABIDecodedValue(
-        new Uint8Array(log!),
-        "GGovPeriodSummary",
-        this.registryReadClient.appSpec.structs,
-      ) as GGovPeriodSummary,
-    );
-  }
-
-  /** Fetch full periods. Routes through summaries → per-period fetches. Preserves prior signature. */
+  /** Fetch full periods. Routes through registry summaries → per-period fetches. */
   @wrapErrors()
   async getPeriods(periodIds: bigint[]): Promise<GGovPeriod[]> {
     // TODO can be made more efficient by logPeriods() on registry
-    const summaries = await this.getPeriodSummaries(periodIds);
+    const summaries = await this.registry.getPeriodSummaries(periodIds);
     return pMap(
       periodIds,
       async (pid, i) => {
@@ -304,28 +293,12 @@ export class GGovReaderSDK {
   }
 
   /**
-   * All live period summaries on the registry, paired with their periodId.
-   * Enumerates 1..lastPeriodId and filters out deleted periods (summary.appId === 0).
-   */
-  @wrapErrors()
-  async getAllPeriodSummaries(): Promise<PeriodSummaryWithId[]> {
-    const { lastPeriodId } = await this.getGlobalState();
-    const count = Number(lastPeriodId ?? 0);
-    if (count === 0) return [];
-    const ids = Array.from({ length: count }, (_, i) => BigInt(i + 1));
-    const summaries = await this.getPeriodSummaries(ids);
-    return ids
-      .map((id, i) => ({ id, summary: summaries[i] }))
-      .filter(({ summary }) => summary && BigInt(summary.appId) !== 0n);
-  }
-
-  /**
-   * All live periods with full data + registry summary. Built on getAllPeriodSummaries,
-   * so deleted periods (summary.appId === 0) are already filtered out.
+   * All live periods with full data + registry summary. Built on the registry's
+   * getAllPeriodSummaries, so deleted periods (summary.appId === 0) are already filtered out.
    */
   @wrapErrors()
   async getAllPeriods(): Promise<PeriodWithSummary[]> {
-    const summaries = await this.getAllPeriodSummaries();
+    const summaries = await this.registry.getAllPeriodSummaries();
     return pMap(
       summaries,
       async ({ id, summary }) => {
@@ -337,61 +310,7 @@ export class GGovReaderSDK {
     );
   }
 
-  @wrapErrors()
-  async getDelegation(account: string): Promise<{ delegatee: string; exists: boolean }> {
-    const { return: result } = await this.registryReadClient.send.getDelegation({ args: { account } });
-    return { delegatee: result![0], exists: result![1] };
-  }
-
-  /** Reverse lookup: addresses that have delegated to $delegatee (empty if none), one per log line. */
-  @wrapErrors()
-  async getDelegators(delegatee: string): Promise<string[]> {
-    const builder = this.registryReadClient.newGroup().logDelegators({ args: { delegatee } });
-    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    // A confirmation with no logs surfaces as an undefined `logs` field — coalesce so the empty
-    // reverse list (box deleted) yields [] rather than a single undefined entry.
-    const logs = confirmations.flatMap(({ logs }) => logs ?? []);
-    return logs.map((log) =>
-      getABIDecodedValue(new Uint8Array(log!), "address", this.registryReadClient.appSpec.structs) as string,
-    );
-  }
-
-  @chunked(128)
-  @wrapErrors()
-  async getDelegations(accounts: string[]): Promise<string[]> {
-    const builder = this.registryReadClient.newGroup().logDelegations({ args: { accounts } });
-    const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap(({ logs }) => logs);
-    return logs.map((log) =>
-      getABIDecodedValue(new Uint8Array(log!), "address", this.registryReadClient.appSpec.structs) as string,
-    );
-  }
-
-  /** Get all delegations by scanning delegation box keys and batch-fetching delegatees. */
-  async getAllDelegations(): Promise<Map<string, string>> {
-    const boxNames = await this.algorand.app.getBoxNames(this.registryAppId);
-    const accounts = boxNames
-      .filter(({ nameRaw }) => nameRaw[0] === 0x64 && nameRaw.length === 33) // 'd' prefix + 32-byte address
-      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString());
-    if (accounts.length === 0) return new Map();
-    const delegatees = await this.getDelegations(accounts);
-    return new Map(accounts.map((account, i) => [account, delegatees[i]]));
-  }
-
-  /** List committee IDs registered on the registry (box-name scan). */
-  async getCommitteeIds(): Promise<Uint8Array[]> {
-    const boxNames = await this.algorand.app.getBoxNames(this.registryAppId);
-    return boxNames
-      .filter(({ nameRaw }) => nameRaw[0] === 99 && nameRaw.length === 33) // 'c' prefix
-      .map(({ nameRaw }) => nameRaw.slice(1));
-  }
-
-  /** Read all registry global state. */
-  getGlobalState() {
-    return this.registry.getGlobalState();
-  }
-
-  /** Read all global state of a period (proposal) app, plus the current network round. */
+  /** Read all global state of a period app, plus the current network round. */
   async getPeriodGlobalState(periodId: bigint | number) {
     const client = await this.getPeriodReadClient(periodId);
     // TODO not atomic, could simulate a logGlobalState to get the current round atomically

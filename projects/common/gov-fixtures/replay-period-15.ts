@@ -79,7 +79,7 @@ const require = createRequire(import.meta.url);
 
 // CJS dist to dodge ESM-source resolution issues (matches deploy-sample-data.ts).
 const { AlgorandClient, microAlgos } = sdkRequire("@algorandfoundation/algokit-utils");
-const { GGovSDK } = require(path.join(sdkDir, "dist/sdk.js"));
+const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, "dist/index.js"));
 const algosdk = sdkRequire("algosdk");
 
 const votingSession = require("./voting-session-period-15-voting-session-1.json");
@@ -281,15 +281,16 @@ async function main() {
     let registryAppAddr: string;
     if (REGISTRY_APP_ID === undefined) {
       console.log("Deploying GGovRegistry...");
-      const created = await GGovSDK.createRegistry({
+      const created = await GGovRegistrySDK.createRegistry({
         algorand,
         deployer: writer,
         operatorAccount: deployer.addr,
         initialFundingAlgos: 10n,
       });
-      sdk = created.sdk;
       registryAppId = created.appClient.appId;
       registryAppAddr = created.appClient.appAddress.toString();
+      // Combined SDK for period ops; registry ops go through sdk.registry.
+      sdk = new GGovSDK({ algorand, registryAppId, writerAccount: writer });
     } else {
       console.log(`Attaching to existing GGovRegistry app ${REGISTRY_APP_ID}...`);
       // The DEPLOYER must already be this registry's operator (and admin for setReady).
@@ -338,14 +339,14 @@ async function main() {
       registryId: 0,
       xGovs: voters.map((address) => ({ address, votes: 1 })),
     };
-    const committeeId = await sdk.uploadCommitteeFile(committeeFile);
+    const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile);
     const committeeHex = Buffer.from(committeeId as Uint8Array).toString("hex");
     console.log(`  Committee ID: ${committeeHex.slice(0, 16)}...`);
 
     // ── Period + topics ─────────────────────────────────────────────────────
     const now = BigInt(Math.floor(Date.now() / 1000));
     console.log("\nCreating period (future window so topics can be added)...");
-    const periodId = await sdk.addPeriod({
+    const periodId = await sdk.registry.addPeriod({
       committeeId,
       votingStart: now + 100_000n,
       votingEnd: now + 200_000n,
