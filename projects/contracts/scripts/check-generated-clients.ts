@@ -3,7 +3,7 @@
  * to the freshly generated clients in the contracts `artifacts/` tree.
  *
  * The SDKs vendor these clients via their `prebuild` step (`cp ../contracts/.../XClient.ts src/generated/`).
- * If the contracts are rebuilt without rebuilding the SDKs (or vice versa), the SDK calls a stale ABI
+ * If the contracts are rebuilt without rebuilding the SDKs, the SDK calls a stale ABI
  * and the contracts test suite silently runs against the wrong client. This check fails fast instead.
  *
  * Reused by the vitest globalSetup and runnable manually:  pnpm --filter smart_contracts check-clients
