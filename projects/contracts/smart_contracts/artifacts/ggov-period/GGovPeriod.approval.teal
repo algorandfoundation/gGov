@@ -4,7 +4,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 2 1 4
-    bytecblock "t" "o" "registryApp" "" 0x151f7c75 0x0000 0x0002 "votingStart" "votingEnd" 0x000000000000000000 "ready" "committeeId" "P" "v" 0x00 "firstVotingRound" "ERR:AUTH" "lastVotingRound" "periodId" "ERR:GT_NO" 0x00020002 "ERR:GT_OB" 0xc8d461ab "ERR:GV_MM" 0x0004 base64(C4EBQw==)
+    bytecblock "t" "o" "registryApp" "" 0x151f7c75 0x0000 0x0002 "votingStart" "votingEnd" 0x000000000000000000 "ready" "committeeId" "P" "v" 0x00 "firstVotingRound" "periodId" "ERR:AUTH" "lastVotingRound" "ERR:GT_NO" 0x00020002 "ERR:GT_OB" 0xc8d461ab "ERR:GV_MM" 0x0004 base64(C4EBQw==)
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:61
@@ -24,7 +24,7 @@ main:
     app_global_put
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:75
     // lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
-    bytec 17 // "lastVotingRound"
+    bytec 18 // "lastVotingRound"
     intc_0 // 0
     app_global_put
 
@@ -58,14 +58,60 @@ main_bare_routing@25:
     err
 
 main_deleteApplication@28:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:516
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:521
     // @baremethod({ allowActions: ['DeleteApplication'] })
     txn ApplicationID
     assert // can only call when not creating
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:518
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:523
     // this.checkAdminCaller()
     callsub checkAdminCaller
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:516
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:524
+    // this.ensureEditable()
+    callsub ensureEditable
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:527-530
+    // compileArc4(GGovRegistryContract).call.removePeriodSummary({
+    //   appId: Application(this.registryApp.value),
+    //   args: [u32(this.periodId.value)],
+    // })
+    itxn_begin
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:528
+    // appId: Application(this.registryApp.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:61
+    // registryApp = GlobalState<uint64>({ initialValue: 0 })
+    bytec_2 // "registryApp"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:528
+    // appId: Application(this.registryApp.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:529
+    // args: [u32(this.periodId.value)],
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:63
+    // periodId = GlobalState<uint64>()
+    bytec 16 // "periodId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:529
+    // args: [u32(this.periodId.value)],
+    app_global_get_ex
+    assert // check GlobalState exists
+    callsub u32
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:527-530
+    // compileArc4(GGovRegistryContract).call.removePeriodSummary({
+    //   appId: Application(this.registryApp.value),
+    //   args: [u32(this.periodId.value)],
+    // })
+    pushbytes 0x99296b25 // method "removePeriodSummary(uint32)void"
+    itxn_field ApplicationArgs
+    itxn_field ApplicationArgs
+    intc_0 // 0
+    itxn_field OnCompletion
+    itxn_field ApplicationID
+    pushint 6 // appl
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    itxn_submit
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:521
     // @baremethod({ allowActions: ['DeleteApplication'] })
     intc_2 // 1
     return
@@ -363,7 +409,7 @@ init_after_if_else@3:
     bnz init_after_if_else@7
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:104
     // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
-    bytec 16 // "ERR:AUTH"
+    bytec 17 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
     log
@@ -385,7 +431,7 @@ init_after_if_else@7:
     btoi
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:63
     // periodId = GlobalState<uint64>()
-    bytec 18 // "periodId"
+    bytec 16 // "periodId"
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:106
     // this.periodId.value = periodId.asUint64()
     swap
@@ -2521,7 +2567,7 @@ vote_after_while@30:
 vote_after_if_else@32:
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:75
     // lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
-    bytec 17 // "lastVotingRound"
+    bytec 18 // "lastVotingRound"
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:381
     // this.lastVotingRound.value = Global.round
     global Round
@@ -3493,7 +3539,7 @@ withdrawALGO:
     bnz withdrawALGO_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:503
     // ensure(receiver !== Global.zeroAddress, errUnauthorized)
-    bytec 16 // "ERR:AUTH"
+    bytec 17 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
     log
@@ -3717,7 +3763,7 @@ checkAdminCaller:
     bnz checkAdminCaller_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:131
     // ensure(ok, errUnauthorized)
-    bytec 16 // "ERR:AUTH"
+    bytec 17 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
     log
@@ -3758,7 +3804,7 @@ syncSummaryToRegistry:
     intc_0 // 0
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:63
     // periodId = GlobalState<uint64>()
-    bytec 18 // "periodId"
+    bytec 16 // "periodId"
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:139
     // u32(this.periodId.value),
     app_global_get_ex

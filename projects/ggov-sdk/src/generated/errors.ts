@@ -53,6 +53,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GP_EX": "Period already exists",
   "ERR:GP_NX": "Period does not exist",
   "ERR:GP_NC": "Period approval program not yet uploaded to registry",
+  "ERR:P_IR": "Cannot rewind period counter: a period exists in the affected id range",
   "ERR:GP_NS": "Voting has not started",
   "ERR:GP_EN": "Voting period ended",
   "ERR:GP_VE": "Cannot modify: votes exist",

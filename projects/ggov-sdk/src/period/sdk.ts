@@ -447,9 +447,11 @@ export class GGovSDK extends GGovReaderSDK {
   // ── Period: deleteApplication (admin-only, via registry C2C verifyAdmin) ──
 
   /**
-   * Delete a deployed period app. Admin-only (the contract's deleteApplication baremethod
-   * inner-calls registry.verifyAdmin). On deletion the AVM closes the period app account and
-   * sends its residual ALGO to the deleting sender, so withdraw any meaningful balance first.
+   * Delete a deployed period app. Admin-only and only while the period is not ready (the
+   * contract's deleteApplication baremethod inner-calls registry.verifyAdmin, then enforces
+   * !ready). On deletion the period inner-calls registry.removePeriodSummary to drop its summary
+   * box, and the AVM closes the period app account and sends its residual ALGO to the deleting
+   * sender, so withdraw any meaningful balance first.
    */
   @requireWriter()
   @wrapErrors()
@@ -465,8 +467,8 @@ export class GGovSDK extends GGovReaderSDK {
     builder = builder ?? client.newGroup();
     return builder.delete.bare({
       note,
-      // 1 inner verifyAdmin (checkAdminCaller)
-      extraFee: (1000).microAlgo(),
+      // 1 inner verifyAdmin (checkAdminCaller) + 1 inner removePeriodSummary
+      extraFee: (2000).microAlgo(),
     });
   }
 

@@ -29,7 +29,7 @@ export function transformedError(errCode: string) {
   return errCode.replace('ERR:', 'Error ')
 }
 
-export const deployRegistry = async (localnet: AlgorandFixture, account: Address) => {
+export const deployRegistry = async (localnet: AlgorandFixture, account: Address, firstPeriodId?: bigint | number) => {
   // Deploy through the production path (GGovRegistrySDK.createRegistry) so every test exercises the
   // real deploy config: extraProgramPages: 3, global schema at the AVM cap, and the GGovPeriod
   // approval bytecode uploaded. createRegistry pays the registry MBR + initial funding out of
@@ -40,6 +40,7 @@ export const deployRegistry = async (localnet: AlgorandFixture, account: Address
   const { sdk, appClient } = await GGovRegistrySDK.createRegistry({
     algorand: localnet.algorand,
     deployer: { sender: account, signer },
+    firstPeriodId,
   })
 
   return {

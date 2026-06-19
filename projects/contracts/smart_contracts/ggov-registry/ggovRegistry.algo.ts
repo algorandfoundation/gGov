@@ -38,6 +38,7 @@ import {
   errOutOfOrder,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
+  errPeriodInRange,
   errTotalMembersOverflow,
   errTotalMembersZero,
   errTotalVotesExceeded,
@@ -567,6 +568,27 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
+   * Set the period-id counter to $newLastPeriodId; the next createPeriod issues
+   * $newLastPeriodId + 1. Admin only.
+   *
+   * Primary use: continue numbering contiguously after a legacy system — set to 15 on a fresh
+   * registry so new periods start at 16. Can also rewind the counter downward.
+   *
+   * Safety: a downward move re-issues the ids in (newLastPeriodId, lastPeriodId]; refuse if any
+   * of those still has a live period box, so an existing period can never be overwritten or
+   * orphaned. Periods are only ever created up to the current lastPeriodId, so ids above it
+   * cannot exist — a forward move therefore reads no boxes.
+   */
+  public rewindLastPeriodId(newLastPeriodId: uint64): void {
+    this.ensureCallerIsAdmin()
+    const cur = this.lastPeriodId.value
+    for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {
+      ensure(!this.periods(u32(id)).exists, errPeriodInRange)
+    }
+    this.lastPeriodId.value = newLastPeriodId
+  }
+
+  /**
    * Update period summary. Called as an inner txn from the period app registered for $periodId
    * (the only path that can mutate the summary). Trust boundary: caller-app ID must match
    * the registered appId for that periodId.
@@ -587,6 +609,20 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     summary.numTopics = numTopics
     summary.ready = ready
     box.value = clone(summary)
+  }
+
+  /**
+   * Remove a period's summary box. Called as an inner txn from the period app registered for
+   * $periodId while it deletes itself, so deleted periods drop out of getAllPeriods/
+   * getAllPeriodSummaries (which filter on appId === 0). Trust boundary: caller-app ID must match
+   * the registered appId for that periodId — same as updatePeriodSummary. The period contract
+   * gates this on admin + !ready before calling (see GGovPeriodContract.deleteApplication).
+   */
+  public removePeriodSummary(periodId: Uint32): void {
+    const box = this.periods(periodId)
+    ensure(box.exists, errGGovPeriodNotExists)
+    ensure(Global.callerApplicationId === box.value.appId, errUnauthorized)
+    box.delete()
   }
 
   /** Get the spawned period app ID for $periodId (0 if unknown). */

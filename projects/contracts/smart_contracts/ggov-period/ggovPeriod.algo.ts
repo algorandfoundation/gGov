@@ -512,12 +512,21 @@ export class GGovPeriodContract extends BaseContract {
     this.checkAdminCaller()
   }
 
-  /** App deletable by registry admin (verified via inner call to registry.verifyAdmin) */
+  /**
+   * App deletable by registry admin (verified via inner call to registry.verifyAdmin), and only
+   * while the period is not ready. Blocking deletion on ready keeps a period that is locked for
+   * voting from being torn down; to delete a ready period the admin must setReady(false) first,
+   * which itself only succeeds when no votes have been cast.
+   */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.checkAdminCaller()
-    // TODO: inner-call the registry to remove this period's summary box so deleted periods
-    // drop out of getAllPeriods/getAllPeriodSummaries (which filter on appId === 0).
-    // Requires a deletePeriod/removePeriod method on GGovRegistryContract.
+    this.ensureEditable()
+    // Inner-call the registry to remove this period's summary box so deleted periods drop out of
+    // getAllPeriods/getAllPeriodSummaries (which filter on appId === 0).
+    compileArc4(GGovRegistryContract).call.removePeriodSummary({
+      appId: Application(this.registryApp.value),
+      args: [u32(this.periodId.value)],
+    })
   }
 }
