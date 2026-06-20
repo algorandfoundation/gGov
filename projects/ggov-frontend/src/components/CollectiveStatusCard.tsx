@@ -1,6 +1,7 @@
 import { Wallet, Network, CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { PeriodStatus } from "@/utils/time";
 
 interface CollectiveStatusCardProps {
   /** Combined voting power across every account the connected wallet can vote with. */
@@ -13,8 +14,11 @@ interface CollectiveStatusCardProps {
   votedAccounts: number;
   /** Whether the wallet holds voting power delegated from other accounts. */
   hasDelegations: boolean;
-  /** Whether the period has ended — switches the banner to a past-tense summary. */
-  periodEnded?: boolean;
+  /**
+   * Period status. Outside the active window (`upcoming`/`ended`) the banner is
+   * a neutral eligible-count summary; during `active` it nudges accounts to vote.
+   */
+  periodStatus: PeriodStatus;
   className?: string;
 }
 
@@ -28,34 +32,40 @@ export default function CollectiveStatusCard({
   eligibleAccounts,
   votedAccounts,
   hasDelegations,
-  periodEnded = false,
+  periodStatus,
   className,
 }: CollectiveStatusCardProps) {
   const pending = eligibleAccounts - votedAccounts;
   const plural = (n: number) => (n !== 1 ? "s" : "");
-  // No voting power → ineligible; otherwise green once every eligible account has
-  // voted. While active, amber prompts the accounts that still need to vote; once
-  // ended, the same row becomes a neutral past-tense tally.
-  const status =
-    eligibleAccounts === 0
+  const isActive = periodStatus === "active";
+  // Outside the active window the banner is a neutral count of how many connected
+  // wallets are eligible. During the active window it tracks the vote drive: red
+  // when nothing is eligible, green once every eligible account has voted, else
+  // amber prompting the accounts that still need to vote.
+  const status = !isActive
+    ? {
+        tone:
+          eligibleAccounts > 0
+            ? "border-success/30 bg-success/10 text-success-foreground"
+            : "border-border bg-muted/40 text-muted-foreground",
+        icon: eligibleAccounts > 0 ? CheckCircle2 : Info,
+        label: `${eligibleAccounts} of ${connectedAccounts} connected wallet${plural(connectedAccounts)} ${
+          periodStatus === "ended" ? "were eligible" : "will be eligible"
+        }`,
+      }
+    : eligibleAccounts === 0
       ? {
           tone: "border-destructive/30 bg-destructive/5 text-destructive",
           icon: XCircle,
-          label: periodEnded ? "Was not eligible to vote" : "Not eligible to vote",
+          label: "Not eligible to vote",
         }
       : pending === 0
         ? { tone: "border-success/30 bg-success/10 text-success-foreground", icon: CheckCircle2, label: "All accounts voted" }
-        : periodEnded
-          ? {
-              tone: "border-border bg-muted/40 text-muted-foreground",
-              icon: Info,
-              label: `${votedAccounts}/${eligibleAccounts} account${plural(eligibleAccounts)} voted`,
-            }
-          : {
-              tone: "border-warning/40 bg-warning/15 text-warning-foreground",
-              icon: AlertTriangle,
-              label: `${pending}/${eligibleAccounts} account${plural(eligibleAccounts)} need to vote`,
-            };
+        : {
+            tone: "border-warning/40 bg-warning/15 text-warning-foreground",
+            icon: AlertTriangle,
+            label: `${pending}/${eligibleAccounts} account${plural(eligibleAccounts)} need to vote`,
+          };
   const StatusIcon = status.icon;
 
   return (
@@ -81,7 +91,7 @@ export default function CollectiveStatusCard({
           <span>{status.label}</span>
         </div>
 
-        {hasDelegations && !periodEnded && (
+        {hasDelegations && isActive && (
           <div className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <Info className="mt-0.5 size-4 shrink-0" />
             <p>You hold voting power delegated from other accounts. Each account is voted for separately.</p>

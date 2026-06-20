@@ -27,15 +27,19 @@ export function ClampedMarkdown({ children, fadeFrom = "from-background", lines 
 
   // Roughly the collapsed height; short descriptions don't need a toggle.
   const isLong = children.length > lines * CHARS_PER_LINE || children.split("\n").length > lines
+  const clamped = isLong && !expanded
 
   return (
     <div className={className}>
+      {/* `flow-root` keeps a block formatting context in both states so the markdown's
+          first-child top margin doesn't collapse out when expanding (which would jump the
+          text). Unlike always-on `overflow-hidden` it doesn't clip wide tables/code. */}
       <div
-        className={!isLong || expanded ? undefined : "relative overflow-hidden"}
-        style={!isLong || expanded ? undefined : { maxHeight: `${lines * LINE_HEIGHT_REM}rem` }}
+        className={cn("flow-root", clamped && "relative overflow-hidden")}
+        style={clamped ? { maxHeight: `${lines * LINE_HEIGHT_REM}rem` } : undefined}
       >
         <MarkdownContent>{children}</MarkdownContent>
-        {isLong && !expanded && (
+        {clamped && (
           <div className={cn("pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t to-transparent", fadeFrom)} />
         )}
       </div>

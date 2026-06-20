@@ -9,6 +9,7 @@ import AccountSelector, { AccountSelectorItem } from "@/components/AccountSelect
 import TopicVoteCard from "@/components/TopicVoteCard";
 import SidebarLayout from "@/components/SidebarLayout";
 import CollectiveStatusCard from "@/components/CollectiveStatusCard";
+import ConnectedWalletsEligibility from "@/components/ConnectedWalletsEligibility";
 import PeriodInfoCard from "@/components/PeriodInfoCard";
 import BackButton from "@/components/BackButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClampedMarkdown } from "@/components/ui/clamped-markdown";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
-import PeriodAppExplorerLink from "@/components/PeriodAppExplorerLink";
+import TechnicalInfoCard from "@/components/TechnicalInfoCard";
 import { formatTimestamp, periodStatus, type PeriodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
@@ -172,7 +173,6 @@ export default function VotePeriodDetail() {
   const status = periodStatus(period.votingStart, period.votingEnd);
   const isActive = status === "active";
   const isUpcoming = status === "upcoming";
-  const isEnded = status === "ended";
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;
 
@@ -258,6 +258,17 @@ export default function VotePeriodDetail() {
   // powers load, so hold the card back until every voter account has resolved.
   const collectiveStatusReady = voterAccounts.every((addr) => xgovPowers[addr] !== undefined);
 
+  // Per-wallet eligibility for the non-active expandable list. Outside the voting
+  // window eligibility is registry voting power (canVote is false for everyone),
+  // and an account is "delegated" when it isn't one of the wallet's own accounts.
+  const walletEligibilityItems = voterAccounts.map((addr) => ({
+    address: addr,
+    votingPower: xgovPowers[addr] ?? 0,
+    eligible: (xgovPowers[addr] ?? 0) > 0,
+    voted: !!voteStatuses[addr],
+    delegated: !walletAddresses.includes(addr),
+  }));
+
   // Eligibility wording: during the active window canVote is authoritative (it
   // also reflects delegation/override rules); outside it canVote returns false
   // for everyone, so fall back to registry voting power.
@@ -312,13 +323,15 @@ export default function VotePeriodDetail() {
         />
       )}
 
-      {activeAddress && (voteRecord || eligibility) && (
+      {activeAddress && !isActive && voterAccounts.length > 0 && collectiveStatusReady && (
+        <ConnectedWalletsEligibility items={walletEligibilityItems} eligibleCount={collectiveEligible} periodStatus={status} />
+      )}
+
+      {activeAddress && isActive && (voteRecord || eligibility) && (
         <div className="text-center text-sm">
           {voteRecord ? (
             <span className="text-muted-foreground">
-              {isActive
-                ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
-                : `Voting closed on ${formatTimestamp(period.votingEnd)}.`}
+              You can change your vote until {formatTimestamp(period.votingEnd)}
             </span>
           ) : (
             <span className={eligibility!.muted ? "text-muted-foreground" : "font-bold"}>
@@ -403,7 +416,7 @@ export default function VotePeriodDetail() {
 
   const sidebar = (
     <div className="space-y-6">
-      {activeAddress && !isUpcoming && (
+      {activeAddress && (
         collectiveStatusReady ? (
           <CollectiveStatusCard
             totalVotingPower={collectiveVotingPower}
@@ -411,7 +424,7 @@ export default function VotePeriodDetail() {
             eligibleAccounts={collectiveEligible}
             votedAccounts={collectiveVoted}
             hasDelegations={allDelegators.length > 0}
-            periodEnded={isEnded}
+            periodStatus={status}
           />
         ) : (
           <Skeleton className="h-40" />
@@ -457,8 +470,8 @@ export default function VotePeriodDetail() {
         votesCast={periodVotesCast}
         eligibleGovernors={eligibleGovernors}
         committeeHref={committeeIdB64 ? `/committees/${committeeIdB64}` : undefined}
-        footer={<PeriodAppExplorerLink periodId={periodId} />}
       />
+      <TechnicalInfoCard periodId={periodId} />
     </div>
   );
 

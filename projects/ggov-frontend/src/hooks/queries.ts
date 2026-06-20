@@ -28,6 +28,7 @@ export const queryKeys = {
   committeeVotingPowers: (account: string) => ['committeeVotingPowers', account] as const,
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
   xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
+  producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
 }
 
 export function useGlobalState() {
@@ -435,6 +436,52 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
       return results
     },
     enabled: !!account,
+  })
+}
+
+/** An account's standing among a committee's producers, ranked by votes (= blocks produced). */
+export type ProducerRank = {
+  /** 1-indexed position by votes (1 = most votes); accounts tied on votes share the same rank. */
+  rank: number
+  /** Total committee members ranked. */
+  totalMembers: number
+  /** The account's own votes. */
+  votes: number
+  /** Smallest p such that the account sits within the top p% of producers (1–100). */
+  topPercentile: number
+}
+
+/**
+ * Rank an account among a committee's producers by votes (= blocks produced),
+ * derived from committee membership. Accounts tied on votes share a rank.
+ * Returns null when the committee has no members or the account isn't one of them.
+ */
+function rankProducer(members: AccountWithVotes[], account: string): ProducerRank | null {
+  if (members.length === 0) return null
+  const mine = members.find((member) => member.account.toString() === account)
+  if (!mine) return null
+  // Standard competition ranking: position is the count of strictly-higher producers, plus one.
+  const rank = members.filter((member) => member.votes > mine.votes).length + 1
+  const topPercentile = Math.max(1, Math.min(100, Math.ceil((rank / members.length) * 100)))
+  return { rank, totalMembers: members.length, votes: mine.votes, topPercentile }
+}
+
+/**
+ * The connected account's producer rank within a committee (by votes = blocks
+ * produced). Derives the standing from committee membership. `null` when the
+ * account isn't a member.
+ */
+export function useProducerRank(committeeIdBase64Url: string | undefined, account: string | null | undefined) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.producerRank(committeeIdBase64Url ?? '', account ?? ''),
+    queryFn: async (): Promise<ProducerRank | null> => {
+      const members = await readerSDK.registry.getCommitteeXGovs(fromBase64Url(committeeIdBase64Url!))
+      return rankProducer(members, account!)
+    },
+    enabled: !!committeeIdBase64Url && !!account,
+    // Committee membership/votes are fixed once the committee exists.
+    staleTime: 600_000,
   })
 }
 
