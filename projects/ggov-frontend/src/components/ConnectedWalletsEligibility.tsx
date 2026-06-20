@@ -1,8 +1,7 @@
-import { ChevronDown } from "lucide-react";
-import Address from "@/components/Address";
-import { Tag } from "@/components/ui/tag";
+import { Avatar, avatarTone } from "@/components/ui/avatar";
+import { useAddressName } from "@/hooks/use-nfd";
+import { ellipseAddress } from "@/utils/ellipseAddress";
 import { cn } from "@/lib/utils";
-import type { PeriodStatus } from "@/utils/time";
 
 export interface WalletEligibilityItem {
   address: string;
@@ -20,8 +19,6 @@ interface ConnectedWalletsEligibilityProps {
   items: WalletEligibilityItem[];
   /** How many of the connected wallets are eligible — the `m` in `m of n`. */
   eligibleCount: number;
-  /** Drives past- vs present-tense wording ("were eligible" once ended). */
-  periodStatus: PeriodStatus;
   className?: string;
 }
 
@@ -29,10 +26,10 @@ type Status = "voted" | "eligible" | "ineligible";
 
 // Mirrors the dot/label language of AccountSelector's STATUS_META so the two
 // eligibility views read consistently.
-const STATUS_META: Record<Status, { dot: string; label: string; labelClass: string }> = {
-  voted: { dot: "bg-muted-foreground", label: "Voted", labelClass: "text-muted-foreground" },
-  eligible: { dot: "bg-primary", label: "Eligible", labelClass: "text-muted-foreground" },
-  ineligible: { dot: "bg-destructive", label: "Not eligible", labelClass: "text-destructive" },
+const STATUS_META: Record<Status, { dot: string; label: string; textClass: string }> = {
+  voted: { dot: "bg-primary dark:bg-algo-teal", label: "Voted", textClass: "text-primary dark:text-algo-teal" },
+  eligible: { dot: "bg-success", label: "Eligible", textClass: "text-success" },
+  ineligible: { dot: "bg-muted-foreground", label: "Not eligible", textClass: "text-muted-foreground" },
 };
 
 function statusOf(item: WalletEligibilityItem): Status {
@@ -40,46 +37,67 @@ function statusOf(item: WalletEligibilityItem): Status {
   return item.voted ? "voted" : "eligible";
 }
 
+/** Two-line identity: NFD name (or ellipsed address) over the mono address. */
+function Identity({ address }: { address: string }) {
+  const { data: name } = useAddressName(address);
+  const ellipsed = ellipseAddress(address, 6);
+  const primary = name ?? ellipsed;
+  return (
+    <div className="min-w-0">
+      <span className="truncate text-[14px] font-medium text-foreground">{primary}</span>
+      {name && <div className="truncate font-mono text-[12px] text-muted-foreground">{ellipsed}</div>}
+    </div>
+  );
+}
+
 /**
  * Read-only, expandable summary of every connected wallet's eligibility in a
  * period. The `m of n` count stays visible; expanding reveals each wallet's
- * status, voting power and whether it voted.
+ * avatar, status, voting power and whether it voted.
  */
 export default function ConnectedWalletsEligibility({
   items,
   eligibleCount,
-  periodStatus,
   className,
 }: ConnectedWalletsEligibilityProps) {
   const plural = (n: number) => (n !== 1 ? "s" : "");
-  const eligibleVerb = periodStatus === "ended" ? "were eligible" : "will be eligible";
+  const anyEligible = eligibleCount > 0;
   return (
-    <details className={cn("group mx-auto max-w-2xl rounded-xl border border-border", className)}>
-      <summary className="flex cursor-pointer items-center justify-between gap-2 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
-        <span>
-          {eligibleCount} of {items.length} connected wallet{plural(items.length)} {eligibleVerb}
+    <details className={cn("group mx-auto max-w-2xl overflow-hidden rounded-xl border border-border bg-card", className)}>
+      <summary className="flex cursor-pointer items-center justify-between gap-2 px-[18px] py-[14px] hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+        <div className="flex items-center gap-2.5">
+          <span className={cn("size-[9px] shrink-0 rounded-full", anyEligible ? "bg-success" : "bg-muted-foreground")} />
+          <span className="font-display text-[15px] font-bold text-foreground">
+            {eligibleCount} of {items.length} connected wallet{plural(items.length)} eligible
+          </span>
+        </div>
+        <span className="shrink-0 text-[13px] font-semibold text-primary dark:text-algo-teal">
+          <span className="group-open:hidden">Show details</span>
+          <span className="hidden group-open:inline">Hide</span>
         </span>
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
       </summary>
-      <div className="space-y-2 border-t border-border px-4 py-3">
+      <div className="flex flex-col">
         {items.map((item) => {
           const meta = STATUS_META[statusOf(item)];
           return (
-            <div key={item.address} className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className={cn("size-2 shrink-0 rounded-full", meta.dot)} />
-                <span className="truncate">
-                  <Address address={item.address} width={6} copy={false} tooltip={false} />
-                </span>
+            <div key={item.address} className="flex items-center gap-3 border-t border-border px-[18px] py-3">
+              <Avatar name={item.address} tone={avatarTone(item.address)} size={30} />
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <Identity address={item.address} />
                 {item.delegated && (
-                  <Tag tone="neutral" className="shrink-0">
-                    Delegated
-                  </Tag>
+                  <span className="shrink-0 rounded-full bg-muted/50 px-[7px] py-[2px] text-[11px] text-muted-foreground">
+                    delegated
+                  </span>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-3 text-right">
-                <span className={cn("text-xs uppercase tracking-wider", meta.labelClass)}>{meta.label}</span>
-                <span className="font-bold tabular-nums">{item.votingPower} Votes</span>
+              <div className="flex shrink-0 flex-col items-end gap-[3px]">
+                <span className={cn("inline-flex items-center gap-1.5 text-[12px]", meta.textClass)}>
+                  <span className={cn("size-[7px] rounded-full", meta.dot)} />
+                  {meta.label}
+                </span>
+                <span className="text-[12.5px] text-muted-foreground">
+                  <strong className="text-foreground tabular-nums">{item.votingPower.toLocaleString()}</strong> votes
+                </span>
               </div>
             </div>
           );

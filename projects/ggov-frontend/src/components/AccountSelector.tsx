@@ -1,5 +1,7 @@
 import { Fragment, useRef, type KeyboardEvent } from "react";
-import Address from "@/components/Address";
+import { Avatar, avatarTone } from "@/components/ui/avatar";
+import { useAddressName } from "@/hooks/use-nfd";
+import { ellipseAddress } from "@/utils/ellipseAddress";
 import { cn } from "@/lib/utils";
 
 export interface AccountSelectorItem {
@@ -25,6 +27,10 @@ interface AccountSelectorProps {
   accounts: AccountSelectorItem[];
   selected: string | null;
   onSelect: (address: string) => void;
+  /** Count of the wallet's own accounts (for the "N connected accounts" subline). */
+  connectedCount?: number;
+  /** Count of accounts delegated to the wallet (for the subline). */
+  delegatedCount?: number;
   className?: string;
 }
 
@@ -39,16 +45,15 @@ function statusOf(item: AccountSelectorItem, delegated?: boolean): Status {
   return "eligible";
 }
 
-const STATUS_META: Record<Status, { dot: string; label: string; right: string; rightClass: string }> = {
-  eligible: { dot: "bg-primary", label: "Eligible", right: "Eligible", rightClass: "text-muted-foreground" },
-  voted: { dot: "bg-muted-foreground", label: "Voted", right: "Completed", rightClass: "text-muted-foreground" },
-  ineligible: { dot: "bg-destructive", label: "Not eligible", right: "Ineligible", rightClass: "text-destructive" },
-  loading: { dot: "bg-muted-foreground/40", label: "Checking…", right: "", rightClass: "text-muted-foreground" },
+const STATUS_META: Record<Status, { dot: string; label: string; textClass: string }> = {
+  eligible: { dot: "bg-success", label: "Eligible", textClass: "text-success" },
+  voted: { dot: "bg-primary dark:bg-algo-teal", label: "Voted", textClass: "text-primary dark:text-algo-teal" },
+  ineligible: { dot: "bg-muted-foreground", label: "Not eligible", textClass: "text-muted-foreground" },
+  loading: { dot: "bg-muted-foreground/40", label: "Checking…", textClass: "text-muted-foreground" },
   locked: {
-    dot: "bg-destructive",
+    dot: "bg-muted-foreground",
     label: "Voted directly · delegate can't override",
-    right: "Locked",
-    rightClass: "text-destructive",
+    textClass: "text-muted-foreground",
   },
 };
 
@@ -56,6 +61,21 @@ const STATUS_META: Record<Status, { dot: string; label: string; right: string; r
 function isDisabled(item: AccountSelectorItem, delegated?: boolean): boolean {
   const status = statusOf(item, delegated);
   return status === "ineligible" || status === "locked";
+}
+
+/** Two-line identity: NFD name (or ellipsed address) over the mono address. */
+function Identity({ item }: { item: AccountSelectorItem }) {
+  const { data: name } = useAddressName(item.address);
+  const ellipsed = ellipseAddress(item.address, 6);
+  const primary = item.label ?? name ?? ellipsed;
+  // Only show the mono address line when the primary line is a resolved name/label.
+  const showAddress = primary !== ellipsed;
+  return (
+    <div className="min-w-0">
+      <span className="truncate text-[14px] font-medium text-foreground">{primary}</span>
+      {showAddress && <div className="truncate font-mono text-[12px] text-muted-foreground">{ellipsed}</div>}
+    </div>
+  );
 }
 
 interface RowProps {
@@ -74,7 +94,6 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
   const meta = STATUS_META[status];
   const isSelected = selected === item.address;
   const disabled = isDisabled(item, delegated);
-  const statusLabel = status === "locked" ? meta.label : delegated ? `${meta.label} · Delegated` : meta.label;
   return (
     <button
       type="button"
@@ -85,60 +104,74 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
       ref={(el) => registerRef(item.address, el)}
       onClick={() => onSelect(item.address)}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 text-left transition-all",
+        "flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition-all",
         isSelected
           ? "border-2 border-primary bg-primary/5"
           : "border-border hover:bg-muted/50 hover:border-foreground/20",
         disabled && "cursor-not-allowed opacity-60 hover:bg-transparent hover:border-border",
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <span
+        className={cn(
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
+          isSelected ? "border-primary" : "border-muted-foreground/40",
+        )}
+      >
         <span
           className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
-            isSelected ? "border-primary" : "border-muted-foreground/40",
+            "h-2.5 w-2.5 rounded-full bg-primary transition-opacity",
+            isSelected ? "opacity-100" : "opacity-0",
           )}
-        >
+        />
+      </span>
+      <Avatar name={item.label ?? item.address} tone={avatarTone(item.address)} size={30} />
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <Identity item={item} />
+        {delegated && (
+          <span className="shrink-0 rounded-full bg-muted/50 px-[7px] py-[2px] text-[11px] text-muted-foreground">
+            delegated to you
+          </span>
+        )}
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-[3px]">
+        <span className={cn("inline-flex items-center gap-1.5 text-[12px]", meta.textClass)}>
           <span
             className={cn(
-              "h-2.5 w-2.5 rounded-full bg-primary transition-opacity",
-              isSelected ? "opacity-100" : "opacity-0",
+              "size-[7px] rounded-full",
+              meta.dot,
+              status === "eligible" && "motion-safe:animate-bounce motion-safe:[animation-duration:0.5s]",
             )}
           />
+          {meta.label}
         </span>
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">
-            {item.label ?? <Address address={item.address} width={8} copy={false} tooltip={false} />}
-          </p>
-          <div className="mt-1 flex items-center gap-2">
-            <span
-              className={cn(
-                "h-2 w-2 rounded-full",
-                meta.dot,
-                status === "eligible" && "motion-safe:animate-bounce motion-safe:[animation-duration:0.5s]",
-              )}
-            />
-            <span className="text-xs text-muted-foreground">Status: {statusLabel}</span>
-          </div>
-        </div>
-      </div>
-      <div className="shrink-0 text-right">
-        <p className={cn("font-bold tabular-nums", isSelected ? "text-primary" : "text-foreground")}>
-          {item.votingPower === undefined ? "—" : `${item.votingPower.toString()} Votes`}
-        </p>
-        {meta.right && <p className={cn("text-xs uppercase tracking-wider", meta.rightClass)}>{meta.right}</p>}
+        <span className="text-[12.5px] text-muted-foreground">
+          {item.votingPower === undefined ? (
+            "—"
+          ) : (
+            <>
+              <strong className="text-foreground tabular-nums">{item.votingPower.toString()}</strong> votes
+            </>
+          )}
+        </span>
       </div>
     </button>
   );
 }
 
 /**
- * Stitch-style account selection: each connected/delegated account is a radio
- * card showing its status and voting power. Accounts that delegated their power
- * to one of your accounts are nested beneath that delegatee, indented with a
- * "↪" branch. Ineligible accounts are dimmed and not selectable.
+ * Account selection: each connected/delegated account is a radio card showing an
+ * avatar, identity, status and voting power. Accounts that delegated their power
+ * to one of your accounts are nested beneath that delegatee, indented with a "↪"
+ * branch. Ineligible / locked accounts are dimmed and not selectable.
  */
-export default function AccountSelector({ accounts, selected, onSelect, className }: AccountSelectorProps) {
+export default function AccountSelector({
+  accounts,
+  selected,
+  onSelect,
+  connectedCount,
+  delegatedCount,
+  className,
+}: AccountSelectorProps) {
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
   const registerRef = (address: string, el: HTMLButtonElement | null) => {
     if (el) buttonRefs.current.set(address, el);
@@ -171,8 +204,16 @@ export default function AccountSelector({ accounts, selected, onSelect, classNam
   }
 
   return (
-    <div className={cn("space-y-3", className)}>
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Account selection</h3>
+    <div className={cn("space-y-3.5", className)}>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-display text-[15px] font-bold">Voting as</h3>
+        {connectedCount != null && (
+          <span className="text-xs text-muted-foreground">
+            {connectedCount} connected account{connectedCount === 1 ? "" : "s"}
+            {delegatedCount ? ` · ${delegatedCount} delegated to you` : ""}
+          </span>
+        )}
+      </div>
       <div
         className="grid grid-cols-1 gap-2"
         role="radiogroup"

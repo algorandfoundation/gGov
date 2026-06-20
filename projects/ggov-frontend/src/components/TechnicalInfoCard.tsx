@@ -23,7 +23,7 @@ export default function TechnicalInfoCard({ periodId, className }: { periodId: n
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-[13px] text-muted-foreground">Period {periodId} App</span>
           {periodAppId !== undefined ? (
-            <AppExplorerLink appId={periodAppId} className="text-sm font-medium" />
+            <AppExplorerLink appId={periodAppId} className="font-mono text-sm font-medium" />
           ) : (
             <span className="text-sm font-medium tabular-nums">—</span>
           )}
@@ -31,7 +31,7 @@ export default function TechnicalInfoCard({ periodId, className }: { periodId: n
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-[13px] text-muted-foreground">Registry App</span>
           {registryAppId ? (
-            <AppExplorerLink appId={registryAppId} className="text-sm font-medium" />
+            <AppExplorerLink appId={registryAppId} className="font-mono text-sm font-medium" />
           ) : (
             <span className="text-sm font-medium tabular-nums">—</span>
           )}
