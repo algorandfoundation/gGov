@@ -2,7 +2,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { Card } from '@/components/ui/card'
 import { Stat } from '@/components/ui/stat'
 import { Tag } from '@/components/ui/tag'
-import { Avatar } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/AccountAvatar'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { BlockGrid } from '@/components/ui/block-grid'
 import ConnectWallet from '@/components/ConnectWallet'
@@ -24,7 +24,7 @@ export function AccountCard() {
     <Card className="p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Avatar name={label} size={40} />
+          <AccountAvatar address={activeAddress} name={label} size={40} />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{label}</div>
             <div className="font-mono text-xs text-muted-foreground">{ellipseAddress(activeAddress, 4)}</div>

@@ -1,4 +1,4 @@
-import { Avatar, avatarTone } from "@/components/ui/avatar";
+import { AccountAvatar } from "@/components/AccountAvatar";
 import { useAddressName } from "@/hooks/use-nfd";
 import { ellipseAddress } from "@/utils/ellipseAddress";
 import { cn } from "@/lib/utils";
@@ -81,7 +81,7 @@ export default function ConnectedWalletsEligibility({
           const meta = STATUS_META[statusOf(item)];
           return (
             <div key={item.address} className="flex items-center gap-3 border-t border-border px-[18px] py-3">
-              <Avatar name={item.address} tone={avatarTone(item.address)} size={30} />
+              <AccountAvatar address={item.address} size={30} />
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Identity address={item.address} />
                 {item.delegated && (

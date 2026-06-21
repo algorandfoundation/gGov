@@ -1,5 +1,5 @@
 import { useWallet } from '@txnlab/use-wallet-react'
-import { Avatar } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/AccountAvatar'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { cn } from '@/lib/utils'
 
@@ -44,7 +44,7 @@ export default function CompactAccountSwitcher({ className }: { className?: stri
                 className={cn('size-2 rounded-full bg-primary transition-opacity', isActive ? 'opacity-100' : 'opacity-0')}
               />
             </span>
-            <Avatar name={label} size={24} />
+            <AccountAvatar address={account.address} name={label} size={24} />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">{label}</div>
               <div className="font-mono text-[11px] text-muted-foreground">{ellipseAddress(account.address, 4)}</div>

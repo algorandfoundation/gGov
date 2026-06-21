@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 
 export type AvatarTone = "teal" | "aqua" | "plum" | "navy"
@@ -5,9 +6,11 @@ export type AvatarTone = "teal" | "aqua" | "plum" | "navy"
 interface AvatarProps {
   /** Display name or address used to derive the initial. */
   name?: string | null
+  /** Avatar image URL (e.g. an NFD avatar). Falls back to the initial-on-tint when absent or it fails to load. */
+  src?: string | null
   /** Pixel diameter. */
   size?: number
-  /** Background tone. Accounts have no uploaded image, so the tone just varies the tint. */
+  /** Background tone, shown as the tint behind the initial (or while an image loads). */
   tone?: AvatarTone
   className?: string
 }
@@ -21,10 +24,29 @@ const TONE: Record<AvatarTone, string> = {
 }
 
 /**
- * Simple initial-on-tint avatar (design-system "Avatar"). Accounts have no
- * uploaded image, so a deterministic tone tint distinguishes them in lists.
+ * Avatar (design-system "Avatar"). Renders `src` as a rounded image when supplied
+ * (e.g. an NFD avatar); otherwise — or if the image fails to load — falls back to a
+ * deterministic initial-on-tint that distinguishes accounts in lists.
  */
-export function Avatar({ name, size = 40, tone = "teal", className }: AvatarProps) {
+export function Avatar({ name, src, size = 40, tone = "teal", className }: AvatarProps) {
+  const [failed, setFailed] = useState(false)
+  // Retry the image whenever the source changes (e.g. NFD resolves after first render).
+  useEffect(() => setFailed(false), [src])
+
+  if (src && !failed) {
+    return (
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={cn("inline-block shrink-0 rounded-full object-cover", TONE[tone], className)}
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+
   const initial = (name?.trim()?.[0] ?? "?").toUpperCase()
   return (
     <span

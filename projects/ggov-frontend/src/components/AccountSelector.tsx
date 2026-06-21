@@ -1,5 +1,5 @@
 import { Fragment, useRef, type KeyboardEvent } from "react";
-import { Avatar, avatarTone } from "@/components/ui/avatar";
+import { AccountAvatar } from "@/components/AccountAvatar";
 import { useAddressName } from "@/hooks/use-nfd";
 import { ellipseAddress } from "@/utils/ellipseAddress";
 import { cn } from "@/lib/utils";
@@ -124,7 +124,7 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
           )}
         />
       </span>
-      <Avatar name={item.label ?? item.address} tone={avatarTone(item.address)} size={30} />
+      <AccountAvatar address={item.address} name={item.label} size={30} />
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Identity item={item} />
         {delegated && (

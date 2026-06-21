@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Avatar, avatarTone } from "@/components/ui/avatar";
+import { AccountAvatar } from "@/components/AccountAvatar";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { TxButtonContent } from "@/components/TxButtonContent";
 import { cn } from "@/lib/utils";
@@ -20,8 +20,10 @@ import { cn } from "@/lib/utils";
 const DELEGATION_DOCS_URL = "https://developer.algorand.org/docs/";
 
 function copyAddress(address: string) {
-  navigator.clipboard.writeText(address);
-  toast.success("Address copied");
+  navigator.clipboard.writeText(address).then(
+    () => toast.success("Address copied"),
+    () => toast.error("Couldn't copy address"),
+  );
 }
 
 /** Restyled card surface matching the vote/period pages (hairline border + sm shadow). */
@@ -45,7 +47,7 @@ function AccountChip({
   const ellipsed = ellipseAddress(address, 6);
   const inner = (
     <>
-      <Avatar name={name ?? address} tone={avatarTone(address)} size={size} />
+      <AccountAvatar address={address} name={name} size={size} />
       <div className="min-w-0 flex-1">
         <div className={cn("truncate font-medium", compact ? "text-[13.5px]" : "text-sm")}>{name ?? ellipsed}</div>
         {name && (
@@ -359,7 +361,7 @@ function DelegatorRow({
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background">
       <div className="flex items-center gap-3 px-3.5 py-3">
-        <Avatar name={name ?? delegator} tone={avatarTone(delegator)} size={32} />
+        <AccountAvatar address={delegator} name={name} size={32} />
         <Link to={`/account/${delegator}`} className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium hover:underline">{name ?? ellipsed}</div>
           {name && <div className="truncate font-mono text-xs text-muted-foreground">{ellipsed}</div>}
@@ -430,7 +432,7 @@ function DelegatorLink({ address }: { address: string }) {
   const ellipsed = ellipseAddress(address, 6);
   return (
     <Link to={`/account/${address}`} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0">
-      <Avatar name={name ?? address} tone={avatarTone(address)} size={30} />
+      <AccountAvatar address={address} name={name} size={30} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13.5px] font-medium text-primary hover:underline dark:text-algo-teal">
           {name ?? ellipsed}
@@ -464,7 +466,7 @@ function HeadingIdentity({ address, isOwnAccount }: { address: string; isOwnAcco
   }
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2.5">
-      <Avatar name={name ?? address} tone={avatarTone(address)} size={28} />
+      <AccountAvatar address={address} name={name} size={28} />
       {name && <span className="text-[15px] font-semibold">{name}</span>}
       <span className="break-all font-mono text-[13px] text-muted-foreground">{ellipseAddress(address, 8)}</span>
       <button
@@ -524,7 +526,6 @@ export default function Account() {
   // delegation is shown read-only as account status.
   const canSelfDelegate = committees.length > 0 || delegators.length > 0;
   const showDelegationCard = isOwnAccount ? canSelfDelegate : true;
-  const totalVotingPower = committees.reduce((sum, c) => sum + c.votingPower, 0);
   const switchName = useAddressName(activeAddress ?? "").data;
 
   if (!address) {
@@ -661,12 +662,6 @@ export default function Account() {
                     </span>
                   </Link>
                 ))}
-                <div className="grid grid-cols-[1fr_auto] items-center bg-muted/40 px-5 py-3">
-                  <span className="text-[13px] font-semibold">Current voting power</span>
-                  <span className="text-right font-display text-lg font-bold tabular-nums text-primary dark:text-algo-teal">
-                    {totalVotingPower.toLocaleString()}
-                  </span>
-                </div>
               </>
             )}
           </Surface>
@@ -675,13 +670,8 @@ export default function Account() {
 
       {/* VOTES CAST (full width) */}
       <div className="mt-7">
-        <div className="mb-3.5 flex items-baseline justify-between gap-3">
+        <div className="mb-3.5 flex items-baseline justify-start gap-3">
           <Eyebrow>Votes cast</Eyebrow>
-          {votes.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {votes.length} period{votes.length === 1 ? "" : "s"}
-            </span>
-          )}
         </div>
         {loadingVotes ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

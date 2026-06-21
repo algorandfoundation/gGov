@@ -4,7 +4,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Avatar } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/AccountAvatar'
 import { useAddressName } from '@/hooks/use-nfd'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 
@@ -45,7 +45,7 @@ export default function TopBarAccount({ fullWidth = false }: { fullWidth?: boole
           className="flex items-center gap-2 rounded-full border border-border py-1 pl-3 pr-1 transition-colors hover:border-foreground/30"
         >
           <span className="text-sm">{label}</span>
-          <Avatar name={label} size={28} />
+          <AccountAvatar address={activeAddress} name={label} size={28} />
         </Link>
       )
     const disconnect = (

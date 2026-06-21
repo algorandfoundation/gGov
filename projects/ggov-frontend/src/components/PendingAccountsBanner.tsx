@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { Avatar, avatarTone } from "@/components/ui/avatar";
+import { AccountAvatar } from "@/components/AccountAvatar";
 import { Button } from "@/components/ui/button";
 import { useAddressName } from "@/hooks/use-nfd";
 import { ellipseAddress } from "@/utils/ellipseAddress";
@@ -92,7 +92,7 @@ function PendingRow({
 }) {
   return (
     <div className="flex items-center gap-3 border-t border-border px-[18px] py-3">
-      <Avatar name={account.address} tone={avatarTone(account.address)} size={32} />
+      <AccountAvatar address={account.address} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-[14px] font-medium text-foreground">
