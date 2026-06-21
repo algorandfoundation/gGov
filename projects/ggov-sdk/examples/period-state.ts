@@ -8,20 +8,13 @@
  *
  * Usage:
  *   cd projects/ggov-sdk
- *   npx tsx examples/period-state.ts [network|registryAppId]
+ *   npx tsx examples/period-state.ts
  *
- * The target defaults to localnet. Pass a network name (localnet|testnet|mainnet)
- * to use the configured registry app id, or pass an explicit numeric app id.
- *
- * Examples:
- *   npx tsx examples/period-state.ts            # localnet (registry app 1002)
- *   npx tsx examples/period-state.ts testnet    # configured testnet registry
- *   npx tsx examples/period-state.ts 764235366  # explicit registry app id
+ * The registry is APP_ID if set, otherwise the one created by DEPLOYER. AlgorandClient
+ * config comes from the AlgoKit environment (defaults to localnet).
  */
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { GGovRegistryReaderSDK, Network } from "..";
-
-const NETWORKS: Network[] = ["localnet", "testnet", "mainnet"];
+import { GGovRegistryReaderSDK } from "..";
+import { getAlgorand, resolveRegistryAppId } from "./env";
 
 /** Format a uint32 unix timestamp (0 = unset) as an ISO string for display. */
 function fmtTime(secs: number | bigint): string {
@@ -30,13 +23,9 @@ function fmtTime(secs: number | bigint): string {
 }
 
 (async () => {
-  const arg = process.argv[2] ?? "localnet";
-  const algorand = AlgorandClient.fromEnvironment();
-
-  // Either a known network name (use configured app id) or an explicit app id.
-  const sdk = NETWORKS.includes(arg as Network)
-    ? new GGovRegistryReaderSDK({ algorand, network: arg as Network })
-    : new GGovRegistryReaderSDK({ algorand, registryAppId: BigInt(arg) });
+  const algorand = getAlgorand();
+  const registryAppId = await resolveRegistryAppId(algorand);
+  const sdk = new GGovRegistryReaderSDK({ algorand, registryAppId });
 
   console.log(`Registry app: ${sdk.appId}`);
 

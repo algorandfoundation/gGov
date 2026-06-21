@@ -8,22 +8,24 @@
  * The target period is located by its body title (e.g. "Entertainment") rather than a
  * raw periodId, since titles are what operators recognise.
  *
+ * The registry is APP_ID if set, otherwise the one created by DEPLOYER.
+ *
  * Usage:
  *   cd projects/ggov-sdk
- *   # defaults: registry app 1004, title "Entertainment"
+ *   # defaults: title "Entertainment"
  *   npx tsx examples/update-period-app.ts
- *   # or pass them explicitly:
- *   npx tsx examples/update-period-app.ts <registryAppId> "<periodTitle>"
+ *   # or pass the title explicitly:
+ *   npx tsx examples/update-period-app.ts "<periodTitle>"
  */
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { GGovSDK } from "..";
+import { getAlgorand, resolveRegistryAppId } from "./env";
 
 (async () => {
-  const registryAppId = BigInt(process.argv[2] ?? 1004);
-  const title = process.argv[3] ?? "Entertainment";
+  const title = process.argv[2] ?? "Entertainment";
 
-  const algorand = AlgorandClient.fromEnvironment();
+  const algorand = getAlgorand();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
+  const registryAppId = await resolveRegistryAppId(algorand, deployer.addr);
 
   // Writer-enabled SDK bound to the existing registry. Writer must be the registry admin.
   const sdk = new GGovSDK({
