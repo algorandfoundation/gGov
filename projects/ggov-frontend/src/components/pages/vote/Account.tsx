@@ -4,7 +4,7 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { toast } from "sonner";
 import { ArrowDown, ArrowLeftRight, BookOpen, Copy, Info, Target } from "lucide-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe } from "@/hooks/queries";
+import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe, useAppEscrow } from "@/hooks/queries";
 import { useDelegateMutation, useUndelegateMutation, useRedelegateMutation } from "@/hooks/mutations";
 import { useAddressName } from "@/hooks/use-nfd";
 import { ellipseAddress } from "@/utils/ellipseAddress";
@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { AccountAvatar } from "@/components/AccountAvatar";
+import AppExplorerLink from "@/components/AppExplorerLink";
+import AccountExplorerLink from "@/components/AccountExplorerLink";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { TxButtonContent } from "@/components/TxButtonContent";
 import { cn } from "@/lib/utils";
@@ -440,24 +442,46 @@ function DelegatorLink({ address }: { address: string }) {
   );
 }
 
+/** App-escrow badge: links the owning app ID to its explorer page, labelled "App" rather than "#". */
+function AppLabel({ appId }: { appId: bigint }) {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-xs font-semibold">
+      <AppExplorerLink appId={appId} prefix="App " />
+    </span>
+  );
+}
+
 /** Page heading identity line: own account shows the full address + "This is you"; another shows avatar + name. */
-function HeadingIdentity({ address, isOwnAccount }: { address: string; isOwnAccount: boolean }) {
+function HeadingIdentity({
+  address,
+  isOwnAccount,
+  appId,
+}: {
+  address: string;
+  isOwnAccount: boolean;
+  appId?: bigint | null;
+}) {
   const { data: name } = useAddressName(address);
   if (isOwnAccount) {
     return (
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <span className="break-all font-mono text-[13px] text-muted-foreground">{address}</span>
-        <button
-          type="button"
-          aria-label="Copy address"
-          onClick={() => copyAddress(address)}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Copy className="size-3.5" />
-        </button>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="font-mono text-[13px] text-muted-foreground sm:hidden">{ellipseAddress(address, 8)}</span>
+          <span className="hidden break-all font-mono text-[13px] text-muted-foreground sm:inline">{address}</span>
+          <button
+            type="button"
+            aria-label="Copy address"
+            onClick={() => copyAddress(address)}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            <Copy className="size-3.5" />
+          </button>
+          <AccountExplorerLink address={address} className="shrink-0" />
+        </span>
         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:text-algo-teal">
           This is you
         </span>
+        {appId != null && <AppLabel appId={appId} />}
       </div>
     );
   }
@@ -465,15 +489,19 @@ function HeadingIdentity({ address, isOwnAccount }: { address: string; isOwnAcco
     <div className="mt-2 flex flex-wrap items-center gap-2.5">
       <AccountAvatar address={address} name={name} size={28} />
       {name && <span className="text-[15px] font-semibold">{name}</span>}
-      <span className="break-all font-mono text-[13px] text-muted-foreground">{ellipseAddress(address, 8)}</span>
-      <button
-        type="button"
-        aria-label="Copy address"
-        onClick={() => copyAddress(address)}
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <Copy className="size-3.5" />
-      </button>
+      <span className="flex min-w-0 items-center gap-2.5">
+        <span className="font-mono text-[13px] text-muted-foreground">{ellipseAddress(address, 8)}</span>
+        <button
+          type="button"
+          aria-label="Copy address"
+          onClick={() => copyAddress(address)}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <Copy className="size-3.5" />
+        </button>
+        <AccountExplorerLink address={address} className="shrink-0" />
+      </span>
+      {appId != null && <AppLabel appId={appId} />}
     </div>
   );
 }
@@ -514,6 +542,7 @@ export default function Account() {
   const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address);
   const { data: delegation, isLoading: loadingDelegation } = useDelegation(address);
   const { data: delegators = [], isLoading: loadingDelegators } = useDelegatedToMe(address);
+  const { data: appEscrowId } = useAppEscrow(address);
   const delegateMutation = useDelegateMutation();
   const undelegateMutation = useUndelegateMutation();
   const redelegateMutation = useRedelegateMutation();
@@ -566,8 +595,10 @@ export default function Account() {
         </div>
       )}
 
-      <h1 className="font-display text-3xl font-bold leading-none">Account</h1>
-      <HeadingIdentity address={address} isOwnAccount={isOwnAccount} />
+      <h1 className="font-display text-3xl font-bold leading-none">
+        {appEscrowId != null ? "Application Account" : "Account"}
+      </h1>
+      <HeadingIdentity address={address} isOwnAccount={isOwnAccount} appId={appEscrowId} />
 
       <div className="mt-6 grid grid-cols-1 items-start gap-[18px] lg:grid-cols-2">
         {/* LEFT COLUMN */}

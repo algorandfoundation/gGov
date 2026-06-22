@@ -11,7 +11,6 @@ import { useAddressName } from '@/hooks/use-nfd'
 import { useCommittee, useGlobalState, useProducerRank, useXGovVotingPowers } from '@/hooks/queries'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { formatBlockRange } from '@/utils/format'
-import { MOCK_AVERAGE_PARTICIPATION_PCT } from '@/lib/mockMetrics'
 
 /** Connected-account identity card. Renders nothing when logged out. */
 export function AccountCard() {
@@ -125,8 +124,6 @@ export function PeriodStatsCard({ committeeId }: { committeeId?: string }) {
   const rows: { caption: string; value: string }[] = [
     { caption: 'Eligible voters this window', value: committee ? committee.totalMembers.toLocaleString() : '—' },
     { caption: 'Voting periods to date', value: periodsToDate != null ? String(periodsToDate) : '—' },
-    // TODO(FLAG): average participation is mocked — see lib/mockMetrics.ts
-    { caption: 'Average participation', value: `${MOCK_AVERAGE_PARTICIPATION_PCT}%` },
   ]
 
   return (

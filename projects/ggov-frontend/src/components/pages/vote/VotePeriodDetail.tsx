@@ -233,9 +233,12 @@ export default function VotePeriodDetail() {
   }
 
   function handleAdvancedVoteChange(topicIdx: number, optionIdx: number, value: number) {
+    // Votes are non-negative integers; clamp here so fractional/negative/NaN input
+    // can't propagate into the on-chain uint32[][] payload.
+    const safe = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
     setTopicVotes((prev) => {
       const next = prev.map((t) => t.map((opts) => [...opts]));
-      next[topicIdx][0][optionIdx] = value;
+      next[topicIdx][0][optionIdx] = safe;
       return next;
     });
   }
@@ -465,12 +468,13 @@ export default function VotePeriodDetail() {
           {period.topics.map(([options, tallies], topicIdx) => {
             const tb = topicBodies[topicIdx];
             const mode = isUpcoming ? "upcoming" : showVoteForm ? (advancedMode ? "advanced" : "select") : "results";
-            // In results mode, tag the option the connected voter recorded a vote for.
+            // Tag an option "YOUR VOTE" only when the recorded vote was single-choice
+            // (exactly one non-zero option). Split/advanced votes get no tag rather than
+            // misleadingly highlighting just the largest allocation.
             const recorded = voteRecord?.topicVotes[topicIdx];
+            const nonZero = recorded?.filter((v) => v > 0) ?? [];
             const votedOptionIdx =
-              mode === "results" && recorded
-                ? recorded.reduce((best, v, i) => (v > (recorded[best] ?? 0) ? i : best), -1)
-                : -1;
+              mode === "results" && nonZero.length === 1 ? recorded!.findIndex((v) => v > 0) : -1;
             return (
               <TopicVoteCard
                 key={topicIdx}

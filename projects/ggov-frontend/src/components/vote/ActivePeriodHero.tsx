@@ -7,7 +7,7 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { usePeriodBody, useCommittee, toBase64Url } from '@/hooks/queries'
 import { formatMonthDay, formatMonthDayYear, daysUntil } from '@/utils/time'
 import { formatBlockRange, toPlainText } from '@/utils/format'
-import { mockPeriodTurnout } from '@/lib/mockMetrics'
+import { periodTurnoutPct } from '@/lib/turnout'
 
 interface Props {
   periodId: number
@@ -24,7 +24,7 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
   const committeeId = toBase64Url(period.committeeId)
   const { data: committee } = useCommittee(committeeId)
 
-  const turnout = mockPeriodTurnout(periodId, committee?.totalMembers)
+  const turnoutPct = periodTurnoutPct(period, committee?.totalVotes)
   const closesInDays = daysUntil(period.votingEnd)
   const topicCount = period.topics.length
 
@@ -61,13 +61,11 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
           </div>
         )}
         <div>
-          {/* TODO(FLAG): turnout is mocked — see lib/mockMetrics.ts */}
           <div className="mb-2 flex justify-between text-xs text-muted-foreground">
             <span>Votes cast</span>
-            <span className="font-semibold text-foreground">{turnout.turnoutPct}%</span>
+            <span className="font-semibold text-foreground">{turnoutPct != null ? `${turnoutPct}%` : '—'}</span>
           </div>
-          <ProgressBar value={turnout.turnoutPct} tone="sky" height={8} />
-          <div className="mt-2 text-xs text-muted-foreground">{turnout.walletsVoted.toLocaleString()} wallets have voted</div>
+          <ProgressBar value={turnoutPct ?? 0} tone="sky" height={8} />
         </div>
         <Button asChild className="w-full">
           <Link to={`/vote/period/${periodId}`}>{activeAddress ? 'Cast your vote' : 'Connect wallet to vote'}</Link>

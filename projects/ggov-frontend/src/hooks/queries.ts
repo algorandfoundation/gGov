@@ -19,6 +19,7 @@ export const queryKeys = {
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
   canVoteMany: (periodId: number, key: string) => ['canVoteMany', periodId, key] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
+  appEscrow: (address: string) => ['appEscrow', address] as const,
   delegation: (account: string) => ['delegation', account] as const,
   allDelegations: ['allDelegations'] as const,
   delegatedToMe: (account: string) => ['delegatedToMe', account] as const,
@@ -29,6 +30,7 @@ export const queryKeys = {
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
   xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
   producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
+  blockHeader: (round: number) => ['blockHeader', round] as const,
 }
 
 export function useGlobalState() {
@@ -72,6 +74,30 @@ export function usePeriodAppId(periodId: number) {
   return useQuery({
     queryKey: queryKeys.periodAppId(periodId),
     queryFn: () => readerSDK.getPeriodAppId(BigInt(periodId)),
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * Resolve whether an address is an application escrow via the Escreg registry,
+ * returning the owning app ID (or null when it isn't a registered escrow).
+ * Whether an address is an app escrow is immutable, so this never goes stale; a
+ * lookup failure resolves to null so the page just renders as a plain account.
+ * (React Query forbids returning undefined from a queryFn, hence null.)
+ */
+export function useAppEscrow(address: string | null | undefined) {
+  const { escregSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.appEscrow(address ?? ''),
+    queryFn: async (): Promise<bigint | null> => {
+      try {
+        const result = await escregSDK.lookup({ addresses: [address!] })
+        return result[address!] ?? null
+      } catch {
+        return null
+      }
+    },
+    enabled: !!address,
     staleTime: Infinity,
   })
 }
@@ -497,4 +523,50 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
     // A committee's membership is fixed once the committee exists.
     staleTime: 600_000,
   })
+}
+
+/** Header-only details for a single block round, as surfaced in the UI. */
+export interface BlockHeaderInfo {
+  round: number
+  /** Block timestamp in unix seconds. */
+  timestamp: number
+}
+
+/**
+ * Header-only block lookups for several rounds at once (one algod `block` call
+ * each, header-only). Backs the committee detail's start/end block panel. Each
+ * round resolves independently and a failed lookup yields `null` rather than
+ * throwing, so the panel can degrade to "round known, fields unavailable".
+ * Value per round: the header info, `null` if the lookup failed, or `undefined`
+ * while still loading.
+ */
+export function useBlockHeaders(rounds: number[]): Record<number, BlockHeaderInfo | null | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const results = useQueries({
+    queries: rounds.map((round) => ({
+      queryKey: queryKeys.blockHeader(round),
+      queryFn: async (): Promise<BlockHeaderInfo | null> => {
+        try {
+          // Header-only: skip the payset/certificate — we only need round metadata.
+          const res = await readerSDK.algorand.client.algod.block(round).headerOnly(true).do()
+          const header = res.block.header
+          return {
+            round: Number(header.round),
+            timestamp: Number(header.timestamp),
+          }
+        } catch {
+          // Archival/header data may be unavailable (e.g. non-archival node) — degrade gracefully.
+          return null
+        }
+      },
+      enabled: round > 0,
+      // Block headers are immutable once the round is final.
+      staleTime: Infinity,
+    })),
+  })
+  const out: Record<number, BlockHeaderInfo | null | undefined> = {}
+  rounds.forEach((round, i) => {
+    out[round] = results[i]?.isSuccess ? results[i].data : undefined
+  })
+  return out
 }

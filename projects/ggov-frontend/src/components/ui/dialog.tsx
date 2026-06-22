@@ -30,17 +30,17 @@ interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
   ({ className, children, onClose, ...props }, ref) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/80" onClick={onClose} />
       <div
         ref={ref}
         className={cn(
-          "relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg",
+          "relative z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col border bg-background shadow-lg sm:rounded-lg",
           className
         )}
         {...props}
       >
-        {children}
+        <div className="grid min-h-0 gap-4 overflow-y-auto p-6">{children}</div>
         {onClose && (
           <button
             className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"

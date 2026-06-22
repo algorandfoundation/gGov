@@ -3,12 +3,15 @@ import React from 'react'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { GGovSDK, GGovReaderSDK } from 'ggov-sdk'
+import { EscregSDK } from '@d13co/escreg-sdk'
 import { getAlgodConfigFromViteEnvironment } from '@/utils/network'
 import { wrapSignerWithPhase } from '@/lib/transactionPhase'
 
 interface GGovSDKContextValue {
   readerSDK: GGovReaderSDK
   sdk: GGovSDK | null
+  /** Read-only registry for resolving whether an address is an app escrow (escrow → app ID). */
+  escregSDK: EscregSDK
 }
 
 const GGovSDKContext = createContext<GGovSDKContextValue | null>(null)
@@ -25,6 +28,9 @@ function createAlgorandClient() {
 }
 
 const appId = BigInt(import.meta.env.VITE_GGOV_REGISTRY_APP_ID || '0')
+const escregAppId = import.meta.env.VITE_ESCREG_APP_ID
+  ? BigInt(import.meta.env.VITE_ESCREG_APP_ID)
+  : undefined
 
 export function GGovSDKProvider({ children }: { children: ReactNode }) {
   const { activeAddress, transactionSigner } = useWallet()
@@ -32,6 +38,17 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
   const readerSDK = useMemo(() => {
     const algorand = createAlgorandClient()
     return new GGovReaderSDK({ algorand, registryAppId: appId, concurrency: 8 })
+  }, [])
+
+  // App-escrow lookups are read-only and wallet-independent. When VITE_ESCREG_APP_ID
+  // is set we query that deployment through the app's own Algorand client; otherwise
+  // the SDK falls back to its built-in Fnet registry (escrow addresses are
+  // network-independent, derived purely from the app ID).
+  const escregSDK = useMemo(() => {
+    if (escregAppId !== undefined) {
+      return new EscregSDK({ appId: escregAppId, algorand: createAlgorandClient() })
+    }
+    return new EscregSDK({})
   }, [])
 
   const sdk = useMemo(() => {
@@ -50,7 +67,7 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
 
   return React.createElement(
     GGovSDKContext.Provider,
-    { value: { readerSDK, sdk } },
+    { value: { readerSDK, sdk, escregSDK } },
     children
   )
 }

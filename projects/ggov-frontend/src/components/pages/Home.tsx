@@ -408,6 +408,14 @@ export default function Home() {
                 <ArrowRight />
               </Link>
             </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-background/40 bg-transparent text-background hover:bg-background hover:text-foreground"
+            >
+              <Link to="/docs">Read docs</Link>
+            </Button>
           </div>
         </div>
       </section>
