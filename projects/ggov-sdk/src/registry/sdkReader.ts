@@ -392,7 +392,7 @@ export class GGovRegistryReaderSDK {
     return { delegatee: result![0], exists: result![1] };
   }
 
-  /** Reverse lookup: addresses that have delegated to $delegatee (empty if none), one per log line. */
+  /** Reverse lookup: addresses that have delegated to `delegatee` (empty if none), one per log line. */
   @wrapErrors()
   async getDelegators(delegatee: string): Promise<string[]> {
     const builder = this.readClient.newGroup().logDelegators({ args: { delegatee } });

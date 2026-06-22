@@ -83,7 +83,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** Last committee numeric ID; superbox prefix for committees */
   lastCommitteeId = GlobalState<uint64>({ initialValue: 0 })
 
-  /** Admin address; defaults to creator. Rotatable via setAdmin. */
+  /** Admin address; defaults to creator. Rotatable via `setAdmin`. */
   admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** Operator address (manages periods on spawned ggov-period apps) */
   operator = GlobalState<Account>()
@@ -166,7 +166,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /**
    * Ingest xGovs into a committee
    * @param committeeId committee ID
-   * @param xGovs xGovs to ingest
+   * @param xGovs xGovs to ingest, strictly ascending order by account ID
    */
   public ingestXGovs(committeeId: CommitteeId, xGovs: AccountWithVotes[]): void {
     this.ensureCallerIsAdmin()
@@ -223,7 +223,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /**
    * Uningest last N xGovs from committee
    * @param committeeId committee ID
-   * @param numXGovs xGovs to uningest, strictly descending order
+   * @param xGovs xGovs to uningest, strictly descending order by account ID
    */
   public uningestXGovs(committeeId: CommitteeId, xGovs: Account[]): void {
     this.ensureCallerIsAdmin()
@@ -259,12 +259,12 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
   // ── Admin ─────────────────────────────────────────────────────────
 
-  /** Override base check: caller must match this registry's stored admin (not the contract creator). */
+  /** Caller must match this registry's stored `admin` (`BaseContract` override). */
   protected override ensureCallerIsAdmin(): void {
     ensure(Txn.sender === this.admin.value, errUnauthorized)
   }
 
-  /** Transfer admin to $newAdmin. Admin only; zero address rejected. */
+  /** Transfer admin to `newAdmin`. Admin only; zero address rejected. */
   public setAdmin(newAdmin: Account): void {
     this.ensureCallerIsAdmin()
     ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
@@ -272,9 +272,11 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Withdraw $amount microALGO from the registry app account to $receiver. Admin only.
+   * Withdraw ALGO from the registry app account to `receiver`. Admin only.
    * The AVM rejects the inner payment if it would drop the app account below its min
    * balance, so over-withdrawal fails atomically (no explicit balance check needed).
+   * @param receiver Destination account
+   * @param amount microALGO to withdraw
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.ensureCallerIsAdmin()
@@ -282,7 +284,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     itxn.payment({ receiver, amount }).submit()
   }
 
-  /** Whether $account is the admin. Called by period contracts via inner txn. */
+  /** Whether `account` is the admin. Called by period contracts via inner txn. */
   @abimethod({ readonly: true })
   public verifyAdmin(account: Account): boolean {
     return account === this.admin.value
@@ -302,13 +304,13 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
   // ── Operator + delegations ────────────────────────────────────────
 
-  /** Set the operator account (manages periods on spawned ggov-period apps). */
+  /** Set the `operator` account. */
   public setOperator(account: Account): void {
     this.ensureCallerIsAdmin()
     this.operator.value = account
   }
 
-  /** Whether $account is the registered operator. Called by period contracts via inner txn. */
+  /** Whether `account` is the registered operator. Called by period contracts via inner txn. */
   @abimethod({ readonly: true })
   public verifyOperator(account: Account): boolean {
     return account === this.operator.value
@@ -354,9 +356,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Record a delegation from $delegator to $delegatee, keeping the forward (`delegations`) and
+   * Record a delegation from `delegator` to `delegatee`, keeping the forward (`delegations`) and
    * reverse (`reverseDelegations`) indexes in sync. Single entry point for adding a delegation —
-   * reused by `delegate` and `mirrorXGovDelegation`. Re-delegating moves the delegator's address
+   * reused by `setVotingAccount` and `mirrorXGovDelegation`. Re-delegating moves the delegator's address
    * off the previous delegatee's reverse list onto the new one.
    */
   private addDelegation(delegator: Account, delegatee: Account): void {
@@ -377,7 +379,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Caller may manage $delegator's delegation if they are the delegator themselves or its current
+   * Caller may manage `delegator`'s delegation if they are the delegator themselves or its current
    * delegatee. Reused by `setVotingAccount` to match the xGov registry's auth rule (xgov_address or
    * current voting_address).
    */
@@ -387,7 +389,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     ensure(Txn.sender === delegator || isCurrentDelegatee, errUnauthorized)
   }
 
-  /** Remove $delegator's delegation if present (idempotent), keeping the reverse index in sync. */
+  /** Remove `delegator`'s delegation if present (idempotent), keeping the reverse index in sync. */
   private removeDelegation(delegator: Account): void {
     const box = this.delegations(delegator)
     if (!box.exists) return
@@ -397,7 +399,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     emit<GGovDelegationCleared>({ delegator, previousDelegatee })
   }
 
-  /** Append $delegator to $delegatee's reverse delegation list. */
+  /** Append `delegator` to `delegatee`'s reverse delegation list. */
   private addReverseDelegation(delegatee: Account, delegator: Account): void {
     const box = this.reverseDelegations(delegatee)
     const list: Account[] = []
@@ -408,7 +410,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     box.value = clone(list)
   }
 
-  /** Remove $delegator from $delegatee's reverse delegation list; delete the box when empty. */
+  /** Remove `delegator` from `delegatee`'s reverse delegation list; delete the box when empty. */
   private removeReverseDelegation(delegatee: Account, delegator: Account): void {
     const box = this.reverseDelegations(delegatee)
     if (!box.exists) return
@@ -439,7 +441,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     return Global.zeroAddress
   }
 
-  /** Log the addresses that have delegated to $delegatee (reverse lookup), one per log line. */
+  /** Log the addresses that have delegated to `delegatee` (reverse lookup), one per log line. */
   @abimethod({ readonly: true })
   public logDelegators(delegatee: Account): void {
     // TODO with limited delegations (~1024) this is fine
@@ -490,7 +492,10 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   // ── Periods registry ──────────────────────────────────────────────
 
   /**
-   * Spawn a fresh ggov-period app for $committeeId.
+   * Spawn a fresh ggov-period app for a certain `committeeId`.
+   * @param committeeId Committee ID
+   * @param votingStart Period start timestamp
+   * @param votingEnd Period end timestamp
    * @param mbrPayment Payment txn covering the new period app's MBR. Receiver must be this registry's address.
    * @returns [periodId, appId]
    */
@@ -568,15 +573,15 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Set the period-id counter to $newLastPeriodId; the next createPeriod issues
-   * $newLastPeriodId + 1. Admin only.
+   * Set the period-id counter to `newLastPeriodId`; the next createPeriod issues
+   * `newLastPeriodId + 1`. Admin only.
    *
    * Primary use: continue numbering contiguously after a legacy system — set to 15 on a fresh
    * registry so new periods start at 16. Can also rewind the counter downward.
    *
-   * Safety: a downward move re-issues the ids in (newLastPeriodId, lastPeriodId]; refuse if any
+   * Safety: a downward move re-issues the ids in (`newLastPeriodId`, `lastPeriodId`]; refuse if any
    * of those still has a live period box, so an existing period can never be overwritten or
-   * orphaned. Periods are only ever created up to the current lastPeriodId, so ids above it
+   * orphaned. Periods are only ever created up to the current `lastPeriodId`, so ids above it
    * cannot exist — a forward move therefore reads no boxes.
    */
   public setLastPeriodId(newLastPeriodId: uint64): void {
@@ -589,7 +594,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Update period summary. Called as an inner txn from the period app registered for $periodId
+   * Update period summary. Called as an inner txn from the period app registered for `periodId`
    * (the only path that can mutate the summary). Trust boundary: caller-app ID must match
    * the registered appId for that periodId.
    */
@@ -613,9 +618,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
   /**
    * Remove a period's summary box. Called as an inner txn from the period app registered for
-   * $periodId while it deletes itself, so deleted periods drop out of getAllPeriods/
-   * getAllPeriodSummaries (which filter on appId === 0). Trust boundary: caller-app ID must match
-   * the registered appId for that periodId — same as updatePeriodSummary. The period contract
+   * `periodId` while it deletes itself, so deleted periods drop out of `getAllPeriods`/
+   * `getAllPeriodSummaries` (which filter on `appId === 0`). Trust boundary: caller-app ID must match
+   * the registered `appId` for that `periodId` — same as `updatePeriodSummary`. The period contract
    * gates this on admin + !ready before calling (see GGovPeriodContract.deleteApplication).
    */
   public removePeriodSummary(periodId: Uint32): void {
@@ -625,7 +630,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     box.delete()
   }
 
-  /** Get the spawned period app ID for $periodId (0 if unknown). */
+  /** Get the spawned period app ID for `periodId` (0 if unknown). */
   @abimethod({ readonly: true })
   public getPeriodApp(periodId: uint64): uint64 {
     const box = this.periods(u32(periodId))
@@ -633,7 +638,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     return 0
   }
 
-  /** Get the period summary (or empty if $periodId is unknown). */
+  /** Get the period summary (or empty if `periodId` is unknown). */
   @abimethod({ readonly: true })
   public getPeriodSummary(periodId: uint64): GGovPeriodSummary {
     const box = this.periods(u32(periodId))
@@ -693,13 +698,14 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Facilitates fetching committee in "one shot" / parallel queries
-   * if logMetadata is true, log committee metadata and superbox metadata (which includes total xGovs)
-   * then log $dataPageLength number of xGov data boxes, starting from $startDataPage
-   * @param committeeId
-   * @param logMetadata
-   * @param startDataPage
-   * @param dataPageLength
+   * Facilitates fetching committee in "one shot" / parallel queries.
+   * When `logMetadata` is true, logs committee metadata and superbox metadata first. 
+   * Then, logs `dataPageLength` consecutive superbox data pages, starting at `startDataPage`.
+   * If a requested page does not exist, logs an empty byte string in its place.
+   * @param committeeId Committee ID
+   * @param logMetadata Whether to log committee and superbox metadata before the data pages
+   * @param startDataPage Index of the first data page to log, starting from 0
+   * @param dataPageLength Number of consecutive data pages to log
    */
   @abimethod({ readonly: true })
   public logCommitteePages(
@@ -763,8 +769,8 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Non-throwing variant of getXGovVotingPower. Returns 0 if account/committee unknown
-   * or the account is not a member of the committee. Used by ggov-period's canVote.
+   * Non-throwing variant of `getXGovVotingPower`. Returns 0 if account/committee unknown
+   * or the account is not a member of the committee. Used by ggov-period's `canVote`.
    */
   @abimethod({ readonly: true })
   public tryGetXGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
