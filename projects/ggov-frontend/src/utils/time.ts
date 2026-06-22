@@ -49,6 +49,18 @@ export function daysUntil(unixSeconds: number): number {
   return Math.ceil((unixSeconds - Date.now() / 1000) / 86_400)
 }
 
+/** "14:08:22" — exact wall-clock time of day in the viewer's local timezone, seconds-precise. */
+export function formatTime(unixSeconds: number): string {
+  const d = new Date(unixSeconds * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+/** Approximate elapsed days for a round span (Algorand ≈ 2.81s/round). */
+export function roundsToDays(rounds: number): number {
+  return Math.round((rounds * 2.81) / 86_400)
+}
+
 export function formatTimestampUTC(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toLocaleString(undefined, {
     year: 'numeric',

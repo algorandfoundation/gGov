@@ -30,6 +30,7 @@ export const queryKeys = {
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
   xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
   producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
+  blockHeader: (round: number) => ['blockHeader', round] as const,
 }
 
 export function useGlobalState() {
@@ -522,4 +523,50 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
     // A committee's membership is fixed once the committee exists.
     staleTime: 600_000,
   })
+}
+
+/** Header-only details for a single block round, as surfaced in the UI. */
+export interface BlockHeaderInfo {
+  round: number
+  /** Block timestamp in unix seconds. */
+  timestamp: number
+}
+
+/**
+ * Header-only block lookups for several rounds at once (one algod `block` call
+ * each, header-only). Backs the committee detail's start/end block panel. Each
+ * round resolves independently and a failed lookup yields `null` rather than
+ * throwing, so the panel can degrade to "round known, fields unavailable".
+ * Value per round: the header info, `null` if the lookup failed, or `undefined`
+ * while still loading.
+ */
+export function useBlockHeaders(rounds: number[]): Record<number, BlockHeaderInfo | null | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const results = useQueries({
+    queries: rounds.map((round) => ({
+      queryKey: queryKeys.blockHeader(round),
+      queryFn: async (): Promise<BlockHeaderInfo | null> => {
+        try {
+          // Header-only: skip the payset/certificate — we only need round metadata.
+          const res = await readerSDK.algorand.client.algod.block(round).headerOnly(true).do()
+          const header = res.block.header
+          return {
+            round: Number(header.round),
+            timestamp: Number(header.timestamp),
+          }
+        } catch {
+          // Archival/header data may be unavailable (e.g. non-archival node) — degrade gracefully.
+          return null
+        }
+      },
+      enabled: round > 0,
+      // Block headers are immutable once the round is final.
+      staleTime: Infinity,
+    })),
+  })
+  const out: Record<number, BlockHeaderInfo | null | undefined> = {}
+  rounds.forEach((round, i) => {
+    out[round] = results[i]?.isSuccess ? results[i].data : undefined
+  })
+  return out
 }
