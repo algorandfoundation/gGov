@@ -1,0 +1,6 @@
+# Commits listed here are ignored by git blame.
+# Add the full SHA of reformat/style commits so blame shows real authors.
+# Configure locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# refactor: reorder registry e2e spec by feature with consistent naming
+d66ed7d5fb49ba61a6c0aaf62136058233b0add9
