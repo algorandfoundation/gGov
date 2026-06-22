@@ -1472,4 +1472,156 @@ describe('GGovRegistry contract', () => {
       expect(state.currentRound).toBeGreaterThan(0n)
     })
   })
+
+  describe('batch reader stress', () => {
+    test('getXGovVotingPowers: 17 committeeIds with distinct votes verify index alignment across @chunked(16)', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const xGov = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeIds: Uint8Array[] = []
+      const expectedPowers: number[] = []
+      for (let i = 0; i < 17; i++) {
+        const id = new Uint8Array(32)
+        id[0] = i
+        const votes = 10 + i * 5 // distinct votes per committee: 10, 15, 20 … 90
+        await sdk.registerCommittee({
+          committeeId: id,
+          periodStart: 50_000_000,
+          periodEnd: 53_000_000,
+          totalMembers: 1,
+          totalVotes: votes,
+          xGovRegistryId: 0n,
+        })
+        await sdk.ingestXGovs({ committeeId: id, xGovs: [{ account: xGov.toString(), votes }] })
+        committeeIds.push(id)
+        expectedPowers.push(votes)
+      }
+      const powers = await sdk.getXGovVotingPowers(committeeIds, xGov.toString())
+      expect(powers).toEqual(expectedPowers)
+    })
+
+    test('getGGovAccountsMap: 129 addresses (100 known + 29 unknown) verify @chunked(128) with mixed entries', async () => {
+      const { generateAccount } = await import('algosdk')
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 100)
+      const unknownAddresses = Array.from({ length: 29 }, () => generateAccount().addr.toString())
+      const allAddresses = [...xGovAccounts.map((a) => a.toString()), ...unknownAddresses]
+      const accountsMap = await sdk.getGGovAccountsMap(allAddresses)
+      expect(accountsMap.size).toBe(129)
+      for (const address of xGovAccounts.map((a) => a.toString())) {
+        const entry = accountsMap.get(address)!
+        expect(entry.accountId).toBeGreaterThan(0)
+        expect(entry.committeeOffsets).toHaveLength(1)
+      }
+      for (const address of unknownAddresses) {
+        expect(accountsMap.get(address)!.accountId).toBe(0)
+        expect(accountsMap.get(address)!.committeeOffsets).toHaveLength(0)
+      }
+    }, 120_000)
+
+    test('getDelegations: 129 addresses (2 distinct delegatees at boundary positions) verify index alignment across @chunked(128)', async () => {
+      const { ALGORAND_ZERO_ADDRESS_STRING, generateAccount } = await import('algosdk')
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 2)
+      const [accountA, accountB] = xGovAccounts
+      const delegateeA = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const delegateeB = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createSDK(localnet, sdk.appId, accountA).setVotingAccount({ votingAddress: delegateeA.toString() })
+      await createSDK(localnet, sdk.appId, accountB).setVotingAccount({ votingAddress: delegateeB.toString() })
+      // accountA at index 0, 127 unregistered addresses, accountB at index 128
+      const freshAddresses = Array.from({ length: 127 }, () => generateAccount().addr.toString())
+      const addresses = [accountA.toString(), ...freshAddresses, accountB.toString()]
+      const results = await sdk.getDelegations(addresses)
+      expect(results).toHaveLength(129)
+      expect(results[0]).toBe(delegateeA.toString())
+      expect(results[128]).toBe(delegateeB.toString())
+      expect(results.slice(1, 128).every((r) => r === ALGORAND_ZERO_ADDRESS_STRING)).toBe(true)
+    })
+
+    test('getPeriodSummaries: 129 IDs (3 known at positions 0/64/128) verify index alignment across @chunked(128)', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const knownIds = [
+        await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n }),
+        await sdk.addPeriod({ committeeId, votingStart: now + 3800n, votingEnd: now + 7400n }),
+        await sdk.addPeriod({ committeeId, votingStart: now + 7500n, votingEnd: now + 11100n }),
+      ]
+      // known periods at positions 0, 64, 128; unknown IDs everywhere else
+      const ids = Array.from({ length: 129 }, (_, i) => {
+        if (i === 0) return knownIds[0]
+        if (i === 64) return knownIds[1]
+        if (i === 128) return knownIds[2]
+        return BigInt(9000 + i)
+      })
+      const summaries = await sdk.getPeriodSummaries(ids)
+      expect(summaries).toHaveLength(129)
+      expect(summaries[0].appId).toBeGreaterThan(0n)
+      expect(summaries[64].appId).toBeGreaterThan(0n)
+      expect(summaries[128].appId).toBeGreaterThan(0n)
+      for (let i = 0; i < 129; i++) {
+        if (i !== 0 && i !== 64 && i !== 128) expect(summaries[i].appId).toBe(0n)
+      }
+    })
+
+    test('257 xGovs: fastGetCommittee and getCommitteeXGovs independently match fixture across superbox page boundary', async () => {
+      // 257 × 8 bytes = 2056 bytes, crossing the 2048-byte superbox page boundary.
+      // fastGetCommittee (simulate+log) and getCommitteeXGovs (direct box read) use different paths —
+      // comparing both against committeeFile.xGovs catches page-read corruption in either.
+      const { generateAccount } = await import('algosdk')
+      const { testAccount } = localnet.context
+      const committeeFile: XGovCommitteeFile = {
+        ...committeeTemplate,
+        totalMembers: 257,
+        totalVotes: 2570,
+        registryId: 0,
+        xGovs: Array.from({ length: 257 }, () => ({
+          address: generateAccount().addr.toString(),
+          votes: 10,
+        })),
+      }
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const committeeId = await sdk.uploadCommitteeFile(committeeFile)
+      const sortedFixture = [...committeeFile.xGovs].sort((a, b) => (a.address < b.address ? -1 : 1))
+      const [fast, xGovs] = await Promise.all([sdk.fastGetCommittee(committeeId), sdk.getCommitteeXGovs(committeeId)])
+      expect(fast!.xGovs).toEqual(sortedFixture)
+      expect(xGovs.map(({ account, votes }) => ({ address: account.toString(), votes }))).toEqual(sortedFixture)
+    }, 120_000)
+
+    test('getCommitteesMetadata: 129 committeeIds with distinct periodStart verify index alignment across @chunked(128)', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const ids: Uint8Array[] = []
+      for (let i = 0; i < 129; i++) {
+        const id = new Uint8Array(32)
+        id[0] = i % 256
+        id[1] = Math.floor(i / 256)
+        await sdk.registerCommittee({
+          committeeId: id,
+          periodStart: 50_000_000 + i,
+          periodEnd: 53_000_000,
+          totalMembers: 1,
+          totalVotes: 10,
+          xGovRegistryId: 0n,
+        })
+        ids.push(id)
+      }
+      const results = await sdk.getCommitteesMetadata(ids)
+      expect(results).toHaveLength(129)
+      for (let i = 0; i < 129; i++) {
+        expect(results[i]).not.toBeNull()
+        expect(results[i]!.periodStart).toBe(50_000_000 + i)
+      }
+    }, 180_000)
+
+    test('uningestCommitteeXGovs: 9 accounts span two 8-account write chunks, committee ends empty', async () => {
+      const { sdk, committeeId, xGovAccounts } = await deployRegistryWithCommittee(localnet, 9)
+      await sdk.uningestCommitteeXGovs({ committeeId, accounts: xGovAccounts.map((a) => a.toString()) })
+      const metadata = await sdk.getCommitteeMetadata(committeeId)
+      expect(metadata!.ingestedVotes).toBe(0)
+      const accountsMap = await sdk.getGGovAccountsMap(xGovAccounts.map((a) => a.toString()))
+      for (const [, account] of accountsMap) {
+        expect(account.committeeOffsets).toHaveLength(0)
+      }
+    })
+  })
 })
