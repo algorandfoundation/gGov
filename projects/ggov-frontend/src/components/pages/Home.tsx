@@ -17,8 +17,6 @@ import { usePeriods, useCommittee, useAllDelegations, usePeriodBody, toBase64Url
 import { periodStatus, formatTimestamp } from '@/utils/time'
 import { cn } from '@/lib/utils'
 
-const DOCS_URL = 'https://developer.algorand.org/docs/get-details/algorand_consensus/'
-
 /** Live ticking remainder until `targetUnixSeconds`, broken into d/h/m/s. */
 function useCountdown(targetUnixSeconds: number | undefined) {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000))
@@ -61,7 +59,7 @@ const HOW_IT_WORKS = [
   {
     icon: Users,
     title: 'Delegate',
-    body: "Short on time to follow every topic? Delegate your voting power to an account you trust to vote on your behalf, and clear it whenever you like to vote for yourself.",
+    body: "Short on time to follow every topic? Delegate your voting power to an account you trust to vote on your behalf.",
   },
 ]
 
@@ -384,6 +382,15 @@ export default function Home() {
             </div>
           ))}
         </div>
+        <div className="flex justify-center">
+          <Link
+            to="/docs"
+            className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline dark:text-algo-teal"
+          >
+            Read documentation
+            <ArrowRight className="size-4" />
+          </Link>
+        </div>
       </section>
 
       {/* ── Closing CTA ──────────────────────────────────────────────────── */}
@@ -407,9 +414,7 @@ export default function Home() {
               variant="outline"
               className="border-background/40 bg-transparent text-background hover:bg-background hover:text-foreground"
             >
-              <a href={DOCS_URL} target="_blank" rel="noopener noreferrer">
-                Read docs
-              </a>
+              <Link to="/docs">Read docs</Link>
             </Button>
           </div>
         </div>

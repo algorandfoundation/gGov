@@ -1,4 +1,4 @@
-import { lazy, useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -10,6 +10,7 @@ import { confirmPhase, resetPhase } from '@/lib/transactionPhase'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from '@/utils/network'
 import Layout from '@/components/Layout'
 import LandingLayout from '@/components/LandingLayout'
+import { Skeleton } from '@/components/ui/skeleton'
 import Home from '@/components/pages/Home'
 import VotePeriods from '@/components/pages/vote/VotePeriods'
 // Lazy-load the heavier routes so the landing view's chunk doesn't carry the
@@ -23,6 +24,15 @@ const AddPeriod = lazy(() => import('@/components/pages/manage/AddPeriod'))
 const AddTopic = lazy(() => import('@/components/pages/manage/AddTopic'))
 const Committees = lazy(() => import('@/components/pages/vote/Committees'))
 const CommitteeDetail = lazy(() => import('@/components/pages/vote/CommitteeDetail'))
+// Public docs site — its own shell (DocsLayout), independent of the app Layout.
+const DocsLayout = lazy(() => import('@/components/DocsLayout'))
+const DocsHome = lazy(() => import('@/components/pages/docs/DocsHome'))
+const DocsGettingStarted = lazy(() => import('@/components/pages/docs/GettingStarted'))
+const DocsVotingPower = lazy(() => import('@/components/pages/docs/VotingPower'))
+const DocsCommittees = lazy(() => import('@/components/pages/docs/Committees'))
+const DocsPeriods = lazy(() => import('@/components/pages/docs/Periods'))
+const DocsDelegation = lazy(() => import('@/components/pages/docs/Delegation'))
+const DocsFaq = lazy(() => import('@/components/pages/docs/Faq'))
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -112,6 +122,22 @@ export default function App() {
                   <Route path="manage/period/:periodId/add-topic" element={<AddTopic />} />
                   <Route path="committees" element={<Committees />} />
                   <Route path="committees/:committeeId" element={<CommitteeDetail />} />
+                </Route>
+                <Route
+                  path="docs"
+                  element={
+                    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                      <DocsLayout />
+                    </Suspense>
+                  }
+                >
+                  <Route index element={<DocsHome />} />
+                  <Route path="getting-started" element={<DocsGettingStarted />} />
+                  <Route path="voting-power" element={<DocsVotingPower />} />
+                  <Route path="committees" element={<DocsCommittees />} />
+                  <Route path="periods" element={<DocsPeriods />} />
+                  <Route path="delegation" element={<DocsDelegation />} />
+                  <Route path="faq" element={<DocsFaq />} />
                 </Route>
               </Routes>
             </BrowserRouter>
