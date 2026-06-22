@@ -1145,7 +1145,6 @@ describe('GGovPeriod contract', () => {
         periodId,
         startOffset: 0n,
         data: bodyJson,
-        last: true,
       })
     })
 
@@ -1162,7 +1161,7 @@ describe('GGovPeriod contract', () => {
       await sdk.setReady({ periodId, ready: true })
       const bodyJson = new TextEncoder().encode('{"title":"After ready"}')
       await expect(
-        sdk.uploadPeriodBodyPartial({ periodId, startOffset: 0n, data: bodyJson, last: true }),
+        sdk.uploadPeriodBodyPartial({ periodId, startOffset: 0n, data: bodyJson }),
       ).rejects.toThrow(transformedError(errGGovReady))
     })
 
@@ -1184,7 +1183,6 @@ describe('GGovPeriod contract', () => {
           topicIndex: 0n,
           startOffset: 0n,
           data: bodyJson,
-          last: true,
         }),
       ).rejects.toThrow(transformedError(errGGovReady))
     })
