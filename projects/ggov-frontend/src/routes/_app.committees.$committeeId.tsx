@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import CommitteeDetail from '@/components/pages/vote/CommitteeDetail'
-import { createReaderSDK } from '@/lib/readerSdk'
+import { createServerReaderSDK } from '@/lib/serverReaderSdk'
 import { fetchCommittee, fetchCommitteeMembers, queryKeys } from '@/hooks/queries'
 
 // SSR the committee metadata + member list. Fully wallet-independent; per-account
@@ -8,7 +8,7 @@ import { fetchCommittee, fetchCommitteeMembers, queryKeys } from '@/hooks/querie
 export const Route = createFileRoute('/_app/committees/$committeeId')({
   loader: async ({ context, params }) => {
     const idB64 = params.committeeId
-    const reader = createReaderSDK()
+    const reader = await createServerReaderSDK()
     try {
       await Promise.all([
         context.queryClient.ensureQueryData({

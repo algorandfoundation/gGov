@@ -17,27 +17,23 @@ export const escregAppId = import.meta.env.VITE_ESCREG_APP_ID
   ? BigInt(import.meta.env.VITE_ESCREG_APP_ID)
   : undefined
 
-// TODO(backend-client): the SSR route loaders run this in the Cloudflare Worker,
-// where every render makes an algod round-trip on a public VITE_ALGOD_* config
-// (the token is bundled into the client too, so it can't be privileged or rate-
-// limited per-origin). Isolate a backend-only Algorand client built from a
-// server-only secret (e.g. a non-VITE ALGOD_TOKEN bound via wrangler, read from
-// the Worker env — NOT import.meta.env) and have the loaders use that, keeping
-// this browser builder for the GGovSDKProvider. Until then loaders share the
-// public client below.
-export function createAlgorandClient() {
+// `tokenOverride` lets the Cloudflare Worker authenticate to Algod with a
+// privileged, server-only secret (see serverReaderSdk.ts) instead of the public
+// VITE_ALGOD_TOKEN that ships in the browser bundle. The browser keeps passing
+// nothing here, so it uses the public config token unchanged.
+export function createAlgorandClient(tokenOverride?: string) {
   const config = getAlgodConfigFromViteEnvironment()
   return AlgorandClient.fromConfig({
     algodConfig: {
       server: config.server,
       port: config.port,
-      token: config.token,
+      token: tokenOverride ?? config.token,
     },
   }).setDefaultValidityWindow(213) // ~10 mins at 2.81 round times
 }
 
-export function createReaderSDK() {
-  return new GGovReaderSDK({ algorand: createAlgorandClient(), registryAppId, concurrency: 8 })
+export function createReaderSDK(tokenOverride?: string) {
+  return new GGovReaderSDK({ algorand: createAlgorandClient(tokenOverride), registryAppId, concurrency: 8 })
 }
 
 export function createEscregSDK() {

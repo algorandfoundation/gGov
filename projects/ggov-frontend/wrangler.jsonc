@@ -9,5 +9,11 @@
   "main": "@tanstack/react-start/server-entry",
   "observability": {
     "enabled": true
-  }
+  },
+  // Secrets (NOT committed here — `vars` would be public). Set server-only secrets
+  // via the CLI so they never touch the dashboard or the client bundle:
+  //   pnpm wrangler secret put ALGOD_TOKEN        # production
+  //   echo 'ALGOD_TOKEN=...' >> .dev.vars         # local dev (see .dev.vars.example)
+  // ALGOD_TOKEN is the privileged Algod token used for SSR chain reads on the
+  // Worker (src/lib/serverReaderSdk.ts).
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import VotePeriodDetail from '@/components/pages/vote/VotePeriodDetail'
-import { createReaderSDK } from '@/lib/readerSdk'
+import { createServerReaderSDK } from '@/lib/serverReaderSdk'
 import { fetchPeriod, fetchPeriodBody, fetchTopicBodies, queryKeys } from '@/hooks/queries'
 
 // SSR the period title/description and each topic's title/description by seeding
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_app/vote/period/$periodId')({
   loader: async ({ context, params }) => {
     const periodId = Number(params.periodId)
     if (!Number.isFinite(periodId)) return
-    const reader = createReaderSDK()
+    const reader = await createServerReaderSDK()
     try {
       const period = await context.queryClient.ensureQueryData({
         queryKey: queryKeys.period(periodId),

@@ -120,6 +120,12 @@ celerybeat.pid
 
 # Environments
 .env
+
+# Cloudflare Worker local secrets (never commit real values; .example is tracked)
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
 .venv
 env/
 venv/
