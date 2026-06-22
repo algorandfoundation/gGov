@@ -407,7 +407,7 @@ export default function Home() {
               variant="outline"
               className="border-background/40 bg-transparent text-background hover:bg-background hover:text-foreground"
             >
-              <a href={DOCS_URL} target="_blank" rel="noreferrer">
+              <a href={DOCS_URL} target="_blank" rel="noopener noreferrer">
                 Read docs
               </a>
             </Button>
