@@ -142,10 +142,10 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="gap-2">
+      <SidebarFooter className="gap-2 pb-6">
         <ThemeToggle showLabel />
         <RefreshButton showLabel />
-        <TopBarAccount fullWidth />
+        <TopBarAccount fullWidth small />
       </SidebarFooter>
     </Sidebar>
   )
@@ -195,7 +195,7 @@ function MobileTopBar() {
         <SidebarTrigger aria-label="Open menu" />
         <Brand />
       </div>
-      <TopBarAccount />
+      <TopBarAccount small />
     </header>
   )
 }
