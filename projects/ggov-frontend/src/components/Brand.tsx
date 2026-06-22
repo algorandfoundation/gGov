@@ -1,0 +1,20 @@
+import { Link } from 'react-router-dom'
+import { cn } from '@/lib/utils'
+
+function AlgorandLogo({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" className={className}>
+      <path fill="currentColor" d="m6.142 21 8.221-14.227.99 3.683L9.268 21h3.115l3.953-6.844L18.181 21h2.792l-2.729-10.166L20.18 7.2h-2.836L16.138 3h-2.72L3.028 21z" />
+    </svg>
+  )
+}
+
+/** Brand lockup: the Algorand mark plus the "Governance" wordmark, linking home. */
+export default function Brand({ className }: { className?: string }) {
+  return (
+    <Link to="/" className={cn('flex items-center gap-2', className)}>
+      <AlgorandLogo className="text-primary size-6" />
+      <span className="text-lg text-primary font-bold">Governance</span>
+    </Link>
+  )
+}

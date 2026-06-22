@@ -5,6 +5,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { useGlobalState } from '@/hooks/queries'
 import { useTheme } from '@/hooks/useTheme'
 import { useIsMobile } from '@/hooks/use-mobile'
+import Brand from '@/components/Brand'
 import TopBarAccount from '@/components/TopBarAccount'
 import Footer from '@/components/Footer'
 import { Button } from '@/components/ui/button'
@@ -26,14 +27,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { Vote, Users, UserCircle, Settings, Sun, Moon, RefreshCw, type LucideIcon } from 'lucide-react'
 
-function AlgorandLogo({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" className={className}>
-      <path fill="currentColor" d="m6.142 21 8.221-14.227.99 3.683L9.268 21h3.115l3.953-6.844L18.181 21h2.792l-2.729-10.166L20.18 7.2h-2.836L16.138 3h-2.72L3.028 21z" />
-    </svg>
-  )
-}
-
 interface NavItem {
   to: string
   label: string
@@ -52,15 +45,6 @@ function useNavItems(): NavItem[] {
     ...(activeAddress ? [{ to: `/account/${activeAddress}`, label: 'My account', icon: UserCircle }] : []),
     ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
   ]
-}
-
-/** "GOVERNANCE" pill that sits beside the wordmark. */
-function GovernancePill() {
-  return (
-    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary dark:bg-algo-teal/15 dark:text-algo-teal">
-      Governance
-    </span>
-  )
 }
 
 function ThemeToggle({ showLabel = false }: { showLabel?: boolean }) {
@@ -134,10 +118,7 @@ function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link to="/" className="flex items-center gap-2 px-2 py-1">
-          <AlgorandLogo className="text-primary size-6" />
-          <span className="text-lg text-primary font-bold">Governance</span>
-        </Link>
+        <Brand className="px-2 py-1" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -169,7 +150,7 @@ function AppSidebar() {
   )
 }
 
-/** Desktop chrome: wordmark + GOVERNANCE pill, text nav, account control. */
+/** Desktop chrome: brand lockup + reload, text nav, account control. */
 function DesktopTopBar() {
   const location = useLocation()
   const navItems = useNavItems()
@@ -177,12 +158,9 @@ function DesktopTopBar() {
   return (
     <header className="hidden border-b border-border md:block">
       <div className="mx-auto flex h-[60px] w-full max-w-[1232px] items-center justify-between px-7">
-        <div className="flex items-center gap-3.5">
-          <Link to="/" className="flex items-center gap-2 text-foreground">
-            <AlgorandLogo className="size-6" />
-            <span className="font-display text-xl font-bold">Algorand</span>
-          </Link>
-          <GovernancePill />
+        <div className="flex items-center gap-3">
+          <Brand />
+          <RefreshButton />
         </div>
         <nav className="flex items-center gap-[22px] text-sm">
           {navItems.map(({ to, label }) => {
@@ -200,10 +178,7 @@ function DesktopTopBar() {
               </Link>
             )
           })}
-          <div className="flex items-center gap-1.5">
-            <RefreshButton />
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
           <TopBarAccount />
         </nav>
       </div>
@@ -211,16 +186,13 @@ function DesktopTopBar() {
   )
 }
 
-/** Compact bar for mobile: hamburger (opens drawer) + wordmark + account control. */
+/** Compact bar for mobile: hamburger (opens drawer) + brand lockup + account control. */
 function MobileTopBar() {
   return (
     <header className="flex h-14 items-center justify-between gap-2 border-b border-border px-4 md:hidden">
       <div className="flex items-center gap-2">
         <SidebarTrigger aria-label="Open menu" />
-        <Link to="/" className="flex items-center gap-2 text-foreground">
-          <AlgorandLogo className="size-6" />
-          <GovernancePill />
-        </Link>
+        <Brand />
       </div>
       <TopBarAccount />
     </header>

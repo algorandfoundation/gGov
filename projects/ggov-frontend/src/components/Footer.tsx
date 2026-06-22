@@ -7,7 +7,7 @@ const footerLinks = [
 export default function Footer() {
   return (
     <footer className="border-t px-4 py-6">
-      <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+      <nav className="flex flex-col items-end gap-x-6 gap-y-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
         {footerLinks.map(({ href, label }) => (
           <a
             key={href}
