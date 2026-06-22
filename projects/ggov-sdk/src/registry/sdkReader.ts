@@ -409,7 +409,11 @@ export class GGovRegistryReaderSDK {
   @wrapErrors()
   async getDelegations(accounts: string[]): Promise<string[]> {
     if (accounts.length === 0) return [];
-    const builder = this.readClient.newGroup().logDelegations({ args: { accounts } });
+    const accountChunks = chunk(accounts, 63);
+    let builder: GGovRegistryComposer<any> = this.readClient.newGroup();
+    for (const accountChunk of accountChunks) {
+      builder = builder.logDelegations({ args: { accounts: accountChunk } });
+    }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS);
     const logs = confirmations.flatMap(({ logs }) => logs ?? []);
     return logs.map((log) =>
