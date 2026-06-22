@@ -144,7 +144,7 @@ export function MarkdownEditor({ value, onChange, placeholder, id, className }: 
       </div>
 
       {/* Keep the editor mounted across tab switches so its view isn't destroyed. */}
-      <div className={cn("relative", tab !== "edit" && "hidden")}>
+      <div className={cn("relative max-h-[24rem] overflow-y-auto", tab !== "edit" && "hidden")}>
         {isEmpty && placeholder && (
           <span className="pointer-events-none absolute left-3 top-2 text-sm text-muted-foreground">{placeholder}</span>
         )}
@@ -152,7 +152,7 @@ export function MarkdownEditor({ value, onChange, placeholder, id, className }: 
       </div>
 
       {tab === "preview" && (
-        <div className="min-h-[7rem] px-3 py-2">
+        <div className="max-h-[24rem] min-h-[7rem] overflow-y-auto px-3 py-2">
           {isEmpty ? (
             <p className="text-sm text-muted-foreground">Nothing to preview.</p>
           ) : (
