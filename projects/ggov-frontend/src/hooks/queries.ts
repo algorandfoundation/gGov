@@ -19,6 +19,7 @@ export const queryKeys = {
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
   canVoteMany: (periodId: number, key: string) => ['canVoteMany', periodId, key] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
+  appEscrow: (address: string) => ['appEscrow', address] as const,
   delegation: (account: string) => ['delegation', account] as const,
   allDelegations: ['allDelegations'] as const,
   delegatedToMe: (account: string) => ['delegatedToMe', account] as const,
@@ -72,6 +73,29 @@ export function usePeriodAppId(periodId: number) {
   return useQuery({
     queryKey: queryKeys.periodAppId(periodId),
     queryFn: () => readerSDK.getPeriodAppId(BigInt(periodId)),
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * Resolve whether an address is an application escrow via the Escreg registry,
+ * returning the owning app ID (or undefined when it isn't a registered escrow).
+ * Whether an address is an app escrow is immutable, so this never goes stale; a
+ * lookup failure resolves to undefined so the page just renders as a plain account.
+ */
+export function useAppEscrow(address: string | null | undefined) {
+  const { escregSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.appEscrow(address ?? ''),
+    queryFn: async (): Promise<bigint | undefined> => {
+      try {
+        const result = await escregSDK.lookup({ addresses: [address!] })
+        return result[address!]
+      } catch {
+        return undefined
+      }
+    },
+    enabled: !!address,
     staleTime: Infinity,
   })
 }
