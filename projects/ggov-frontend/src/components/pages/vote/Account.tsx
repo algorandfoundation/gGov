@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { AccountAvatar } from "@/components/AccountAvatar";
 import AppExplorerLink from "@/components/AppExplorerLink";
+import AccountExplorerLink from "@/components/AccountExplorerLink";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { TxButtonContent } from "@/components/TxButtonContent";
 import { cn } from "@/lib/utils";
@@ -476,6 +477,7 @@ function HeadingIdentity({
         >
           <Copy className="size-3.5" />
         </button>
+        <AccountExplorerLink address={address} />
         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:text-algo-teal">
           This is you
         </span>
@@ -496,6 +498,7 @@ function HeadingIdentity({
       >
         <Copy className="size-3.5" />
       </button>
+      <AccountExplorerLink address={address} />
       {appId !== undefined && <AppLabel appId={appId} />}
     </div>
   );
