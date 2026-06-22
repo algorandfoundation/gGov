@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowLeftRight, BookOpen, Copy, ExternalLink, Info, Target } from "lucide-react";
+import { ArrowDown, ArrowLeftRight, BookOpen, Copy, Info, Target } from "lucide-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe } from "@/hooks/queries";
 import { useDelegateMutation, useUndelegateMutation, useRedelegateMutation } from "@/hooks/mutations";
@@ -17,7 +17,7 @@ import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { TxButtonContent } from "@/components/TxButtonContent";
 import { cn } from "@/lib/utils";
 
-const DELEGATION_DOCS_URL = "https://developer.algorand.org/docs/";
+const DELEGATION_DOCS_URL = "/docs/delegation";
 
 function copyAddress(address: string) {
   navigator.clipboard.writeText(address).then(
@@ -75,16 +75,13 @@ function AccountChip({
 function DocsLink() {
   return (
     <div className="mt-4 border-t border-border pt-3.5">
-      <a
-        href={DELEGATION_DOCS_URL}
-        target="_blank"
-        rel="noreferrer"
+      <Link
+        to={DELEGATION_DOCS_URL}
         className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:underline dark:text-algo-teal"
       >
         <BookOpen className="size-3.5" />
         Read more about delegation
-        <ExternalLink className="size-3" />
-      </a>
+      </Link>
     </div>
   );
 }

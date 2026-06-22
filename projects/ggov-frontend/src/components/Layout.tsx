@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Vote, Users, UserCircle, Settings, Sun, Moon, RefreshCw, type LucideIcon } from 'lucide-react'
+import { Vote, Users, UserCircle, Settings, BookOpen, Sun, Moon, RefreshCw, type LucideIcon } from 'lucide-react'
 
 function AlgorandLogo({ className }: { className?: string }) {
   return (
@@ -51,6 +51,7 @@ function useNavItems(): NavItem[] {
     { to: '/committees', label: 'Committees', icon: Users },
     ...(activeAddress ? [{ to: `/account/${activeAddress}`, label: 'My account', icon: UserCircle }] : []),
     ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
+    { to: '/docs', label: 'Docs', icon: BookOpen },
   ]
 }
 

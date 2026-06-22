@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const footerLinks = [
   { href: 'https://algorand.co/algorand-foundation/disclaimer', label: 'Disclaimer' },
   { href: 'https://algorand.co/algorand-foundation/privacy-policy', label: 'Privacy Policy' },
@@ -8,6 +10,9 @@ export default function Footer() {
   return (
     <footer className="border-t px-4 py-6">
       <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+        <Link to="/docs" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
+          Documentation
+        </Link>
         {footerLinks.map(({ href, label }) => (
           <a
             key={href}
