@@ -79,20 +79,21 @@ export function usePeriodAppId(periodId: number) {
 
 /**
  * Resolve whether an address is an application escrow via the Escreg registry,
- * returning the owning app ID (or undefined when it isn't a registered escrow).
+ * returning the owning app ID (or null when it isn't a registered escrow).
  * Whether an address is an app escrow is immutable, so this never goes stale; a
- * lookup failure resolves to undefined so the page just renders as a plain account.
+ * lookup failure resolves to null so the page just renders as a plain account.
+ * (React Query forbids returning undefined from a queryFn, hence null.)
  */
 export function useAppEscrow(address: string | null | undefined) {
   const { escregSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.appEscrow(address ?? ''),
-    queryFn: async (): Promise<bigint | undefined> => {
+    queryFn: async (): Promise<bigint | null> => {
       try {
         const result = await escregSDK.lookup({ addresses: [address!] })
-        return result[address!]
+        return result[address!] ?? null
       } catch {
-        return undefined
+        return null
       }
     },
     enabled: !!address,
