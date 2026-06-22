@@ -10,6 +10,7 @@ import { confirmPhase, resetPhase } from '@/lib/transactionPhase'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from '@/utils/network'
 import Layout from '@/components/Layout'
 import LandingLayout from '@/components/LandingLayout'
+import { Skeleton } from '@/components/ui/skeleton'
 import Home from '@/components/pages/Home'
 import VotePeriods from '@/components/pages/vote/VotePeriods'
 // Lazy-load the heavier routes so the landing view's chunk doesn't carry the
@@ -125,7 +126,7 @@ export default function App() {
                 <Route
                   path="docs"
                   element={
-                    <Suspense fallback={null}>
+                    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
                       <DocsLayout />
                     </Suspense>
                   }
