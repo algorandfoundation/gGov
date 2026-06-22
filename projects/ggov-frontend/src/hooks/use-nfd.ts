@@ -73,7 +73,13 @@ const nfd = create({
 export function useAddressNfd(address?: string | null): UseQueryResult<NfdProfile | null> {
   return useQuery({
     queryKey: ['nfd', network, address ?? '-'],
-    queryFn: () => nfd.fetch(address!),
+    queryFn: async () => {
+      try {
+        return (await nfd.fetch(address!)) ?? null
+      } catch {
+        return null
+      }
+    },
     enabled: nfdEnabled && !!address,
     gcTime: 1000 * 60 * 60, // 1 hour
     staleTime: 1000 * 60 * 60, // 1 hour
