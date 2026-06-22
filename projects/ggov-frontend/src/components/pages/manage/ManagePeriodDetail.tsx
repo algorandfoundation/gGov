@@ -5,7 +5,6 @@ import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, to
 import {
   useEditPeriodMutation,
   useUploadPeriodBodyMutation,
-  useEditTopicMutation,
   useUploadTopicBodyMutation,
   useRemoveTopicMutation,
   useSetReadyMutation,
@@ -20,6 +19,7 @@ import { MarkdownContent } from '@/components/ui/markdown-content'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { EditOptionsDialog } from '@/components/pages/manage/EditOptionsDialog'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
@@ -39,7 +39,6 @@ export default function ManagePeriodDetail() {
 
   const editPeriodMutation = useEditPeriodMutation()
   const uploadPeriodBodyMutation = useUploadPeriodBodyMutation()
-  const editTopicMutation = useEditTopicMutation()
   const uploadTopicBodyMutation = useUploadTopicBodyMutation()
   const removeTopicMutation = useRemoveTopicMutation()
   const setReadyMutation = useSetReadyMutation()
@@ -53,9 +52,8 @@ export default function ManagePeriodDetail() {
   const [editPeriodTitle, setEditPeriodTitle] = useState('')
   const [editPeriodBody, setEditPeriodBody] = useState('')
 
-  // Edit topic dialog
+  // Edit topic options dialog: tracks which topic is open; the dialog owns the form state.
   const [editingTopic, setEditingTopic] = useState<number | null>(null)
-  const [editOptions, setEditOptions] = useState<string[]>([])
 
   // Edit topic body dialog
   const [editingTopicBody, setEditingTopicBody] = useState<number | null>(null)
@@ -106,21 +104,6 @@ export default function ManagePeriodDetail() {
       periodId,
       body: { title: editPeriodTitle.trim(), body: editPeriodBody.trim() },
     })
-  }
-
-  function openEditTopic(topicIdx: number) {
-    if (!period) return
-    const [options] = period.topics[topicIdx]
-    setEditingTopic(topicIdx)
-    setEditOptions([...options])
-  }
-
-  function handleEditTopic() {
-    if (editingTopic === null) return
-    editTopicMutation.mutate(
-      { periodId, topicIndex: editingTopic, options: editOptions },
-      { onSuccess: () => setEditingTopic(null) },
-    )
   }
 
   function openEditTopicBody(topicIdx: number) {
@@ -356,7 +339,7 @@ export default function ManagePeriodDetail() {
                       )}
                       {canEdit && (
                         <>
-                          <Button variant="ghost" size="sm" onClick={() => openEditTopic(topicIdx)}>
+                          <Button variant="ghost" size="sm" onClick={() => setEditingTopic(topicIdx)}>
                             Edit options
                           </Button>
                           <Button
@@ -405,52 +388,12 @@ export default function ManagePeriodDetail() {
 
       {/* Edit Topic Options Dialog */}
       {editingTopic !== null && (
-        <Dialog open={true} onOpenChange={() => setEditingTopic(null)}>
-          <DialogContent onClose={() => setEditingTopic(null)}>
-            <DialogHeader>
-              <DialogTitle>Edit Topic {editingTopic + 1} Options</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              {editOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    name={`topic-option-${i}`}
-                    aria-label={`Option ${i + 1}`}
-                    value={opt}
-                    onChange={(e) => {
-                      const next = [...editOptions]
-                      next[i] = e.target.value
-                      setEditOptions(next)
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditOptions(editOptions.filter((_, j) => j !== i))}
-                    disabled={editOptions.length <= 1}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={() => setEditOptions([...editOptions, ''])}>
-                Add Option
-              </Button>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingTopic(null)}>Cancel</Button>
-              <Button onClick={handleEditTopic} disabled={editTopicMutation.isPending} aria-busy={editTopicMutation.isPending}>
-                <TxButtonContent
-                  pending={editTopicMutation.isPending}
-                  success={editTopicMutation.isSuccess}
-                  idleLabel="Save"
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <EditOptionsDialog
+          periodId={periodId}
+          topicIndex={editingTopic}
+          initialOptions={period.topics[editingTopic][0]}
+          onClose={() => setEditingTopic(null)}
+        />
       )}
 
       {/* Ready Transition Dialog */}
