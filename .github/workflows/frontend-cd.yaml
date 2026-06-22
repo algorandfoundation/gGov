@@ -1,0 +1,73 @@
+name: Deploy frontend (testnet)
+
+# Deploys the ggov-frontend Cloudflare Worker to testnet on merge to main.
+# Path-scoped so contracts-only merges don't trigger a redundant frontend deploy;
+# use the "Run workflow" button (workflow_dispatch) to deploy on demand.
+#
+# Required secrets (repo or `frontend-testnet` environment):
+#   CLOUDFLARE_API_TOKEN   - Workers deploy token (Account > Workers Scripts: Edit)
+#   CLOUDFLARE_ACCOUNT_ID  - target Cloudflare account id
+#   ALGOD_TOKEN            - privileged Algod token; uploaded as a Worker secret
+#                            (optional — if unset, SSR reads fall back to the
+#                            public VITE_ALGOD_TOKEN from .env.testnet)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/ggov-frontend/**'
+      - 'projects/ggov-sdk/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/frontend-cd.yaml'
+  workflow_dispatch:
+
+# One deploy at a time; a newer push supersedes an in-flight run.
+concurrency:
+  group: frontend-cd
+  cancel-in-progress: true
+
+jobs:
+  deploy-testnet:
+    runs-on: "ubuntu-latest"
+    environment: frontend-testnet
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ALGOD_TOKEN: ${{ secrets.ALGOD_TOKEN }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'pnpm'
+          cache-dependency-path: "**/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ggov-frontend consumes ggov-sdk via `link:../ggov-sdk` (built dist/). The
+      # generated clients are committed, so a plain tsc builds it — no algokit.
+      - name: Build ggov-sdk
+        run: pnpm --filter ggov-sdk build
+
+      # `deploy:testnet` = typecheck && vite build --mode testnet && wrangler deploy.
+      # Reads public client config from .env.testnet; authenticates to Cloudflare
+      # with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID.
+      - name: Build & deploy Worker (testnet)
+        working-directory: projects/ggov-frontend
+        run: pnpm deploy:testnet
+
+      # Upload the privileged Algod token as a Worker secret (server-only; never in
+      # the client bundle). Runs after deploy so the Worker exists; secrets persist
+      # across deploys, so this just keeps it in sync. Skipped when the secret is unset.
+      - name: Set ALGOD_TOKEN Worker secret
+        if: ${{ env.ALGOD_TOKEN != '' }}
+        working-directory: projects/ggov-frontend
+        run: printf '%s' "$ALGOD_TOKEN" | pnpm wrangler secret put ALGOD_TOKEN

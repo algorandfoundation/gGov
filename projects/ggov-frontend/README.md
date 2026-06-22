@@ -47,3 +47,16 @@ read it inside a `createIsomorphicFn().server()` body, and document it above.
 pnpm deploy              # pnpm typecheck && vite build && wrangler deploy
 pnpm deploy:testnet
 ```
+
+### Continuous deployment
+
+Merging to `main` deploys the Worker to **testnet** via
+[`.github/workflows/frontend-cd.yaml`](../../.github/workflows/frontend-cd.yaml)
+(also runnable on demand from the Actions tab). Configure these secrets on the repo
+or the `frontend-testnet` environment:
+
+| Secret                  | Purpose                                                              |
+| ----------------------- | ------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Wrangler deploy auth (Workers Scripts: Edit).                       |
+| `CLOUDFLARE_ACCOUNT_ID` | Target Cloudflare account.                                          |
+| `ALGOD_TOKEN`           | Privileged Algod token, uploaded as the Worker secret on each deploy. Optional — SSR reads fall back to the public token if unset. |
