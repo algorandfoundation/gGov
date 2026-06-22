@@ -106,6 +106,7 @@ export function useAddPeriodMutation() {
       votingEnd: bigint
       title?: string
       body?: string
+      electThresh?: number
     }) => {
       // A body is only uploaded (a second signed group) when a title is provided.
       const willUploadBody = !!args.title?.trim()
@@ -122,7 +123,11 @@ export function useAddPeriodMutation() {
           progress.step('Uploading period body')
           await sdk!.uploadPeriodBody({
             periodId,
-            body: { title: args.title!.trim(), body: args.body?.trim() ?? '' },
+            body: {
+              title: args.title!.trim(),
+              body: args.body?.trim() ?? '',
+              ...(args.electThresh !== undefined ? { electThresh: args.electThresh } : {}),
+            },
           })
         }
 

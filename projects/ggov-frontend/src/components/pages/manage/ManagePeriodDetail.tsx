@@ -51,6 +51,8 @@ export default function ManagePeriodDetail() {
   // Edit period body
   const [editPeriodTitle, setEditPeriodTitle] = useState('')
   const [editPeriodBody, setEditPeriodBody] = useState('')
+  const [editIsElection, setEditIsElection] = useState(false)
+  const [editElectThresh, setEditElectThresh] = useState('')
 
   // Edit topic options dialog: tracks which topic is open; the dialog owns the form state.
   const [editingTopic, setEditingTopic] = useState<number | null>(null)
@@ -83,6 +85,8 @@ export default function ManagePeriodDetail() {
       seededBodyPeriodId.current = periodId
       setEditPeriodTitle(periodBody?.title ?? '')
       setEditPeriodBody(periodBody?.body ?? '')
+      setEditIsElection(periodBody?.electThresh !== undefined)
+      setEditElectThresh(periodBody?.electThresh !== undefined ? String(periodBody.electThresh) : '')
     }
   }, [periodBody, periodId])
 
@@ -98,11 +102,19 @@ export default function ManagePeriodDetail() {
     })
   }
 
+  const editElectThreshNum = Number(editElectThresh)
+  const editElectThreshValid =
+    !editIsElection || (Number.isInteger(editElectThreshNum) && editElectThreshNum >= 1)
+
   function handleSavePeriodBody() {
-    if (!editPeriodTitle.trim() || !editPeriodBody.trim()) return
+    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectThreshValid) return
     uploadPeriodBodyMutation.mutate({
       periodId,
-      body: { title: editPeriodTitle.trim(), body: editPeriodBody.trim() },
+      body: {
+        title: editPeriodTitle.trim(),
+        body: editPeriodBody.trim(),
+        ...(editIsElection ? { electThresh: editElectThreshNum } : {}),
+      },
     })
   }
 
@@ -283,7 +295,37 @@ export default function ManagePeriodDetail() {
                   placeholder="Period description..."
                 />
               </div>
-              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending} aria-busy={uploadPeriodBodyMutation.isPending}>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={editIsElection}
+                    onChange={(e) => setEditIsElection(e.target.checked)}
+                  />
+                  Election type
+                </label>
+                {editIsElection && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-elect-thresh">Seats to elect</Label>
+                    <Input
+                      id="edit-elect-thresh"
+                      name="edit-elect-thresh"
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={editElectThresh}
+                      onChange={(e) => setEditElectThresh(e.target.value)}
+                      placeholder="Number of seats being elected"
+                      required
+                    />
+                    {!editElectThreshValid && (
+                      <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending || !editElectThreshValid} aria-busy={uploadPeriodBodyMutation.isPending}>
                 <TxButtonContent
                   pending={uploadPeriodBodyMutation.isPending}
                   success={uploadPeriodBodyMutation.isSuccess}

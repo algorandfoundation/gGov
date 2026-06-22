@@ -44,15 +44,24 @@ export type GGovPeriodContractArgs = GGovPeriodArgs["obj"];
 export interface BodyJson {
   title: string;
   body: string;
+  /**
+   * Present only on election-type periods: the number of seats being elected
+   * (a positive integer). Absent on non-election periods.
+   */
+  electThresh?: number;
 }
 
 export function validateBodyJson(obj: unknown): obj is BodyJson {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof (obj as any).title === "string" &&
-    typeof (obj as any).body === "string"
-  );
+  if (typeof obj !== "object" || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  if (typeof o.title !== "string" || typeof o.body !== "string") return false;
+  if (
+    o.electThresh !== undefined &&
+    (typeof o.electThresh !== "number" || !Number.isInteger(o.electThresh) || o.electThresh < 1)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function parseBodyJson(raw: Uint8Array): BodyJson | null {
