@@ -4,12 +4,12 @@
   "description": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/d13co/xgov-delegator.git"
+    "url": "git+https://github.com/algorandfoundation/gGov.git"
   },
   "bugs": {
-    "url": "https://github.com/d13co/xgov-delegator/issues"
+    "url": "https://github.com/algorandfoundation/gGov/issues"
   },
-  "homepage": "https://github.com/d13co/xgov-delegator/tree/main/projects/ggov-sdk#readme",
+  "homepage": "https://github.com/algorandfoundation/gGov/tree/main/projects/ggov-sdk#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
