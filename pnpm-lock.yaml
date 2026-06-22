@@ -112,6 +112,12 @@ importers:
       '@blockshake/defly-connect':
         specifier: ^1.2.1
         version: 1.2.1(algosdk@3.5.2)
+      '@d13co/escreg-sdk':
+        specifier: ^0.0.3
+        version: 0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)
+      '@d13co/open-in':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@perawallet/connect':
         specifier: ^1.4.1
         version: 1.4.2(algosdk@3.5.2)
@@ -427,6 +433,15 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
+
+  '@d13co/escreg-sdk@0.0.3':
+    resolution: {integrity: sha512-EZam1vJKqVGcBAcvt35v3k2wn8q9Wp0gxvxZ5kmW209EAMOy/GDM+TM/7xs1Go24K2Uyis3e/sD4ElR8ksD9Sw==}
+    peerDependencies:
+      '@algorandfoundation/algokit-utils': ^9.0.0
+      algosdk: ^3.0.0
+
+  '@d13co/open-in@0.1.2':
+    resolution: {integrity: sha512-s2/p03vJLJnN46X6mAo1P2kERi0UGAubLwk8S5AI6vsEmxrxmfIvic/B01FM0+ygAQU23cIMRbY+qwbPsuyYag==}
 
   '@d13co/superbox@2.0.0':
     resolution: {integrity: sha512-/AQ4yUBULg4qehgYDDnh3RkanFpNHaXtsVm9usKsCfuM1OMIWeVSKOKgl4OcFaR187MSTg6zaTXaTF7QFLrncw==}
@@ -4855,6 +4870,14 @@ snapshots:
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
+
+  '@d13co/escreg-sdk@0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)':
+    dependencies:
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.5.2)
+      algosdk: 3.5.2
+      p-map: 7.0.4
+
+  '@d13co/open-in@0.1.2': {}
 
   '@d13co/superbox@2.0.0(tslib@2.8.1)':
     dependencies:

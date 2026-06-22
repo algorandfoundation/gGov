@@ -14,11 +14,11 @@
  *      the registry — call sdk.uploadPeriodApprovalProgram() with the new bytecode.
  *   4. Optionally setOperator and setXGovRegistryApp.
  */
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { GGovSDK } from "..";
+import { getAlgorand } from "./env";
 
 (async () => {
-  const algorand = AlgorandClient.fromEnvironment();
+  const algorand = getAlgorand();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
   const { sdk, appClient } = await GGovSDK.createRegistry({

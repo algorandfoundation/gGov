@@ -134,6 +134,10 @@
   --color-chart-5: var(--chart-5);
   --color-algo-teal: var(--algo-teal);
   --color-algo-blue: var(--algo-blue);
+  --color-algo-navy-40: var(--algo-navy-40);
+  --color-algo-orange: var(--algo-orange);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -182,6 +186,15 @@
   --ring: #2d2df1;
   --algo-teal: #17cac6;
   --algo-blue: #2d2df1;
+  /* Fixed neutral grey for muted results bars (design-system navy-40). */
+  --algo-navy-40: #99a1a7;
+  /* DESIGN.md accent orange (used for the delegate-can't-override warning). */
+  --algo-orange: #ff7f48;
+  /* High-contrast variants of success/warning for text & markers on the pale
+   * tint strips. Light mode darkens the accent for legibility; dark mode keeps
+   * the bright accent, which already reads on the dark tint. */
+  --success-strong: #0e7a55;
+  --warning-strong: #e0a800;
   --chart-1: #2d2df1;
   --chart-2: #17cac6;
   --chart-3: #5858f0;
@@ -227,6 +240,10 @@
   --ring: #6c6cf1;
   --algo-teal: #45d5d1;
   --algo-blue: #6c6cf1;
+  --algo-navy-40: #99a1a7;
+  --algo-orange: #ff7f48;
+  --success-strong: #01dc94;
+  --warning-strong: #ffe248;
   --chart-1: #6c6cf1;
   --chart-2: #45d5d1;
   --chart-3: #8080f3;

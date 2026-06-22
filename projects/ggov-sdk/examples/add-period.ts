@@ -14,14 +14,14 @@
  *   5. getPeriod (reads from the per-period app)
  *   6. getPeriodSummary (reads from the registry)
  */
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { readFileSync } from "fs";
 import { GGovSDK } from "..";
+import { getAlgorand } from "./env";
 
 (async () => {
   const file = JSON.parse(readFileSync(process.argv[2], "utf-8"));
 
-  const algorand = AlgorandClient.fromEnvironment();
+  const algorand = getAlgorand();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
   // 1. Deploy fresh GGovRegistry + seed MBR + upload period approval bytecode + setOperator.

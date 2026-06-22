@@ -1,37 +1,52 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
+import { Check, AlertTriangle } from "lucide-react";
 import Address from "@/components/Address";
 import AccountSelector, { AccountSelectorItem } from "@/components/AccountSelector";
 import TopicVoteCard from "@/components/TopicVoteCard";
 import SidebarLayout from "@/components/SidebarLayout";
 import CollectiveStatusCard from "@/components/CollectiveStatusCard";
+import ConnectedWalletsEligibility from "@/components/ConnectedWalletsEligibility";
+import PendingAccountsBanner, { type PendingAccount } from "@/components/PendingAccountsBanner";
 import PeriodInfoCard from "@/components/PeriodInfoCard";
 import BackButton from "@/components/BackButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClampedMarkdown } from "@/components/ui/clamped-markdown";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
-import PeriodAppExplorerLink from "@/components/PeriodAppExplorerLink";
+import TechnicalInfoCard from "@/components/TechnicalInfoCard";
 import { formatTimestamp, periodStatus, type PeriodStatus } from "@/utils/time";
 import { toBase64Url } from "@/hooks/queries";
-import { cn } from "@/lib/utils";
 import { TxButtonContent } from "@/components/TxButtonContent";
 
 function VoteAllocationSummary({ allocated, power }: { allocated: number; power: number }) {
   const remaining = power - allocated;
+  const balanced = remaining === 0;
   return (
-    <div className={cn("text-xs mt-2 tabular-nums", remaining === 0 ? "text-muted-foreground" : "text-destructive")}>
-      {remaining === 0
-        ? `${allocated} / ${power} votes allocated`
-        : remaining > 0
-          ? `${allocated} / ${power} votes allocated (${remaining} remaining)`
-          : `${allocated} / ${power} votes allocated (${-remaining} over)`}
+    <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-dashed border-input pt-3">
+      <span className="text-[12.5px] text-muted-foreground">
+        <strong className="text-foreground tabular-nums">{allocated.toLocaleString()}</strong> / {power.toLocaleString()}{" "}
+        votes allocated
+        {!balanced && (remaining > 0 ? ` (${remaining.toLocaleString()} remaining)` : ` (${(-remaining).toLocaleString()} over)`)}
+      </span>
+      {balanced ? (
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] font-semibold text-success">
+          <span className="size-[7px] rounded-full bg-success" />
+          Balanced
+        </span>
+      ) : (
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] font-semibold text-destructive">
+          <span className="size-[7px] rounded-full bg-destructive" />
+          {remaining > 0 ? "Under" : "Over"}
+        </span>
+      )}
     </div>
   );
 }
@@ -70,6 +85,19 @@ export default function VotePeriodDetail() {
   // When we switch the active account in order to vote as one of its delegators,
   // remember that delegator so the reset-on-switch below keeps it selected.
   const pendingVoterRef = useRef<string | null>(null);
+  // The "Voting as" account-context card, so "Switch & vote" can scroll back to it.
+  const votingAsRef = useRef<HTMLDivElement>(null);
+  // Set when a vote was just cast, so the post-vote banner scrolls itself into
+  // view on the render where it first appears (but not on an initial page load
+  // that already has a vote record).
+  const justVotedRef = useRef(false);
+  const bannerRef = useCallback((el: HTMLDivElement | null) => {
+    if (el && justVotedRef.current) {
+      justVotedRef.current = false;
+      // `nearest` only scrolls when the banner isn't already visible.
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, []);
   useEffect(() => {
     if (pendingVoterRef.current) {
       setSelectedVoter(pendingVoterRef.current);
@@ -172,7 +200,6 @@ export default function VotePeriodDetail() {
   const status = periodStatus(period.votingStart, period.votingEnd);
   const isActive = status === "active";
   const isUpcoming = status === "upcoming";
-  const isEnded = status === "ended";
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;
 
@@ -206,9 +233,12 @@ export default function VotePeriodDetail() {
   }
 
   function handleAdvancedVoteChange(topicIdx: number, optionIdx: number, value: number) {
+    // Votes are non-negative integers; clamp here so fractional/negative/NaN input
+    // can't propagate into the on-chain uint32[][] payload.
+    const safe = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
     setTopicVotes((prev) => {
       const next = prev.map((t) => t.map((opts) => [...opts]));
-      next[topicIdx][0][optionIdx] = value;
+      next[topicIdx][0][optionIdx] = safe;
       return next;
     });
   }
@@ -228,8 +258,14 @@ export default function VotePeriodDetail() {
     if (!selectedVoter) return;
     voteMutation.mutate(
       { periodId, voterAccount: selectedVoter, topicVotes: buildVotes() },
-      // Return to simple mode once an advanced-mode vote lands.
-      { onSuccess: () => setAdvancedMode(false) },
+      {
+        onSuccess: () => {
+          // Return to simple mode once an advanced-mode vote lands, and arm the
+          // post-vote banner to scroll into view when it next renders.
+          setAdvancedMode(false);
+          justVotedRef.current = true;
+        },
+      },
     );
   }
 
@@ -258,6 +294,17 @@ export default function VotePeriodDetail() {
   // powers load, so hold the card back until every voter account has resolved.
   const collectiveStatusReady = voterAccounts.every((addr) => xgovPowers[addr] !== undefined);
 
+  // Per-wallet eligibility for the non-active expandable list. Outside the voting
+  // window eligibility is registry voting power (canVote is false for everyone),
+  // and an account is "delegated" when it isn't one of the wallet's own accounts.
+  const walletEligibilityItems = voterAccounts.map((addr) => ({
+    address: addr,
+    votingPower: xgovPowers[addr] ?? 0,
+    eligible: (xgovPowers[addr] ?? 0) > 0,
+    voted: !!voteStatuses[addr],
+    delegated: !walletAddresses.includes(addr),
+  }));
+
   // Eligibility wording: during the active window canVote is authoritative (it
   // also reflects delegation/override rules); outside it canVote returns false
   // for everyone, so fall back to registry voting power.
@@ -276,6 +323,37 @@ export default function VotePeriodDetail() {
   // The committee's member count is the number of eligible governors.
   const eligibleGovernors = committee?.totalMembers;
 
+  // Post-vote nudge: once the selected voter has voted, surface the wallet's
+  // *other* controlled accounts that are eligible and still haven't voted.
+  const pendingAccounts: PendingAccount[] = voterAccounts
+    .filter((addr) => addr !== selectedVoter && !voteStatuses[addr])
+    .filter((addr) => {
+      const elig = walletAddresses.includes(addr) ? walletEligibility[addr] : delegatorEligibility[addr];
+      return !!elig?.canVote;
+    })
+    .map((addr) => ({
+      address: addr,
+      votingPower: xgovPowers[addr] ?? 0,
+      delegated: !walletAddresses.includes(addr),
+    }));
+  const showPendingBanner = isActive && !!voteRecord && !!selectedVoter && pendingAccounts.length > 0;
+
+  function switchAndVote(addr: string) {
+    handleSelectVoter(addr);
+    votingAsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // One-line hint beside the submit button: what's still missing, else the
+  // change-your-vote deadline once a ballot is valid.
+  const missingSeats = simpleSelections.filter((s) => s < 0).length;
+  const submitHint = !canSubmit
+    ? advancedMode
+      ? `Allocate exactly ${power.toLocaleString()} votes in every topic`
+      : `${missingSeats} of ${period.topics.length} topic${period.topics.length === 1 ? "" : "s"} still need a choice`
+    : voteRecord
+      ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
+      : "";
+
   const mainContent = (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -287,72 +365,99 @@ export default function VotePeriodDetail() {
       {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
 
       {isActive && activeAddress && voterAccounts.length >= 1 && (
-        <AccountSelector
-          className="mx-auto max-w-2xl"
-          selected={selectedVoter}
-          onSelect={handleSelectVoter}
-          accounts={walletAddresses.map<AccountSelectorItem>((addr) => ({
-            address: addr,
-            votingPower: walletEligibility[addr]?.votingPower,
-            canVote: walletEligibility[addr]?.canVote,
-            hasVoted: voteStatuses[addr],
-            // Accounts that delegated to this one nest under it as children.
-            delegated: (delegatorsByDelegatee[addr] ?? []).map<AccountSelectorItem>((d) => {
-              const record = delegatorRecords[d];
-              return {
-                address: d,
-                votingPower: delegatorEligibility[d]?.votingPower,
-                canVote: delegatorEligibility[d]?.canVote,
-                hasVoted: voteStatuses[d],
-                // Voted for itself (not via a delegate) → the delegate can't override.
-                votedDirectly: record != null && record.topicVotes != null && !record.isDelegated,
-              };
-            }),
-          }))}
-        />
-      )}
+        <div ref={votingAsRef} className="scroll-mt-6 rounded-xl border border-border bg-card px-5 py-[18px]">
+          <AccountSelector
+            selected={selectedVoter}
+            onSelect={handleSelectVoter}
+            connectedCount={walletAddresses.length}
+            delegatedCount={allDelegators.length}
+            accounts={walletAddresses.map<AccountSelectorItem>((addr) => ({
+              address: addr,
+              votingPower: walletEligibility[addr]?.votingPower,
+              canVote: walletEligibility[addr]?.canVote,
+              hasVoted: voteStatuses[addr],
+              // Accounts that delegated to this one nest under it as children.
+              delegated: (delegatorsByDelegatee[addr] ?? []).map<AccountSelectorItem>((d) => {
+                const record = delegatorRecords[d];
+                return {
+                  address: d,
+                  votingPower: delegatorEligibility[d]?.votingPower,
+                  canVote: delegatorEligibility[d]?.canVote,
+                  hasVoted: voteStatuses[d],
+                  // Voted for itself (not via a delegate) → the delegate can't override.
+                  votedDirectly: record != null && record.topicVotes != null && !record.isDelegated,
+                };
+              }),
+            }))}
+          />
 
-      {activeAddress && (voteRecord || eligibility) && (
-        <div className="text-center text-sm">
-          {voteRecord ? (
-            <span className="text-muted-foreground">
-              {isActive
-                ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
-                : `Voting closed on ${formatTimestamp(period.votingEnd)}.`}
-            </span>
-          ) : (
-            <span className={eligibility!.muted ? "text-muted-foreground" : "font-bold"}>
-              {votingForSelf ? (
-                eligibility!.self
-              ) : (
-                <>
-                  <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility!.suffix}
-                </>
+          {(voteRecord || eligibility) && (
+            <div className="mt-4 flex items-start gap-2.5 text-[13.5px] leading-relaxed">
+              {(voteRecord || !eligibility!.muted) && (
+                <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-success text-white">
+                  <Check className="size-2.5" strokeWidth={3} />
+                </span>
               )}
-            </span>
+              <span className={voteRecord || !eligibility!.muted ? "text-foreground" : "text-muted-foreground"}>
+                {voteRecord ? (
+                  <>
+                    You can change your vote any time until voting closes on{" "}
+                    <strong>{formatTimestamp(period.votingEnd)}</strong>.
+                  </>
+                ) : votingForSelf ? (
+                  eligibility!.self
+                ) : (
+                  <>
+                    <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility!.suffix}
+                  </>
+                )}
+              </span>
+            </div>
+          )}
+
+          {!votingForSelf && voteRecord && !voteRecord.isDelegated && (
+            <div className="mt-2.5 flex items-start gap-2.5 rounded-md border border-algo-orange/30 bg-algo-orange/10 px-3 py-2.5">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-algo-orange" />
+              <span className="text-[13px] leading-snug text-[#9A4A1F] dark:text-algo-orange">
+                <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so
+                you cannot vote on their behalf. A delegate cannot override a vote the account holder cast themselves.
+              </span>
+            </div>
           )}
         </div>
       )}
 
-      {isActive && !votingForSelf && voteRecord && !voteRecord.isDelegated && (
-        <div className="max-w-lg rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so you cannot vote on their
-          behalf. A delegate cannot override a vote the account holder cast themselves.
-        </div>
+      {activeAddress && !isActive && voterAccounts.length > 0 && collectiveStatusReady && (
+        <ConnectedWalletsEligibility items={walletEligibilityItems} eligibleCount={collectiveEligible} />
       )}
 
       <Separator />
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Topics</h2>
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold">Topics</h2>
+          {showVoteForm && (
+            <div className="flex items-center gap-2.5">
+              <span className="text-[12.5px] text-muted-foreground">Ballot mode</span>
+              <Tabs value={advancedMode ? "advanced" : "simple"} onValueChange={(v) => setAdvancedMode(v === "advanced")}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="simple" className="px-3 text-xs">
+                    Simple
+                  </TabsTrigger>
+                  <TabsTrigger value="advanced" className="px-3 text-xs">
+                    Advanced
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
+        </div>
         {showVoteForm && (
-          <button
-            type="button"
-            className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setAdvancedMode((v) => !v)}
-          >
-            {advancedMode ? "Simple mode" : "Advanced mode"}
-          </button>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            {advancedMode
+              ? "Split your votes across the options as you like — each topic must use your full voting power."
+              : "Pick one option per topic; all of your votes go to that choice."}
+          </p>
         )}
       </div>
 
@@ -363,6 +468,13 @@ export default function VotePeriodDetail() {
           {period.topics.map(([options, tallies], topicIdx) => {
             const tb = topicBodies[topicIdx];
             const mode = isUpcoming ? "upcoming" : showVoteForm ? (advancedMode ? "advanced" : "select") : "results";
+            // Tag an option "YOUR VOTE" only when the recorded vote was single-choice
+            // (exactly one non-zero option). Split/advanced votes get no tag rather than
+            // misleadingly highlighting just the largest allocation.
+            const recorded = voteRecord?.topicVotes[topicIdx];
+            const nonZero = recorded?.filter((v) => v > 0) ?? [];
+            const votedOptionIdx =
+              mode === "results" && nonZero.length === 1 ? recorded!.findIndex((v) => v > 0) : -1;
             return (
               <TopicVoteCard
                 key={topicIdx}
@@ -376,6 +488,8 @@ export default function VotePeriodDetail() {
                 onSelect={(optIdx) => handleSimpleSelect(topicIdx, optIdx)}
                 advancedVotes={topicVotes[topicIdx]?.[0]}
                 onAdvancedChange={(optIdx, value) => handleAdvancedVoteChange(topicIdx, optIdx, value)}
+                votingPower={power}
+                votedOptionIdx={votedOptionIdx >= 0 && (recorded?.[votedOptionIdx] ?? 0) > 0 ? votedOptionIdx : undefined}
                 footer={
                   showVoteForm && advancedMode ? (
                     <VoteAllocationSummary allocated={advancedTopicTotals[topicIdx]} power={power} />
@@ -388,30 +502,45 @@ export default function VotePeriodDetail() {
       )}
 
       {showVoteForm && (
-        <Button onClick={submitVote} disabled={voteMutation.isPending || !canSubmit} aria-busy={voteMutation.isPending}>
-          <TxButtonContent
-            pending={voteMutation.isPending}
-            success={voteMutation.isSuccess}
-            idleLabel="Submit vote"
-            pendingLabel="Voting…"
-            confirmedLabel="Voted"
+        <div className="flex items-center gap-4">
+          <Button onClick={submitVote} disabled={voteMutation.isPending || !canSubmit} aria-busy={voteMutation.isPending}>
+            <TxButtonContent
+              pending={voteMutation.isPending}
+              success={voteMutation.isSuccess}
+              idleLabel="Submit vote"
+              pendingLabel="Voting…"
+              confirmedLabel="Voted"
+            />
+          </Button>
+          {submitHint && <span className="text-[13px] text-muted-foreground">{submitHint}</span>}
+        </div>
+      )}
+
+      {showPendingBanner && selectedVoter && (
+        <div ref={bannerRef} className="scroll-mt-6">
+          <PendingAccountsBanner
+            className="mx-auto"
+            pending={pendingAccounts}
+            votedAccount={{ address: selectedVoter, votingPower: selectedVoterPower }}
+            totalAccounts={voterAccounts.length}
+            onSwitchAndVote={switchAndVote}
           />
-        </Button>
+        </div>
       )}
     </div>
   );
 
   const sidebar = (
     <div className="space-y-6">
-      {activeAddress && !isUpcoming && (
+      {activeAddress && (
         collectiveStatusReady ? (
           <CollectiveStatusCard
             totalVotingPower={collectiveVotingPower}
             connectedAccounts={voterAccounts.length}
             eligibleAccounts={collectiveEligible}
             votedAccounts={collectiveVoted}
-            hasDelegations={allDelegators.length > 0}
-            periodEnded={isEnded}
+            delegatedCount={allDelegators.length}
+            periodStatus={status}
           />
         ) : (
           <Skeleton className="h-40" />
@@ -457,8 +586,8 @@ export default function VotePeriodDetail() {
         votesCast={periodVotesCast}
         eligibleGovernors={eligibleGovernors}
         committeeHref={committeeIdB64 ? `/committees/${committeeIdB64}` : undefined}
-        footer={<PeriodAppExplorerLink periodId={periodId} />}
       />
+      <TechnicalInfoCard periodId={periodId} />
     </div>
   );
 

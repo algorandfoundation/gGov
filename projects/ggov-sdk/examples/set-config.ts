@@ -10,8 +10,8 @@
  * The DEPLOYER environment account must be the admin (creator) of the GGovRegistry app —
  * both setters are admin-gated.
  */
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { GGovRegistrySDK, GGovRegistryFactory } from "..";
+import { GGovRegistrySDK } from "..";
+import { getAlgorand, resolveRegistryAppId } from "./env";
 
 (async () => {
   const xGovRegistryAppIdArg = process.argv[2];
@@ -26,17 +26,11 @@ import { GGovRegistrySDK, GGovRegistryFactory } from "..";
   const xGovRegistryAppId = BigInt(xGovRegistryAppIdArg);
   const operatorAddress = operatorAddressArg === "-" ? null : operatorAddressArg;
 
-  const algorand = AlgorandClient.fromEnvironment();
+  const algorand = getAlgorand();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
 
-  // Locate the existing GGovRegistry app deployed by this deployer
-  const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-    defaultSender: deployer.addr,
-  });
-  const { appId } = await factory.getAppClientByCreatorAndName({
-    creatorAddress: deployer.addr,
-    appName: "GGovRegistry",
-  });
+  // Registry: APP_ID env if set, otherwise the registry created by this deployer.
+  const appId = await resolveRegistryAppId(algorand, deployer.addr);
   console.log({ registryAppId: appId });
 
   const sdk = new GGovRegistrySDK({
