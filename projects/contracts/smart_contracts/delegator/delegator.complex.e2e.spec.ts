@@ -1,4 +1,5 @@
 import { Config } from '@algorandfoundation/algokit-utils'
+import { nullLogger } from '@algorandfoundation/algokit-utils/types/logging'
 import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
@@ -14,11 +15,15 @@ import { STATUS_EMPTY } from '../xgov-proposal-mock/xGovProposalMock.algo'
 describe.skip('Delegator complex e2e tests', () => {
   const localnet = algorandFixture()
   beforeAll(() => {
-    Config.configure({
-      debug: true,
-      // traceAll: true,
-    })
-    registerDebugEventHandlers()
+    if (process.env.NOOP_TEST_LOGGER === 'true') {
+      Config.configure({ logger: nullLogger })
+    } else {
+      Config.configure({
+        debug: true,
+        // traceAll: true
+        })
+      registerDebugEventHandlers()
+    }
   })
   beforeEach(localnet.newScope)
 

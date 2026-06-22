@@ -5,15 +5,20 @@ import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from 'xgov-delegator-sdk'
 import { errAlgoHoursExist, errPeriodStartInvalid, errUnauthorized } from '../base/errors.algo'
 import { deployDelegatorSimple, transformedError } from '../common-tests'
+import { nullLogger } from '@algorandfoundation/algokit-utils/types/logging'
 
 describe.skip('Delegator simple e2e tests', () => {
   const localnet = algorandFixture()
   beforeAll(() => {
-    Config.configure({
-      // debug: true,
-      // traceAll: true,
-    })
-    registerDebugEventHandlers()
+    if (process.env.NOOP_TEST_LOGGER === 'true') {
+      Config.configure({ logger: nullLogger })
+    } else {
+      Config.configure({
+        debug: true,
+        // traceAll: true
+        })
+      registerDebugEventHandlers()
+    }
   })
   beforeEach(localnet.newScope)
 

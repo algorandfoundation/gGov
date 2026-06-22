@@ -27,6 +27,7 @@ import {
 } from '../base/errors.algo'
 import { transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
+import { nullLogger } from '@algorandfoundation/algokit-utils/types/logging'
 
 async function deployRegistryAndSDK(
   localnet: ReturnType<typeof algorandFixture>,
@@ -142,8 +143,15 @@ async function createVotingPeriod(
 describe('GGovPeriod contract', () => {
   const localnet = algorandFixture()
   beforeAll(() => {
-    Config.configure({ debug: true })
-    registerDebugEventHandlers()
+    if (process.env.NOOP_TEST_LOGGER === 'true') {
+      Config.configure({ logger: nullLogger })
+    } else {
+      Config.configure({
+        debug: true,
+        // traceAll: true
+        })
+      registerDebugEventHandlers()
+    }
   })
   beforeEach(localnet.newScope)
 
