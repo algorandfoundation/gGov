@@ -5,6 +5,7 @@
     "target": "ES2022",
     "moduleResolution": "node",
     "module": "ES2022",
+    "types": ["node"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
