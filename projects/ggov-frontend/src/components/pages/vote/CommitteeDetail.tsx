@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronDown, Clock, Download } from 'lucide-react'
 import type { AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
@@ -13,6 +13,12 @@ import { formatMonthDayYear, formatTime, roundsToDays } from '@/utils/time'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import { useAddressName } from '@/hooks/use-nfd'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { AccountAvatar } from '@/components/AccountAvatar'
@@ -83,75 +89,33 @@ async function downloadCommittee(
 }
 
 function ExportMenu({ onExport, disabled }: { onExport: (kind: ExportKind) => void; disabled: boolean }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  // Close on click-outside and Escape.
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: PointerEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  function choose(kind: ExportKind) {
-    onExport(kind)
-    setOpen(false)
-  }
-
+  // Radix DropdownMenu owns open/close, focus management, keyboard navigation
+  // (arrows, Home/End, typeahead), Escape, click-outside and ARIA roles.
   return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
+    <DropdownMenu>
+      <DropdownMenuTrigger
         disabled={disabled}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3.5 py-2 font-display text-sm font-bold transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="group inline-flex shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3.5 py-2 font-display text-sm font-bold transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Download className="size-[15px]" />
         Export
-        <ChevronDown className={cn('size-3.5 transition-transform duration-150', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-20 w-52 overflow-hidden rounded-md border border-input bg-popover shadow-md"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => choose('csv')}
-            className="flex w-full items-center gap-2.5 border-b border-border px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
-          >
-            <span className="rounded bg-algo-blue/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-algo-blue dark:text-algo-teal">
-              CSV
-            </span>
-            <span className="flex-1">Comma-separated</span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => choose('json')}
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
-          >
-            <span className="rounded bg-success/15 px-1.5 py-0.5 font-mono text-[10px] font-bold text-success-strong dark:text-success">
-              JSON
-            </span>
-            <span className="flex-1">Structured JSON</span>
-          </button>
-        </div>
-      )}
-    </div>
+        <ChevronDown className="size-3.5 transition-transform duration-150 group-data-[state=open]:rotate-180" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => onExport('csv')} className="gap-2.5 px-3 py-2.5">
+          <span className="rounded bg-algo-blue/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-algo-blue dark:text-algo-teal">
+            CSV
+          </span>
+          <span className="flex-1">Comma-separated</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onExport('json')} className="gap-2.5 px-3 py-2.5">
+          <span className="rounded bg-success/15 px-1.5 py-0.5 font-mono text-[10px] font-bold text-success-strong dark:text-success">
+            JSON
+          </span>
+          <span className="flex-1">Structured JSON</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -331,6 +295,18 @@ export default function CommitteeDetail() {
   const start = page * PAGE_SIZE
   const paginated = ranked.slice(start, start + PAGE_SIZE)
   const hasMembers = ranked.length > 0
+
+  // Restart at the first page when switching committees — this route component
+  // stays mounted across :committeeId changes, so the page would otherwise carry over.
+  useEffect(() => {
+    setPage(0)
+  }, [committeeId])
+
+  // Clamp if the ranked list shrinks (e.g. a background refetch) so we never
+  // render an out-of-range, empty page.
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages - 1))
+  }, [totalPages])
 
   return (
     <div className="mx-auto max-w-[880px]">
