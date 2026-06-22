@@ -17,14 +17,14 @@ import { ellipseAddress } from '@/utils/ellipseAddress'
  * `fullWidth` spans the container, centering the pill and right-aligning the
  * disconnect button (used in the mobile drawer footer).
  */
-export default function TopBarAccount({ fullWidth = false }: { fullWidth?: boolean }) {
+export default function TopBarAccount({ fullWidth = false, small = false }: { fullWidth?: boolean, small?: boolean }) {
   const { activeAddress, activeWallet, activeWalletAccounts, wallets } = useWallet()
   const { data: nfd } = useAddressName(activeAddress)
   const [open, setOpen] = useState(false)
 
   if (activeAddress && activeWallet) {
     const accounts = activeWalletAccounts ?? []
-    const label = nfd ?? ellipseAddress(activeAddress)
+    const label = nfd ?? ellipseAddress(activeAddress, undefined, small)
     const control =
       accounts.length > 1 ? (
         <select
@@ -35,7 +35,7 @@ export default function TopBarAccount({ fullWidth = false }: { fullWidth?: boole
         >
           {accounts.map((account) => (
             <option key={account.address} value={account.address}>
-              {account.name ? `${account.name} (${ellipseAddress(account.address)})` : ellipseAddress(account.address)}
+              {account.name ? `${account.name} (${ellipseAddress(account.address, undefined, small)})` : ellipseAddress(account.address, undefined, small)}
             </option>
           ))}
         </select>
