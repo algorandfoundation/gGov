@@ -1,18 +1,24 @@
 import { Link } from 'react-router-dom'
 import { AlgorandLogo } from '@/components/Brand'
+import { cn } from '@/lib/utils'
 
 const footerLinks = [
+  { href: 'https://github.com/algorandfoundation/gGov', label: 'Source Code' },
   { href: 'https://algorand.co/algorand-foundation/disclaimer', label: 'Disclaimer' },
   { href: 'https://algorand.co/algorand-foundation/privacy-policy', label: 'Privacy Policy' },
-  { href: 'https://github.com/algorandfoundation/gGov', label: 'GitHub' },
 ]
 
-export default function Footer() {
+/**
+ * Site footer. `className` styles the full-width `<footer>` (e.g. outer padding)
+ * and `containerClassName` constrains the inner content so it lines up with the
+ * page's header/content (the max-width container differs per layout).
+ */
+export default function Footer({ className, containerClassName }: { className?: string; containerClassName?: string }) {
   return (
-    <footer className="border-t px-4 py-6">
-      <div className="relative flex items-center justify-between sm:justify-center">
-        <AlgorandLogo className="text-primary size-6 shrink-0 sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2" />
-        <nav className="flex flex-col items-end gap-x-6 gap-y-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
+    <footer className={cn('border-t py-6', className)}>
+      <div className={cn('flex items-center justify-between', containerClassName)}>
+        <AlgorandLogo className="text-muted-foreground size-6 shrink-0" />
+        <nav className="flex flex-col items-end gap-x-6 gap-y-2 sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
           <Link to="/docs" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
             Documentation
           </Link>
@@ -28,6 +34,8 @@ export default function Footer() {
             </a>
           ))}
         </nav>
+        {/* Mirrors the logo's width so the centered nav stays optically centered on desktop. */}
+        <span aria-hidden className="hidden size-6 shrink-0 sm:block" />
       </div>
     </footer>
   )

@@ -30,7 +30,7 @@ export default function LandingLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <Footer />
+      <Footer className="px-4" containerClassName="mx-auto max-w-6xl" />
     </div>
   )
 }

@@ -214,7 +214,7 @@ export default function Layout() {
             <Outlet />
           </Suspense>
         </div>
-        <Footer />
+        <Footer containerClassName="mx-auto w-full max-w-[1232px] px-4 sm:px-7" />
       </SidebarInset>
     </SidebarProvider>
   )
