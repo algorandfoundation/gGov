@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "build": "vite build",
     "build:testnet": "vite build --mode testnet",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "generate-routes": "tsr generate",
+    "typecheck": "tsr generate && tsc --noEmit",
     "deploy": "pnpm typecheck && vite build && wrangler deploy",
     "deploy:testnet": "pnpm typecheck && vite build --mode testnet && wrangler deploy",
     "cf-typegen": "wrangler types"
@@ -45,7 +46,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.1.0",
     "remark-gfm": "^4.0.1",
     "sonner": "^1.7.0",
     "tailwind-merge": "^2.6.0",
@@ -56,6 +56,7 @@
     "@cloudflare/vite-plugin": "^1.42.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.0.0",
+    "@tanstack/router-cli": "^1.167.17",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^5.2.0",
