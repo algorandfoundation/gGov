@@ -99,7 +99,7 @@ function RefreshButton({ showLabel = false }: { showLabel?: boolean }) {
     <Button
       variant="ghost"
       size="icon"
-      className="size-8"
+      className="size-8 text-muted-foreground"
       onClick={handleRefresh}
       disabled={refreshing}
       aria-label="Reload data"
