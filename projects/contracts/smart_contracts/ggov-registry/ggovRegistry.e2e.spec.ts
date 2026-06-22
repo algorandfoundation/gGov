@@ -24,6 +24,7 @@ import {
   errOutOfOrder,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
+  errPeriodInRange,
   errTotalMembersZero,
   errTotalVotesExceeded,
   errTotalVotesMismatch,
@@ -1069,6 +1070,12 @@ describe('GGovRegistry contract', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
+    test('non-admin cannot setLastPeriodId', async () => {
+      await expect(nonAdminSDK.setLastPeriodId({ newLastPeriodId: 0n })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
     test('non-admin cannot update the registry app', async () => {
       await expect(
         sdk.readClient.send.update.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
@@ -1328,6 +1335,25 @@ describe('GGovRegistry contract', () => {
       await expect(
         sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n }),
       ).rejects.toThrow(transformedError(errPeriodAppNotConfigured))
+    })
+  })
+
+  describe('setLastPeriodId', () => {
+    test('admin can set lastPeriodId when no periods exist in the affected range', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      await sdk.setLastPeriodId({ newLastPeriodId: 99n })
+      expect(await sdk.readClient.state.global.lastPeriodId()).toBe(99n)
+    })
+
+    test('rejects when a period exists in the affected range', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      await sdk.addPeriod({ committeeId, votingStart: now + 3800n, votingEnd: now + 7400n })
+      await expect(sdk.setLastPeriodId({ newLastPeriodId: 0n })).rejects.toThrow(transformedError(errPeriodInRange))
     })
   })
 
