@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useState } from 'react'
-import { Link, Outlet, useLocation } from '@tanstack/react-router'
+import { Suspense, useState } from 'react'
+import { Link, Outlet } from '@tanstack/react-router'
 import { ArrowRight, Menu, Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { Button } from '@/components/ui/button'
