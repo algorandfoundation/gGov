@@ -80,7 +80,7 @@ function DocsLink() {
       <a
         href={DELEGATION_DOCS_URL}
         target="_blank"
-        rel="noreferrer"
+        rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:underline dark:text-algo-teal"
       >
         <BookOpen className="size-3.5" />

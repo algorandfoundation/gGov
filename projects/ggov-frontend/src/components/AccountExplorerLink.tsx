@@ -26,7 +26,7 @@ export default function AccountExplorerLink({
     <a
       href={url}
       target="_blank"
-      rel="noreferrer"
+      rel="noopener noreferrer"
       aria-label="Open in explorer"
       title="Open in explorer"
       className={cn('text-muted-foreground hover:text-foreground', className)}

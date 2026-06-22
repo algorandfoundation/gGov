@@ -32,7 +32,7 @@ export default function AppExplorerLink({
     <a
       href={url}
       target="_blank"
-      rel="noreferrer"
+      rel="noopener noreferrer"
       className={cn('inline-flex items-center gap-1 tabular-nums text-primary hover:underline dark:text-algo-teal', className)}
     >
       {prefix}{id}
