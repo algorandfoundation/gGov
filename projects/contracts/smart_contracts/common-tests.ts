@@ -49,6 +49,18 @@ export const deployRegistry = async (localnet: AlgorandFixture, account: Address
   }
 }
 
+export const createSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
+  new GGovRegistrySDK({
+    algorand: localnet.algorand,
+    registryAppId,
+    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
+  })
+
+export const generateAccountWithSDK = async (localnet: AlgorandFixture, registryAppId: bigint, initialFunds = (1).algos()) => {
+  const account = await localnet.context.generateAccount({ initialFunds })
+  return { account, sdk: createSDK(localnet, registryAppId, account) }
+}
+
 async function createCommittee(
   localnet: AlgorandFixture,
   registryAppId: bigint,

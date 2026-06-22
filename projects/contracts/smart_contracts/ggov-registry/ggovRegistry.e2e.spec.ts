@@ -1,4 +1,5 @@
 import { Config } from '@algorandfoundation/algokit-utils'
+import { nullLogger } from '@algorandfoundation/algokit-utils/types/logging'
 import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
@@ -8,9 +9,12 @@ import {
   increaseBudgetIncrementCost,
   XGovCommitteeFile,
   GGovRegistrySDK,
+  GGovRegistryFactory,
+  GGovPeriodFactory,
 } from 'ggov-sdk'
 import {
   errAccountNotExists,
+  errAccountOffsetNotExists,
   errCommitteeExists,
   errCommitteeIncomplete,
   errCommitteeNotExists,
@@ -18,6 +22,7 @@ import {
   errIngestedVotesNotZero,
   errNumXGovsExceeded,
   errOutOfOrder,
+  errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errTotalMembersZero,
   errTotalVotesExceeded,
@@ -28,17 +33,21 @@ import {
   errZeroVotes,
 } from '../base/errors.algo'
 import { committeesForTests } from './fixtures'
-import { deployRegistry, deployRegistryWithCommittee, deployRegistryWithTwoCommittees, transformedError } from '../common-tests'
+import { createSDK, deployRegistry, deployRegistryWithCommittee, deployRegistryWithTwoCommittees, deployXGovMocksAndRegistry, generateAccountWithSDK, transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 
 describe('GGovRegistry contract', () => {
   const localnet = algorandFixture()
   beforeAll(() => {
-    Config.configure({
-      debug: true,
-      // traceAll: true,
-    })
-    registerDebugEventHandlers()
+    if (process.env.NOOP_TEST_LOGGER === 'true') {
+      Config.configure({ logger: nullLogger })
+    } else {
+      Config.configure({ 
+        debug: true, 
+        // traceAll: true
+       })
+      registerDebugEventHandlers()
+    }
   })
   beforeEach(localnet.newScope)
 
@@ -87,26 +96,49 @@ describe('GGovRegistry contract', () => {
     }
   })
 
-  for (const [name, id, committeeFile] of committeesForTests) {
-    test(`Uploads committee ${name}`, async () => {
-      const { testAccount } = localnet.context
-      const { sdk } = await deployRegistry(localnet, testAccount)
+  describe('upload committee file (registerCommittee + ingestXGovs wrapper)', () => {
+    for (const [name, id, committeeFile] of committeesForTests) {
+      test(`uploads committee ${name}`, async () => {
+        const { testAccount } = localnet.context
+        const { sdk } = await deployRegistry(localnet, testAccount)
 
-      const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
-      expect(committeeId).toEqual(new Uint8Array(Buffer.from(id, 'base64')))
+        const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
+        expect(committeeId).toEqual(new Uint8Array(Buffer.from(id, 'base64')))
 
-      const result = await sdk.uploadCommitteeFile(committeeFile)
-      expect(result).toEqual(committeeId)
+        const result = await sdk.uploadCommitteeFile(committeeFile)
+        expect(result).toEqual(committeeId)
 
-      const storedCommittee = await sdk.getCommittee(committeeId)
-      expect(storedCommittee).toBeDefined()
-      expect(storedCommittee!.periodStart).toEqual(committeeFile.periodStart)
-      expect(storedCommittee!.periodEnd).toEqual(committeeFile.periodEnd)
-      expect(storedCommittee!.totalMembers).toEqual(committeeFile.totalMembers)
-      expect(storedCommittee!.totalVotes).toEqual(committeeFile.totalVotes)
-      expect(storedCommittee!.xGovs).toEqual(committeeFile.xGovs)
+        const storedCommittee = await sdk.getCommittee(committeeId)
+        expect(storedCommittee).toBeDefined()
+        expect(storedCommittee!.periodStart).toEqual(committeeFile.periodStart)
+        expect(storedCommittee!.periodEnd).toEqual(committeeFile.periodEnd)
+        expect(storedCommittee!.totalMembers).toEqual(committeeFile.totalMembers)
+        expect(storedCommittee!.totalVotes).toEqual(committeeFile.totalVotes)
+        expect(storedCommittee!.xGovs).toEqual(committeeFile.xGovs)
+        expect(storedCommittee!.xGovs.length).toEqual(storedCommittee!.totalMembers)
+        expect(storedCommittee!.xGovs.reduce((acc, g) => acc + g.votes, 0)).toEqual(storedCommittee!.totalVotes)
+      })
+    }
+  })
+
+  describe('uningest all xGovs from committee (uningestXGovs wrapper)', () => {
+    test('removes all members from a fully ingested committee', async () => {
+      const { sdk, committeeId, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      const allAddresses = xGovAccounts.map((a) => a.toString())
+      await sdk.uningestCommitteeXGovs({ committeeId, accounts: allAddresses })
+      const metadata = await sdk.getCommitteeMetadata(committeeId)
+      expect(metadata!.ingestedVotes).toBe(0)
+      for (const xGov of xGovAccounts) {
+        await expect(
+          sdk.readClient.send.getXGovVotingPower({ args: { committeeId, account: xGov.toString() } }),
+        ).rejects.toThrow(transformedError(errAccountOffsetNotExists))
+      }
+      const gGovAccountsMap = await sdk.getGGovAccountsMap(allAddresses)
+      for (const [, gGovAccount] of Array.from(gGovAccountsMap.entries())) {
+        expect(gGovAccount.committeeOffsets).toHaveLength(0)
+      }
     })
-  }
+  })
 
   describe('registry accounts', () => {
     test('getAccount returns GGovAccount with committeeOffsets after ingestion', async () => {
@@ -136,49 +168,6 @@ describe('GGovRegistry contract', () => {
       expect(registryAccount!.committeeOffsets).toHaveLength(0)
     })
 
-    test('getXGovVotingPower returns correct votes without offset hint', async () => {
-      const { sdk, committeeId, committeeFile, xGovAccounts } = await deployRegistryWithCommittee(localnet)
-      const committeeIdRaw = committeeId
-
-      for (const xGov of xGovAccounts) {
-        const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
-          args: { committeeId: committeeIdRaw, account: xGov.toString() },
-        })
-        const expectedVotes = committeeFile.xGovs.find((x) => x.address === xGov.toString())!.votes
-        expect(votingPower).toBe(expectedVotes)
-      }
-    })
-
-    test('getXGovVotingPower fails for non-member account', async () => {
-      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
-      const randomAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await expect(
-        sdk.readClient.send.getXGovVotingPower({
-          args: { committeeId, account: randomAccount.toString() },
-        }),
-      ).rejects.toThrow(transformedError('ERR:A_NX'))
-    })
-
-    test('uningestXGovs removes specific accounts', async () => {
-      const { sdk, committeeId, committeeFile, sorted } = await deployRegistryWithCommittee(localnet)
-
-      // uningest the last account (must provide in reverse ingestion order)
-      const lastAccount = sorted[sorted.length - 1]
-      await sdk.uningestXGovs({ committeeId, xGovs: [lastAccount.address] })
-
-      // verify committee metadata updated
-      const metadata = await sdk.getCommitteeMetadata(committeeId)
-      expect(metadata).toBeDefined()
-      expect(metadata!.ingestedVotes).toBe(committeeFile.totalVotes - committeeFile.xGovs.find((x) => x.address === lastAccount.address)!.votes)
-
-      // verify the uningest account no longer has voting power
-      await expect(
-        sdk.readClient.send.getXGovVotingPower({
-          args: { committeeId, account: lastAccount.address },
-        }),
-      ).rejects.toThrow(transformedError('ERR:AO_NX'))
-    })
-
     test('account in two committees has two committeeOffsets', async () => {
       const { sdk, accountB } = await deployRegistryWithTwoCommittees(localnet)
 
@@ -194,67 +183,42 @@ describe('GGovRegistry contract', () => {
       expect(numericIds).toEqual([0, 1])
     })
 
-    test('uningest from one committee preserves other committee offset', async () => {
-      const { sdk, committeeId1, committeeId2, accountA, accountB } = await deployRegistryWithTwoCommittees(localnet)
-
-      // uningest committee 1 fully (B then A — reverse ingestion order)
-      await sdk.uningestCommitteeXGovs({ committeeId: committeeId1, accounts: [accountA.toString(), accountB.toString()] })
-
-      // accountB should still have voting power in committee 2
-      const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
-        args: { committeeId: committeeId2, account: accountB.toString() },
-      })
-      expect(votingPower).toBe(10)
-
-      // accountB should have exactly 1 committee offset remaining (committee 2)
-      const { return: registryAccount } = await sdk.readClient.send.getAccount({
-        args: { account: accountB.toString() },
-      })
-      expect(registryAccount!.committeeOffsets).toHaveLength(1)
-      expect(registryAccount!.committeeOffsets[0][0]).toBe(1) // numericId 1
-
-      // accountA should have zero committee offsets
-      const { return: registryAccountA } = await sdk.readClient.send.getAccount({
-        args: { account: accountA.toString() },
-      })
-      expect(registryAccountA!.committeeOffsets).toHaveLength(0)
-    })
-
-    test('uningestCommitteeXGovs removes all members from a fully ingested committee', async () => {
-      const { sdk, committeeId, committeeFile, xGovAccounts } = await deployRegistryWithCommittee(localnet)
-
-      // verify committee is fully ingested
-      const metadataBefore = await sdk.getCommitteeMetadata(committeeId)
-      expect(metadataBefore).toBeDefined()
-      expect(metadataBefore!.ingestedVotes).toBe(committeeFile.totalVotes)
-
-      // uningest all members via wrapper (handles reverse order internally)
-      const allAddresses = xGovAccounts.map((a) => a.toString())
-      await sdk.uningestCommitteeXGovs({ committeeId, accounts: allAddresses })
-
-      // verify committee metadata shows zero ingested votes
-      const metadataAfter = await sdk.getCommitteeMetadata(committeeId)
-      expect(metadataAfter).toBeDefined()
-      expect(metadataAfter!.ingestedVotes).toBe(0)
-
-      // verify no account has voting power anymore
+    test('logAccounts returns accountId > 0 for known accounts and 0 for unknown', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      const unknown = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const allAddresses = [...xGovAccounts.map((a) => a.toString()), unknown.toString()]
+      const accountsMap = await sdk.getGGovAccountsMap(allAddresses)
       for (const xGov of xGovAccounts) {
-        await expect(
-          sdk.readClient.send.getXGovVotingPower({
-            args: { committeeId, account: xGov.toString() },
-          }),
-        ).rejects.toThrow(transformedError('ERR:AO_NX'))
+        expect(accountsMap.get(xGov.toString())!.accountId).toBeGreaterThan(0)
+        expect(accountsMap.get(xGov.toString())!.committeeOffsets).toHaveLength(1)
       }
-
-      // verify account offset hints are cleaned up
-      const gGovAccountsMap = await sdk.getGGovAccountsMap(allAddresses)
-      for (const [, gGovAccount] of Array.from(gGovAccountsMap.entries())) {
-        expect(gGovAccount.committeeOffsets).toHaveLength(0)
-      }
+      expect(accountsMap.get(unknown.toString())!.accountId).toBe(0)
+      expect(accountsMap.get(unknown.toString())!.committeeOffsets).toHaveLength(0)
     })
   })
 
   describe('registerCommittee', () => {
+    test('registers a committee and metadata is retrievable', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const committeeId = new Uint8Array(32).fill(1)
+      await sdk.registerCommittee({
+        committeeId,
+        periodStart: 50_000_000,
+        periodEnd: 53_000_000,
+        totalMembers: 3,
+        totalVotes: 30,
+        xGovRegistryId: 0n,
+      })
+      const metadata = await sdk.getCommitteeMetadata(committeeId)
+      expect(metadata).toBeDefined()
+      expect(metadata!.periodStart).toBe(50_000_000)
+      expect(metadata!.periodEnd).toBe(53_000_000)
+      expect(metadata!.totalMembers).toBe(3)
+      expect(metadata!.totalVotes).toBe(30)
+      expect(metadata!.ingestedVotes).toBe(0)
+    })
+
     test('rejects totalMembers=0', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
@@ -369,6 +333,13 @@ describe('GGovRegistry contract', () => {
         transformedError(errCommitteeNotExists),
       )
     })
+
+    test('succeeds after full uningest', async () => {
+      const { sdk, committeeId, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      await sdk.uningestCommitteeXGovs({ committeeId, accounts: xGovAccounts.map((a) => a.toString()) })
+      await sdk.unregisterCommittee({ committeeId })
+      expect(await sdk.getCommitteeMetadata(committeeId)).toBeNull()
+    })
   })
 
   describe('ingestXGovs', () => {
@@ -448,6 +419,45 @@ describe('GGovRegistry contract', () => {
       await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errZeroVotes))
     })
 
+    test('enforces xGovs in ascending account ID order', async () => {
+      const { sdk, sorted, committeeFile } = await deployRegistryWithCommittee(localnet, 5)
+      const votesPerMember = 5
+      const newCommitteeFile: XGovCommitteeFile = {
+        ...committeeFile,
+        totalMembers: committeeFile.totalMembers + 1,
+        totalVotes: committeeFile.totalVotes + votesPerMember,
+        periodStart: committeeFile.periodStart + 3_000_000,
+        periodEnd: committeeFile.periodEnd + 3_000_000,
+      }
+      const newCommitteeId = calculateCommitteeId(JSON.stringify(newCommitteeFile))
+      await sdk.registerCommittee({
+        committeeId: newCommitteeId,
+        periodStart: newCommitteeFile.periodStart,
+        periodEnd: newCommitteeFile.periodEnd,
+        totalMembers: newCommitteeFile.totalMembers,
+        totalVotes: newCommitteeFile.totalVotes,
+        xGovRegistryId: 0n,
+      })
+      const xGovsToIngestSorted = sorted.map((x) => ({ account: x.address, votes: votesPerMember }))
+      xGovsToIngestSorted.push({
+        account: (await localnet.context.generateAccount({ initialFunds: (1).algos() })).toString(),
+        votes: votesPerMember,
+      })
+
+      await expect(
+        sdk.ingestXGovs({
+          committeeId: newCommitteeId,
+          xGovs:[xGovsToIngestSorted.at(-1)!, ...xGovsToIngestSorted.slice(0, -1)] 
+        }),
+      ).rejects.toThrow(transformedError(errOutOfOrder))
+      await expect(
+        sdk.ingestXGovs({
+          committeeId: newCommitteeId,
+          xGovs: [xGovsToIngestSorted[1], xGovsToIngestSorted[0], ...xGovsToIngestSorted.slice(2)],
+        }),
+      ).rejects.toThrow(transformedError(errOutOfOrder))
+    })
+
     test('works in multiple batches', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
@@ -481,6 +491,38 @@ describe('GGovRegistry contract', () => {
   })
 
   describe('uningestXGovs', () => {
+    test('removes specific accounts', async () => {
+      const { sdk, committeeId, committeeFile, sorted } = await deployRegistryWithCommittee(localnet)
+      const lastAccount = sorted[sorted.length - 1]
+      await sdk.uningestXGovs({ committeeId, xGovs: [lastAccount.address] })
+      const metadata = await sdk.getCommitteeMetadata(committeeId)
+      expect(metadata!.ingestedVotes).toBe(committeeFile.totalVotes - committeeFile.xGovs.find((x) => x.address === lastAccount.address)!.votes)
+      await expect(
+        sdk.readClient.send.getXGovVotingPower({ args: { committeeId, account: lastAccount.address } }),
+      ).rejects.toThrow(transformedError(errAccountOffsetNotExists))
+    })
+
+    test('uningest from one committee preserves other committee offset', async () => {
+      const { sdk, committeeId1, committeeId2, accountA, accountB } = await deployRegistryWithTwoCommittees(localnet)
+      await sdk.uningestCommitteeXGovs({ committeeId: committeeId1, accounts: [accountA.toString(), accountB.toString()] })
+      const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
+        args: { committeeId: committeeId2, account: accountB.toString() },
+      })
+      expect(votingPower).toBe(10)
+      const { return: registryAccount } = await sdk.readClient.send.getAccount({ args: { account: accountB.toString() } })
+      expect(registryAccount!.committeeOffsets).toHaveLength(1)
+      expect(registryAccount!.committeeOffsets[0][0]).toBe(1)
+      const { return: registryAccountA } = await sdk.readClient.send.getAccount({ args: { account: accountA.toString() } })
+      expect(registryAccountA!.committeeOffsets).toHaveLength(0)
+    })
+
+    test('rejects account not ingested in this committee', async () => {
+      const { sdk, committeeId2, accountA } = await deployRegistryWithTwoCommittees(localnet)
+      await expect(
+        sdk.uningestXGovs({ committeeId: committeeId2, xGovs: [accountA.toString()] }),
+      ).rejects.toThrow(transformedError(errAccountOffsetNotExists))
+    })
+
     test('rejects wrong order (not reverse ingestion order)', async () => {
       const { sdk, committeeId, sorted } = await deployRegistryWithCommittee(localnet)
       // try to uningest the first account (should be last since it has lowest offset)
@@ -494,7 +536,7 @@ describe('GGovRegistry contract', () => {
       const randomAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       await expect(
         sdk.uningestXGovs({ committeeId, xGovs: [randomAccount.toString()] }),
-      ).rejects.toThrow(transformedError('ERR:A_NX'))
+      ).rejects.toThrow(transformedError(errAccountNotExists))
     })
 
     test('rejects more xGovs than exist', async () => {
@@ -603,63 +645,239 @@ describe('GGovRegistry contract', () => {
       const metadata = await sdk.getCommitteeMetadata(new Uint8Array(32))
       expect(metadata).toBeNull()
     })
+
+    test('getXGovVotingPower returns correct votes without offset hint', async () => {
+      const { sdk, committeeId, committeeFile, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      for (const xGov of xGovAccounts) {
+        const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
+          args: { committeeId, account: xGov.toString() },
+        })
+        const expectedVotes = committeeFile.xGovs.find((x) => x.address === xGov.toString())!.votes
+        expect(votingPower).toBe(expectedVotes)
+      }
+    })
+
+    test('getXGovVotingPower fails for non-member account', async () => {
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      const randomAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        sdk.readClient.send.getXGovVotingPower({
+          args: { committeeId, account: randomAccount.toString() },
+        }),
+      ).rejects.toThrow(transformedError(errAccountNotExists))
+    })
+
+    test('tryGetXGovVotingPower returns correct votes for a committee member', async () => {
+      const { sdk, committeeId, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      const { return: power } = await sdk.readClient.send.tryGetXGovVotingPower({
+        args: { committeeId, account: xGovAccounts[0].toString() },
+      })
+      expect(power).toBe(10)
+    })
+
+    test('tryGetXGovVotingPower returns 0 for an unknown account', async () => {
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      const unknown = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { return: power } = await sdk.readClient.send.tryGetXGovVotingPower({
+        args: { committeeId, account: unknown.toString() },
+      })
+      expect(power).toBe(0)
+    })
+
+    test('tryGetXGovVotingPower returns 0 for an unknown committee', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet)
+      const { return: power } = await sdk.readClient.send.tryGetXGovVotingPower({
+        args: { committeeId: new Uint8Array(32), account: xGovAccounts[0].toString() },
+      })
+      expect(power).toBe(0)
+    })
+
+    test('getDelegation returns delegatee and exists=true after setVotingAccount', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      const { delegatee, exists } = await sdk.getDelegation(xgov.toString())
+      expect(delegatee).toBe(votingAddress.toString())
+      expect(exists).toBe(true)
+    })
+
+    test('getDelegation returns exists=false for undelegated account', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const { exists } = await sdk.getDelegation(xGovAccounts[0].toString())
+      expect(exists).toBe(false)
+    })
+
+    test('getDelegate returns the delegatee address after setVotingAccount', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [xgov] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      const { return: delegate } = await sdk.readClient.send.getDelegate({ args: { account: xgov.toString() } })
+      expect(delegate).toBe(votingAddress.toString())
+    })
+
+    test('getDelegate returns zero address for account with no delegation', async () => {
+      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const { return: delegate } = await sdk.readClient.send.getDelegate({ args: { account: xGovAccounts[0].toString() } })
+      expect(delegate).toBe(ALGORAND_ZERO_ADDRESS_STRING)
+    })
+
+    test('getPeriodSummary returns correct fields after addPeriod', async () => {
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: localnet.context.testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const votingStart = now + 100n
+      const votingEnd = now + 3700n
+      const periodId = await sdk.addPeriod({ committeeId, votingStart, votingEnd })
+      const { return: summary } = await sdk.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(summary!.appId).toBeGreaterThan(0n)
+      expect(summary!.votingStart).toBe(Number(votingStart))
+      expect(summary!.votingEnd).toBe(Number(votingEnd))
+      expect(summary!.numTopics).toBe(0)
+      expect(summary!.ready).toBe(false)
+    })
+
+    test('getPeriodSummary returns zero struct for non-existent period', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const { return: summary } = await sdk.readClient.send.getPeriodSummary({ args: { periodId: 99n } })
+      expect(summary!.appId).toBe(0n)
+      expect(summary!.ready).toBe(false)
+    })
+
+    test('getPeriodApp returns the period app id after addPeriod', async () => {
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: localnet.context.testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const { return: appId } = await sdk.readClient.send.getPeriodApp({ args: { periodId } })
+      expect(appId).toBeGreaterThan(0n)
+    })
+
+    test('logPeriodSummaries returns summaries for known and zero struct for unknown period', async () => {
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: localnet.context.testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const summaries = await sdk.getPeriodSummaries([periodId, 99n])
+      expect(summaries[0].appId).toBeGreaterThan(0n)
+      expect(summaries[1].appId).toBe(0n)
+    })
+  })
+
+  describe('SDK reader wrappers', () => {
+    test('logDelegators returns all delegators for the same delegatee', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 2)
+      const [delegator1, delegator2] = xGovAccounts
+      const sharedDelegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createSDK(localnet, sdk.appId, delegator1).setVotingAccount({ votingAddress: sharedDelegatee.toString() })
+      await createSDK(localnet, sdk.appId, delegator2).setVotingAccount({ votingAddress: sharedDelegatee.toString() })
+      const delegators = await sdk.getDelegators(sharedDelegatee.toString())
+      expect(delegators).toHaveLength(2)
+      expect(delegators).toEqual(expect.arrayContaining([delegator1.toString(), delegator2.toString()]))
+    })
+
+    test('logDelegators returns empty list for account with no delegators', async () => {
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      expect(await sdk.getDelegators(xGovAccounts[0].toString())).toEqual([])
+    })
+
+    test('logDelegations returns delegatee for delegated accounts and zero address for undelegated', async () => {
+      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
+      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 2)
+      const [delegated, undelegated] = xGovAccounts
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createSDK(localnet, sdk.appId, delegated).setVotingAccount({ votingAddress: votingAddress.toString() })
+      const results = await sdk.getDelegations([delegated.toString(), undelegated.toString()])
+      expect(results).toEqual([votingAddress.toString(), ALGORAND_ZERO_ADDRESS_STRING])
+    })
+
+    test('logCommitteeMetadata returns metadata for known committees and null for unknown', async () => {
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      const results = await sdk.getCommitteesMetadata([committeeId, new Uint8Array(32)])
+      expect(results[0]).not.toBeNull()
+      expect(results[0]!.totalMembers).toBeGreaterThan(0)
+      expect(results[1]).toBeNull()
+    })
   })
 
   describe('mirrorXGovDelegation', () => {
-    const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
-      new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: appId,
-        writerAccount: {
-          sender: user,
-          signer: localnet.algorand.account.getSigner(user),
-        },
-      })
-
-    test('non-admin cannot mirrorXGovDelegation', async () => {
-      const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet)
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await expect(
-        userSDK(sdk.appId, nonAdmin).mirrorXGovDelegation({ account: xGovAccounts[0].toString() }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
-    })
-
     test('refuses to overwrite an existing delegation', async () => {
-      const { testAccount } = localnet.context
       const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 2)
       const [delegator, delegatee] = xGovAccounts
       // delegator (a known, ingested account) sets a local gGov delegation
-      await userSDK(sdk.appId, delegator).setVotingAccount({ votingAddress: delegatee.toString() })
+      await createSDK(localnet, sdk.appId, delegator).setVotingAccount({ votingAddress: delegatee.toString() })
       // admin attempting to mirror over the existing delegation must be rejected
       await expect(
-        userSDK(sdk.appId, testAccount).mirrorXGovDelegation({ account: delegator.toString() }),
+        sdk.mirrorXGovDelegation({ account: delegator.toString() }),
       ).rejects.toThrow(transformedError(errGGovDelegationExists))
+    })
+
+    test('mirrors an xGov delegation into gGov', async () => {
+      const { testAccount } = localnet.context
+      const { registryAppClient, ggovRegistrySDK, xGovs } = await deployXGovMocksAndRegistry(localnet, testAccount, 4)
+      const [delegator1, delegatee1, delegator2, delegatee2] = xGovs
+
+      const pairs = [
+        [delegator1, delegatee1],
+        [delegator2, delegatee2],
+      ] as const
+      for (const [delegator, delegatee] of pairs) {
+        await registryAppClient.send.setXGovBox({
+          args: {
+            voterAddress: delegator.toString(),
+            value: { votingAddress: delegatee.toString(), toleratedAbsences: 0n, lastVoteTimestamp: 0n, subscriptionRound: 0n },
+          },
+        })
+        await ggovRegistrySDK.mirrorXGovDelegation({ account: delegator.toString() })
+      }
+
+      for (const [delegator, delegatee] of pairs) {
+        const delegation = await ggovRegistrySDK.getDelegation(delegator.toString())
+        expect(delegation.exists).toBe(true)
+        expect(delegation.delegatee).toBe(delegatee.toString())
+      }
+    })
+
+    test('self-delegation in xGov is skipped (no gGov delegation created)', async () => {
+      const { testAccount } = localnet.context
+      const { registryAppClient, ggovRegistrySDK, xGovs } = await deployXGovMocksAndRegistry(localnet, testAccount, 1)
+      const [delegator] = xGovs
+
+      await registryAppClient.send.setXGovBox({
+        args: {
+          voterAddress: delegator.toString(),
+          value: {
+            votingAddress: delegator.toString(),
+            toleratedAbsences: 0n,
+            lastVoteTimestamp: 0n,
+            subscriptionRound: 0n,
+          },
+        },
+      })
+
+      await ggovRegistrySDK.mirrorXGovDelegation({ account: delegator.toString() })
+
+      const delegation = await ggovRegistrySDK.getDelegation(delegator.toString())
+      expect(delegation.exists).toBe(false)
     })
   })
 
   describe('setVotingAccount (xGov-compatible delegation)', () => {
-    const userSDK = (appId: bigint, user: Parameters<typeof localnet.algorand.account.getSigner>[0]) =>
-      new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: appId,
-        writerAccount: {
-          sender: user,
-          signer: localnet.algorand.account.getSigner(user),
-        },
-      })
-
     test('xGov sets their own voting account (account defaults to self) → delegation recorded', async () => {
       const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
       const [xgov] = xGovAccounts
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       // no `account` arg → defaults to the signer (self)
-      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
 
-      const delegation = await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())
+      const delegation = await sdk.getDelegation(xgov.toString())
       expect(delegation.exists).toBe(true)
       expect(delegation.delegatee).toBe(votingAddress.toString())
-      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([xgov.toString()])
+      expect(await sdk.getDelegators(votingAddress.toString())).toEqual([xgov.toString()])
     })
 
     test('current voting address can re-point the delegation via the `account` arg', async () => {
@@ -668,16 +886,16 @@ describe('GGovRegistry contract', () => {
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const newVotingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
-      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
       // the current voting address (not the xGov) manages the xGov's delegation
-      await userSDK(sdk.appId, votingAddress).setVotingAccount({
+      await createSDK(localnet, sdk.appId, votingAddress).setVotingAccount({
         account: xgov.toString(),
         votingAddress: newVotingAddress.toString(),
       })
 
-      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).delegatee).toBe(newVotingAddress.toString())
-      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
-      expect(await userSDK(sdk.appId, xgov).getDelegators(newVotingAddress.toString())).toEqual([xgov.toString()])
+      expect((await sdk.getDelegation(xgov.toString())).delegatee).toBe(newVotingAddress.toString())
+      expect(await sdk.getDelegators(votingAddress.toString())).toEqual([])
+      expect(await sdk.getDelegators(newVotingAddress.toString())).toEqual([xgov.toString()])
     })
 
     test('current voting address can clear the delegation (omitting votingAddress)', async () => {
@@ -685,12 +903,12 @@ describe('GGovRegistry contract', () => {
       const [xgov] = xGovAccounts
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
-      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
       // delegatee clears the xGov's delegation; omitted votingAddress defaults to the managed account
-      await userSDK(sdk.appId, votingAddress).setVotingAccount({ account: xgov.toString() })
+      await createSDK(localnet, sdk.appId, votingAddress).setVotingAccount({ account: xgov.toString() })
 
-      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
-      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
+      expect((await sdk.getDelegation(xgov.toString())).exists).toBe(false)
+      expect(await sdk.getDelegators(votingAddress.toString())).toEqual([])
     })
 
     test('setting votingAddress to the zero address clears the delegation', async () => {
@@ -699,14 +917,14 @@ describe('GGovRegistry contract', () => {
       const [xgov] = xGovAccounts
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
-      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
-      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(true)
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      expect((await sdk.getDelegation(xgov.toString())).exists).toBe(true)
 
       // votingAddress == ZERO_ADDRESS is treated as "clear", same as omitting it / self-delegation
-      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: ALGORAND_ZERO_ADDRESS_STRING })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: ALGORAND_ZERO_ADDRESS_STRING })
 
-      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
-      expect(await userSDK(sdk.appId, xgov).getDelegators(votingAddress.toString())).toEqual([])
+      expect((await sdk.getDelegation(xgov.toString())).exists).toBe(false)
+      expect(await sdk.getDelegators(votingAddress.toString())).toEqual([])
     })
 
     test('xGov can clear their own delegation (undelegate ergonomics: empty args)', async () => {
@@ -714,17 +932,17 @@ describe('GGovRegistry contract', () => {
       const [xgov] = xGovAccounts
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
-      await userSDK(sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({ votingAddress: votingAddress.toString() })
       // empty args → manage self, omit target → clear (replaces the former undelegate({}))
-      await userSDK(sdk.appId, xgov).setVotingAccount({})
-      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({})
+      expect((await sdk.getDelegation(xgov.toString())).exists).toBe(false)
     })
 
     test('clearing when no delegation exists is a no-op', async () => {
       const { sdk, xGovAccounts } = await deployRegistryWithCommittee(localnet, 1)
       const [xgov] = xGovAccounts
-      await userSDK(sdk.appId, xgov).setVotingAccount({})
-      expect((await userSDK(sdk.appId, xgov).getDelegation(xgov.toString())).exists).toBe(false)
+      await createSDK(localnet, sdk.appId, xgov).setVotingAccount({})
+      expect((await sdk.getDelegation(xgov.toString())).exists).toBe(false)
     })
 
     test('unauthorized third party cannot set another xGov’s voting account', async () => {
@@ -733,7 +951,7 @@ describe('GGovRegistry contract', () => {
       const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       await expect(
-        userSDK(sdk.appId, stranger).setVotingAccount({
+        createSDK(localnet, sdk.appId, stranger).setVotingAccount({
           account: xgov.toString(),
           votingAddress: votingAddress.toString(),
         }),
@@ -746,25 +964,29 @@ describe('GGovRegistry contract', () => {
       const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       // stranger manages their own (default-self) delegation but has no gGov account
       await expect(
-        userSDK(sdk.appId, stranger).setVotingAccount({ votingAddress: votingAddress.toString() }),
+        createSDK(localnet, sdk.appId, stranger).setVotingAccount({ votingAddress: votingAddress.toString() }),
       ).rejects.toThrow(transformedError(errAccountNotExists))
     })
   })
 
-  describe('auth', () => {
-    test('non-admin cannot registerCommittee', async () => {
+  describe('admin auth', () => {
+    let sdk: GGovRegistrySDK
+    let nonAdmin: Awaited<ReturnType<typeof localnet.context.generateAccount>>
+    let nonAdminSDK: GGovRegistrySDK
+
+    beforeEach(async () => {
       const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      // create a separate SDK with non-admin writer
-      const nonAdminSDK = new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: sdk.appId,
-        writerAccount: {
-          sender: nonAdmin,
-          signer: localnet.algorand.account.getSigner(nonAdmin),
-        },
-      })
+      ;({ sdk } = await deployRegistry(localnet, testAccount))
+      ;({ account: nonAdmin, sdk: nonAdminSDK } = await generateAccountWithSDK(localnet, sdk.appId))
+    })
+
+    test('non-admin cannot unregisterCommittee', async () => {
+      await expect(
+        nonAdminSDK.unregisterCommittee({ committeeId: new Uint8Array(32) }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot registerCommittee', async () => {
       await expect(
         nonAdminSDK.registerCommittee({
           committeeId: new Uint8Array(32),
@@ -778,10 +1000,6 @@ describe('GGovRegistry contract', () => {
     })
 
     test('non-admin cannot ingestXGovs', async () => {
-      const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      // register committee as admin
       const committeeId = new Uint8Array(32)
       await sdk.registerCommittee({
         committeeId,
@@ -790,15 +1008,6 @@ describe('GGovRegistry contract', () => {
         totalMembers: 1,
         totalVotes: 10,
         xGovRegistryId: 0n,
-      })
-      // try to ingest as non-admin
-      const nonAdminSDK = new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: sdk.appId,
-        writerAccount: {
-          sender: nonAdmin,
-          signer: localnet.algorand.account.getSigner(nonAdmin),
-        },
       })
       await expect(
         nonAdminSDK.ingestXGovs({
@@ -809,8 +1018,6 @@ describe('GGovRegistry contract', () => {
     })
 
     test('non-admin cannot uningestXGovs', async () => {
-      const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const committeeFile: XGovCommitteeFile = {
         ...committeeTemplate,
@@ -819,18 +1026,58 @@ describe('GGovRegistry contract', () => {
         registryId: 0,
         xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
       }
-      const { sdk } = await deployRegistry(localnet, testAccount)
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
-      const nonAdminSDK = new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: sdk.appId,
-        writerAccount: {
-          sender: nonAdmin,
-          signer: localnet.algorand.account.getSigner(nonAdmin),
-        },
-      })
       await expect(
         nonAdminSDK.uningestXGovs({ committeeId, xGovs: [xGovAccount.toString()] }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot mirrorXGovDelegation', async () => {
+      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        nonAdminSDK.mirrorXGovDelegation({ account: xGovAccount.toString() }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot setAdmin', async () => {
+      await expect(nonAdminSDK.setAdmin({ newAdmin: nonAdmin.toString() })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('non-admin cannot withdraw ALGO', async () => {
+      await expect(
+        nonAdminSDK.withdrawALGO({ receiver: nonAdmin.toString(), amount: (1).algos().microAlgo }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot set the xGov registry app id', async () => {
+      await expect(nonAdminSDK.setXGovRegistryApp({ appId: 12345n })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('non-admin cannot setOperator', async () => {
+      await expect(nonAdminSDK.setOperator({ account: nonAdmin.toString() })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('non-admin cannot uploadPeriodApprovalPartial', async () => {
+      await expect(
+        nonAdminSDK.uploadPeriodApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]), last: false }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot update the registry app', async () => {
+      await expect(
+        sdk.readClient.send.update.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot delete the registry app', async () => {
+      await expect(
+        sdk.readClient.send.delete.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
   })
@@ -846,7 +1093,7 @@ describe('GGovRegistry contract', () => {
     test('admin can transfer to new admin and old admin loses access', async () => {
       const { testAccount } = localnet.context
       const newAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { sdk, client } = await deployRegistry(localnet, testAccount)
+      const { sdk } = await deployRegistry(localnet, testAccount)
 
       await sdk.setAdmin({ newAdmin: newAdmin.toString() })
       expect(await sdk.getAdmin()).toBe(newAdmin.toString())
@@ -864,69 +1111,20 @@ describe('GGovRegistry contract', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
 
       // new admin can call admin-gated methods (use setOperator as a simple no-side-effect example)
-      const newAdminSDK = new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: client.appId,
-        writerAccount: { sender: newAdmin, signer: localnet.algorand.account.getSigner(newAdmin) },
-      })
+      const newAdminSDK = createSDK(localnet, sdk.appId, newAdmin)
       await expect(newAdminSDK.setOperator({ account: newAdmin.toString() })).resolves.toBeDefined()
-    })
-
-    test('non-admin cannot setAdmin', async () => {
-      const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      const nonAdminSDK = new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: sdk.appId,
-        writerAccount: { sender: nonAdmin, signer: localnet.algorand.account.getSigner(nonAdmin) },
-      })
-      await expect(nonAdminSDK.setAdmin({ newAdmin: nonAdmin.toString() })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
-    })
-
-    test('admin cannot transfer to zero address', async () => {
-      const { testAccount } = localnet.context
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
-      await expect(sdk.setAdmin({ newAdmin: ALGORAND_ZERO_ADDRESS_STRING })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
     })
 
     test('admin can update the registry app', async () => {
       const { testAccount } = localnet.context
-      const { client } = await deployRegistry(localnet, testAccount)
-      const sender = testAccount.toString()
-      const signer = testAccount.signer
-      await expect(client.send.update.bare({ sender, signer })).resolves.toBeDefined()
-    })
-
-    test('non-admin cannot update the registry app', async () => {
-      const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { client } = await deployRegistry(localnet, testAccount)
-      await expect(
-        client.send.update.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
-    })
-
-    test('non-admin cannot delete the registry app', async () => {
-      const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { client } = await deployRegistry(localnet, testAccount)
-      await expect(
-        client.send.delete.bare({ sender: nonAdmin.toString(), signer: localnet.algorand.account.getSigner(nonAdmin) }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      await expect(sdk.readClient.send.update.bare({ sender: testAccount.toString(), signer: testAccount.signer })).resolves.toBeDefined()
     })
 
     test('admin can delete the registry app', async () => {
       const { testAccount } = localnet.context
-      const { client } = await deployRegistry(localnet, testAccount)
-      const sender = testAccount.toString()
-      const signer = testAccount.signer
-      await expect(client.send.delete.bare({ sender, signer })).resolves.toBeDefined()
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      await expect(sdk.readClient.send.delete.bare({ sender: testAccount.toString(), signer: testAccount.signer })).resolves.toBeDefined()
     })
   })
 
@@ -934,44 +1132,21 @@ describe('GGovRegistry contract', () => {
     test('admin can withdraw ALGO to a receiver', async () => {
       const { testAccount } = localnet.context
       // deployRegistry funds the app account with 10 ALGO
-      const { sdk, client } = await deployRegistry(localnet, testAccount)
+      const { sdk } = await deployRegistry(localnet, testAccount)
       const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const before = await localnet.algorand.account.getInformation(receiver)
-      const registryBefore = await localnet.algorand.account.getInformation(client.appAddress)
+      const registryBefore = await localnet.algorand.account.getInformation(sdk.readClient.appAddress)
       const amount = (3).algos().microAlgo
 
       await sdk.withdrawALGO({ receiver: receiver.toString(), amount })
 
       const after = await localnet.algorand.account.getInformation(receiver)
-      const registryAfter = await localnet.algorand.account.getInformation(client.appAddress)
+      const registryAfter = await localnet.algorand.account.getInformation(sdk.readClient.appAddress)
       // Receiver does not pay the fees (sender/admin does), so it gains exactly `amount`.
       expect(after.balance.microAlgo).toBe(before.balance.microAlgo + amount)
       // Registry loses `amount` (the inner-payment fee is paid by the outer txn sender).
       expect(registryAfter.balance.microAlgo).toBe(registryBefore.balance.microAlgo - amount)
-    })
-
-    test('non-admin cannot withdraw ALGO', async () => {
-      const { testAccount } = localnet.context
-      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      const nonAdminSDK = new GGovRegistrySDK({
-        algorand: localnet.algorand,
-        registryAppId: sdk.appId,
-        writerAccount: { sender: nonAdmin, signer: localnet.algorand.account.getSigner(nonAdmin) },
-      })
-      await expect(
-        nonAdminSDK.withdrawALGO({ receiver: nonAdmin.toString(), amount: (1).algos().microAlgo }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
-    })
-
-    test('cannot withdraw to the zero address', async () => {
-      const { testAccount } = localnet.context
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
-      await expect(
-        sdk.withdrawALGO({ receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: (1).algos().microAlgo }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
@@ -982,6 +1157,201 @@ describe('GGovRegistry contract', () => {
       await expect(
         sdk.withdrawALGO({ receiver: receiver.toString(), amount: (100).algos().microAlgo }),
       ).rejects.toThrow()
+    })
+  })
+
+  describe('setXGovRegistryApp', () => {
+    test('admin can set the xGov registry app id', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      await sdk.setXGovRegistryApp({ appId: 12345n })
+      expect(await sdk.readClient.state.global.xGovRegistryApp()).toBe(12345n)
+    })
+  })
+
+  describe('setOperator', () => {
+    test('admin can set the operator', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await sdk.setOperator({ account: operator.toString() })
+      expect(await sdk.readClient.state.global.operator()).toBe(operator.toString())
+    })
+  })
+
+  describe('upload period approval program (chunked upload - uploadPeriodApprovalPartial wrapper)', () => {
+    test('period box assembled via chunks enables createPeriod', async () => {
+      const { testAccount } = localnet.context
+      // Deploy bare registry (no period bytecode) by bypassing the deployRegistry helper
+      await localnet.algorand.account.ensureFundedFromEnvironment(testAccount, (25).algos())
+      const factory = localnet.algorand.client.getTypedAppFactory(GGovRegistryFactory, {
+        defaultSender: testAccount,
+        defaultSigner: testAccount.signer,
+      })
+      const { appClient: bareClient } = await factory.deploy({
+        onUpdate: 'append',
+        onSchemaBreak: 'append',
+        createParams: { extraProgramPages: 3 },
+      })
+      await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
+      const sdk = createSDK(localnet, bareClient.appId, testAccount)
+
+      const periodFactory = localnet.algorand.client.getTypedAppFactory(GGovPeriodFactory, {
+        defaultSender: testAccount,
+        defaultSigner: testAccount.signer,
+      })
+      const compiled = await periodFactory.appFactory.compile()
+      await sdk.uploadPeriodApprovalProgram({ bytecode: compiled.approvalProgram })
+
+      // Verify the box was assembled correctly: createPeriod (addPeriod) must succeed
+      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeFile: XGovCommitteeFile = {
+        ...committeeTemplate,
+        totalMembers: 1,
+        totalVotes: 10,
+        registryId: 0,
+        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+      }
+      const committeeId = await sdk.uploadCommitteeFile(committeeFile)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n }),
+      ).resolves.toBeDefined()
+    })
+  })
+
+  describe('createPeriod', () => {
+    test('operator can create a period', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      expect(periodId).toBeGreaterThan(0n)
+    })
+
+    test('rejects mbrPayment sent to wrong receiver', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const wrongPayment = await localnet.algorand.createTransaction.payment({
+        sender: testAccount.toString(),
+        receiver: testAccount.toString(),
+        amount: (1).algos(),
+      })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.writeClient!.send.createPeriod({
+          args: { committeeId, votingStart: now + 100n, votingEnd: now + 3700n, mbrPayment: wrongPayment },
+          sender: testAccount.toString(),
+          signer: testAccount.signer,
+          extraFee: (3000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-operator cannot create a period', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const { sdk: nonOperatorSDK } = await generateAccountWithSDK(localnet, sdk.appId, (3).algos())
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        nonOperatorSDK.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('rejects nonexistent committee', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.addPeriod({ committeeId: new Uint8Array(32), votingStart: now + 100n, votingEnd: now + 3700n }),
+      ).rejects.toThrow(transformedError(errCommitteeNotExists))
+    })
+
+    test('rejects incomplete committee', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const committeeId = new Uint8Array(32).fill(1)
+      await sdk.registerCommittee({
+        committeeId,
+        periodStart: 50_000_000,
+        periodEnd: 53_000_000,
+        totalMembers: 1,
+        totalVotes: 10,
+        xGovRegistryId: 0n,
+      })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n }),
+      ).rejects.toThrow(transformedError(errCommitteeIncomplete))
+    })
+
+    test('rejects votingEnd <= votingStart', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.addPeriod({ committeeId, votingStart: now + 3700n, votingEnd: now + 100n }),
+      ).rejects.toThrow(transformedError(errPeriodEndLessThanStart))
+    })
+
+    test('rejects when period approval program not uploaded', async () => {
+      const { testAccount } = localnet.context
+      await localnet.algorand.account.ensureFundedFromEnvironment(testAccount, (25).algos())
+      const factory = localnet.algorand.client.getTypedAppFactory(GGovRegistryFactory, {
+        defaultSender: testAccount,
+        defaultSigner: testAccount.signer,
+      })
+      const { appClient: bareClient } = await factory.deploy({
+        onUpdate: 'append',
+        onSchemaBreak: 'append',
+        createParams: { extraProgramPages: 3 },
+      })
+      await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
+      const sdk = createSDK(localnet, bareClient.appId, testAccount)
+      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeId = await sdk.uploadCommitteeFile({
+        ...committeeTemplate,
+        totalMembers: 1,
+        totalVotes: 10,
+        registryId: 0,
+        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+      })
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      await expect(
+        sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n }),
+      ).rejects.toThrow(transformedError(errPeriodAppNotConfigured))
+    })
+  })
+
+  describe('read methods auth', () => {
+    test('verifyAdmin returns true for the admin and false for any other account', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const other = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const { return: isAdmin } = await sdk.readClient.send.verifyAdmin({ args: { account: testAccount.toString() } })
+      expect(isAdmin).toBe(true)
+      const { return: isAdminOther } = await sdk.readClient.send.verifyAdmin({ args: { account: other.toString() } })
+      expect(isAdminOther).toBe(false)
+    })
+
+    test('verifyOperator returns true for the operator and false for any other account', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const other = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await sdk.setOperator({ account: operator.toString() })
+      const { return: isOperator } = await sdk.readClient.send.verifyOperator({ args: { account: operator.toString() } })
+      expect(isOperator).toBe(true)
+      const { return: isOperatorOther } = await sdk.readClient.send.verifyOperator({ args: { account: other.toString() } })
+      expect(isOperatorOther).toBe(false)
     })
   })
 })
