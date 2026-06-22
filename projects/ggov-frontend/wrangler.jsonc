@@ -1,8 +1,13 @@
 {
-  // Cloudflare Pages project configuration.
-  // Enables `wrangler pages deploy` / `wrangler pages dev` to pick up the
-  // project name and build output without extra flags.
+  // Cloudflare Worker configuration for the TanStack Start app.
+  // `wrangler deploy` (run after `vite build`) deploys the server entry plus the
+  // built client assets emitted by @cloudflare/vite-plugin.
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ggov-frontend",
-  "compatibility_date": "2026-06-09",
-  "pages_build_output_dir": "dist"
+  "compatibility_date": "2026-06-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true
+  }
 }

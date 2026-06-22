@@ -1,5 +1,5 @@
 import { Suspense, useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, Outlet } from '@tanstack/react-router'
 import { ArrowRight, Menu, Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { Button } from '@/components/ui/button'
@@ -47,23 +47,21 @@ function ThemeToggle() {
 /** A single sidebar link. Active = blue tint + a left accent bar. */
 function SidebarLink({ to, label, onNavigate }: { to: string; label: string; onNavigate?: () => void }) {
   return (
-    <NavLink
+    // TanStack Link concatenates base className with active/inactive props.
+    // IMPORTANT: set the whole border-left in both states so React never leaves
+    // a stale accent bar on a previously-active item (see brief).
+    <Link
       to={to}
-      end={to === '/docs'}
+      activeOptions={{ exact: to === '/docs' }}
       onClick={onNavigate}
-      className={({ isActive }) =>
-        cn(
-          // IMPORTANT: set the whole border-left in both states so React never
-          // leaves a stale accent bar on a previously-active item (see brief).
-          'block rounded-sm px-3 py-[7px] font-sans text-[14.5px] no-underline transition-colors',
-          isActive
-            ? 'border-l-2 border-primary bg-primary/10 font-semibold text-primary'
-            : 'border-l-2 border-transparent font-medium text-muted-foreground hover:text-foreground',
-        )
-      }
+      className={cn('block rounded-sm px-3 py-[7px] font-sans text-[14.5px] no-underline transition-colors')}
+      activeProps={{ className: 'border-l-2 border-primary bg-primary/10 font-semibold text-primary' }}
+      inactiveProps={{
+        className: 'border-l-2 border-transparent font-medium text-muted-foreground hover:text-foreground',
+      }}
     >
       {label}
-    </NavLink>
+    </Link>
   )
 }
 

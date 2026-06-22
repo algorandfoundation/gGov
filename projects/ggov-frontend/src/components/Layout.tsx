@@ -1,5 +1,5 @@
 import { Suspense, useState } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useGlobalState } from '@/hooks/queries'

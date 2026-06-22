@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -41,7 +41,7 @@ export default function TopBarAccount({ fullWidth = false }: { fullWidth?: boole
         </select>
       ) : (
         <Link
-          to={`/account/${activeAddress}`}
+          to="/account/$address" params={{ address: activeAddress }}
           className="flex items-center gap-2 rounded-full border border-border py-1 pl-3 pr-1 transition-colors hover:border-foreground/30"
         >
           <span className="text-sm">{label}</span>

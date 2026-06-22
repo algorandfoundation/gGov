@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import type { GGovPeriod } from 'ggov-sdk'
 import { Badge } from '@/components/ui/badge'
 import { ClampedMarkdown } from '@/components/ui/clamped-markdown'
@@ -39,7 +39,7 @@ export default function PeriodRow({ periodId, period }: Props) {
 
   return (
     <Link
-      to={`/vote/period/${periodId}`}
+      to="/vote/period/$periodId" params={{ periodId: String(periodId) }}
       className="block rounded-md border border-border bg-card transition-colors hover:border-foreground/30"
     >
       {/* Desktop grid row */}

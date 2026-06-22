@@ -167,6 +167,14 @@ cython_debug/
 # NPM
 node_modules
 
+# TanStack Start / Router generated + build artifacts
+**/routeTree.gen.ts
+.tanstack/
+.output/
+.nitro/
+.wrangler/
+projects/ggov-frontend/worker-configuration.d.ts
+
 
 /TODO
 /BACKLOG
