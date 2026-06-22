@@ -462,26 +462,29 @@ function HeadingIdentity({
 }: {
   address: string;
   isOwnAccount: boolean;
-  appId?: bigint;
+  appId?: bigint | null;
 }) {
   const { data: name } = useAddressName(address);
   if (isOwnAccount) {
     return (
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <span className="break-all font-mono text-[13px] text-muted-foreground">{address}</span>
-        <button
-          type="button"
-          aria-label="Copy address"
-          onClick={() => copyAddress(address)}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Copy className="size-3.5" />
-        </button>
-        <AccountExplorerLink address={address} />
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="font-mono text-[13px] text-muted-foreground sm:hidden">{ellipseAddress(address, 8)}</span>
+          <span className="hidden break-all font-mono text-[13px] text-muted-foreground sm:inline">{address}</span>
+          <button
+            type="button"
+            aria-label="Copy address"
+            onClick={() => copyAddress(address)}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            <Copy className="size-3.5" />
+          </button>
+          <AccountExplorerLink address={address} className="shrink-0" />
+        </span>
         <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:text-algo-teal">
           This is you
         </span>
-        {appId !== undefined && <AppLabel appId={appId} />}
+        {appId != null && <AppLabel appId={appId} />}
       </div>
     );
   }
@@ -489,17 +492,19 @@ function HeadingIdentity({
     <div className="mt-2 flex flex-wrap items-center gap-2.5">
       <AccountAvatar address={address} name={name} size={28} />
       {name && <span className="text-[15px] font-semibold">{name}</span>}
-      <span className="break-all font-mono text-[13px] text-muted-foreground">{ellipseAddress(address, 8)}</span>
-      <button
-        type="button"
-        aria-label="Copy address"
-        onClick={() => copyAddress(address)}
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <Copy className="size-3.5" />
-      </button>
-      <AccountExplorerLink address={address} />
-      {appId !== undefined && <AppLabel appId={appId} />}
+      <span className="flex min-w-0 items-center gap-2.5">
+        <span className="font-mono text-[13px] text-muted-foreground">{ellipseAddress(address, 8)}</span>
+        <button
+          type="button"
+          aria-label="Copy address"
+          onClick={() => copyAddress(address)}
+          className="shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <Copy className="size-3.5" />
+        </button>
+        <AccountExplorerLink address={address} className="shrink-0" />
+      </span>
+      {appId != null && <AppLabel appId={appId} />}
     </div>
   );
 }
@@ -594,7 +599,7 @@ export default function Account() {
       )}
 
       <h1 className="font-display text-3xl font-bold leading-none">
-        {appEscrowId !== undefined ? "Application Account" : "Account"}
+        {appEscrowId != null ? "Application Account" : "Account"}
       </h1>
       <HeadingIdentity address={address} isOwnAccount={isOwnAccount} appId={appEscrowId} />
 
