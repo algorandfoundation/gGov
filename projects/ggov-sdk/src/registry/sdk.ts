@@ -188,6 +188,20 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
+  makeSetLastPeriodIdTxns({ newLastPeriodId, builder }: GGovRegistryContractArgs["setLastPeriodId(uint64)void"] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup();
+    // A downward move reads the period boxes in the reclaimed range; AlgoKit populates the
+    // box references automatically. A forward seed (the legacy case) reads no boxes.
+    builder = builder.setLastPeriodId({ args: { newLastPeriodId } });
+    return builder;
+  }
+
+  setLastPeriodId = this.makeTxnExecutor({
+    maker: this.makeSetLastPeriodIdTxns,
+  });
+
+  @requireWriter()
+  @wrapErrors()
   makeSetAdminTxns({ newAdmin, builder }: GGovRegistryContractArgs["setAdmin(address)void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup();
     builder = builder.setAdmin({ args: { newAdmin } });
@@ -461,6 +475,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     operatorAccount,
     xGovRegistryAppId,
     initialFundingAlgos,
+    firstPeriodId,
     update = false,
   }: {
     algorand: AlgorandClient;
@@ -468,6 +483,12 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     operatorAccount?: string | Address;
     xGovRegistryAppId?: bigint | number;
     initialFundingAlgos?: bigint | number;
+    /**
+     * Id to assign to the first period created on this registry. Use to continue numbering
+     * contiguously after a legacy system (e.g. 16 to follow legacy periods 1..15). Seeds the
+     * registry's period counter to firstPeriodId - 1; omit to start at 1.
+     */
+    firstPeriodId?: bigint | number;
     update?: boolean;
   }): Promise<{ sdk: GGovRegistrySDK; appClient: GGovRegistryClient }> {
     const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
@@ -502,6 +523,13 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     });
 
     await sdk.uploadPeriodApprovalProgram({ bytecode });
+
+    if (firstPeriodId !== undefined) {
+      // Seed the counter so the first createPeriod issues firstPeriodId. Done before setOperator,
+      // and the operator is the only role that can create periods, so no period can be created
+      // in between.
+      await sdk.setLastPeriodId({ newLastPeriodId: BigInt(firstPeriodId) - 1n });
+    }
 
     if (xGovRegistryAppId !== undefined) {
       await sdk.setXGovRegistryApp({ appId: BigInt(xGovRegistryAppId) });

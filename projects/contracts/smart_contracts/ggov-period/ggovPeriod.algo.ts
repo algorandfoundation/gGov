@@ -55,6 +55,8 @@ import {
 import { ensure, u32 } from '../base/utils.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
 
+const TOPIC_BODY_BOX_PREFIX = Bytes`T`
+
 @contract({ name: 'GGovPeriod' })
 export class GGovPeriodContract extends BaseContract {
   /** Registry app ID. 0 sentinel = uninitialised */
@@ -81,7 +83,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Period body JSON (chunked) */
   periodBody = Box<bytes>({ key: 'P' })
   /** Topic body JSON by topicIndex */
-  topicBodies = BoxMap<uint64, bytes>({ keyPrefix: 'T' })
+  topicBodies = BoxMap<Uint32, bytes>({ keyPrefix: TOPIC_BODY_BOX_PREFIX }) // squatting key prefix to avoid collisions; code uses op.Box for splicing/resizing
   /** Per-voter vote record, keyed by voter Account */
   voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
 
@@ -148,6 +150,11 @@ export class GGovPeriodContract extends BaseContract {
   /** Guard for operator edits: period must not be ready */
   protected ensureEditable(): void {
     ensure(!this.ready.value, errGGovReady)
+  }
+
+  /** Box key for the topic-body box of $topicIndex: 'T' + the ARC-4 uint32 index. */
+  protected topicBodyBoxKey(topicIndex: uint64): bytes {
+    return TOPIC_BODY_BOX_PREFIX.concat(encodeArc4(u32(topicIndex)))
   }
 
   // ── Operator: period/topic CRUD ──────────────────────────────────
@@ -255,7 +262,7 @@ export class GGovPeriodContract extends BaseContract {
 
   // ── Operator: body uploads ───────────────────────────────────────
 
-  public uploadPeriodBodyPartial(startOffset: uint64, data: bytes, last: boolean): void {
+  public uploadPeriodBodyPartial(startOffset: uint64, data: bytes): void {
     this.ensureCallerIsOperator()
     this.ensureEditable()
     const boxKey = Bytes`P`
@@ -272,10 +279,13 @@ export class GGovPeriodContract extends BaseContract {
     op.Box.replace(boxKey, startOffset, data)
   }
 
-  public uploadTopicBodyPartial(topicIndex: uint64, startOffset: uint64, data: bytes, last: boolean): void {
+  public uploadTopicBodyPartial(topicIndex: uint64, startOffset: uint64, data: bytes): void {
+    // topicBodies is declared as BoxMap in the class to surface collisions with the box prefix in the type system
+    // but we have to use op.Box here for the fine-grained control needed to splice in partial updates
+    // so we use a helper to construct the full box key consistently between the two usages
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    const boxKey = Bytes`T`.concat(encodeArc4(u32(topicIndex)))
+    const boxKey = this.topicBodyBoxKey(topicIndex)
     const writeEnd: uint64 = startOffset + data.length
     if (startOffset === 0) {
       op.Box.delete(boxKey)
@@ -287,6 +297,21 @@ export class GGovPeriodContract extends BaseContract {
       }
     }
     op.Box.replace(boxKey, startOffset, data)
+  }
+
+  /**
+   * Delete the topic-body boxes ('T'+index) for the given topic indexes. Admin only and only while
+   * not ready (same gates as deletePeriodApp). Used by the SDK to clear per-topic body boxes — paged
+   * ≤8 per txn because of the 8-box-reference limit — before deletion, so their min-balance is
+   * reclaimed rather than permanently locked. op.Box.delete is a no-op for an absent box, so
+   * unknown/stale indexes are harmless. Each referenced box must be in the txn's box-reference array.
+   */
+  public deleteTopicBodies(topicIndexes: uint64[]): void {
+    this.checkAdminCaller()
+    this.ensureEditable()
+    for (const idx of clone(topicIndexes)) {
+      op.Box.delete(this.topicBodyBoxKey(idx))
+    }
   }
 
   // ── Voting ───────────────────────────────────────────────────────
@@ -512,12 +537,29 @@ export class GGovPeriodContract extends BaseContract {
     this.checkAdminCaller()
   }
 
-  /** App deletable by registry admin (verified via inner call to registry.verifyAdmin) */
+  /**
+   * App deletable by registry admin (verified via inner call to registry.verifyAdmin), and only
+   * while the period is not ready. Blocking deletion on ready keeps a period that is locked for
+   * voting from being torn down; to delete a ready period the admin must setReady(false) first,
+   * which itself only succeeds when no votes have been cast.
+   */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.checkAdminCaller()
-    // TODO: inner-call the registry to remove this period's summary box so deleted periods
-    // drop out of getAllPeriods/getAllPeriodSummaries (which filter on appId === 0).
-    // Requires a deletePeriod/removePeriod method on GGovRegistryContract.
+    this.ensureEditable()
+    // delete boxes to reclaim their mbr
+    // topicOptionsArr and topicVotesArr will always exist
+    // periodBody may or may not exist
+    this.topicOptionsArr.delete()
+    this.topicVotesArr.delete()
+    if (this.periodBody.exists) this.periodBody.delete()
+    // Inner-call the registry to remove this period's summary box so deleted periods drop out of
+    // getAllPeriods/getAllPeriodSummaries (which filter on appId === 0).
+    compileArc4(GGovRegistryContract).call.removePeriodSummary({
+      appId: Application(this.registryApp.value),
+      args: [u32(this.periodId.value)],
+    })
+    // Close out all escrow balance to caller
+    itxn.payment({ receiver: Txn.sender, amount: 0, closeRemainderTo: Txn.sender }).submit()
   }
 }

@@ -22,12 +22,17 @@ import {
   errNotOperator,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
+  errPeriodInRange,
   errUnauthorized,
 } from '../base/errors.algo'
 import { transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 
-async function deployRegistryAndSDK(localnet: ReturnType<typeof algorandFixture>, admin: Address) {
+async function deployRegistryAndSDK(
+  localnet: ReturnType<typeof algorandFixture>,
+  admin: Address,
+  firstPeriodId?: bigint | number,
+) {
   // GGovRegistrySDK.createRegistry() pays the registry MBR + box-MBR out of the deployer's balance; top
   // the localnet test admin up so it can afford the 10 ALGO transfer plus deploy fees.
   await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
@@ -37,6 +42,7 @@ async function deployRegistryAndSDK(localnet: ReturnType<typeof algorandFixture>
       sender: admin,
       signer: localnet.algorand.account.getSigner(admin),
     },
+    firstPeriodId,
   })
   // Combined SDK for period ops; registry ops go through sdk.registry.
   const sdk = new GGovSDK({
@@ -85,9 +91,10 @@ async function deployWithCommittee(
   localnet: ReturnType<typeof algorandFixture>,
   numXGovs = 3,
   votesPerMember = 10,
+  firstPeriodId?: bigint | number,
 ) {
   const { testAccount: admin } = localnet.context
-  const { appClient, sdk } = await deployRegistryAndSDK(localnet, admin)
+  const { appClient, sdk } = await deployRegistryAndSDK(localnet, admin, firstPeriodId)
 
   const xGovAccounts = await Promise.all(
     Array.from({ length: numXGovs }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
@@ -240,13 +247,81 @@ describe('GGovPeriod contract', () => {
     })
   })
 
+  // ── setLastPeriodId / contiguous period ids ───────────────────
+
+  describe('setLastPeriodId / contiguous period ids', () => {
+    test('firstPeriodId seeds the first period id (contiguous after a legacy system)', async () => {
+      // Legacy system ran periods 1..15; new periods should continue at 16.
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 3, 10, 16n)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const id1 = await sdk.registry.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const id2 = await sdk.registry.addPeriod({ committeeId, votingStart: now + 200n, votingEnd: now + 3800n })
+      const id3 = await sdk.registry.addPeriod({ committeeId, votingStart: now + 300n, votingEnd: now + 3900n })
+      expect([id1, id2, id3]).toEqual([16n, 17n, 18n])
+
+      // Reader enumerates from 1 but the phantom 1..15 are filtered (no boxes) — list starts at 16.
+      const summaries = await sdk.registry.getAllPeriodSummaries()
+      expect(summaries.map((s) => s.id)).toEqual([16n, 17n, 18n])
+      for (const { summary } of summaries) {
+        expect(BigInt(summary.appId)).toBeGreaterThan(0n)
+      }
+    })
+
+    test('setLastPeriodId forward-seeds the counter; next period is newLastPeriodId + 1', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setLastPeriodId({ newLastPeriodId: 15n })
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      expect(periodId).toBe(16n)
+    })
+
+    test('Non-admin cannot rewind', async () => {
+      const { testAccount: admin } = localnet.context
+      const { appClient } = await deployRegistryAndSDK(localnet, admin)
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const nonAdminSDK = createUserSDK(localnet, appClient.appId, nonAdmin)
+      await expect(nonAdminSDK.registry.setLastPeriodId({ newLastPeriodId: 15n })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('Rewind refuses to re-issue an id that has a live period', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      expect(periodId).toBe(1n)
+      // Rewinding to 0 would re-issue id 1, which is live → reject.
+      await expect(sdk.registry.setLastPeriodId({ newLastPeriodId: 0n })).rejects.toThrow(
+        transformedError(errPeriodInRange),
+      )
+    })
+
+    test('Rewind allowed across a deleted period; the id is re-issued', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      expect(periodId).toBe(1n)
+      // Deleting drops the summary box, so the id is free to re-issue.
+      await sdk.deletePeriodApp({ periodId })
+      await sdk.registry.setLastPeriodId({ newLastPeriodId: 0n })
+      const reissued = await sdk.registry.addPeriod({ committeeId, votingStart: now + 200n, votingEnd: now + 3800n })
+      expect(reissued).toBe(1n)
+    })
+  })
+
   // ── getAllPeriods / getAllPeriodSummaries ────────────────────────
 
   describe('getAllPeriods / getAllPeriodSummaries', () => {
-    // NOTE: deleted-period filtering (summary.appId === 0) is currently a no-op — the registry
-    // has no deletePeriod, so summary boxes are never removed and there is no way to produce an
-    // appId === 0 summary for an existing ID. Left untested until the registry-cleanup TODO lands
-    // (see GGovPeriodContract.deleteApplication).
+    // Deleted-period filtering (summary.appId === 0) is exercised by the deletePeriodApp suite
+    // below: deleting a period inner-calls registry.removePeriodSummary, dropping its summary box.
 
     test('Empty registry returns no periods', async () => {
       const { sdk } = await deployWithCommittee(localnet)
@@ -297,6 +372,110 @@ describe('GGovPeriod contract', () => {
       const byId = new Map(summaries.map((s) => [s.id, s.summary]))
       expect(byId.get(1n)!.ready).toBe(true)
       expect(byId.get(2n)!.ready).toBe(false)
+    })
+  })
+
+  // ── deletePeriodApp (admin-only, !ready) ─────────────────────────
+
+  describe('deletePeriodApp', () => {
+    test('Admin can delete a non-ready period; registry summary box is removed', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const id1 = await sdk.registry.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const id2 = await sdk.registry.addPeriod({ committeeId, votingStart: now + 200n, votingEnd: now + 3800n })
+
+      // Sanity: both summaries present before deletion.
+      expect((await sdk.registry.getAllPeriodSummaries()).map((s) => s.id)).toEqual([id1, id2])
+
+      await sdk.deletePeriodApp({ periodId: id1 })
+
+      // Summary box for id1 is gone (getPeriodSummary returns the empty/appId-0 summary)…
+      const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId: id1 } })
+      expect(BigInt(summary!.appId)).toBe(0n)
+
+      // …and it drops out of the enumerations, leaving only id2.
+      expect((await sdk.registry.getAllPeriodSummaries()).map((s) => s.id)).toEqual([id2])
+      expect((await sdk.getAllPeriods()).map((p) => p.id)).toEqual([id2])
+    })
+
+    test('Cannot delete a ready period', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 100n,
+        votingEnd: now + 3700n,
+      })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.setReady({ periodId, ready: true })
+
+      await expect(sdk.deletePeriodApp({ periodId })).rejects.toThrow(transformedError(errGGovReady))
+
+      // Period survives the rejected deletion.
+      const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(BigInt(summary!.appId)).toBeGreaterThan(0n)
+    })
+
+    test('Non-admin cannot delete a period', async () => {
+      const { appClient, sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 100n,
+        votingEnd: now + 3700n,
+      })
+
+      const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const nonAdminSDK = createUserSDK(localnet, appClient.appId, nonAdmin)
+      await expect(nonAdminSDK.deletePeriodApp({ periodId })).rejects.toThrow(transformedError(errUnauthorized))
+
+      // Period survives the rejected deletion.
+      const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(BigInt(summary!.appId)).toBeGreaterThan(0n)
+    })
+
+    test('Deletes every period box (paged) and reclaims their MBR to the admin', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      // Over-fund the period app so it can hold the period body + all topic-body box MBR.
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(periodAppId), (3).algos())
+
+      // >8 topics each with an uploaded body, plus a period body → 'o','t','P' + 9×'T' = 12 boxes,
+      // so topic-body cleanup spans multiple batches (>8 box refs per txn is impossible).
+      const NUM_TOPICS = 9
+      for (let i = 0; i < NUM_TOPICS; i++) {
+        await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
+      }
+      await sdk.uploadPeriodBody({ periodId, body: { title: 'Period', body: 'Period description body.' } })
+      for (let i = 0; i < NUM_TOPICS; i++) {
+        await sdk.uploadTopicBody({ periodId, topicIndex: i, body: { title: `Topic ${i}`, body: `Body ${i}.` } })
+      }
+
+      // Sanity: all boxes are present before deletion.
+      expect((await localnet.algorand.app.getBoxNames(periodAppId)).length).toBe(3 + NUM_TOPICS)
+
+      const adminBefore = (await localnet.algorand.client.algod.accountInformation(admin.toString()).do()).amount
+
+      await sdk.deletePeriodApp({ periodId })
+
+      // Every box is gone — none left to lock MBR.
+      expect((await localnet.algorand.app.getBoxNames(periodAppId)).length).toBe(0)
+      // Registry summary dropped.
+      const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(BigInt(summary!.appId)).toBe(0n)
+      // The swept app-account balance (base + all freed box MBR) lands with the admin, net of fees.
+      const adminAfter = (await localnet.algorand.client.algod.accountInformation(admin.toString()).do()).amount
+      expect(adminAfter).toBeGreaterThan(adminBefore)
     })
   })
 
@@ -966,7 +1145,6 @@ describe('GGovPeriod contract', () => {
         periodId,
         startOffset: 0n,
         data: bodyJson,
-        last: true,
       })
     })
 
@@ -983,7 +1161,7 @@ describe('GGovPeriod contract', () => {
       await sdk.setReady({ periodId, ready: true })
       const bodyJson = new TextEncoder().encode('{"title":"After ready"}')
       await expect(
-        sdk.uploadPeriodBodyPartial({ periodId, startOffset: 0n, data: bodyJson, last: true }),
+        sdk.uploadPeriodBodyPartial({ periodId, startOffset: 0n, data: bodyJson }),
       ).rejects.toThrow(transformedError(errGGovReady))
     })
 
@@ -1005,7 +1183,6 @@ describe('GGovPeriod contract', () => {
           topicIndex: 0n,
           startOffset: 0n,
           data: bodyJson,
-          last: true,
         }),
       ).rejects.toThrow(transformedError(errGGovReady))
     })
@@ -1352,7 +1529,9 @@ describe('GGovPeriod contract', () => {
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, admin)
       await expect(
-        client.send.delete.bare({ extraFee: (1000).microAlgo() }),
+        // deletes 'o'/'t'/'P' boxes (must be referenced); 1 inner verifyAdmin + 1 inner
+        // removePeriodSummary + 1 inner sweep payment
+        client.send.delete.bare({ boxReferences: ['o', 't', 'P'], extraFee: (3000).microAlgo() }),
       ).resolves.toBeDefined()
     })
   })
