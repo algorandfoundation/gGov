@@ -56,6 +56,8 @@ jobs:
 
       - name: Run tests
         shell: bash
+        env:
+          NOOP_TEST_LOGGER: 'true'
         run: |
           set -o pipefail
           algokit project run test --project-name 'contracts'
