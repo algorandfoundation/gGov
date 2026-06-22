@@ -89,15 +89,9 @@ function DocsNav({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function DocsLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { pathname, hash } = useLocation()
-
-  // Client-side navigation keeps the previous scroll position, so moving between
-  // docs pages can land you mid-article. Reset to the top on each navigation —
-  // but only when there's no fragment, so deep links to a heading anchor still
-  // scroll to their target.
-  useEffect(() => {
-    if (!hash) window.scrollTo(0, 0)
-  }, [pathname, hash])
+  // Scroll-on-navigation is handled by the router's `scrollRestoration` (see
+  // src/router.tsx): top on a new page, restored position on back/forward, and
+  // hash anchors honored — so no manual window.scrollTo is needed here.
 
   return (
     <div className="min-h-svh bg-background text-foreground">
