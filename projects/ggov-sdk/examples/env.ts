@@ -31,7 +31,13 @@ export async function resolveRegistryAppId(
   algorand: AlgorandClient,
   deployerAddr?: string | Address,
 ): Promise<bigint> {
-  if (process.env.APP_ID) return BigInt(process.env.APP_ID);
+  const rawAppId = process.env.APP_ID?.trim();
+  if (rawAppId) {
+    if (!/^\d+$/.test(rawAppId) || BigInt(rawAppId) <= 0n) {
+      throw new Error(`Invalid APP_ID "${process.env.APP_ID}": expected a positive integer registry app id.`);
+    }
+    return BigInt(rawAppId);
+  }
 
   const creatorAddress = deployerAddr ?? (await algorand.account.fromEnvironment("DEPLOYER")).addr;
   const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
