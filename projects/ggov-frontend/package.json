@@ -19,6 +19,7 @@
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",
     "@blockshake/defly-connect": "^1.2.1",
+    "@d13co/open-in": "^0.1.2",
     "@perawallet/connect": "^1.4.1",
     "@radix-ui/react-slot": "^1.1.0",
     "@tanstack/react-query": "^5.90.21",
