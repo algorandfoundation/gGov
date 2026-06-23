@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ClampedMarkdown } from "@/components/ui/clamped-markdown";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export type TopicVoteMode = "upcoming" | "results" | "select" | "advanced";
@@ -24,6 +25,10 @@ interface TopicVoteCardProps {
   votedOptionIdx?: number;
   /** Footer node, e.g. an allocation summary in `advanced` mode. */
   footer?: React.ReactNode;
+  /** Results-mode outcome shown as a success Badge in the header band (replaces the option count). */
+  outcome?: React.ReactNode;
+  /** Distinct voters in the period, appended to the results footer ("… · N voters"). */
+  voters?: number;
   topicIdx: number;
 }
 
@@ -62,6 +67,8 @@ export default function TopicVoteCard({
   votingPower,
   votedOptionIdx,
   footer,
+  outcome,
+  voters,
   topicIdx,
 }: TopicVoteCardProps) {
   const totalVotes = tallies.reduce((a, b) => a + b, 0);
@@ -79,9 +86,15 @@ export default function TopicVoteCard({
           </span>
           {title && <h2 className="min-w-0 truncate text-[17px] font-semibold text-foreground">{title}</h2>}
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {options.length} option{options.length === 1 ? "" : "s"}
-        </span>
+        {mode === "results" && outcome != null ? (
+          <Badge variant="secondary" className="shrink-0 border-0 bg-success/[0.14] text-success-strong">
+            {outcome}
+          </Badge>
+        ) : (
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {options.length} option{options.length === 1 ? "" : "s"}
+          </span>
+        )}
       </div>
 
       <div className="p-6 pt-4">
@@ -133,7 +146,10 @@ export default function TopicVoteCard({
                 </div>
               );
             })}
-            <p className="text-xs tabular-nums text-muted-foreground">{totalVotes.toLocaleString()} votes cast</p>
+            <p className="text-xs tabular-nums text-muted-foreground">
+              {totalVotes.toLocaleString()} votes cast
+              {voters != null && ` · ${voters.toLocaleString()} voter${voters === 1 ? "" : "s"}`}
+            </p>
           </div>
         )}
 

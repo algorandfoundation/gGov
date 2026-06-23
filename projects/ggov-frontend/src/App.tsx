@@ -16,6 +16,7 @@ import VotePeriods from '@/components/pages/vote/VotePeriods'
 // Lazy-load the heavier routes so the landing view's chunk doesn't carry the
 // TipTap editor (Add/Manage screens) or react-markdown (detail screens).
 const VotePeriodDetail = lazy(() => import('@/components/pages/vote/VotePeriodDetail'))
+const VotePeriodResults = lazy(() => import('@/components/pages/vote/VotePeriodResults'))
 const Delegation = lazy(() => import('@/components/pages/vote/Delegation'))
 const Account = lazy(() => import('@/components/pages/vote/Account'))
 const ManagePeriods = lazy(() => import('@/components/pages/manage/ManagePeriods'))
@@ -114,6 +115,7 @@ export default function App() {
                 <Route element={<Layout />}>
                   <Route path="vote" element={<VotePeriods />} />
                   <Route path="vote/period/:periodId" element={<VotePeriodDetail />} />
+                  <Route path="vote/period/:periodId/results" element={<VotePeriodResults />} />
                   <Route path="vote/delegation" element={<Delegation />} />
                   <Route path="account/:address" element={<Account />} />
                   <Route path="manage" element={<ManagePeriods />} />
