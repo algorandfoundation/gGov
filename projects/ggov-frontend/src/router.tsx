@@ -3,6 +3,8 @@ import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { routeTree } from './routeTree.gen'
 import { confirmPhase, resetPhase } from '@/lib/transactionPhase'
+import { emitSurfacedError } from '@/lib/errorBus'
+import RouteError from '@/components/pages/RouteError'
 
 // Per-request on the server, once on the client. The custom caches drive the
 // global transaction phase from every mutation's lifecycle so buttons can flash
@@ -13,6 +15,11 @@ function createQueryClient() {
     queryCache: new QueryCache({
       onError: (error, query) => {
         console.error(`Query failed [${JSON.stringify(query.queryKey)}]:`, error)
+        // Page-defining reads opt in with `meta: { surfaceError: true }` so a
+        // failed primary load raises the error dialog instead of silently
+        // looking like empty data. Optional/background reads stay untagged.
+        // On the server there are no subscribers, so this is a no-op.
+        if (query.meta?.surfaceError) emitSurfacedError(error)
       },
     }),
     mutationCache: new MutationCache({
@@ -40,6 +47,11 @@ export function getRouter() {
     // hold its own stale copy of it.
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
+    // Branded in-shell error screen for any route's loader/render failure. These
+    // are caught at the route's own boundary and never reach the root
+    // `errorComponent` (that one is the bare-document fallback for root/provider
+    // failures), so without this they'd fall back to the router's plain default.
+    defaultErrorComponent: RouteError,
   })
 
   // Wires QueryClient dehydrate/hydrate into the router (and provides
