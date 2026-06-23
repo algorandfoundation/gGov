@@ -26,7 +26,7 @@ export default function AddPeriod() {
   const [electSeats, setElectSeats] = useState('')
 
   const electSeatsNum = Number(electSeats)
-  const electSeatsValid = !isElection || (Number.isInteger(electSeatsNum) && electSeatsNum >= 1)
+  const electSeatsValid = !isElection || (Number.isSafeInteger(electSeatsNum) && electSeatsNum >= 1)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -104,7 +104,7 @@ export default function ManagePeriodDetail() {
 
   const editElectSeatsNum = Number(editElectSeats)
   const editElectSeatsValid =
-    !editIsElection || (Number.isInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
+    !editIsElection || (Number.isSafeInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
 
   function handleSavePeriodBody() {
     if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectSeatsValid) return

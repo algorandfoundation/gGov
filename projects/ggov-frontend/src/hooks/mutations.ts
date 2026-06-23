@@ -4,7 +4,7 @@ import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useErrorDialog } from '@/hooks/useErrorDialog'
 import { queryKeys } from '@/hooks/queries'
 import { signingProgress } from '@/lib/signingProgress'
-import type { BodyJson } from 'ggov-sdk'
+import type { BodyJson, PeriodBodyJson } from 'ggov-sdk'
 
 function txnSuccessToast(message: string, data?: unknown) {
   const txIds = data && typeof data === 'object' && 'txIds' in data
@@ -173,7 +173,7 @@ export function useUploadPeriodBodyMutation() {
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: (args: { periodId: number; body: BodyJson }) =>
+    mutationFn: (args: { periodId: number; body: PeriodBodyJson }) =>
       sdk!.uploadPeriodBody({
         periodId: BigInt(args.periodId),
         body: args.body,

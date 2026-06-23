@@ -55,7 +55,7 @@ export interface PeriodBodyJson extends BodyJson {
   electSeats?: number;
 }
 
-export function validateBodyJson(obj: unknown): obj is BodyJson {
+export function validateBodyJson(obj: unknown): obj is PeriodBodyJson {
   if (typeof obj !== "object" || obj === null) return false;
   const o = obj as Record<string, unknown>;
   if (typeof o.title !== "string" || typeof o.body !== "string") return false;
@@ -68,7 +68,7 @@ export function validateBodyJson(obj: unknown): obj is BodyJson {
   return true;
 }
 
-export function parseBodyJson(raw: Uint8Array): BodyJson | null {
+export function parseBodyJson(raw: Uint8Array): PeriodBodyJson | null {
   try {
     const text = new TextDecoder().decode(raw);
     const parsed = JSON.parse(text);

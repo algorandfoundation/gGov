@@ -251,8 +251,7 @@ export class GGovReaderSDK {
       const key = new Uint8Array(1);
       key[0] = 0x50; // 'P'
       const raw = await this.algorand.app.getBoxValue(appId, key);
-      // Sound: validateBodyJson (inside parseBodyJson) structurally checks the optional electSeats field.
-      return parseBodyJson(raw) as PeriodBodyJson | null;
+      return parseBodyJson(raw);
     } catch {
       return null;
     }
