@@ -239,12 +239,12 @@ async function main() {
         });
 
   // Create a period: future window first (so topics can be added), upload body
-  // (with electThresh for a council election), add topics, then set the real
+  // (with electSeats for a council election), add topics, then set the real
   // window and mark ready.
   async function createPeriod(opts: {
     title: string;
     body: string;
-    electThresh?: number;
+    electSeats?: number;
     topics: { title: string; body: string; options?: string[] }[];
     votingStart: bigint;
     votingEnd: bigint;
@@ -259,7 +259,7 @@ async function main() {
       body: {
         title: opts.title,
         body: opts.body,
-        ...(opts.electThresh !== undefined ? { electThresh: opts.electThresh } : {}),
+        ...(opts.electSeats !== undefined ? { electSeats: opts.electSeats } : {}),
       },
     });
     for (const t of opts.topics) {
@@ -322,7 +322,7 @@ async function main() {
   const councilId = await createPeriod({
     title: "gGov Council — Term 2 election",
     body: "Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 lead for the available seats.",
-    electThresh: 3,
+    electSeats: 3,
     topics: candidateTopics,
     votingStart: now - 3600n,
     votingEnd: now + 86400n * 7n,

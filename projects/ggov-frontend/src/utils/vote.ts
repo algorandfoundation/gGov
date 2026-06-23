@@ -12,8 +12,10 @@ const ABSTAIN_RE = /^(abstain|neutral|none|no vote)/
 export function classifyOption(label: string): OptionSentiment {
   const l = label.trim().toLowerCase()
   if (YES_RE.test(l)) return "yes"
-  if (NO_RE.test(l)) return "no"
+  // Abstain before No: NO_RE's `no\b` matches "no vote", so abstain phrases that
+  // start with "no " must be claimed here first or they'd be miscounted as No.
   if (ABSTAIN_RE.test(l)) return "abstain"
+  if (NO_RE.test(l)) return "no"
   return "other"
 }
 
