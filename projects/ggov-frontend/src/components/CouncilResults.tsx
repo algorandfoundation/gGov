@@ -19,7 +19,7 @@ interface CouncilResultsProps {
 }
 
 /**
- * Council election results: candidates ranked by net score (Yes − No; Abstain has
+ * Election results: candidates ranked by net score (Yes − No; Abstain has
  * no effect), with the top `threshold` marked "Leading" and a cutoff divider drawn
  * after rank N. Diverging score bars are centered on a zero axis (positive right,
  * negative left). Provisional language only — ranking, never seating verdicts.

@@ -2,7 +2,7 @@
 export type OptionSentiment = "yes" | "no" | "abstain" | "other"
 
 // Free-form on-chain option labels, classified by leading keyword. Single source of
-// truth so the council net-score tally and the per-account record swatches never
+// truth so the election net-score tally and the per-account record swatches never
 // disagree on what a label means.
 const YES_RE = /^(for\b|approve|approved|yes\b|in favou?r|favou?r|support|pass)/
 const NO_RE = /^(against|no\b|reject|oppose|fail|veto)/

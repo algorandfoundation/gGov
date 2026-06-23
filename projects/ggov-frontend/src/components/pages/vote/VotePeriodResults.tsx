@@ -25,7 +25,7 @@ import { formatBlockRange } from "@/utils/format";
 import { tallyBallot, singleChoiceIndex } from "@/utils/vote";
 import { cn } from "@/lib/utils";
 
-/** "How scoring works" sidebar card (council elections only). */
+/** "How scoring works" sidebar card (elections only). */
 function ScoringCard({ threshold }: { threshold: number }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
@@ -69,9 +69,9 @@ function ScoringCard({ threshold }: { threshold: number }) {
 
 /**
  * Read-only Period Results page (`/vote/period/:periodId/results`). The layout is
- * chosen by period type: a council election (period body has `electSeats`) shows
+ * chosen by period type: an election (period body has `electSeats`) shows
  * the ranked candidate list with a seat cutoff; any other period shows per-topic
- * tally cards. Council results are also shown live while the period is active (the
+ * tally cards. Election results are also shown live while the period is active (the
  * in-progress order); standard results are post-close only.
  */
 export default function VotePeriodResults() {
@@ -99,11 +99,11 @@ export default function VotePeriodResults() {
 
   const status = periodStatus(period.votingStart, period.votingEnd);
   const isEnded = status === "ended";
-  const isCouncil = periodBody?.electSeats !== undefined;
+  const isElection = periodBody?.electSeats !== undefined;
   const threshold = periodBody?.electSeats ?? 0;
-  // Council elections expose the in-progress order while active; standard results
+  // Elections expose the in-progress order while active; standard results
   // are post-close only.
-  const live = isCouncil && status === "active";
+  const live = isElection && status === "active";
   const showResults = isEnded || live;
 
   const header = (
@@ -138,20 +138,20 @@ export default function VotePeriodResults() {
   );
   const governorsVoted = voters?.length ?? 0;
 
-  const candidates: CouncilCandidate[] = isCouncil
+  const candidates: CouncilCandidate[] = isElection
     ? period.topics.map(([options, tallies], i) => {
         const { yes, no, abstain } = tallyBallot(options, tallies);
         return { name: topicBodies[i]?.title ?? `Candidate ${i + 1}`, yes, no, abstain };
       })
     : [];
 
-  const metaCount = isCouncil
+  const metaCount = isElection
     ? `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`
     : `${period.topics.length} topic${period.topics.length === 1 ? "" : "s"}`;
 
   const sidebar = (
     <div className="space-y-4">
-      {isCouncil && <ScoringCard threshold={threshold} />}
+      {isElection && <ScoringCard threshold={threshold} />}
       {committee ? (
         <TurnoutCard
           votesCast={periodVotesCast}
@@ -166,11 +166,11 @@ export default function VotePeriodResults() {
         <Eyebrow>Period information</Eyebrow>
         <div className="mt-3.5 flex flex-col gap-3">
           <InfoRow label="Type">
-            <span className={cn("text-sm font-medium", isCouncil ? "text-algo-blue dark:text-algo-teal" : "text-foreground")}>
-              {isCouncil ? "Council election" : "Standard vote"}
+            <span className={cn("text-sm font-medium", isElection ? "text-algo-blue dark:text-algo-teal" : "text-foreground")}>
+              {isElection ? "Election" : "Standard vote"}
             </span>
           </InfoRow>
-          {isCouncil ? (
+          {isElection ? (
             <>
               <InfoRow label="Seats">
                 <span className="font-display text-[15px] font-bold tabular-nums">{threshold}</span>
@@ -199,7 +199,7 @@ export default function VotePeriodResults() {
     </div>
   );
 
-  const main = isCouncil ? (
+  const main = isElection ? (
     <CouncilResults candidates={candidates} threshold={threshold} live={live} />
   ) : period.topics.length === 0 ? (
     <p className="text-muted-foreground">No topics in this period.</p>
@@ -227,10 +227,10 @@ export default function VotePeriodResults() {
         <div>
           {header}
           <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
-            {isCouncil ? (
+            {isElection ? (
               <span className="inline-flex items-center gap-1.5 font-semibold text-algo-blue dark:text-algo-teal">
                 <Shield className="size-3.5" />
-                Council election
+                Election
               </span>
             ) : (
               <span>Results</span>

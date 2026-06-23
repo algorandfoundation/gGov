@@ -213,9 +213,9 @@ export default function VotePeriodDetail() {
   const isActive = status === "active";
   const isUpcoming = status === "upcoming";
   const isEnded = status === "ended";
-  // Council elections (period body carries `electSeats`) expose their live
+  // Elections (period body carries `electSeats`) expose their live
   // ranked standings while active; any ended period exposes its full results.
-  const isCouncil = periodBody?.electSeats !== undefined;
+  const isElection = periodBody?.electSeats !== undefined;
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;
 
@@ -428,7 +428,7 @@ export default function VotePeriodDetail() {
 
       {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
 
-      {isEnded && isCouncil && (
+      {isEnded && isElection && (
         <div>
           <Button asChild variant="outline" size="sm">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
@@ -507,9 +507,9 @@ export default function VotePeriodDetail() {
         </div>
       )}
 
-      {/* Active council elections expose their live ranked standings — shown to
+      {/* Active elections expose their live ranked standings — shown to
           everyone (connected or not), below the account selector / connect CTA. */}
-      {isActive && isCouncil && (
+      {isActive && isElection && (
         <div>
           Election seats: {periodBody?.electSeats} &nbsp;·&nbsp;
           <Button asChild variant="outline" size="sm">
