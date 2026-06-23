@@ -45,7 +45,10 @@ read it inside a `createIsomorphicFn().server()` body, and document it above.
 
 Network config is baked in at **build** time (`vite build --mode <net>` inlines the
 `VITE_*` vars from `.env.<net>`), so testnet and mainnet are **separate Workers**,
-selected via wrangler environments in [`wrangler.jsonc`](./wrangler.jsonc):
+selected via wrangler environments in [`wrangler.jsonc`](./wrangler.jsonc). With
+`@cloudflare/vite-plugin` the Cloudflare environment is chosen at build time via the
+`CLOUDFLARE_ENV` variable (the plugin writes a redirected `dist/server/wrangler.json`);
+the subsequent `wrangler deploy` ships that — `wrangler deploy --env` has no effect.
 
 | Network | Worker name             | Command             |
 | ------- | ----------------------- | ------------------- |
@@ -53,8 +56,8 @@ selected via wrangler environments in [`wrangler.jsonc`](./wrangler.jsonc):
 | mainnet | `ggov-frontend-mainnet` | `pnpm deploy:mainnet` |
 
 ```bash
-pnpm deploy:testnet      # typecheck && vite build --mode testnet && wrangler deploy --env testnet
-pnpm deploy:mainnet      # typecheck && vite build --mode mainnet && wrangler deploy --env mainnet
+pnpm deploy:testnet      # typecheck && CLOUDFLARE_ENV=testnet vite build --mode testnet && wrangler deploy
+pnpm deploy:mainnet      # typecheck && CLOUDFLARE_ENV=mainnet vite build --mode mainnet && wrangler deploy
 pnpm deploy              # localnet build to the top-level worker (rarely used)
 ```
 

@@ -1,6 +1,6 @@
 name: Deploy frontend (testnet)
 
-# Deploys the ggov-frontend-testnet Cloudflare Worker (wrangler `--env testnet`) on merge to main.
+# Deploys the ggov-frontend-testnet Cloudflare Worker (CLOUDFLARE_ENV=testnet build) on merge to main.
 # Path-scoped so contracts-only merges don't trigger a redundant frontend deploy;
 # use the "Run workflow" button (workflow_dispatch) to deploy on demand.
 #
@@ -57,7 +57,8 @@ jobs:
       - name: Build ggov-sdk
         run: pnpm --filter ggov-sdk build
 
-      # `deploy:testnet` = typecheck && vite build --mode testnet && wrangler deploy --env testnet.
+      # `deploy:testnet` = typecheck && CLOUDFLARE_ENV=testnet vite build --mode testnet && wrangler deploy.
+      # CLOUDFLARE_ENV makes @cloudflare/vite-plugin emit the ggov-frontend-testnet config.
       # Reads public client config from .env.testnet; authenticates to Cloudflare
       # with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID.
       - name: Build & deploy Worker (testnet)

@@ -12,8 +12,11 @@
   },
   // Per-network Worker deployments. Network config is baked in at build time
   // (`vite build --mode testnet|mainnet` inlines the VITE_* vars), so testnet and
-  // mainnet are separate Workers. `wrangler deploy --env testnet|mainnet` targets the
-  // matching name; top-level main/compatibility_*/observability are inherited by each.
+  // mainnet are separate Workers. With @cloudflare/vite-plugin the Cloudflare
+  // environment is selected at BUILD time via CLOUDFLARE_ENV (the plugin writes a
+  // redirected dist/server/wrangler.json), then a plain `wrangler deploy` ships it —
+  // `wrangler deploy --env` is NOT honored. See the deploy:* scripts in package.json.
+  // Top-level main/compatibility_*/observability are inherited by each environment.
   "env": {
     "testnet": { "name": "ggov-frontend-testnet" },
     "mainnet": { "name": "ggov-frontend-mainnet" }

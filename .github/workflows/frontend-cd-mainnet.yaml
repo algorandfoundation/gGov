@@ -1,6 +1,6 @@
 name: Deploy frontend (mainnet)
 
-# Deploys the ggov-frontend-mainnet Cloudflare Worker (wrangler `--env mainnet`).
+# Deploys the ggov-frontend-mainnet Cloudflare Worker (CLOUDFLARE_ENV=mainnet build).
 # Manual only — there is no push trigger. Run it from the Actions tab once the
 # mainnet registry App ID is set in .env.mainnet and the frontend-mainnet
 # environment secrets are configured.
@@ -51,7 +51,8 @@ jobs:
       - name: Build ggov-sdk
         run: pnpm --filter ggov-sdk build
 
-      # `deploy:mainnet` = typecheck && vite build --mode mainnet && wrangler deploy --env mainnet.
+      # `deploy:mainnet` = typecheck && CLOUDFLARE_ENV=mainnet vite build --mode mainnet && wrangler deploy.
+      # CLOUDFLARE_ENV makes @cloudflare/vite-plugin emit the ggov-frontend-mainnet config.
       # Reads public client config from .env.mainnet; authenticates to Cloudflare
       # with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID.
       - name: Build & deploy Worker (mainnet)
