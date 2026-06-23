@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { Preview } from '@storybook/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,10 +6,6 @@ import { Toaster } from '../src/components/ui/sonner'
 import { ErrorDialogProvider } from '../src/hooks/useErrorDialog'
 import { MockWalletProvider, type MockWalletConfig } from './mocks/use-wallet-react'
 import '../src/main.css'
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, staleTime: Infinity } },
-})
 
 const preview: Preview = {
   globalTypes: {
@@ -35,6 +31,11 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
+      // Fresh client per story so React Query cache (staleTime: Infinity) doesn't
+      // leak between stories and make them order-dependent.
+      const [queryClient] = useState(
+        () => new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } }),
+      )
       const theme = context.globals.theme === 'dark' ? 'dark' : 'light'
       useEffect(() => {
         // Dark mode is class-based (`.dark` ancestor). Radix dialogs/menus portal

@@ -7,7 +7,7 @@
  * real global transaction phase, so the `TxButtonContent` label animates exactly
  * as it does in the app (`Sign in Lute…` → `Saving…` → `Saved`).
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { setPhase, confirmPhase, resetPhase } from '@/lib/transactionPhase'
 
 interface FakeMutateOptions {
@@ -29,19 +29,30 @@ function useFakeMutation(): FakeMutation {
   const [isPending, setIsPending] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
+  // Track scheduled timers so a story switch / HMR unmount, a re-run, or a reset
+  // can cancel pending callbacks — otherwise they fire setState on an unmounted
+  // component and re-flip the global transaction phase after the UI has moved on.
+  const timers = useRef<number[]>([])
+  const clearTimers = useCallback(() => {
+    timers.current.forEach((id) => window.clearTimeout(id))
+    timers.current = []
+  }, [])
+  useEffect(() => clearTimers, [clearTimers])
+
   const mutate = useCallback((_vars?: unknown, options?: FakeMutateOptions) => {
+    clearTimers()
     setIsSuccess(false)
     setIsPending(true)
     setPhase('signing')
     // signing (wallet prompt) → sending (submitted) → confirmed (✓ flash) → idle
-    window.setTimeout(() => setPhase('sending'), 900)
-    window.setTimeout(() => {
+    timers.current.push(window.setTimeout(() => setPhase('sending'), 900))
+    timers.current.push(window.setTimeout(() => {
       setIsPending(false)
       setIsSuccess(true)
       confirmPhase()
       options?.onSuccess?.()
-    }, 1900)
-  }, [])
+    }, 1900))
+  }, [clearTimers])
 
   const mutateAsync = useCallback(
     (vars?: unknown, options?: FakeMutateOptions) =>
@@ -52,10 +63,11 @@ function useFakeMutation(): FakeMutation {
   )
 
   const reset = useCallback(() => {
+    clearTimers()
     setIsPending(false)
     setIsSuccess(false)
     resetPhase()
-  }, [])
+  }, [clearTimers])
 
   return { mutate, mutateAsync, isPending, isSuccess, isError: false, reset }
 }
