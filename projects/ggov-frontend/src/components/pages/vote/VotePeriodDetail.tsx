@@ -511,6 +511,7 @@ export default function VotePeriodDetail() {
           everyone (connected or not), below the account selector / connect CTA. */}
       {isActive && isCouncil && (
         <div>
+          Election seats: {periodBody?.electSeats} &nbsp;·&nbsp;
           <Button asChild variant="outline" size="sm">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
               View Ranked Results

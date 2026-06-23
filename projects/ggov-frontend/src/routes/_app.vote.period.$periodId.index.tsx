@@ -8,7 +8,7 @@ import { fetchPeriod, fetchPeriodBody, fetchTopicBodies, queryKeys } from '@/hoo
 // the query cache server-side with the same keys the page's hooks read. The
 // wallet/voting UI stays behind `activeAddress &&` so it only renders after
 // client hydration.
-export const Route = createFileRoute('/_app/vote/period/$periodId')({
+export const Route = createFileRoute('/_app/vote/period/$periodId/')({
   loader: async ({ context, params }) => {
     const periodId = Number(params.periodId)
     // A non-integer / negative id (e.g. /vote/period/1.5 or /abc) can never name a
