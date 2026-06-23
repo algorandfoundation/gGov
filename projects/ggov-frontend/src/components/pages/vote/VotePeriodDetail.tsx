@@ -510,7 +510,7 @@ export default function VotePeriodDetail() {
       {/* Active elections expose their live ranked standings — shown to
           everyone (connected or not), below the account selector / connect CTA. */}
       {isActive && isElection && (
-        <div>
+        <div className="mt-4 flex justify-end items-center gap-3 text-[13px] text-muted-foreground">
           Election seats: {periodBody?.electSeats} &nbsp;·&nbsp;
           <Button asChild variant="outline" size="sm">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
