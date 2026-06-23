@@ -1,6 +1,6 @@
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
+import type { GGovPeriod, BodyJson, PeriodBodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
 
 export interface PeriodWithId {
   id: number
@@ -306,7 +306,7 @@ export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise
   return readerSDK.getPeriod(BigInt(periodId))
 }
 
-export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<BodyJson | null> {
+export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<PeriodBodyJson | null> {
   assertNonNegativeInt(periodId, 'period id')
   return readerSDK.getPeriodBody(BigInt(periodId))
 }

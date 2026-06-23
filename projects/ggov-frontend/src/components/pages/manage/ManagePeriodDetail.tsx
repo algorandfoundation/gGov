@@ -53,6 +53,8 @@ export default function ManagePeriodDetail() {
   // Edit period body
   const [editPeriodTitle, setEditPeriodTitle] = useState('')
   const [editPeriodBody, setEditPeriodBody] = useState('')
+  const [editIsElection, setEditIsElection] = useState(false)
+  const [editElectSeats, setEditElectSeats] = useState('')
 
   // Edit topic options dialog: tracks which topic is open; the dialog owns the form state.
   const [editingTopic, setEditingTopic] = useState<number | null>(null)
@@ -88,6 +90,8 @@ export default function ManagePeriodDetail() {
       seededBodyPeriodId.current = periodId
       setEditPeriodTitle(periodBody?.title ?? '')
       setEditPeriodBody(periodBody?.body ?? '')
+      setEditIsElection(periodBody?.electSeats !== undefined)
+      setEditElectSeats(periodBody?.electSeats !== undefined ? String(periodBody.electSeats) : '')
     }
   }, [periodBody, periodId])
 
@@ -103,11 +107,19 @@ export default function ManagePeriodDetail() {
     })
   }
 
+  const editElectSeatsNum = Number(editElectSeats)
+  const editElectSeatsValid =
+    !editIsElection || (Number.isSafeInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
+
   function handleSavePeriodBody() {
-    if (!editPeriodTitle.trim() || !editPeriodBody.trim()) return
+    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectSeatsValid) return
     uploadPeriodBodyMutation.mutate({
       periodId,
-      body: { title: editPeriodTitle.trim(), body: editPeriodBody.trim() },
+      body: {
+        title: editPeriodTitle.trim(),
+        body: editPeriodBody.trim(),
+        ...(editIsElection ? { electSeats: editElectSeatsNum } : {}),
+      },
     })
   }
 
@@ -288,9 +300,40 @@ export default function ManagePeriodDetail() {
                   placeholder="Period description..."
                 />
               </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={editIsElection}
+                    onChange={(e) => setEditIsElection(e.target.checked)}
+                  />
+                  Election type
+                </label>
+                {editIsElection && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-elect-seats">Seats to elect</Label>
+                    <Input
+                      id="edit-elect-seats"
+                      name="edit-elect-seats"
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={editElectSeats}
+                      onChange={(e) => setEditElectSeats(e.target.value)}
+                      placeholder="Number of seats being elected"
+                      required
+                    />
+                    {!editElectSeatsValid && (
+                      <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
+                    )}
+                  </div>
+                )}
+              </div>
               <TxButton
                 size="sm"
                 onClick={handleSavePeriodBody}
+                disabled={!editElectSeatsValid}
                 pending={uploadPeriodBodyMutation.isPending}
                 success={uploadPeriodBodyMutation.isSuccess}
                 idleLabel={periodBody ? 'Update body' : 'Add body'}
