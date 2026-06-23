@@ -1,28 +1,25 @@
-import type { AnchorHTMLAttributes, ReactNode } from "react"
+import { forwardRef, type AnchorHTMLAttributes, type ReactNode } from "react"
 
 /**
  * Storybook mock for `@tanstack/react-router`. Aliased in `.storybook/main.ts` so
  * leaf UI components render without a real router context: `Link` becomes a plain
  * anchor (ignoring `to`/`params`/`search`), and the common hooks return inert stubs.
  */
-export function Link({
-  to,
-  params,
-  search,
-  children,
-  ...props
-}: {
-  to?: string
-  params?: Record<string, unknown>
-  search?: Record<string, unknown>
-  children?: ReactNode
-} & AnchorHTMLAttributes<HTMLAnchorElement>) {
+export const Link = forwardRef<
+  HTMLAnchorElement,
+  {
+    to?: string
+    params?: Record<string, unknown>
+    search?: Record<string, unknown>
+    children?: ReactNode
+  } & AnchorHTMLAttributes<HTMLAnchorElement>
+>(function Link({ to, params, search, children, ...props }, ref) {
   return (
-    <a href="#" {...props}>
+    <a ref={ref} href="#" {...props}>
       {children}
     </a>
   )
-}
+})
 
 export function useNavigate() {
   return () => {}
