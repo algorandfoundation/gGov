@@ -4,7 +4,8 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useVoters, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
-import { Check, AlertTriangle } from "lucide-react";
+import { Check } from "lucide-react";
+import { Callout } from "@/components/ui/callout";
 import Address from "@/components/Address";
 import AccountSelector, { AccountSelectorItem } from "@/components/AccountSelector";
 import TopicVoteCard from "@/components/TopicVoteCard";
@@ -27,7 +28,7 @@ import TechnicalInfoCard from "@/components/TechnicalInfoCard";
 import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } from "@/utils/time";
 import { singleChoiceIndex } from "@/utils/vote";
 import { toBase64Url } from "@/hooks/queries";
-import { TxButtonContent } from "@/components/TxButtonContent";
+import { TxButton } from "@/components/TxButtonContent";
 
 function VoteAllocationSummary({ allocated, power }: { allocated: number; power: number }) {
   const remaining = power - allocated;
@@ -487,13 +488,10 @@ export default function VotePeriodDetail() {
           )}
 
           {!votingForSelf && voteRecord && !voteRecord.isDelegated && (
-            <div className="mt-2.5 flex items-start gap-2.5 rounded-md border border-algo-orange/30 bg-algo-orange/10 px-3 py-2.5">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-algo-orange" />
-              <span className="text-[13px] leading-snug text-[#9A4A1F] dark:text-algo-orange">
-                <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so
-                you cannot vote on their behalf. A delegate cannot override a vote the account holder cast themselves.
-              </span>
-            </div>
+            <Callout variant="danger" className="mt-2.5">
+              <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so
+              you cannot vote on their behalf. A delegate cannot override a vote the account holder cast themselves.
+            </Callout>
           )}
         </div>
       )}
@@ -578,15 +576,15 @@ export default function VotePeriodDetail() {
 
       {showVoteForm && (
         <div className="flex items-center gap-4">
-          <Button onClick={submitVote} disabled={voteMutation.isPending || !canSubmit} aria-busy={voteMutation.isPending}>
-            <TxButtonContent
-              pending={voteMutation.isPending}
-              success={voteMutation.isSuccess}
-              idleLabel="Submit vote"
-              pendingLabel="Voting…"
-              confirmedLabel="Voted"
-            />
-          </Button>
+          <TxButton
+            onClick={submitVote}
+            disabled={!canSubmit}
+            pending={voteMutation.isPending}
+            success={voteMutation.isSuccess}
+            idleLabel="Submit vote"
+            pendingLabel="Voting…"
+            confirmedLabel="Voted"
+          />
           {submitHint && <span className="text-[13px] text-muted-foreground">{submitHint}</span>}
         </div>
       )}

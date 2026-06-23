@@ -1,108 +1,44 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
-import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { AccountAvatar } from '@/components/AccountAvatar'
-import { useAddressName } from '@/hooks/use-nfd'
-import { ellipseAddress } from '@/utils/ellipseAddress'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import UserDropdown from '@/components/UserDropdown'
+import WalletPicker from '@/components/WalletPicker'
 
 /**
  * Compact wallet control shared by the desktop top bar and the mobile drawer
  * footer. Logged out → a "Connect wallet" button + wallet picker dialog; logged
- * in → an account pill (avatar + NFD or truncated address) linking to the account
- * page, with a disconnect affordance.
+ * in → the {@link UserDropdown} avatar pill (account switcher, account-page link,
+ * and disconnect all live inside that menu).
  *
- * `fullWidth` spans the container, centering the pill and right-aligning the
- * disconnect button (used in the mobile drawer footer).
+ * `fullWidth` centers the control within its container (used in the mobile drawer
+ * footer); `small` collapses the dropdown trigger to just the avatar.
  */
 export default function TopBarAccount({ fullWidth = false, small = false }: { fullWidth?: boolean, small?: boolean }) {
-  const { activeAddress, activeWallet, activeWalletAccounts, wallets } = useWallet()
-  const { data: nfd } = useAddressName(activeAddress)
+  const { activeAddress, activeWallet } = useWallet()
   const [open, setOpen] = useState(false)
 
   if (activeAddress && activeWallet) {
-    const accounts = activeWalletAccounts ?? []
-    const label = nfd ?? ellipseAddress(activeAddress, undefined, small)
-    const control =
-      accounts.length > 1 ? (
-        <select
-          aria-label="Select account"
-          className="h-8 max-w-[150px] rounded-full border border-border bg-transparent px-3 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={activeAddress}
-          onChange={(e) => activeWallet.setActiveAccount(e.target.value)}
-        >
-          {accounts.map((account) => (
-            <option key={account.address} value={account.address}>
-              {account.name ? `${account.name} (${ellipseAddress(account.address, undefined, small)})` : ellipseAddress(account.address, undefined, small)}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <Link
-          to="/account/$address" params={{ address: activeAddress }}
-          className="flex items-center gap-2 rounded-full border border-border py-1 pl-3 pr-1 transition-colors hover:border-foreground/30"
-        >
-          <span className="text-sm">{label}</span>
-          <AccountAvatar address={activeAddress} name={label} size={28} />
-        </Link>
-      )
-    const disconnect = (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-8"
-        onClick={() => activeWallet.disconnect()}
-        aria-label="Disconnect wallet"
-        title="Disconnect wallet"
-      >
-        <LogOut className="size-4" />
-      </Button>
-    )
-
     if (fullWidth) {
-      // 1fr | auto | 1fr keeps the pill centered regardless of the disconnect button's width.
       return (
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
-          <span aria-hidden />
-          <div className="flex justify-center">{control}</div>
-          <div className="flex justify-end">{disconnect}</div>
+        <div className="flex w-full justify-center">
+          <UserDropdown small={small} />
         </div>
       )
     }
-
-    return (
-      <div className="flex items-center gap-1.5">
-        {control}
-        {disconnect}
-      </div>
-    )
+    return <UserDropdown small={small} />
   }
 
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)}>Connect wallet</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent onClose={() => setOpen(false)}>
+        <DialogContent onClose={() => setOpen(false)} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Connect wallet</DialogTitle>
+            <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {wallets.map((wallet) => (
-              <Button
-                key={wallet.id}
-                variant="outline"
-                className="justify-start"
-                onClick={async () => {
-                  await wallet.connect()
-                  setOpen(false)
-                }}
-              >
-                {wallet.metadata.name}
-              </Button>
-            ))}
-          </div>
+          <WalletPicker onConnected={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>

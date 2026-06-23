@@ -4,12 +4,11 @@ import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useCommittees } from '@/hooks/queries'
 import { useAddPeriodMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { fromDatetimeLocalUTC } from '@/utils/time'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton } from '@/components/TxButtonContent'
 
 export default function AddPeriod() {
   const { sdk } = useGGovSDK()
@@ -23,15 +22,15 @@ export default function AddPeriod() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [isElection, setIsElection] = useState(false)
-  const [electThresh, setElectThresh] = useState('')
+  const [electSeats, setElectSeats] = useState('')
 
-  const electThreshNum = Number(electThresh)
-  const electThreshValid = !isElection || (Number.isInteger(electThreshNum) && electThreshNum >= 1)
+  const electSeatsNum = Number(electSeats)
+  const electSeatsValid = !isElection || (Number.isSafeInteger(electSeatsNum) && electSeatsNum >= 1)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedCommittee || !votingStart || !votingEnd || !title.trim() || !body.trim()) return
-    if (!electThreshValid) return
+    if (!electSeatsValid) return
 
     const committee = committees.find((c) => c.idBase64Url === selectedCommittee)
     if (!committee) return
@@ -42,7 +41,7 @@ export default function AddPeriod() {
       votingEnd: BigInt(fromDatetimeLocalUTC(votingEnd)),
       title: title.trim(),
       body: body.trim(),
-      electThresh: isElection ? electThreshNum : undefined,
+      electSeats: isElection ? electSeatsNum : undefined,
     })
 
     navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
@@ -146,34 +145,34 @@ export default function AddPeriod() {
               </label>
               {isElection && (
                 <div className="space-y-2">
-                  <Label htmlFor="elect-thresh">Seats to elect</Label>
+                  <Label htmlFor="elect-seats">Seats to elect</Label>
                   <Input
-                    id="elect-thresh"
-                    name="elect-thresh"
+                    id="elect-seats"
+                    name="elect-seats"
                     type="number"
                     min={1}
                     step={1}
-                    value={electThresh}
-                    onChange={(e) => setElectThresh(e.target.value)}
+                    value={electSeats}
+                    onChange={(e) => setElectSeats(e.target.value)}
                     placeholder="Number of seats being elected"
                     required
                   />
-                  {!electThreshValid && (
+                  {!electSeatsValid && (
                     <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
                   )}
                 </div>
               )}
             </div>
 
-            <Button type="submit" disabled={addPeriodMutation.isPending || !electThreshValid} aria-busy={addPeriodMutation.isPending}>
-              <TxButtonContent
-                pending={addPeriodMutation.isPending}
-                success={addPeriodMutation.isSuccess}
-                idleLabel="Create period"
-                pendingLabel="Creating…"
-                confirmedLabel="Created"
-              />
-            </Button>
+            <TxButton
+              type="submit"
+              disabled={!electSeatsValid}
+              pending={addPeriodMutation.isPending}
+              success={addPeriodMutation.isSuccess}
+              idleLabel="Create period"
+              pendingLabel="Creating…"
+              confirmedLabel="Created"
+            />
           </form>
         </CardContent>
       </Card>

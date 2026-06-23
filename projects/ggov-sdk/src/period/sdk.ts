@@ -5,6 +5,7 @@ import { GGovPeriodClient, GGovPeriodComposer } from "../generated/GGovPeriodCli
 import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
+  PeriodBodyJson,
   CommitteeId,
   ConstructorArgs,
   GGovPeriodContractArgs,
@@ -254,7 +255,7 @@ export class GGovSDK extends GGovReaderSDK {
     note,
   }: {
     periodId: bigint | number;
-    body: BodyJson | string | Uint8Array;
+    body: PeriodBodyJson | string | Uint8Array;
     note?: string | Uint8Array;
   }): Promise<void> {
     const client = await this.getPeriodWriteClient(periodId);

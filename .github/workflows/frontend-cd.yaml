@@ -1,6 +1,6 @@
 name: Deploy frontend (testnet)
 
-# Deploys the ggov-frontend Cloudflare Worker to testnet on merge to main.
+# Deploys the ggov-frontend-testnet Cloudflare Worker (CLOUDFLARE_ENV=testnet build) on merge to main.
 # Path-scoped so contracts-only merges don't trigger a redundant frontend deploy;
 # use the "Run workflow" button (workflow_dispatch) to deploy on demand.
 #
@@ -57,7 +57,8 @@ jobs:
       - name: Build ggov-sdk
         run: pnpm --filter ggov-sdk build
 
-      # `deploy:testnet` = typecheck && vite build --mode testnet && wrangler deploy.
+      # `deploy:testnet` = typecheck && CLOUDFLARE_ENV=testnet vite build --mode testnet && wrangler deploy.
+      # CLOUDFLARE_ENV makes @cloudflare/vite-plugin emit the ggov-frontend-testnet config.
       # Reads public client config from .env.testnet; authenticates to Cloudflare
       # with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID.
       - name: Build & deploy Worker (testnet)
@@ -65,9 +66,10 @@ jobs:
         run: pnpm deploy:testnet
 
       # Upload the privileged Algod token as a Worker secret (server-only; never in
-      # the client bundle). Runs after deploy so the Worker exists; secrets persist
-      # across deploys, so this just keeps it in sync. Skipped when the secret is unset.
+      # the client bundle). `--env testnet` targets the ggov-frontend-testnet worker.
+      # Runs after deploy so the Worker exists; secrets persist across deploys, so this
+      # just keeps it in sync. Skipped when the secret is unset.
       - name: Set ALGOD_TOKEN Worker secret
         if: ${{ env.ALGOD_TOKEN != '' }}
         working-directory: projects/ggov-frontend
-        run: printf '%s' "$ALGOD_TOKEN" | pnpm wrangler secret put ALGOD_TOKEN
+        run: printf '%s' "$ALGOD_TOKEN" | pnpm wrangler secret put ALGOD_TOKEN --env testnet

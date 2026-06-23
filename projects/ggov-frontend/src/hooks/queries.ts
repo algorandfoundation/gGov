@@ -1,6 +1,6 @@
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
+import type { GGovPeriod, BodyJson, PeriodBodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
 
 export interface PeriodWithId {
   id: number
@@ -40,6 +40,7 @@ export function useGlobalState() {
     queryKey: queryKeys.globalState,
     queryFn: () => readerSDK.registry.getGlobalState(),
     staleTime: 60_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -51,6 +52,7 @@ export function usePeriods() {
     // Mutations (add/edit/set-ready) invalidate this key, so a modest staleTime
     // just avoids refetching the list on every navigation back to it.
     staleTime: 60_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -59,6 +61,7 @@ export function usePeriod(periodId: number) {
   return useQuery({
     queryKey: queryKeys.period(periodId),
     queryFn: () => fetchPeriod(readerSDK, periodId),
+    meta: { surfaceError: true },
   })
 }
 
@@ -313,7 +316,7 @@ export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise
   return readerSDK.getPeriod(BigInt(periodId))
 }
 
-export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<BodyJson | null> {
+export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<PeriodBodyJson | null> {
   assertNonNegativeInt(periodId, 'period id')
   return readerSDK.getPeriodBody(BigInt(periodId))
 }
@@ -396,6 +399,7 @@ export function useCommittees() {
     },
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -412,6 +416,7 @@ export function useCommittee(idBase64Url: string | undefined) {
     enabled: !!idBase64Url,
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -576,6 +581,7 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
     enabled: !!idBase64Url,
     // A committee's membership is fixed once the committee exists.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
