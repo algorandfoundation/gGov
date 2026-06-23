@@ -15,13 +15,14 @@ import BackButton from "@/components/BackButton";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import TopicVoteCard from "@/components/TopicVoteCard";
 import TurnoutCard from "@/components/TurnoutCard";
-import CouncilResults, { tallyBallot, type CouncilCandidate } from "@/components/CouncilResults";
+import CouncilResults, { type CouncilCandidate } from "@/components/CouncilResults";
 import { InfoRow } from "@/components/PeriodInfoCard";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { periodStatus, formatMonthDayYear } from "@/utils/time";
 import { formatBlockRange } from "@/utils/format";
+import { tallyBallot, singleChoiceIndex } from "@/utils/vote";
 import { cn } from "@/lib/utils";
 
 /** "How scoring works" sidebar card (council elections only). */
@@ -142,15 +143,6 @@ export default function VotePeriodResults() {
       })
     : [];
 
-  // YOUR VOTE tag: only when the connected account's recorded vote was single-choice.
-  const votedIdxForTopic = (ti: number): number | undefined => {
-    const rec = voteRecord?.topicVotes[ti];
-    const nonZero = rec?.filter((v) => v > 0) ?? [];
-    if (nonZero.length !== 1) return undefined;
-    const idx = rec!.findIndex((v) => v > 0);
-    return (rec?.[idx] ?? 0) > 0 ? idx : undefined;
-  };
-
   const metaCount = isCouncil
     ? `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`
     : `${period.topics.length} topic${period.topics.length === 1 ? "" : "s"}`;
@@ -220,7 +212,8 @@ export default function VotePeriodResults() {
           tallies={tallies}
           mode="results"
           voters={voters?.length}
-          votedOptionIdx={votedIdxForTopic(ti)}
+          // YOUR VOTE tag: only when the connected account's recorded vote was single-choice.
+          votedOptionIdx={singleChoiceIndex(voteRecord?.topicVotes[ti])}
         />
       ))}
     </div>

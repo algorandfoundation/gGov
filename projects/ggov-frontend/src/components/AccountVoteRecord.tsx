@@ -1,6 +1,7 @@
 import { AccountAvatar } from "@/components/AccountAvatar";
 import { useAddressName } from "@/hooks/use-nfd";
 import { ellipseAddress } from "@/utils/ellipseAddress";
+import { classifyOption } from "@/utils/vote";
 import { cn } from "@/lib/utils";
 
 /** How the connected wallet relates to this account, driving the header tag. */
@@ -38,11 +39,16 @@ export interface AccountVoteRecordProps {
  * everything else (candidate names) → algo-blue.
  */
 export function sentimentTone(label: string): string {
-  const l = label.trim().toLowerCase();
-  if (/^(for\b|approve|approved|yes\b|in favou?r|favou?r|support|pass)/.test(l)) return "bg-success";
-  if (/^(against|no\b|reject|oppose|fail|veto)/.test(l)) return "bg-algo-orange";
-  if (/^(abstain|neutral|none|no vote)/.test(l)) return "bg-algo-navy-40";
-  return "bg-algo-blue";
+  switch (classifyOption(label)) {
+    case "yes":
+      return "bg-success";
+    case "no":
+      return "bg-algo-orange";
+    case "abstain":
+      return "bg-algo-navy-40";
+    default:
+      return "bg-algo-blue";
+  }
 }
 
 const ROLE_META: Record<AccountVoteRole, { label: string; className: string }> = {

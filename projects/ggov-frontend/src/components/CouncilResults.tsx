@@ -18,42 +18,6 @@ interface CouncilResultsProps {
   live?: boolean;
 }
 
-const YES_RE = /^(for\b|approve|approved|yes\b|in favou?r|favou?r|support|pass)/;
-const NO_RE = /^(against|no\b|reject|oppose|fail|veto)/;
-const ABSTAIN_RE = /^(abstain|neutral|none|no vote)/;
-
-/**
- * Reduce a candidate-topic's options/tallies to Yes/No/Abstain totals. Options are
- * free-form, so classify by label (matching the `sentimentTone` vocabulary); if no
- * option label is recognized, fall back to positional order [Yes, No, Abstain].
- */
-export function tallyBallot(options: string[], tallies: number[]): { yes: number; no: number; abstain: number } {
-  let yes = 0;
-  let no = 0;
-  let abstain = 0;
-  let matched = false;
-  options.forEach((opt, i) => {
-    const l = opt.trim().toLowerCase();
-    const t = tallies[i] ?? 0;
-    if (YES_RE.test(l)) {
-      yes += t;
-      matched = true;
-    } else if (NO_RE.test(l)) {
-      no += t;
-      matched = true;
-    } else if (ABSTAIN_RE.test(l)) {
-      abstain += t;
-      matched = true;
-    }
-  });
-  if (!matched) {
-    yes = tallies[0] ?? 0;
-    no = tallies[1] ?? 0;
-    abstain = tallies[2] ?? 0;
-  }
-  return { yes, no, abstain };
-}
-
 /**
  * Council election results: candidates ranked by net score (Yes − No; Abstain has
  * no effect), with the top `threshold` marked "Leading" and a cutoff divider drawn

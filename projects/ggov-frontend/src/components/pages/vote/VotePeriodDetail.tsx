@@ -25,6 +25,7 @@ import { ClampedMarkdown } from "@/components/ui/clamped-markdown";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import TechnicalInfoCard from "@/components/TechnicalInfoCard";
 import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } from "@/utils/time";
+import { singleChoiceIndex } from "@/utils/vote";
 import { toBase64Url } from "@/hooks/queries";
 import { TxButtonContent } from "@/components/TxButtonContent";
 
@@ -545,10 +546,8 @@ export default function VotePeriodDetail() {
             // Tag an option "YOUR VOTE" only when the recorded vote was single-choice
             // (exactly one non-zero option). Split/advanced votes get no tag rather than
             // misleadingly highlighting just the largest allocation.
-            const recorded = voteRecord?.topicVotes[topicIdx];
-            const nonZero = recorded?.filter((v) => v > 0) ?? [];
             const votedOptionIdx =
-              mode === "results" && nonZero.length === 1 ? recorded!.findIndex((v) => v > 0) : -1;
+              mode === "results" ? singleChoiceIndex(voteRecord?.topicVotes[topicIdx]) : undefined;
             return (
               <TopicVoteCard
                 key={topicIdx}
@@ -563,7 +562,7 @@ export default function VotePeriodDetail() {
                 advancedVotes={topicVotes[topicIdx]?.[0]}
                 onAdvancedChange={(optIdx, value) => handleAdvancedVoteChange(topicIdx, optIdx, value)}
                 votingPower={power}
-                votedOptionIdx={votedOptionIdx >= 0 && (recorded?.[votedOptionIdx] ?? 0) > 0 ? votedOptionIdx : undefined}
+                votedOptionIdx={votedOptionIdx}
                 outcome={isEnded ? "Final" : undefined}
                 voters={voters?.length}
                 footer={
