@@ -69,7 +69,7 @@ function ScoringCard({ threshold }: { threshold: number }) {
 
 /**
  * Read-only Period Results page (`/vote/period/:periodId/results`). The layout is
- * chosen by period type: a council election (period body has `electThresh`) shows
+ * chosen by period type: a council election (period body has `electSeats`) shows
  * the ranked candidate list with a seat cutoff; any other period shows per-topic
  * tally cards. Council results are also shown live while the period is active (the
  * in-progress order); standard results are post-close only.
@@ -99,8 +99,8 @@ export default function VotePeriodResults() {
 
   const status = periodStatus(period.votingStart, period.votingEnd);
   const isEnded = status === "ended";
-  const isCouncil = periodBody?.electThresh !== undefined;
-  const threshold = periodBody?.electThresh ?? 0;
+  const isCouncil = periodBody?.electSeats !== undefined;
+  const threshold = periodBody?.electSeats ?? 0;
   // Council elections expose the in-progress order while active; standard results
   // are post-close only.
   const live = isCouncil && status === "active";

@@ -12,7 +12,7 @@ export interface CouncilCandidate {
 
 interface CouncilResultsProps {
   candidates: CouncilCandidate[];
-  /** Seats being elected (`electThresh`). The top `threshold` lead. */
+  /** Seats being elected (`electSeats`). The top `threshold` lead. */
   threshold: number;
   /** Active period → in-progress framing (ranking may still change). */
   live?: boolean;

@@ -209,10 +209,10 @@ export default function VotePeriodDetail() {
   const isActive = status === "active";
   const isUpcoming = status === "upcoming";
   const isEnded = status === "ended";
-  // Council elections (period body carries `electThresh`) expose their live
+  // Council elections (period body carries `electSeats`) expose their live
   // standings; the full Period Results page is reachable once ended, or while a
   // council election is active (in-progress order).
-  const isCouncil = periodBody?.electThresh !== undefined;
+  const isCouncil = periodBody?.electSeats !== undefined;
   const showResultsLink = isEnded || (isCouncil && isActive);
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;

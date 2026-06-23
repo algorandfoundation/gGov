@@ -149,7 +149,7 @@ export function useVoters(periodId: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery<string[]>({
     queryKey: queryKeys.voters(periodId),
-    queryFn: () => readerSDK.getVoters(BigInt(periodId)),
+    queryFn: () => fetchVoters(readerSDK, periodId),
   })
 }
 
@@ -319,6 +319,11 @@ export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise
 export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<PeriodBodyJson | null> {
   assertNonNegativeInt(periodId, 'period id')
   return readerSDK.getPeriodBody(BigInt(periodId))
+}
+
+export function fetchVoters(readerSDK: GGovReaderSDK, periodId: number): Promise<string[]> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getVoters(BigInt(periodId))
 }
 
 export function fetchTopicBodies(
