@@ -4,18 +4,21 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.15.0"
   },
   "scripts": {
     "dev": "vite",
     "dev:testnet": "vite --mode testnet",
+    "dev:mainnet": "vite --mode mainnet",
     "build": "vite build",
-    "build:testnet": "vite build --mode testnet",
+    "build:testnet": "CLOUDFLARE_ENV=testnet vite build --mode testnet",
+    "build:mainnet": "CLOUDFLARE_ENV=mainnet vite build --mode mainnet",
     "preview": "vite preview",
     "generate-routes": "tsr generate",
     "typecheck": "tsr generate && tsc --noEmit",
     "deploy": "pnpm typecheck && vite build && wrangler deploy",
-    "deploy:testnet": "pnpm typecheck && vite build --mode testnet && wrangler deploy",
+    "deploy:testnet": "pnpm typecheck && pnpm build:testnet && wrangler deploy",
+    "deploy:mainnet": "pnpm typecheck && pnpm build:mainnet && wrangler deploy",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
