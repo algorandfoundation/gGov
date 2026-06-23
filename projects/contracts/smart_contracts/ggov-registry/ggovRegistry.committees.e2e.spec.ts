@@ -1,6 +1,6 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { calculateCommitteeId, XGovCommitteeFile } from 'ggov-sdk'
+import { calculateCommitteeId, GGovRegistrySDK, XGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
   errAccountOffsetNotExists,
@@ -415,17 +415,24 @@ describe('GGovRegistry committees', () => {
   })
 
   describe('uploadCommitteeFile (SDK wrapper)', () => {
-    // registerCommittee + ingestXGovs
-    for (const [name, id, committeeFile] of committeesForTests) {
-      test(`uploads committee ${name}`, async () => {
-        const { testAccount } = localnet.context
-        const { sdk } = await deployRegistry(localnet, testAccount)
+    let sdk: GGovRegistrySDK
+    const uploadedIds: Uint8Array[] = []
 
+    beforeAll(async () => {
+      await localnet.newScope()
+      ;({ sdk } = await deployRegistry(localnet, localnet.context.testAccount))
+      await localnet.algorand.account.ensureFundedFromEnvironment(sdk.readClient.appAddress, (30).algos())
+      for (const [, , committeeFile] of committeesForTests) {
+        uploadedIds.push(await sdk.uploadCommitteeFile(committeeFile))
+      }
+    })
+
+    // registerCommittee + ingestXGovs
+    for (const [i, [name, id, committeeFile]] of committeesForTests.entries()) {
+      test(`uploads committee ${name}`, async () => {
         const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
         expect(committeeId).toEqual(new Uint8Array(Buffer.from(id, 'base64')))
-
-        const result = await sdk.uploadCommitteeFile(committeeFile)
-        expect(result).toEqual(committeeId)
+        expect(uploadedIds[i]).toEqual(committeeId)
 
         const storedCommittee = await sdk.getCommittee(committeeId)
         expect(storedCommittee).toBeDefined()
@@ -438,6 +445,26 @@ describe('GGovRegistry committees', () => {
         expect(storedCommittee!.xGovs.reduce((acc, g) => acc + g.votes, 0)).toEqual(storedCommittee!.totalVotes)
       })
     }
+
+    test('getCommitteeIds returns all uploaded committees', async () => {
+      const ids = await sdk.getCommitteeIds()
+      expect(ids).toHaveLength(committeesForTests.length)
+      for (const id of uploadedIds) {
+        expect(ids).toContainEqual(id)
+      }
+    })
+
+    test('getCommitteesMetadata returns correct metadata for all known and null for unknown', async () => {
+      const unknown = new Uint8Array(32)
+      const results = await sdk.getCommitteesMetadata([...uploadedIds, unknown])
+      expect(results).toHaveLength(uploadedIds.length + 1)
+      for (const [i, [, , committeeFile]] of committeesForTests.entries()) {
+        expect(results[i]).not.toBeNull()
+        expect(results[i]!.periodStart).toEqual(committeeFile.periodStart)
+        expect(results[i]!.periodEnd).toEqual(committeeFile.periodEnd)
+      }
+      expect(results[uploadedIds.length]).toBeNull()
+    })
   })
 
   describe('uningestCommitteeXGovs (SDK wrapper)', () => {

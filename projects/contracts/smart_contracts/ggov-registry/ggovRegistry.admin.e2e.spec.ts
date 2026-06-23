@@ -36,23 +36,22 @@ describe('GGovRegistry admin', () => {
   })
 
   describe('increaseBudget opcode cost', () => {
+    let sdk: GGovRegistrySDK
+    beforeAll(async () => {
+      await localnet.newScope()
+      ;({ sdk } = await deployRegistry(localnet, localnet.context.testAccount))
+    })
     for (let i = 0; i < 3; i++) {
       test(`It should cost ${increaseBudgetBaseCost + i * increaseBudgetIncrementCost} with itxns=${i}`, async () => {
         const { testAccount } = localnet.context
-        const sender = testAccount.toString()
-        const signer = testAccount.signer
-
-        const { sdk } = await deployRegistry(localnet, testAccount)
-
         const {
           simulateResponse: {
             txnGroups: [{ appBudgetConsumed }],
           },
         } = await sdk
           .writeClient!.newGroup()
-          .increaseBudget({ sender, signer, args: { itxns: BigInt(i) }, extraFee: (i * 1000).microAlgo() })
+          .increaseBudget({ sender: testAccount.toString(), signer: testAccount.signer, args: { itxns: BigInt(i) }, extraFee: (i * 1000).microAlgo() })
           .simulate()
-
         expect(appBudgetConsumed).toBe(increaseBudgetBaseCost + i * increaseBudgetIncrementCost) // if this fails then update the new value in SDK/constants
       })
     }
@@ -166,7 +165,8 @@ describe('GGovRegistry admin', () => {
     let nonAdmin: Awaited<ReturnType<typeof localnet.context.generateAccount>>
     let nonAdminSDK: GGovRegistrySDK
 
-    beforeEach(async () => {
+    beforeAll(async () => {
+      await localnet.newScope()
       const { testAccount } = localnet.context
       ;({ sdk } = await deployRegistry(localnet, testAccount))
       ;({ account: nonAdmin, sdk: nonAdminSDK } = await generateAccountWithSDK(localnet, sdk.appId))
@@ -269,7 +269,7 @@ describe('GGovRegistry admin', () => {
       await expect(
         sdk.readClient.send.update.bare({
           sender: nonAdmin.toString(),
-          signer: localnet.algorand.account.getSigner(nonAdmin),
+          signer: nonAdmin.signer,
         }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
@@ -278,36 +278,41 @@ describe('GGovRegistry admin', () => {
       await expect(
         sdk.readClient.send.delete.bare({
           sender: nonAdmin.toString(),
-          signer: localnet.algorand.account.getSigner(nonAdmin),
+          signer: nonAdmin.signer,
         }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
   })
 
   describe('verifyAdmin / verifyOperator', () => {
-    test('verifyAdmin returns true for the admin and false for any other account', async () => {
+    let sdk: GGovRegistrySDK
+    let admin: string
+    let operator: string
+    let other: string
+
+    beforeAll(async () => {
+      await localnet.newScope()
       const { testAccount } = localnet.context
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      const other = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { return: isAdmin } = await sdk.readClient.send.verifyAdmin({ args: { account: testAccount.toString() } })
+      admin = testAccount.toString()
+      ;({ sdk } = await deployRegistry(localnet, testAccount))
+      const operatorAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const otherAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      operator = operatorAccount.toString()
+      other = otherAccount.toString()
+      await sdk.setOperator({ account: operator })
+    })
+
+    test('verifyAdmin returns true for the admin and false for any other account', async () => {
+      const { return: isAdmin } = await sdk.readClient.send.verifyAdmin({ args: { account: admin } })
       expect(isAdmin).toBe(true)
-      const { return: isAdminOther } = await sdk.readClient.send.verifyAdmin({ args: { account: other.toString() } })
+      const { return: isAdminOther } = await sdk.readClient.send.verifyAdmin({ args: { account: other } })
       expect(isAdminOther).toBe(false)
     })
 
     test('verifyOperator returns true for the operator and false for any other account', async () => {
-      const { testAccount } = localnet.context
-      const { sdk } = await deployRegistry(localnet, testAccount)
-      const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const other = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await sdk.setOperator({ account: operator.toString() })
-      const { return: isOperator } = await sdk.readClient.send.verifyOperator({
-        args: { account: operator.toString() },
-      })
+      const { return: isOperator } = await sdk.readClient.send.verifyOperator({ args: { account: operator } })
       expect(isOperator).toBe(true)
-      const { return: isOperatorOther } = await sdk.readClient.send.verifyOperator({
-        args: { account: other.toString() },
-      })
+      const { return: isOperatorOther } = await sdk.readClient.send.verifyOperator({ args: { account: other } })
       expect(isOperatorOther).toBe(false)
     })
   })

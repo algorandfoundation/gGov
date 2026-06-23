@@ -93,7 +93,9 @@ export async function configureProposal(args: {
 }) {
   const { proposalAppClient, ...rest } = args
   const { committee, status, voteOpenTs, votingDuration } = rest
-  console.log('Configuring proposal', rest)
+  if (process.env.NOOP_TEST_LOGGER !== 'true') {
+    console.log('Configuring proposal', rest)
+  }
   const builder: XGovProposalMockComposer<any> = proposalAppClient.newGroup()
   if (committee !== undefined) {
     builder.setCommitteeId({
