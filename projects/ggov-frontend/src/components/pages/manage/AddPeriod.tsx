@@ -23,15 +23,15 @@ export default function AddPeriod() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [isElection, setIsElection] = useState(false)
-  const [electThresh, setElectThresh] = useState('')
+  const [electSeats, setElectSeats] = useState('')
 
-  const electThreshNum = Number(electThresh)
-  const electThreshValid = !isElection || (Number.isInteger(electThreshNum) && electThreshNum >= 1)
+  const electSeatsNum = Number(electSeats)
+  const electSeatsValid = !isElection || (Number.isInteger(electSeatsNum) && electSeatsNum >= 1)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedCommittee || !votingStart || !votingEnd || !title.trim() || !body.trim()) return
-    if (!electThreshValid) return
+    if (!electSeatsValid) return
 
     const committee = committees.find((c) => c.idBase64Url === selectedCommittee)
     if (!committee) return
@@ -42,7 +42,7 @@ export default function AddPeriod() {
       votingEnd: BigInt(fromDatetimeLocalUTC(votingEnd)),
       title: title.trim(),
       body: body.trim(),
-      electThresh: isElection ? electThreshNum : undefined,
+      electSeats: isElection ? electSeatsNum : undefined,
     })
 
     navigate(`/manage/period/${periodId}`)
@@ -146,26 +146,26 @@ export default function AddPeriod() {
               </label>
               {isElection && (
                 <div className="space-y-2">
-                  <Label htmlFor="elect-thresh">Seats to elect</Label>
+                  <Label htmlFor="elect-seats">Seats to elect</Label>
                   <Input
-                    id="elect-thresh"
-                    name="elect-thresh"
+                    id="elect-seats"
+                    name="elect-seats"
                     type="number"
                     min={1}
                     step={1}
-                    value={electThresh}
-                    onChange={(e) => setElectThresh(e.target.value)}
+                    value={electSeats}
+                    onChange={(e) => setElectSeats(e.target.value)}
                     placeholder="Number of seats being elected"
                     required
                   />
-                  {!electThreshValid && (
+                  {!electSeatsValid && (
                     <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
                   )}
                 </div>
               )}
             </div>
 
-            <Button type="submit" disabled={addPeriodMutation.isPending || !electThreshValid} aria-busy={addPeriodMutation.isPending}>
+            <Button type="submit" disabled={addPeriodMutation.isPending || !electSeatsValid} aria-busy={addPeriodMutation.isPending}>
               <TxButtonContent
                 pending={addPeriodMutation.isPending}
                 success={addPeriodMutation.isSuccess}

@@ -52,7 +52,7 @@ export default function ManagePeriodDetail() {
   const [editPeriodTitle, setEditPeriodTitle] = useState('')
   const [editPeriodBody, setEditPeriodBody] = useState('')
   const [editIsElection, setEditIsElection] = useState(false)
-  const [editElectThresh, setEditElectThresh] = useState('')
+  const [editElectSeats, setEditElectSeats] = useState('')
 
   // Edit topic options dialog: tracks which topic is open; the dialog owns the form state.
   const [editingTopic, setEditingTopic] = useState<number | null>(null)
@@ -85,8 +85,8 @@ export default function ManagePeriodDetail() {
       seededBodyPeriodId.current = periodId
       setEditPeriodTitle(periodBody?.title ?? '')
       setEditPeriodBody(periodBody?.body ?? '')
-      setEditIsElection(periodBody?.electThresh !== undefined)
-      setEditElectThresh(periodBody?.electThresh !== undefined ? String(periodBody.electThresh) : '')
+      setEditIsElection(periodBody?.electSeats !== undefined)
+      setEditElectSeats(periodBody?.electSeats !== undefined ? String(periodBody.electSeats) : '')
     }
   }, [periodBody, periodId])
 
@@ -102,18 +102,18 @@ export default function ManagePeriodDetail() {
     })
   }
 
-  const editElectThreshNum = Number(editElectThresh)
-  const editElectThreshValid =
-    !editIsElection || (Number.isInteger(editElectThreshNum) && editElectThreshNum >= 1)
+  const editElectSeatsNum = Number(editElectSeats)
+  const editElectSeatsValid =
+    !editIsElection || (Number.isInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
 
   function handleSavePeriodBody() {
-    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectThreshValid) return
+    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectSeatsValid) return
     uploadPeriodBodyMutation.mutate({
       periodId,
       body: {
         title: editPeriodTitle.trim(),
         body: editPeriodBody.trim(),
-        ...(editIsElection ? { electThresh: editElectThreshNum } : {}),
+        ...(editIsElection ? { electSeats: editElectSeatsNum } : {}),
       },
     })
   }
@@ -307,25 +307,25 @@ export default function ManagePeriodDetail() {
                 </label>
                 {editIsElection && (
                   <div className="space-y-2">
-                    <Label htmlFor="edit-elect-thresh">Seats to elect</Label>
+                    <Label htmlFor="edit-elect-seats">Seats to elect</Label>
                     <Input
-                      id="edit-elect-thresh"
-                      name="edit-elect-thresh"
+                      id="edit-elect-seats"
+                      name="edit-elect-seats"
                       type="number"
                       min={1}
                       step={1}
-                      value={editElectThresh}
-                      onChange={(e) => setEditElectThresh(e.target.value)}
+                      value={editElectSeats}
+                      onChange={(e) => setEditElectSeats(e.target.value)}
                       placeholder="Number of seats being elected"
                       required
                     />
-                    {!editElectThreshValid && (
+                    {!editElectSeatsValid && (
                       <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
                     )}
                   </div>
                 )}
               </div>
-              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending || !editElectThreshValid} aria-busy={uploadPeriodBodyMutation.isPending}>
+              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending || !editElectSeatsValid} aria-busy={uploadPeriodBodyMutation.isPending}>
                 <TxButtonContent
                   pending={uploadPeriodBodyMutation.isPending}
                   success={uploadPeriodBodyMutation.isSuccess}
