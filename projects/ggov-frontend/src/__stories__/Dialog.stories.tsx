@@ -11,9 +11,9 @@ import {
 import { Button } from '@/components/ui/button'
 
 /**
- * §0.1 — the hand-rolled (non-Radix) dialog primitive every modal in the app is
- * built from: a `bg-black/80` overlay, a centered panel, and the
- * header / title / description / footer slots, with an optional close ✕.
+ * §0.1 — the dialog primitive every modal in the app is built from. Radix-based
+ * (focus-trap, Esc-to-close, scroll-lock, ARIA) with a themed navy scrim, a centered
+ * panel, the header / title / description / footer slots, and an optional close ✕.
  */
 const meta: Meta = {
   title: 'MISC_DIALOGS/0. Dialog primitive',

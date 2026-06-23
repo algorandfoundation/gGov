@@ -5,8 +5,8 @@ import { demoAccounts } from '../../.storybook/mocks/use-wallet-react'
 
 /**
  * §1 — the connect-wallet control. Logged out it's a "Connect wallet" button that
- * opens the wallet-picker dialog (a list of `outline` buttons, one per wallet).
- * Logged in it becomes the account dropdown (see §6 — User account dropdown).
+ * opens the wallet-picker dialog (the shared `WalletPicker` — a 2×2 grid of wallet
+ * tiles). Logged in it becomes the account dropdown (see §6 — User account dropdown).
  */
 const meta: Meta<typeof TopBarAccount> = {
   title: 'MISC_DIALOGS/1. Connect wallet',
