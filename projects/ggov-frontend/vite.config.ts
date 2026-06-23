@@ -70,15 +70,24 @@ const stripWorkerNodePolyfills = {
   },
 }
 
+// Storybook loads this config too (its builder-vite merges it). The TanStack Start
+// + Cloudflare Worker plugins inject the whole route tree / SSR worker, which
+// Storybook neither needs nor can resolve against its mocks — so skip them (and the
+// worker node-polyfill handling) when running under Storybook. The storybook scripts
+// set STORYBOOK=true.
+const isStorybook = !!process.env.STORYBOOK
+
 export default defineConfig({
-  plugins: [
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
-    tanstackStart(),
-    react(),
-    tailwindcss(),
-    ...clientNodePolyfills,
-    stripWorkerNodePolyfills,
-  ],
+  plugins: isStorybook
+    ? [react(), tailwindcss()]
+    : [
+        cloudflare({ viteEnvironment: { name: 'ssr' } }),
+        tanstackStart(),
+        react(),
+        tailwindcss(),
+        ...clientNodePolyfills,
+        stripWorkerNodePolyfills,
+      ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

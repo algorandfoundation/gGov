@@ -39,6 +39,7 @@ export function useGlobalState() {
     queryKey: queryKeys.globalState,
     queryFn: () => readerSDK.registry.getGlobalState(),
     staleTime: 60_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -50,6 +51,7 @@ export function usePeriods() {
     // Mutations (add/edit/set-ready) invalidate this key, so a modest staleTime
     // just avoids refetching the list on every navigation back to it.
     staleTime: 60_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -58,6 +60,7 @@ export function usePeriod(periodId: number) {
   return useQuery({
     queryKey: queryKeys.period(periodId),
     queryFn: () => fetchPeriod(readerSDK, periodId),
+    meta: { surfaceError: true },
   })
 }
 
@@ -386,6 +389,7 @@ export function useCommittees() {
     },
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -402,6 +406,7 @@ export function useCommittee(idBase64Url: string | undefined) {
     enabled: !!idBase64Url,
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -566,6 +571,7 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
     enabled: !!idBase64Url,
     // A committee's membership is fixed once the committee exists.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 

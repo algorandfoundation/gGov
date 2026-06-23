@@ -66,8 +66,8 @@ export default function ManagePeriods() {
                     className={
                       'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
                       (ready
-                        ? 'bg-success/15 text-success-foreground'
-                        : 'bg-warning/15 text-warning-foreground')
+                        ? 'bg-success/15 text-success-strong'
+                        : 'bg-warning/15 text-warning-strong')
                     }
                   >
                     {ready ? 'Ready' : 'Draft'}

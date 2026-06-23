@@ -138,6 +138,9 @@
   --color-algo-orange: var(--algo-orange);
   --color-success-strong: var(--success-strong);
   --color-warning-strong: var(--warning-strong);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-info-strong: var(--info-strong);
+  --color-scrim: var(--scrim);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -173,7 +176,8 @@
   --muted-foreground: #66717c;
   --accent: #e5e7e9;
   --accent-foreground: #001324;
-  --destructive: #d92d20;
+  /* Brand: orange carries ALL destructive/danger (was red #d92d20). */
+  --destructive: #ff7f48;
   --destructive-foreground: #ffffff;
   --success: #01dc94;
   --success-foreground: #03543f;
@@ -193,8 +197,13 @@
   /* High-contrast variants of success/warning for text & markers on the pale
    * tint strips. Light mode darkens the accent for legibility; dark mode keeps
    * the bright accent, which already reads on the dark tint. */
-  --success-strong: #0e7a55;
-  --warning-strong: #e0a800;
+  --success-strong: #0e8f6b;
+  --warning-strong: #7a5a00;
+  /* Readable danger/info text on pale tint strips (callouts, toasts, error dialog). */
+  --destructive-strong: #c24a1e;
+  --info-strong: #2d2df1;
+  /* Unified overlay scrim shared by dialogs and sheets (opacity applied at use site). */
+  --scrim: #001324;
   --chart-1: #2d2df1;
   --chart-2: #17cac6;
   --chart-3: #5858f0;
@@ -227,7 +236,7 @@
   --muted-foreground: #99a1a7;
   --accent: #334250;
   --accent-foreground: #e5e7e9;
-  --destructive: #f0716a;
+  --destructive: #ff7f48;
   --destructive-foreground: #ffffff;
   --success: #01dc94;
   --success-foreground: #6ee7b7;
@@ -242,8 +251,11 @@
   --algo-blue: #6c6cf1;
   --algo-navy-40: #99a1a7;
   --algo-orange: #ff7f48;
-  --success-strong: #01dc94;
-  --warning-strong: #ffe248;
+  --success-strong: #2fe3ac;
+  --warning-strong: #e7c24a;
+  --destructive-strong: #ff9166;
+  --info-strong: #6c6cf1;
+  --scrim: #001324;
   --chart-1: #6c6cf1;
   --chart-2: #45d5d1;
   --chart-3: #8080f3;

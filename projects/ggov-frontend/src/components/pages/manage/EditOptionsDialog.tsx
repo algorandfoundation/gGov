@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton } from '@/components/TxButtonContent'
 import { useEditTopicMutation } from '@/hooks/mutations'
 
 interface EditOptionsDialogProps {
@@ -143,19 +143,15 @@ export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClos
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button
+          <TxButton
             onClick={handleSave}
-            disabled={!isValid || editTopicMutation.isPending}
-            aria-busy={editTopicMutation.isPending}
-          >
-            <TxButtonContent
-              pending={editTopicMutation.isPending}
-              success={editTopicMutation.isSuccess}
-              idleLabel="Save"
-              pendingLabel="Saving…"
-              confirmedLabel="Saved"
-            />
-          </Button>
+            disabled={!isValid}
+            pending={editTopicMutation.isPending}
+            success={editTopicMutation.isSuccess}
+            idleLabel="Save"
+            pendingLabel="Saving…"
+            confirmedLabel="Saved"
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

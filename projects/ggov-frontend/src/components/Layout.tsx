@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Vote, Users, UserCircle, Settings, BookOpen, Sun, Moon, RefreshCw, type LucideIcon } from 'lucide-react'
+import { Vote, Users, Settings, BookOpen, Sun, Moon, RefreshCw, type LucideIcon } from 'lucide-react'
 
 interface NavItem {
   to: string
@@ -42,7 +42,6 @@ function useNavItems(): NavItem[] {
   return [
     { to: '/vote', label: 'Vote', icon: Vote },
     { to: '/committees', label: 'Committees', icon: Users },
-    ...(activeAddress ? [{ to: `/account/${activeAddress}`, label: 'My account', icon: UserCircle }] : []),
     ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
     { to: '/docs', label: 'Docs', icon: BookOpen },
   ]
