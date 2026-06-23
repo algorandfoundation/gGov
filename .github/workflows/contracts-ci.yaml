@@ -16,49 +16,50 @@ defaults:
 
 jobs:
   validate:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          version: 10
+          node-version: 22.x
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
 
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'pnpm'
-          cache-dependency-path: "**/pnpm-lock.yaml"
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install algokit
         run: pipx install algokit
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # - name: Format check
+      #   run: algokit project run format-check
 
-      # - name: Audit dependencies
-      #   run: algokit project run audit --project-name 'contracts'
+      # - name: Lint
+      #   run: algokit project run lint
 
-      # - name: Lint and format
-      #   run: algokit project run lint --project-name 'contracts'
+      # - name: Typecheck
+      #   run: algokit project run typecheck
 
       - name: Build smart contracts
         run: algokit project run build --project-name 'contracts'
 
-      - name: Build SDK
+      - name: Build SDKs
         run: algokit project run build --project-name 'ggov-sdk' --project-name 'delegator-sdk'
 
+      - name: Build frontend
+        run: algokit project run build --project-name 'ggov-frontend'
+
       - name: Upload SDK build output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sdk-build
           path: |
@@ -83,7 +84,7 @@ jobs:
         run: algokit project deploy localnet --project-name 'contracts'
 
   test:
-    name: test ${{ matrix.name }}
+    name: Test ${{ matrix.name }}
     needs: validate
     runs-on: ubuntu-latest
     strategy:
@@ -99,43 +100,38 @@ jobs:
           - name: remaining contracts
             args: --exclude='smart_contracts/ggov-registry/**' --exclude='smart_contracts/ggov-period/**'
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          version: 10
+          node-version: 22.x
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
 
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'pnpm'
-          cache-dependency-path: "**/pnpm-lock.yaml"
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install algokit
         run: pipx install algokit
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Download SDK build output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: sdk-build
           path: projects
 
       - name: Start LocalNet
         run: algokit localnet start
-        
+
       - name: Run tests
         timeout-minutes: 15
         env:
           NOOP_TEST_LOGGER: true
-        run: pnpm --dir projects/contracts exec vitest run --reporter=verbose ${{ matrix.args }}
+        run: pnpm --filter smart_contracts exec vitest run --reporter=verbose ${{ matrix.args }}
