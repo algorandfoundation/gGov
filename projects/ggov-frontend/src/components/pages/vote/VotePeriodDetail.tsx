@@ -428,11 +428,11 @@ export default function VotePeriodDetail() {
 
       {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
 
-      {isEnded && (
+      {isEnded && isCouncil && (
         <div>
           <Button asChild variant="outline" size="sm">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
-              View full results
+              View Ranked Results
             </Link>
           </Button>
         </div>
@@ -520,7 +520,7 @@ export default function VotePeriodDetail() {
         </div>
       )}
 
-      {activeAddress && !isActive && voterAccounts.length > 0 && collectiveStatusReady && (
+      {activeAddress && isUpcoming && voterAccounts.length > 0 && collectiveStatusReady && (
         <ConnectedWalletsEligibility items={walletEligibilityItems} eligibleCount={collectiveEligible} />
       )}
 
