@@ -43,17 +43,40 @@ read it inside a `createIsomorphicFn().server()` body, and document it above.
 
 ## Deploy
 
+Network config is baked in at **build** time (`vite build --mode <net>` inlines the
+`VITE_*` vars from `.env.<net>`), so testnet and mainnet are **separate Workers**,
+selected via wrangler environments in [`wrangler.jsonc`](./wrangler.jsonc):
+
+| Network | Worker name             | Command             |
+| ------- | ----------------------- | ------------------- |
+| testnet | `ggov-frontend-testnet` | `pnpm deploy:testnet` |
+| mainnet | `ggov-frontend-mainnet` | `pnpm deploy:mainnet` |
+
 ```bash
-pnpm deploy              # pnpm typecheck && vite build && wrangler deploy
-pnpm deploy:testnet
+pnpm deploy:testnet      # typecheck && vite build --mode testnet && wrangler deploy --env testnet
+pnpm deploy:mainnet      # typecheck && vite build --mode mainnet && wrangler deploy --env mainnet
+pnpm deploy              # localnet build to the top-level worker (rarely used)
+```
+
+> **Mainnet is not live yet** — set the real `VITE_GGOV_REGISTRY_APP_ID` in
+> [`.env.mainnet`](./.env.mainnet) (and `mainnet.registryAppId` in
+> [`../ggov-sdk/src/networkConfig.ts`](../ggov-sdk/src/networkConfig.ts)) before deploying.
+
+Secrets are per-environment — scope the CLI with `--env`:
+
+```bash
+pnpm wrangler secret put ALGOD_TOKEN --env testnet
+pnpm wrangler secret put ALGOD_TOKEN --env mainnet
 ```
 
 ### Continuous deployment
 
 Merging to `main` deploys the Worker to **testnet** via
-[`.github/workflows/frontend-cd.yaml`](../../.github/workflows/frontend-cd.yaml)
-(also runnable on demand from the Actions tab). Configure these secrets on the repo
-or the `frontend-testnet` environment:
+[`.github/workflows/frontend-cd.yaml`](../../.github/workflows/frontend-cd.yaml).
+**Mainnet** deploys only on demand (no push trigger) via
+[`.github/workflows/frontend-cd-mainnet.yaml`](../../.github/workflows/frontend-cd-mainnet.yaml)
+— run it from the Actions tab. Configure these secrets on the repo or the matching
+environment (`frontend-testnet` / `frontend-mainnet`):
 
 | Secret                  | Purpose                                                              |
 | ----------------------- | ------------------------------------------------------------------- |
