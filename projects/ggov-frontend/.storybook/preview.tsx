@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { Preview } from '@storybook/react'
-import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '../src/components/ui/sonner'
 import { ErrorDialogProvider } from '../src/hooks/useErrorDialog'
@@ -49,19 +48,17 @@ const preview: Preview = {
       const wallet = (context.parameters.wallet ?? {}) as MockWalletConfig
 
       return (
-        <MemoryRouter>
-          <QueryClientProvider client={queryClient}>
-            <MockWalletProvider config={wallet}>
-              <ErrorDialogProvider>
-                <div className="bg-background text-foreground font-sans flex min-h-screen w-full items-start justify-center p-8">
-                  <Story />
-                </div>
-              </ErrorDialogProvider>
-              {/* Mounted as in App.tsx; theme prop keeps toasts in sync with the toolbar. */}
-              <Toaster position="bottom-right" theme={theme} />
-            </MockWalletProvider>
-          </QueryClientProvider>
-        </MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <MockWalletProvider config={wallet}>
+            <ErrorDialogProvider>
+              <div className="bg-background text-foreground font-sans flex min-h-screen w-full items-start justify-center p-8">
+                <Story />
+              </div>
+            </ErrorDialogProvider>
+            {/* Mounted as in AppProviders; theme prop keeps toasts in sync with the toolbar. */}
+            <Toaster position="bottom-right" theme={theme} />
+          </MockWalletProvider>
+        </QueryClientProvider>
       )
     },
   ],

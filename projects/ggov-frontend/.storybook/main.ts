@@ -43,6 +43,9 @@ const config: StorybookConfig = {
     config.resolve.alias = [
       { find: '@/hooks/mutations', replacement: path.resolve(dirname, 'mocks/mutations.tsx') },
       { find: '@txnlab/use-wallet-react', replacement: path.resolve(dirname, 'mocks/use-wallet-react.tsx') },
+      // The app migrated to @tanstack/react-router; mock it so leaf components render
+      // without a router context (Link → anchor).
+      { find: '@tanstack/react-router', replacement: path.resolve(dirname, 'mocks/tanstack-react-router.tsx') },
       { find: '@', replacement: src },
       ...existingArr.filter((a) => (a as { find?: string }).find !== '@'),
     ]

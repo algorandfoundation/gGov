@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { Check, ChevronDown, LogOut, UserCircle, Wallet } from 'lucide-react'
 import {
@@ -87,7 +87,7 @@ export default function UserDropdown({ small = false }: { small?: boolean }) {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to={`/account/${activeAddress}`}>
+          <Link to="/account/$address" params={{ address: activeAddress }}>
             <UserCircle />
             <span>Go to my account</span>
           </Link>

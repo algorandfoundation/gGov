@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { toast } from "sonner";
 import { ArrowDown, ArrowLeftRight, BookOpen, Copy, Info, Target } from "lucide-react";
@@ -361,7 +361,7 @@ function DelegatorRow({
     <div className="overflow-hidden rounded-lg border border-border bg-background">
       <div className="flex items-center gap-3 px-3.5 py-3">
         <AccountAvatar address={delegator} name={name} size={32} />
-        <Link to={`/account/${delegator}`} className="min-w-0 flex-1">
+        <Link to="/account/$address" params={{ address: delegator }} className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium hover:underline">{name ?? ellipsed}</div>
           {name && <div className="truncate font-mono text-xs text-muted-foreground">{ellipsed}</div>}
         </Link>
@@ -430,7 +430,7 @@ function DelegatorLink({ address }: { address: string }) {
   const { data: name } = useAddressName(address);
   const ellipsed = ellipseAddress(address, 6);
   return (
-    <Link to={`/account/${address}`} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0">
+    <Link to="/account/$address" params={{ address }} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0">
       <AccountAvatar address={address} name={name} size={30} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13.5px] font-medium text-primary hover:underline dark:text-algo-teal">
@@ -507,7 +507,7 @@ function HeadingIdentity({
 }
 
 export default function Account() {
-  const { address } = useParams<{ address: string }>();
+  const { address } = useParams({ strict: false });
   const { activeAddress, activeWalletAccounts } = useWallet();
   const navigate = useNavigate();
   const { sdk } = useGGovSDK();
@@ -583,7 +583,7 @@ export default function Account() {
               size="sm"
               onClick={() => {
                 setShowSwitchBanner(false);
-                navigate(`/account/${activeAddress}`);
+                navigate({ to: "/account/$address", params: { address: activeAddress } });
               }}
             >
               Switch to my account
@@ -679,7 +679,7 @@ export default function Account() {
                 {committees.map((c) => (
                   <Link
                     key={c.idBase64Url}
-                    to={`/committees/${c.idBase64Url}`}
+                    to="/committees/$committeeId" params={{ committeeId: c.idBase64Url }}
                     className="grid grid-cols-[1fr_auto] items-center gap-2.5 border-b border-border px-5 py-3 transition-colors hover:bg-muted/40"
                   >
                     <span className="truncate font-mono text-[13px] font-medium text-primary dark:text-algo-teal">
@@ -716,7 +716,7 @@ export default function Account() {
                 <div className="border-b border-border p-4">
                   <div className="flex items-start justify-between gap-2.5">
                     <Link
-                      to={`/vote/period/${periodId}`}
+                      to="/vote/period/$periodId" params={{ periodId: String(periodId) }}
                       className="font-display text-[15px] font-bold leading-tight hover:text-primary dark:hover:text-algo-teal"
                     >
                       {body?.title ?? `Period #${periodId}`}

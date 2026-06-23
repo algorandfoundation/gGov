@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { Callout as UICallout } from '@/components/ui/callout'

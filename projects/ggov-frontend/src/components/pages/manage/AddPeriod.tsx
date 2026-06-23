@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useCommittees } from '@/hooks/queries'
 import { useAddPeriodMutation } from '@/hooks/mutations'
@@ -37,7 +37,7 @@ export default function AddPeriod() {
       body: body.trim(),
     })
 
-    navigate(`/manage/period/${periodId}`)
+    navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
   }
 
   if (!sdk) {

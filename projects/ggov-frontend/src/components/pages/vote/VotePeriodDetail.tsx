@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "@tanstack/react-router";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
@@ -75,7 +75,7 @@ function eligibilityCopy(status: PeriodStatus, canVote: boolean): { self: string
 }
 
 export default function VotePeriodDetail() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>();
+  const { periodId: pidParam } = useParams({ strict: false });
   const periodId = Number(pidParam);
   const { sdk } = useGGovSDK();
   const { activeAddress, activeWallet, activeWalletAccounts } = useWallet();

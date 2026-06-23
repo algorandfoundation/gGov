@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
 import {
@@ -28,7 +28,7 @@ import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodSta
 import { TxButton, TxButtonContent } from '@/components/TxButtonContent'
 
 export default function ManagePeriodDetail() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>()
+  const { periodId: pidParam } = useParams({ strict: false })
   const periodId = Number(pidParam)
   const { sdk } = useGGovSDK()
 
@@ -311,7 +311,7 @@ export default function ManagePeriodDetail() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Topics ({period.topics.length})</h2>
-        <Link to={`/manage/period/${periodId}/add-topic`}>
+        <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
           <Button variant="outline" size="sm">Add topic</Button>
         </Link>
       </div>
