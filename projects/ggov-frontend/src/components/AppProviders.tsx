@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
-import { Toaster } from 'sonner'
+import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { GGovSDKProvider } from '@/hooks/useGGovSDK'
 import { ErrorDialogProvider } from '@/hooks/useErrorDialog'

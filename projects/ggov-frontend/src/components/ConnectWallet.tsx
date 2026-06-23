@@ -1,42 +1,24 @@
-import { useWallet } from '@txnlab/use-wallet-react'
 import { useState } from 'react'
+import { useWallet } from '@txnlab/use-wallet-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ellipseAddress } from '@/utils/ellipseAddress'
-import Address from '@/components/Address'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import UserDropdown from '@/components/UserDropdown'
+import WalletPicker from '@/components/WalletPicker'
 
+/**
+ * Sidebar wallet control. Logged out → a "Connect wallet" button + the shared
+ * {@link WalletPicker} dialog; logged in → the {@link UserDropdown} account menu
+ * (the account switcher + disconnect live there, replacing the old native
+ * `<select>` + Disconnect button).
+ */
 export default function ConnectWallet() {
-  const { activeAddress, activeWallet, activeWalletAccounts, wallets } = useWallet()
+  const { activeAddress, activeWallet } = useWallet()
   const [open, setOpen] = useState(false)
 
   if (activeAddress && activeWallet) {
-    const accounts = activeWalletAccounts ?? []
-    const hasMultipleAccounts = accounts.length > 1
-
     return (
-      <div className="flex flex-col gap-2 w-full">
-        {hasMultipleAccounts ? (
-          <select
-            aria-label="Select account"
-            name="active-account"
-            className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm font-mono text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={activeAddress}
-            onChange={(e) => activeWallet.setActiveAccount(e.target.value)}
-          >
-            {accounts.map((account) => (
-              <option key={account.address} value={account.address}>
-                {account.name ? `${account.name} (${ellipseAddress(account.address)})` : ellipseAddress(account.address)}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="text-sm text-muted-foreground truncate">
-            <Address address={activeAddress} tooltip={false} />
-          </span>
-        )}
-        <Button variant="outline" size="sm" className="w-full" onClick={() => activeWallet.disconnect()}>
-          Disconnect
-        </Button>
+      <div className="flex w-full justify-center">
+        <UserDropdown />
       </div>
     )
   }
@@ -45,25 +27,12 @@ export default function ConnectWallet() {
     <>
       <Button className="w-full" onClick={() => setOpen(true)}>Connect wallet</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent onClose={() => setOpen(false)}>
+        <DialogContent onClose={() => setOpen(false)} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Connect wallet</DialogTitle>
+            <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {wallets.map((wallet) => (
-              <Button
-                key={wallet.id}
-                variant="outline"
-                className="justify-start"
-                onClick={async () => {
-                  await wallet.connect()
-                  setOpen(false)
-                }}
-              >
-                {wallet.metadata.name}
-              </Button>
-            ))}
-          </div>
+          <WalletPicker onConnected={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>
