@@ -38,9 +38,6 @@ export default function VotingRecordSection({ activeAddress, records, topicCount
           <div className="text-[14px] font-medium text-foreground">{title}</div>
           <div className="text-[12.5px] text-muted-foreground">{detail} · recorded on-chain</div>
         </div>
-        <a href="#voting-record" className="shrink-0 text-[13px] font-semibold text-primary dark:text-algo-teal">
-          View record ↓
-        </a>
       </div>
 
       <div id="voting-record" className="scroll-mt-6">
