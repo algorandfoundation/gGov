@@ -4,12 +4,11 @@ import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useCommittees } from '@/hooks/queries'
 import { useAddPeriodMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { fromDatetimeLocalUTC } from '@/utils/time'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton } from '@/components/TxButtonContent'
 
 export default function AddPeriod() {
   const { sdk } = useGGovSDK()
@@ -127,15 +126,14 @@ export default function AddPeriod() {
               />
             </div>
 
-            <Button type="submit" disabled={addPeriodMutation.isPending} aria-busy={addPeriodMutation.isPending}>
-              <TxButtonContent
-                pending={addPeriodMutation.isPending}
-                success={addPeriodMutation.isSuccess}
-                idleLabel="Create period"
-                pendingLabel="Creating…"
-                confirmedLabel="Created"
-              />
-            </Button>
+            <TxButton
+              type="submit"
+              pending={addPeriodMutation.isPending}
+              success={addPeriodMutation.isSuccess}
+              idleLabel="Create period"
+              pendingLabel="Creating…"
+              confirmedLabel="Created"
+            />
           </form>
         </CardContent>
       </Card>

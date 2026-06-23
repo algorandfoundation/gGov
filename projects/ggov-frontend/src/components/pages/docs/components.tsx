@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, ChevronRight, Info } from 'lucide-react'
+import { ArrowRight, ChevronRight } from 'lucide-react'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import { Callout as UICallout } from '@/components/ui/callout'
 import { getDocsPage, getNextDocsPage } from '@/components/pages/docs/nav'
 
 /**
@@ -63,10 +64,9 @@ export function InlineLink({ to, children }: { to: string; children: ReactNode }
 type CalloutVariant = 'info' | 'neutral' | 'warning'
 
 /**
- * Admonition block. Three variants per the spec: info = blue, neutral = inset,
- * warning = orange (used only for the delegation direct-vote rule). The orange
- * accent text mirrors the app's existing warning treatment
- * (text-[#9A4A1F] dark:text-algo-orange).
+ * Docs admonition block — a thin wrapper over the shared {@link UICallout} at prose
+ * scale. The docs "warning" (the delegation direct-vote rule) maps to the shared
+ * orange `danger` variant; info/neutral pass through.
  */
 export function Callout({
   variant = 'info',
@@ -77,29 +77,15 @@ export function Callout({
   icon?: ReactNode
   children: ReactNode
 }) {
-  if (variant === 'warning') {
-    return (
-      <div className="my-2 mb-[18px] flex gap-3 rounded-md border border-algo-orange/30 border-l-[3px] border-l-algo-orange bg-algo-orange/10 px-[18px] py-4">
-        <AlertTriangle className="mt-px size-[18px] flex-none text-algo-orange" />
-        <div className="font-sans text-[15px] leading-[1.55] text-[#9A4A1F] [&_strong]:text-[#7A3A18] dark:text-algo-orange dark:[&_strong]:text-algo-orange">
-          {children}
-        </div>
-      </div>
-    )
-  }
-  if (variant === 'neutral') {
-    return (
-      <div className="my-2 mb-[18px] flex gap-3 rounded-md border border-border bg-muted px-[18px] py-4">
-        <span className="mt-px flex-none text-muted-foreground">{icon}</span>
-        <div className="font-sans text-[15px] leading-[1.55] text-muted-foreground">{children}</div>
-      </div>
-    )
-  }
   return (
-    <div className="my-2 mb-[18px] flex gap-3 rounded-md border border-primary/30 border-l-[3px] border-l-primary bg-primary/10 px-[18px] py-4">
-      <span className="mt-px flex-none text-primary">{icon ?? <Info className="size-[18px]" />}</span>
-      <div className="font-sans text-[15px] leading-[1.55] text-muted-foreground">{children}</div>
-    </div>
+    <UICallout
+      variant={variant === 'warning' ? 'danger' : variant}
+      size="md"
+      icon={icon}
+      className="my-2 mb-[18px]"
+    >
+      {children}
+    </UICallout>
   )
 }
 

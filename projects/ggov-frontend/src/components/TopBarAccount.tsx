@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import UserDropdown from '@/components/UserDropdown'
+import WalletPicker from '@/components/WalletPicker'
 
 /**
  * Compact wallet control shared by the desktop top bar and the mobile drawer
@@ -14,7 +15,7 @@ import UserDropdown from '@/components/UserDropdown'
  * footer); `small` collapses the dropdown trigger to just the avatar.
  */
 export default function TopBarAccount({ fullWidth = false, small = false }: { fullWidth?: boolean, small?: boolean }) {
-  const { activeAddress, activeWallet, wallets } = useWallet()
+  const { activeAddress, activeWallet } = useWallet()
   const [open, setOpen] = useState(false)
 
   if (activeAddress && activeWallet) {
@@ -32,25 +33,12 @@ export default function TopBarAccount({ fullWidth = false, small = false }: { fu
     <>
       <Button size="sm" onClick={() => setOpen(true)}>Connect wallet</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent onClose={() => setOpen(false)}>
+        <DialogContent onClose={() => setOpen(false)} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Connect wallet</DialogTitle>
+            <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {wallets.map((wallet) => (
-              <Button
-                key={wallet.id}
-                variant="outline"
-                className="justify-start"
-                onClick={async () => {
-                  await wallet.connect()
-                  setOpen(false)
-                }}
-              >
-                {wallet.metadata.name}
-              </Button>
-            ))}
-          </div>
+          <WalletPicker onConnected={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>

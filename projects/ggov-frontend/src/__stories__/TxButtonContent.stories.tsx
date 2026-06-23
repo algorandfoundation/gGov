@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useEffect, useState } from 'react'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton, TxButtonContent } from '@/components/TxButtonContent'
 import { setPhase, confirmPhase, resetPhase, type TransactionPhase } from '@/lib/transactionPhase'
 import { Button } from '@/components/ui/button'
 import { demoAccounts } from '../../.storybook/mocks/use-wallet-react'
@@ -57,14 +57,11 @@ function InteractiveTxButton() {
       confirmPhase()
     }, 1900)
   }
-  return (
-    <Button onClick={run} disabled={pending} aria-busy={pending}>
-      <TxButtonContent pending={pending} success={success} idleLabel="Cast vote" />
-    </Button>
-  )
+  // Uses TxButton so the confirmed flash shows the green (navy text) state.
+  return <TxButton onClick={run} pending={pending} success={success} idleLabel="Cast vote" />
 }
 
 export const Interactive: Story = {
-  name: 'Interactive — run the full flow',
+  name: 'Interactive — run the full flow (green confirmed)',
   render: () => <InteractiveTxButton />,
 }

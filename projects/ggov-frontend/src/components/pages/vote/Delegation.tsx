@@ -4,11 +4,10 @@ import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useDelegation } from '@/hooks/queries'
 import { useDelegateMutation, useUndelegateMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Address from '@/components/Address'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton } from '@/components/TxButtonContent'
 
 export default function Delegation() {
   const { sdk } = useGGovSDK()
@@ -46,21 +45,17 @@ export default function Delegation() {
               <p className="text-sm">
                 Delegated to: <Address address={delegation.delegatee} to width={8} className="text-primary hover:underline" />
               </p>
-              <Button
+              <TxButton
                 variant="destructive"
                 size="sm"
                 onClick={() => undelegateMutation.mutate()}
                 disabled={submitting}
-                aria-busy={undelegateMutation.isPending}
-              >
-                <TxButtonContent
-                  pending={undelegateMutation.isPending}
-                  success={undelegateMutation.isSuccess}
-                  idleLabel="Remove delegation"
-                  pendingLabel="Removing…"
-                  confirmedLabel="Removed"
-                />
-              </Button>
+                pending={undelegateMutation.isPending}
+                success={undelegateMutation.isSuccess}
+                idleLabel="Remove delegation"
+                pendingLabel="Removing…"
+                confirmedLabel="Removed"
+              />
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No active delegation.</p>
@@ -84,19 +79,15 @@ export default function Delegation() {
                 onChange={(e) => setDelegateeInput(e.target.value)}
               />
             </div>
-            <Button
+            <TxButton
               onClick={() => delegateMutation.mutate(delegateeInput)}
               disabled={submitting || !delegateeInput || !sdk}
-              aria-busy={delegateMutation.isPending}
-            >
-              <TxButtonContent
-                pending={delegateMutation.isPending}
-                success={delegateMutation.isSuccess}
-                idleLabel="Delegate"
-                pendingLabel="Delegating…"
-                confirmedLabel="Delegated"
-              />
-            </Button>
+              pending={delegateMutation.isPending}
+              success={delegateMutation.isSuccess}
+              idleLabel="Delegate"
+              pendingLabel="Delegating…"
+              confirmedLabel="Delegated"
+            />
           </div>
         </CardContent>
       </Card>

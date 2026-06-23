@@ -16,7 +16,7 @@ import { AccountAvatar } from "@/components/AccountAvatar";
 import AppExplorerLink from "@/components/AppExplorerLink";
 import AccountExplorerLink from "@/components/AccountExplorerLink";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
-import { TxButtonContent } from "@/components/TxButtonContent";
+import { TxButton, TxButtonContent } from "@/components/TxButtonContent";
 import { cn } from "@/lib/utils";
 
 const DELEGATION_DOCS_URL = "/docs/delegation";
@@ -218,15 +218,15 @@ function DelegationCard({
           Changing delegation takes effect immediately. It won't alter votes already cast for the current period.
         </InfoNote>
         <div className="mt-3.5 flex gap-2.5">
-          <Button onClick={submitDelegate} disabled={submitting || !input || !sdk} aria-busy={delegateMutation.isPending}>
-            <TxButtonContent
-              pending={delegateMutation.isPending}
-              success={delegateMutation.isSuccess}
-              idleLabel="Update delegation"
-              pendingLabel="Updating…"
-              confirmedLabel="Updated"
-            />
-          </Button>
+          <TxButton
+            onClick={submitDelegate}
+            disabled={submitting || !input || !sdk}
+            pending={delegateMutation.isPending}
+            success={delegateMutation.isSuccess}
+            idleLabel="Update delegation"
+            pendingLabel="Updating…"
+            confirmedLabel="Updated"
+          />
           <Button variant="ghost" onClick={() => setMode("view")} disabled={submitting}>
             Cancel
           </Button>
@@ -287,15 +287,15 @@ function DelegationCard({
           The delegate can vote with this account's power until you remove or change it. You can revoke at any time.
         </InfoNote>
         <div className="mt-3.5 flex gap-2.5">
-          <Button onClick={submitDelegate} disabled={submitting || !input || !sdk} aria-busy={delegateMutation.isPending}>
-            <TxButtonContent
-              pending={delegateMutation.isPending}
-              success={delegateMutation.isSuccess}
-              idleLabel="Delegate"
-              pendingLabel="Delegating…"
-              confirmedLabel="Delegated"
-            />
-          </Button>
+          <TxButton
+            onClick={submitDelegate}
+            disabled={submitting || !input || !sdk}
+            pending={delegateMutation.isPending}
+            success={delegateMutation.isSuccess}
+            idleLabel="Delegate"
+            pendingLabel="Delegating…"
+            confirmedLabel="Delegated"
+          />
           <Button
             variant="ghost"
             onClick={() => {

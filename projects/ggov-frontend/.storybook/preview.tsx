@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import type { Preview } from '@storybook/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'sonner'
+import { Toaster } from '../src/components/ui/sonner'
+import { ErrorDialogProvider } from '../src/hooks/useErrorDialog'
 import { MockWalletProvider, type MockWalletConfig } from './mocks/use-wallet-react'
 import '../src/main.css'
 
@@ -50,9 +51,11 @@ const preview: Preview = {
         <MemoryRouter>
           <QueryClientProvider client={queryClient}>
             <MockWalletProvider config={wallet}>
-              <div className="bg-background text-foreground font-sans flex min-h-screen w-full items-start justify-center p-8">
-                <Story />
-              </div>
+              <ErrorDialogProvider>
+                <div className="bg-background text-foreground font-sans flex min-h-screen w-full items-start justify-center p-8">
+                  <Story />
+                </div>
+              </ErrorDialogProvider>
               {/* Mounted as in App.tsx; theme prop keeps toasts in sync with the toolbar. */}
               <Toaster position="bottom-right" theme={theme} />
             </MockWalletProvider>
