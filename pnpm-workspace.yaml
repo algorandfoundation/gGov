@@ -1,6 +1,9 @@
 packages:
   - 'projects/*'
+
+# https://pnpm.io/supply-chain-security
+minimumReleaseAge: 10080  # 1 week
+blockExoticSubdeps: true
+ignoreScripts: true
 allowBuilds:
   esbuild: true
-  sharp: false
-  workerd: false

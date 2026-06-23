@@ -1,0 +1,11 @@
+pnpm-lock.yaml
+node_modules/
+dist/
+.claude
+.github/skills
+AGENTS.md
+.mcp.json
+.algokit
+**/generated/*.ts
+*.gen.ts
+**/artifacts/**
