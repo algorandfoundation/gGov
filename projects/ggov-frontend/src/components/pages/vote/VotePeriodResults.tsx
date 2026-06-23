@@ -15,7 +15,7 @@ import BackButton from "@/components/BackButton";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import TopicVoteCard from "@/components/TopicVoteCard";
 import TurnoutCard from "@/components/TurnoutCard";
-import CouncilResults, { type CouncilCandidate } from "@/components/CouncilResults";
+import ElectionResults, { type ElectionCandidate } from "@/components/ElectionResults";
 import { InfoRow } from "@/components/PeriodInfoCard";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,7 +138,7 @@ export default function VotePeriodResults() {
   );
   const governorsVoted = voters?.length ?? 0;
 
-  const candidates: CouncilCandidate[] = isElection
+  const candidates: ElectionCandidate[] = isElection
     ? period.topics.map(([options, tallies], i) => {
         const { yes, no, abstain } = tallyBallot(options, tallies);
         return { name: topicBodies[i]?.title ?? `Candidate ${i + 1}`, yes, no, abstain };
@@ -200,7 +200,7 @@ export default function VotePeriodResults() {
   );
 
   const main = isElection ? (
-    <CouncilResults candidates={candidates} threshold={threshold} live={live} />
+    <ElectionResults candidates={candidates} threshold={threshold} live={live} />
   ) : period.topics.length === 0 ? (
     <p className="text-muted-foreground">No topics in this period.</p>
   ) : (

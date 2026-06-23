@@ -2,7 +2,7 @@ import { ListOrdered, Minus } from "lucide-react";
 import { Avatar, avatarTone } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-export interface CouncilCandidate {
+export interface ElectionCandidate {
   /** Candidate handle — the topic title. */
   name: string;
   yes: number;
@@ -10,8 +10,8 @@ export interface CouncilCandidate {
   abstain: number;
 }
 
-interface CouncilResultsProps {
-  candidates: CouncilCandidate[];
+interface ElectionResultsProps {
+  candidates: ElectionCandidate[];
   /** Seats being elected (`electSeats`). The top `threshold` lead. */
   threshold: number;
   /** Active period → in-progress framing (ranking may still change). */
@@ -24,7 +24,7 @@ interface CouncilResultsProps {
  * after rank N. Diverging score bars are centered on a zero axis (positive right,
  * negative left). Provisional language only — ranking, never seating verdicts.
  */
-export default function CouncilResults({ candidates, threshold, live }: CouncilResultsProps) {
+export default function ElectionResults({ candidates, threshold, live }: ElectionResultsProps) {
   const scored = candidates
     .map((c) => ({ ...c, score: c.yes - c.no }))
     .sort((a, b) => b.score - a.score);
