@@ -1,9 +1,10 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
 import { getErrorMessage, isUserRejectionError } from '@/lib/errors'
+import { subscribeSurfacedError } from '@/lib/errorBus'
 
 interface ErrorDialogContextValue {
   showError: (err: unknown) => void
@@ -25,6 +26,11 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const clearError = useCallback(() => setError(null), [])
+
+  // Surface failed primary queries (tagged `meta.surfaceError`) through this same
+  // dialog. The subscription is client-only, so the QueryCache's server-side
+  // `onError` has no listener and never tries to render a modal during SSR.
+  useEffect(() => subscribeSurfacedError(showError), [showError])
 
   return (
     <ErrorDialogContext.Provider value={{ showError, clearError }}>

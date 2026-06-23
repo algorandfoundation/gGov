@@ -3,6 +3,10 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanst
 import type { QueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import AppProviders from '@/components/AppProviders'
+import NotFound from '@/components/pages/NotFound'
+import StatusScreen from '@/components/StatusScreen'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 // Imported as a URL so the integration emits a <link rel="stylesheet"> during SSR
 // (Tailwind v4 entry + self-hosted brand fonts live in this file).
 import appCss from '../main.css?url'
@@ -25,20 +29,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
   }),
   component: RootComponent,
-  // Top-level catch-all (replaces the old main.tsx ErrorBoundary). Renders a bare
-  // document without the app providers so a provider failure can't re-trigger it.
+  // 404 boundary for unmatched URLs and `notFound()` thrown by child loaders.
+  // Renders inside RootDocument, so it keeps the app chrome's providers/styling.
+  notFoundComponent: () => <NotFound />,
+  // Top-level catch-all (replaces the old main.tsx ErrorBoundary). Renders its own
+  // bare document — without the app providers — so a provider failure can't
+  // re-trigger it. Recoverable in-app errors surface through the error dialog
+  // (useErrorDialog); this is the last resort, so it offers copy + reload + home.
   errorComponent: ({ error }) => (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
       <body>
-        <div className="flex min-h-screen items-center justify-center p-8">
-          <div className="max-w-md text-center">
-            <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
-            <p className="text-muted-foreground">{error?.message}</p>
-          </div>
-        </div>
+        <StatusScreen
+          title="Something went wrong"
+          description="An unexpected error occurred. You can copy the details below or reload the page."
+          message={error?.message}
+          actions={
+            <>
+              {/* window is only touched in the click handler, so SSR is safe. */}
+              <button
+                type="button"
+                className={cn(buttonVariants())}
+                onClick={() => window.location.reload()}
+              >
+                Reload
+              </button>
+              <a href="/" className={cn(buttonVariants({ variant: 'outline' }))}>
+                Go home
+              </a>
+            </>
+          }
+        />
         <Scripts />
       </body>
     </html>
