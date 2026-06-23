@@ -40,9 +40,9 @@ function useNavItems(): NavItem[] {
   const isOperator = !!activeAddress && !!globalState?.operator && activeAddress === globalState.operator
 
   return [
+    ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
     { to: '/vote', label: 'Vote', icon: Vote },
     { to: '/committees', label: 'Committees', icon: Users },
-    ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
     { to: '/docs', label: 'Docs', icon: BookOpen },
   ]
 }
