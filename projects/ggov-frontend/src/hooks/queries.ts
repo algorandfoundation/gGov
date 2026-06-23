@@ -288,11 +288,23 @@ export function fromBase64Url(str: string): Uint8Array {
 // hooks use, so the page renders server-side data immediately and never diverges
 // from what the client would fetch.
 
+// Ids/counts come from URL params (e.g. /vote/period/:periodId) and flow into
+// BigInt(). Guard first so a malformed route (`/vote/period/abc` → Number() is
+// NaN) fails with a clear error instead of a cryptic `BigInt(NaN)` RangeError —
+// these helpers are shared by both the hooks and the SSR loaders.
+function assertNonNegativeInt(value: number, label: string): void {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`Invalid ${label}: ${value}`)
+  }
+}
+
 export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise<GGovPeriod> {
+  assertNonNegativeInt(periodId, 'period id')
   return readerSDK.getPeriod(BigInt(periodId))
 }
 
 export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<BodyJson | null> {
+  assertNonNegativeInt(periodId, 'period id')
   return readerSDK.getPeriodBody(BigInt(periodId))
 }
 
@@ -301,6 +313,8 @@ export function fetchTopicBodies(
   periodId: number,
   topicCount: number,
 ): Promise<(BodyJson | null)[]> {
+  assertNonNegativeInt(periodId, 'period id')
+  assertNonNegativeInt(topicCount, 'topic count')
   return Promise.all(
     Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))),
   )
