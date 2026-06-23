@@ -10,7 +10,8 @@
  *
  * Resets localnet, then uses the KMD default wallet accounts as committee members
  * (so they persist and can connect + vote via the frontend). Seeds three periods —
- * an ACTIVE council election, an ENDED standard vote, and an UPCOMING vote — with
+ * an ENDED council election (id 1), an ACTIVE council election (id 2), and an
+ * UPCOMING standard vote (id 3) — with
  * votes and delegations cast so the results pages, the live council standings, and
  * the multi-account voting record are all populated. Random transaction notes
  * deduplicate otherwise-identical calls (no sleeps needed). Finally rewrites the
@@ -310,8 +311,8 @@ async function main() {
   await delegate(B, A); // B delegates to A; A will cast B's ballot
   await delegate(C, A); // C delegates to A but votes directly → locked ("Voted directly")
 
-  // ── 1) ACTIVE council election ─────────────────────────────────────
-  console.log("\nCreating ACTIVE council election (3 seats, 5 candidates)...");
+  // Council candidates (5), shared by the past and active elections. Each is a
+  // Yes/No/Abstain ballot; candidates rank by net score (Yes − No) for the seats.
   const candidateTopics = [
     { title: "txnlab.algo", body: "AlgoKit core maintainer and developer tooling." },
     { title: "folks.algo", body: "Folks Finance lending protocol contributor." },
@@ -319,59 +320,32 @@ async function main() {
     { title: "reti.algo", body: "Reti staking pool collective." },
     { title: "gard.algo", body: "GARD stablecoin protocol team." },
   ];
-  const councilId = await createPeriod({
-    title: "gGov Council — Term 2 election",
-    body: "Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 lead for the available seats.",
-    electSeats: 3,
-    topics: candidateTopics,
-    votingStart: now - 3600n,
-    votingEnd: now + 86400n * 7n,
-  });
-  await fundPeriodForVotes(councilId);
-  // Ballots per candidate [c0..c4], designed for a descending ranking with one negative.
-  const councilBallots: Record<string, string[]> = {
-    [A]: ["Y", "Y", "Y", "Y", "N"],
-    [B]: ["Y", "Y", "Y", "Y", "N"],
-    [C]: ["Y", "Y", "Y", "A", "N"],
-    [D]: ["Y", "Y", "Y", "N", "A"],
-    [E]: ["Y", "Y", "N", "N", "A"],
-    [F]: ["Y", "N", "N", "N", "Y"],
-  };
-  await castBallot(councilId, A, pA, councilBallots[A], A);
-  await castBallot(councilId, B, pB, councilBallots[B], A); // delegated: A casts for B
-  await castBallot(councilId, C, pC, councilBallots[C], C); // direct
-  await castBallot(councilId, D, pD, councilBallots[D], D);
-  await castBallot(councilId, E, pE, councilBallots[E], E);
-  await castBallot(councilId, F, pF, councilBallots[F], F);
-  console.log(`Council election period #${councilId} is ACTIVE with votes cast`);
 
-  // ── 2) ENDED standard period ───────────────────────────────────────
+  // ── 1) ENDED (past) council election ───────────────────────────────
   // The contract blocks editPeriod once a period is `ready` (and voting requires
   // ready), and setReady(false) is blocked once votes exist — so a voted period
   // can't be backdated. Instead give it a short window, cast within it, then let
   // wall-clock pass votingEnd; the frontend derives "ended" from votingEnd vs now.
-  console.log("\nCreating ENDED standard period (votes + delegations)...");
+  console.log("\nCreating ENDED council election (id 1; 3 seats, 5 candidates)...");
   const endedStart = BigInt(Math.floor(Date.now() / 1000));
   const endedVotingEnd = endedStart + 90n; // short window: cast within it, then it lapses
   const endedId = await createPeriod({
-    title: "Q4 2025 Governance",
-    body: "A standard governance vote on protocol parameters. Final tallies recorded on-chain.",
-    topics: [
-      { title: "Increase Staking Rewards", body: "Raise staking rewards from 5% to 7% APY to incentivize participation." },
-      { title: "Community Grant Proposal #42", body: "Fund the open-source DeFi analytics dashboard with 50,000 ALGO." },
-      { title: "Extend Governance Period to 6 Months", body: "Change the period duration from 3 months to 6 months." },
-    ],
+    title: "gGov Council — Term 1 election",
+    body: "Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 took the available seats.",
+    electSeats: 3,
+    topics: candidateTopics,
     votingStart: endedStart - 3600n,
     votingEnd: endedVotingEnd,
   });
   await fundPeriodForVotes(endedId);
+  // Ballots per candidate [c0..c4], designed for a descending ranking with one negative.
   const endedBallots: Record<string, string[]> = {
-    [A]: ["Y", "Y", "N"],
-    [B]: ["Y", "N", "N"],
-    [C]: ["Y", "Y", "Y"],
-    [D]: ["N", "Y", "N"],
-    [E]: ["A", "N", "A"],
-    [F]: ["Y", "A", "N"],
+    [A]: ["Y", "Y", "Y", "Y", "N"],
+    [B]: ["Y", "Y", "Y", "A", "N"],
+    [C]: ["Y", "Y", "Y", "N", "A"],
+    [D]: ["Y", "Y", "N", "N", "A"],
+    [E]: ["Y", "N", "N", "N", "Y"],
+    [F]: ["Y", "N", "N", "Y", "N"],
   };
   await castBallot(endedId, A, pA, endedBallots[A], A);
   await castBallot(endedId, B, pB, endedBallots[B], A); // delegated: A casts for B
@@ -385,10 +359,37 @@ async function main() {
     console.log(`  Waiting ${Math.ceil(waitMs / 1000)}s for the voting window to close...`);
     await new Promise((r) => setTimeout(r, waitMs));
   }
-  console.log(`Standard period #${endedId} is ENDED with votes cast`);
+  console.log(`Council election period #${endedId} is ENDED with votes cast`);
 
-  // ── 3) UPCOMING standard period ────────────────────────────────────
-  console.log("\nCreating UPCOMING standard period...");
+  // ── 2) ACTIVE council election ─────────────────────────────────────
+  console.log("\nCreating ACTIVE council election (id 2; 3 seats, 5 candidates)...");
+  const activeId = await createPeriod({
+    title: "gGov Council — Term 2 election",
+    body: "Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 lead for the available seats.",
+    electSeats: 3,
+    topics: candidateTopics,
+    votingStart: now - 3600n,
+    votingEnd: now + 86400n * 7n,
+  });
+  await fundPeriodForVotes(activeId);
+  const activeBallots: Record<string, string[]> = {
+    [A]: ["Y", "Y", "Y", "Y", "N"],
+    [B]: ["Y", "Y", "Y", "Y", "N"],
+    [C]: ["Y", "Y", "Y", "A", "N"],
+    [D]: ["Y", "Y", "Y", "N", "A"],
+    [E]: ["Y", "Y", "N", "N", "A"],
+    [F]: ["Y", "N", "N", "N", "Y"],
+  };
+  await castBallot(activeId, A, pA, activeBallots[A], A);
+  await castBallot(activeId, B, pB, activeBallots[B], A); // delegated: A casts for B
+  await castBallot(activeId, C, pC, activeBallots[C], C); // direct
+  await castBallot(activeId, D, pD, activeBallots[D], D);
+  await castBallot(activeId, E, pE, activeBallots[E], E);
+  await castBallot(activeId, F, pF, activeBallots[F], F);
+  console.log(`Council election period #${activeId} is ACTIVE with votes cast`);
+
+  // ── 3) UPCOMING (future) standard period ───────────────────────────
+  console.log("\nCreating UPCOMING standard period (id 3)...");
   const upcomingId = await createPeriod({
     title: "Q2 2026 Governance",
     body: "Upcoming governance period covering protocol upgrades and ecosystem strategy.",
@@ -420,8 +421,8 @@ async function main() {
   console.log(`App Address:   ${appClient.appAddress}`);
   console.log(`Operator:      ${deployerAddr}`);
   console.log(`Committee:     ${committeeHex.slice(0, 16)}... (${memberAddresses.length} members)`);
-  console.log(`Period #${councilId}:  ACTIVE council election (3 seats, 5 candidates, votes cast)`);
-  console.log(`Period #${endedId}:  ENDED standard vote (3 topics, votes + delegations)`);
+  console.log(`Period #${endedId}:  ENDED council election (3 seats, 5 candidates, votes + delegations)`);
+  console.log(`Period #${activeId}:  ACTIVE council election (3 seats, 5 candidates, votes cast)`);
   console.log(`Period #${upcomingId}:  UPCOMING standard vote (2 topics, starts in 14 days)`);
   console.log(`\nDelegations: B→A (delegated to you), C→A (voted directly).`);
   console.log("Connect as the deployer/operator account below to see the voting record + your votes:");
