@@ -11,7 +11,9 @@ import { fetchPeriod, fetchPeriodBody, fetchTopicBodies, queryKeys } from '@/hoo
 export const Route = createFileRoute('/_app/vote/period/$periodId')({
   loader: async ({ context, params }) => {
     const periodId = Number(params.periodId)
-    if (!Number.isFinite(periodId) || periodId < 0) throw notFound()
+    // A non-integer / negative id (e.g. /vote/period/1.5 or /abc) can never name a
+    // real period — a 404, matching the integer validation the page's hooks enforce.
+    if (!Number.isInteger(periodId) || periodId < 0) throw notFound()
     const reader = await createServerReaderSDK()
 
     // Existence gate. getPeriod can't tell us a period is missing — it swallows
