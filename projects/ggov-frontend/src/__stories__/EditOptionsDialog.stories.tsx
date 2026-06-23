@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { within, userEvent } from '@storybook/test'
+import { within, userEvent } from 'storybook/test'
 import { EditOptionsDialog } from '@/components/pages/manage/EditOptionsDialog'
 import { demoAccounts } from '../../.storybook/mocks/use-wallet-react'
 

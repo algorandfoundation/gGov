@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { within, userEvent } from '@storybook/test'
+import { within, userEvent } from 'storybook/test'
 import { ErrorDialogProvider, useErrorDialog } from '@/hooks/useErrorDialog'
 import { Button } from '@/components/ui/button'
 

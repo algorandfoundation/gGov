@@ -8,7 +8,8 @@ const src = path.resolve(dirname, '../src')
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(ts|tsx)'],
-  addons: ['@storybook/addon-essentials'],
+  // Storybook 9: the former addon-essentials (controls, actions, viewport,
+  // backgrounds, toolbars, …) are built into core, so no addons entry is needed.
   framework: { name: '@storybook/react-vite', options: {} },
   // Serve the app's self-hosted Aeonik/Inter fonts (referenced from /fonts/…).
   staticDirs: ['../public'],
@@ -16,9 +17,10 @@ const config: StorybookConfig = {
     config.plugins = config.plugins ?? []
     // The app processes main.css through Tailwind v4's vite plugin.
     config.plugins.push(tailwindcss())
-    // The project vite.config (react, tailwind, node-polyfills) is merged in by
-    // the Storybook builder; dedupe by plugin name so the app's copies don't
-    // collide with Storybook's own react/tailwind plugins.
+    // The Storybook builder merges the project vite.config. The app's config drops
+    // its TanStack Start / Cloudflare plugins when STORYBOOK=true (see vite.config),
+    // so here we only dedupe by name — the app's react/tailwind copies otherwise
+    // collide with Storybook's own.
     const seen = new Set<string>()
     config.plugins = (config.plugins as Array<{ name?: string }>)
       .flat()
