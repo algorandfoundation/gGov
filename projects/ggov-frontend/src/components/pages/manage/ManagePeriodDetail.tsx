@@ -239,15 +239,15 @@ export default function ManagePeriodDetail() {
                   />
                 </div>
               </div>
-              <Button size="sm" onClick={handleEditPeriod} disabled={editPeriodMutation.isPending} aria-busy={editPeriodMutation.isPending}>
-                <TxButtonContent
-                  pending={editPeriodMutation.isPending}
-                  success={editPeriodMutation.isSuccess}
-                  idleLabel="Save changes"
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
+              <TxButton
+                size="sm"
+                onClick={handleEditPeriod}
+                pending={editPeriodMutation.isPending}
+                success={editPeriodMutation.isSuccess}
+                idleLabel="Save changes"
+                pendingLabel="Saving…"
+                confirmedLabel="Saved"
+              />
             </div>
           ) : (
             <div className="text-sm">
@@ -288,15 +288,15 @@ export default function ManagePeriodDetail() {
                   placeholder="Period description..."
                 />
               </div>
-              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending} aria-busy={uploadPeriodBodyMutation.isPending}>
-                <TxButtonContent
-                  pending={uploadPeriodBodyMutation.isPending}
-                  success={uploadPeriodBodyMutation.isSuccess}
-                  idleLabel={periodBody ? 'Update body' : 'Add body'}
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
+              <TxButton
+                size="sm"
+                onClick={handleSavePeriodBody}
+                pending={uploadPeriodBodyMutation.isPending}
+                success={uploadPeriodBodyMutation.isSuccess}
+                idleLabel={periodBody ? 'Update body' : 'Add body'}
+                pendingLabel="Saving…"
+                confirmedLabel="Saved"
+              />
             </>
           ) : periodBody && (
             <div>

@@ -120,7 +120,7 @@ function EmptyPanel({ children, className }: { children: ReactNode; className?: 
 }
 
 const ORANGE_BTN =
-  "text-[#C24A1E] hover:bg-algo-orange/10 disabled:opacity-50 dark:text-algo-orange";
+  "text-destructive-strong hover:bg-destructive/10 disabled:opacity-50";
 
 /** Status pill on the delegation card header. */
 function DelegationBadge({ delegating }: { delegating: boolean }) {
