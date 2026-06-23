@@ -1,16 +1,25 @@
 /**
- * Deploy GGov contract to localnet and create sample governance data.
+ * Deploy GGov contract to localnet and seed a full active governance session.
  *
  * Usage (from repo root):
- *   npx tsx projects/contracts/smart_contracts/ggov/deploy-sample.ts
+ *   npx tsx projects/ggov-frontend/scripts/deploy-sample-data.ts
  *   OR from ggov-frontend:
  *   npx tsx scripts/deploy-sample-data.ts
  *
- * Requires: algokit localnet running, SDKs built
+ * Requires: algokit localnet running, SDKs built (ggov-sdk dist).
  *
- * This script resets localnet first, then uses the existing KMD default wallet
- * accounts as committee members so they persist and can vote via the frontend.
- * Random transaction notes are used to deduplicate identical calls (no sleeps needed).
+ * Resets localnet, then uses the KMD default wallet accounts as committee members
+ * (so they persist and can connect + vote via the frontend). Seeds three periods —
+ * an ACTIVE council election, an ENDED standard vote, and an UPCOMING vote — with
+ * votes and delegations cast so the results pages, the live council standings, and
+ * the multi-account voting record are all populated. Random transaction notes
+ * deduplicate otherwise-identical calls (no sleeps needed). Finally rewrites the
+ * frontend .env with the new registry app id.
+ *
+ * Delegation story (connect as the deployer/operator to see it on the ended period):
+ *   - Member B delegates to A (deployer); A casts B's ballot  → "Delegated to you"
+ *   - Member C delegates to A but votes directly (locked)     → "Voted directly"
+ *   - A votes its own ballot                                  → "Your account"
  */
 
 import { createRequire } from "node:module";
@@ -123,11 +132,11 @@ async function main() {
   // Register deployer signer from KMD
   await registerKmdAccount(kmd, walletHandle, deployerAddr, algorand);
 
-  // Fund deployer
+  // Fund deployer (pays registry + 3 period MBRs, vote-record boxes, and its own votes)
   await algorand.send.payment({
     sender: dispenser.addr,
     receiver: deployerAddr,
-    amount: (100 as any).algo(),
+    amount: (300 as any).algo(),
   });
 
   // ── Deploy GGovRegistry contract ──────────────────────────────────
@@ -153,31 +162,36 @@ async function main() {
   console.log(`App address: ${appClient.appAddress}`);
   console.log("Operator set to deployer");
 
-  // ── Generate 5 new KMD accounts for committee members ──────────────
+  // ── Generate 5 external committee accounts (B..F) ──────────────────
+  // These are standalone accounts (NOT added to the KMD wallet) so that, when the
+  // dev connects the deployer A in the frontend, the accounts that delegate to A
+  // (B, C) read as external delegators — "Delegated to you" / "Voted directly" —
+  // rather than the wallet's own accounts. Their signers are auto-registered.
 
-  console.log("\nGenerating 5 new KMD accounts...");
+  console.log("\nGenerating 5 external committee accounts (B..F)...");
   const generatedAddresses: string[] = [];
   for (let i = 0; i < 5; i++) {
-    const addr = await generateKmdAccount(kmd, walletHandle);
-    generatedAddresses.push(addr);
-    console.log(`  Generated account ${i + 1}: ${addr.slice(0, 12)}...`);
+    const acct = algorand.account.random();
+    generatedAddresses.push(acct.addr.toString());
+    console.log(`  Generated account ${i + 1}: ${acct.addr.toString().slice(0, 12)}...`);
   }
 
-  // Use the deployer plus the 5 generated accounts as committee members
+  // Deployer (A, in the KMD wallet) + 5 external accounts (B..F) as committee
+  // members, with distinct power so council scores spread and the cutoff is clear.
   const memberAddresses = [deployerAddr, ...generatedAddresses];
-  const memberVotes = [200, 100, 80, 60, 40, 20];
+  const memberVotes = [200, 150, 120, 90, 60, 30];
   console.log(`\nUsing ${memberAddresses.length} accounts as committee members:`);
 
   for (let i = 0; i < memberAddresses.length; i++) {
     const addr = memberAddresses[i];
-    const role = addr === deployerAddr ? " (admin/operator)" : "";
-    // Deployer signer already registered; register + fund others
+    const role = addr === deployerAddr ? " (admin/operator, KMD wallet)" : " (external)";
+    // Fund every non-deployer member enough to vote (a multi-topic vote must clear
+    // the ~643_210 µAlgo opcode-budget pre-sim bar).
     if (addr !== deployerAddr) {
-      await registerKmdAccount(kmd, walletHandle, addr, algorand);
       await algorand.send.payment({
         sender: dispenser.addr,
         receiver: addr,
-        amount: (10 as any).algo(),
+        amount: (20 as any).algo(),
         note: randomNote(),
       });
     }
@@ -204,146 +218,195 @@ async function main() {
     .join("");
   console.log(`Committee ID: ${committeeHex}`);
 
-  // Release KMD wallet handle
+  // Release KMD wallet handle (signers are already registered with AlgorandClient).
   await kmd.releaseWalletHandle(walletHandle);
 
-  // ── Create an ACTIVE voting period ────────────────────────────────
+  // ── Session helpers ────────────────────────────────────────────────
 
-  console.log("\nCreating active voting period...");
   const now = BigInt(Math.floor(Date.now() / 1000));
+  const [A, B, C, D, E, F] = memberAddresses;
+  const [pA, pB, pC, pD, pE, pF] = memberVotes;
 
-  // First create with future start so we can add topics
-  const periodId = await sdk.registry.addPeriod({
-    committeeId,
-    votingStart: now + 10000n,
-    votingEnd: now + 20000n,
-  });
-  console.log(`Period #${periodId} created`);
+  // Per-voter SDK (writer = that account); reuse the main `sdk` for the deployer A
+  // (used both for A's own votes and for A casting a delegator's ballot).
+  const voterSdk = (addr: string) =>
+    addr === deployerAddr
+      ? sdk
+      : new GGovSDK({
+          algorand,
+          registryAppId: appId,
+          writerAccount: { sender: addr, signer: algorand.account.getSigner(addr) },
+        });
 
-  // Upload period body
-  console.log("Uploading period body...");
-  await sdk.uploadPeriodBody({
-    periodId: periodId!,
-    body: {
-      title: "Q1 2026 Governance",
-      body: "Vote on key proposals for the Q1 2026 governance period. Topics include staking rewards, community grants, and governance duration.",
-    },
-  });
+  // Create a period: future window first (so topics can be added), upload body
+  // (with electThresh for a council election), add topics, then set the real
+  // window and mark ready.
+  async function createPeriod(opts: {
+    title: string;
+    body: string;
+    electThresh?: number;
+    topics: { title: string; body: string; options?: string[] }[];
+    votingStart: bigint;
+    votingEnd: bigint;
+  }): Promise<bigint> {
+    const periodId = (await sdk.registry.addPeriod({
+      committeeId,
+      votingStart: now + 100000n,
+      votingEnd: now + 200000n,
+    })) as bigint;
+    await sdk.uploadPeriodBody({
+      periodId,
+      body: {
+        title: opts.title,
+        body: opts.body,
+        ...(opts.electThresh !== undefined ? { electThresh: opts.electThresh } : {}),
+      },
+    });
+    for (const t of opts.topics) {
+      const topicIndex = (await sdk.addTopic({
+        periodId,
+        options: t.options ?? ["Yes", "No", "Abstain"],
+        note: randomNote(),
+      })) as bigint;
+      await sdk.uploadTopicBody({ periodId, topicIndex, body: { title: t.title, body: t.body } });
+    }
+    await sdk.editPeriod({ periodId, committeeId, votingStart: opts.votingStart, votingEnd: opts.votingEnd });
+    await sdk.setReady({ periodId, ready: true });
+    return periodId;
+  }
 
-  // Add topics (all Yes/No/Abstain — random notes prevent duplicate txn IDs)
-  console.log("Adding topics...");
+  // Fund a period app for per-voter vote-record boxes (3 ALGO covers our committee).
+  async function fundPeriodForVotes(periodId: bigint) {
+    const periodAppId = await sdk.getPeriodAppId(periodId);
+    const periodAppAddr = algosdk.getApplicationAddress(periodAppId).toString();
+    await algorand.send.payment({
+      sender: deployerAddr,
+      receiver: periodAppAddr,
+      amount: (3 as any).algo(),
+      note: randomNote(),
+    });
+  }
 
-  const topic1Id = await sdk.addTopic({
-    periodId: periodId!,
-    options: ["Yes", "No", "Abstain"],
-    note: randomNote(),
-  });
-  await sdk.uploadTopicBody({
-    periodId: periodId!,
-    topicIndex: topic1Id!,
-    body: {
-      title: "Increase Staking Rewards",
-      body: "Proposal to increase staking rewards from 5% to 7% APY to incentivize long-term participation in governance.",
-    },
-  });
-  console.log("  Topic 1: Increase Staking Rewards");
+  // One-hot ballot row: full voting power on the chosen option. Y→0, N→1, A→2.
+  const oneHot = (choice: string, power: number): number[] => {
+    const idx = choice === "Y" ? 0 : choice === "N" ? 1 : 2;
+    return [0, 1, 2].map((i) => (i === idx ? power : 0));
+  };
 
-  const topic2Id = await sdk.addTopic({
-    periodId: periodId!,
-    options: ["Yes", "No", "Abstain"],
-    note: randomNote(),
-  });
-  await sdk.uploadTopicBody({
-    periodId: periodId!,
-    topicIndex: topic2Id!,
-    body: {
-      title: "Community Grant Proposal #42",
-      body: "Fund the open-source DeFi analytics dashboard project with 50,000 ALGO from the community treasury.",
-    },
-  });
-  console.log("  Topic 2: Community Grant Proposal #42");
+  // Cast `choices` (one per topic) for `voter` with `power`. `castBy` is the signer:
+  // the voter itself (direct) or its delegatee (delegated vote).
+  async function castBallot(periodId: bigint, voter: string, power: number, choices: string[], castBy: string) {
+    const topicVotes = choices.map((c) => oneHot(c, power));
+    await voterSdk(castBy).vote({ periodId, voterAccount: voter, topicVotes, note: randomNote() });
+  }
 
-  const topic3Id = await sdk.addTopic({
-    periodId: periodId!,
-    options: ["Yes", "No", "Abstain"],
-    note: randomNote(),
-  });
-  await sdk.uploadTopicBody({
-    periodId: periodId!,
-    topicIndex: topic3Id!,
-    body: {
-      title: "Extend Governance Period to 6 Months",
-      body: "Change the governance period duration from 3 months to 6 months to reduce voter fatigue and allow more time for deliberation.",
-    },
-  });
-  console.log("  Topic 3: Extend Governance Period to 6 Months");
+  // Global (registry-level) voting-power delegation: `delegator` → `delegatee`.
+  async function delegate(delegator: string, delegatee: string) {
+    await voterSdk(delegator).registry.setVotingAccount({ votingAddress: delegatee });
+  }
 
-  // Now edit period to make it active (voting start in the past)
-  await sdk.editPeriod({
-    periodId: periodId!,
-    committeeId,
-    votingStart: now - 3600n, // started 1 hour ago
-    votingEnd: now + 86400n * 7n, // ends in 7 days
-  });
-  console.log("Period is now ACTIVE (voting open for 7 days)");
+  // ── Delegations (global; apply to every period) ────────────────────
+  console.log("\nSetting delegations: B→A (delegated), C→A (votes directly)...");
+  await delegate(B, A); // B delegates to A; A will cast B's ballot
+  await delegate(C, A); // C delegates to A but votes directly → locked ("Voted directly")
 
-  // ── Create an UPCOMING period ─────────────────────────────────────
+  // ── 1) ACTIVE council election ─────────────────────────────────────
+  console.log("\nCreating ACTIVE council election (3 seats, 5 candidates)...");
+  const candidateTopics = [
+    { title: "txnlab.algo", body: "AlgoKit core maintainer and developer tooling." },
+    { title: "folks.algo", body: "Folks Finance lending protocol contributor." },
+    { title: "nodely.algo", body: "Infrastructure, indexer and node operator." },
+    { title: "reti.algo", body: "Reti staking pool collective." },
+    { title: "gard.algo", body: "GARD stablecoin protocol team." },
+  ];
+  const councilId = await createPeriod({
+    title: "gGov Council — Term 2 election",
+    body: "Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 lead for the available seats.",
+    electThresh: 3,
+    topics: candidateTopics,
+    votingStart: now - 3600n,
+    votingEnd: now + 86400n * 7n,
+  });
+  await fundPeriodForVotes(councilId);
+  // Ballots per candidate [c0..c4], designed for a descending ranking with one negative.
+  const councilBallots: Record<string, string[]> = {
+    [A]: ["Y", "Y", "Y", "Y", "N"],
+    [B]: ["Y", "Y", "Y", "Y", "N"],
+    [C]: ["Y", "Y", "Y", "A", "N"],
+    [D]: ["Y", "Y", "Y", "N", "A"],
+    [E]: ["Y", "Y", "N", "N", "A"],
+    [F]: ["Y", "N", "N", "N", "Y"],
+  };
+  await castBallot(councilId, A, pA, councilBallots[A], A);
+  await castBallot(councilId, B, pB, councilBallots[B], A); // delegated: A casts for B
+  await castBallot(councilId, C, pC, councilBallots[C], C); // direct
+  await castBallot(councilId, D, pD, councilBallots[D], D);
+  await castBallot(councilId, E, pE, councilBallots[E], E);
+  await castBallot(councilId, F, pF, councilBallots[F], F);
+  console.log(`Council election period #${councilId} is ACTIVE with votes cast`);
 
-  console.log("\nCreating upcoming voting period...");
-  const period2Id = await sdk.registry.addPeriod({
-    committeeId,
-    votingStart: now + 86400n * 14n, // starts in 14 days
-    votingEnd: now + 86400n * 28n, // ends in 28 days
+  // ── 2) ENDED standard period ───────────────────────────────────────
+  // The contract blocks editPeriod once a period is `ready` (and voting requires
+  // ready), and setReady(false) is blocked once votes exist — so a voted period
+  // can't be backdated. Instead give it a short window, cast within it, then let
+  // wall-clock pass votingEnd; the frontend derives "ended" from votingEnd vs now.
+  console.log("\nCreating ENDED standard period (votes + delegations)...");
+  const endedStart = BigInt(Math.floor(Date.now() / 1000));
+  const endedVotingEnd = endedStart + 90n; // short window: cast within it, then it lapses
+  const endedId = await createPeriod({
+    title: "Q4 2025 Governance",
+    body: "A standard governance vote on protocol parameters. Final tallies recorded on-chain.",
+    topics: [
+      { title: "Increase Staking Rewards", body: "Raise staking rewards from 5% to 7% APY to incentivize participation." },
+      { title: "Community Grant Proposal #42", body: "Fund the open-source DeFi analytics dashboard with 50,000 ALGO." },
+      { title: "Extend Governance Period to 6 Months", body: "Change the period duration from 3 months to 6 months." },
+    ],
+    votingStart: endedStart - 3600n,
+    votingEnd: endedVotingEnd,
   });
-  console.log(`Period #${period2Id} created`);
+  await fundPeriodForVotes(endedId);
+  const endedBallots: Record<string, string[]> = {
+    [A]: ["Y", "Y", "N"],
+    [B]: ["Y", "N", "N"],
+    [C]: ["Y", "Y", "Y"],
+    [D]: ["N", "Y", "N"],
+    [E]: ["A", "N", "A"],
+    [F]: ["Y", "A", "N"],
+  };
+  await castBallot(endedId, A, pA, endedBallots[A], A);
+  await castBallot(endedId, B, pB, endedBallots[B], A); // delegated: A casts for B
+  await castBallot(endedId, C, pC, endedBallots[C], C); // direct (delegation locked)
+  await castBallot(endedId, D, pD, endedBallots[D], D);
+  await castBallot(endedId, E, pE, endedBallots[E], E);
+  await castBallot(endedId, F, pF, endedBallots[F], F);
+  // Wait for the voting window to lapse so the period reads as ENDED in the UI.
+  const waitMs = Number(endedVotingEnd) * 1000 + 2000 - Date.now();
+  if (waitMs > 0) {
+    console.log(`  Waiting ${Math.ceil(waitMs / 1000)}s for the voting window to close...`);
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
+  console.log(`Standard period #${endedId} is ENDED with votes cast`);
 
-  await sdk.uploadPeriodBody({
-    periodId: period2Id!,
-    body: {
-      title: "Q2 2026 Governance",
-      body: "Upcoming governance period covering protocol upgrades and ecosystem strategy.",
-    },
+  // ── 3) UPCOMING standard period ────────────────────────────────────
+  console.log("\nCreating UPCOMING standard period...");
+  const upcomingId = await createPeriod({
+    title: "Q2 2026 Governance",
+    body: "Upcoming governance period covering protocol upgrades and ecosystem strategy.",
+    topics: [
+      { title: "Protocol Upgrade v2.0", body: "Approve deployment of Protocol v2.0 (state proofs, block pipelining)." },
+      { title: "Ecosystem Development Fund", body: "Allocate 1M ALGO to an ecosystem development fund for grants and tooling." },
+    ],
+    votingStart: now + 86400n * 14n,
+    votingEnd: now + 86400n * 28n,
   });
-
-  const topic4Id = await sdk.addTopic({
-    periodId: period2Id!,
-    options: ["Yes", "No", "Abstain"],
-    note: randomNote(),
-  });
-  await sdk.uploadTopicBody({
-    periodId: period2Id!,
-    topicIndex: topic4Id!,
-    body: {
-      title: "Protocol Upgrade v2.0",
-      body: "Approve the deployment of Protocol v2.0 which includes state proof enhancements and improved block pipelining.",
-    },
-  });
-  console.log("  Topic 1: Protocol Upgrade v2.0");
-
-  const topic5Id = await sdk.addTopic({
-    periodId: period2Id!,
-    options: ["Yes", "No", "Abstain"],
-    note: randomNote(),
-  });
-  await sdk.uploadTopicBody({
-    periodId: period2Id!,
-    topicIndex: topic5Id!,
-    body: {
-      title: "Ecosystem Development Fund",
-      body: "Allocate 1M ALGO to an ecosystem development fund for grants, hackathons, and developer tooling.",
-    },
-  });
-  console.log("  Topic 2: Ecosystem Development Fund");
+  console.log(`Standard period #${upcomingId} is UPCOMING (starts in 14 days)`);
 
   // ── Update .env with app ID ───────────────────────────────────────
 
   const envPath = path.resolve(__dirname, "../.env");
   if (fs.existsSync(envPath)) {
     let envContent = fs.readFileSync(envPath, "utf-8");
-    envContent = envContent.replace(
-      /VITE_GGOV_(REGISTRY_)?APP_ID=.*/,
-      `VITE_GGOV_REGISTRY_APP_ID=${appId}`
-    );
+    envContent = envContent.replace(/VITE_GGOV_(REGISTRY_)?APP_ID=.*/, `VITE_GGOV_REGISTRY_APP_ID=${appId}`);
     fs.writeFileSync(envPath, envContent);
     console.log(`\n.env updated: VITE_GGOV_REGISTRY_APP_ID=${appId}`);
   } else {
@@ -356,13 +419,17 @@ async function main() {
   console.log(`App ID:        ${appId}`);
   console.log(`App Address:   ${appClient.appAddress}`);
   console.log(`Operator:      ${deployerAddr}`);
-  console.log(`Committee:     ${committeeHex.slice(0, 16)}...`);
-  console.log(`Period #${periodId}:  ACTIVE (3 topics, voting open)`);
-  console.log(`Period #${period2Id}:  UPCOMING (2 topics, starts in 14 days)`);
-  console.log(`\nKMD committee members (${memberAddresses.length} total, all can vote):`);
+  console.log(`Committee:     ${committeeHex.slice(0, 16)}... (${memberAddresses.length} members)`);
+  console.log(`Period #${councilId}:  ACTIVE council election (3 seats, 5 candidates, votes cast)`);
+  console.log(`Period #${endedId}:  ENDED standard vote (3 topics, votes + delegations)`);
+  console.log(`Period #${upcomingId}:  UPCOMING standard vote (2 topics, starts in 14 days)`);
+  console.log(`\nDelegations: B→A (delegated to you), C→A (voted directly).`);
+  console.log("Connect as the deployer/operator account below to see the voting record + your votes:");
+  console.log(`  ${deployerAddr}`);
+  console.log(`\nCommittee members (${memberAddresses.length} total; A is in the KMD wallet, B..F are external):`);
   memberAddresses.forEach((addr: string, i: number) => {
-    const role = addr === deployerAddr ? " (admin/operator)" : " (generated)";
-    console.log(`  Member${i + 1}: ${addr.slice(0, 12)}... (${memberVotes[i]} votes)${role}`);
+    const label = addr === deployerAddr ? "A (admin/operator, KMD wallet)" : `${String.fromCharCode(65 + i)} (external)`;
+    console.log(`  Member${i + 1}: ${addr.slice(0, 12)}... (${memberVotes[i]} votes) — ${label}`);
   });
   console.log("\nReady! Run: cd projects/ggov-frontend && pnpm dev");
 }
