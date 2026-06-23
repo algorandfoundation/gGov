@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link } from "@tanstack/react-router";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { Shield } from "lucide-react";
 import {
@@ -75,7 +75,7 @@ function ScoringCard({ threshold }: { threshold: number }) {
  * in-progress order); standard results are post-close only.
  */
 export default function VotePeriodResults() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>();
+  const { periodId: pidParam } = useParams({ strict: false });
   const periodId = Number(pidParam);
   const { activeAddress } = useWallet();
 
@@ -123,7 +123,9 @@ export default function VotePeriodResults() {
             Results aren't available yet — voting {status === "upcoming" ? "hasn't opened" : "is still open"}.
           </p>
           <Button asChild variant="outline" className="mt-4">
-            <Link to={`/vote/period/${periodId}`}>Go to the period</Link>
+            <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>
+              Go to the period
+            </Link>
           </Button>
         </div>
       </div>

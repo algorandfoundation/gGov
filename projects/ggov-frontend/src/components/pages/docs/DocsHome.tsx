@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { ArrowRight, Check } from 'lucide-react'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { ContentsRow } from '@/components/pages/docs/components'

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link } from "@tanstack/react-router";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
 import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useVoters, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
@@ -77,7 +77,7 @@ function eligibilityCopy(status: PeriodStatus, canVote: boolean): { self: string
 }
 
 export default function VotePeriodDetail() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>();
+  const { periodId: pidParam } = useParams({ strict: false });
   const periodId = Number(pidParam);
   const { sdk } = useGGovSDK();
   const { activeAddress, activeWallet, activeWalletAccounts } = useWallet();
@@ -428,7 +428,7 @@ export default function VotePeriodDetail() {
       {showResultsLink && (
         <div>
           <Button asChild variant="outline" size="sm">
-            <Link to={`/vote/period/${periodId}/results`}>
+            <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
               {isCouncil && !isEnded ? "View live standings" : "View full results"}
             </Link>
           </Button>

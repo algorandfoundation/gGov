@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useAddTopicMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -11,7 +11,7 @@ import BackButton from '@/components/BackButton'
 import { TxButtonContent } from '@/components/TxButtonContent'
 
 export default function AddTopic() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>()
+  const { periodId: pidParam } = useParams({ strict: false })
   const periodId = Number(pidParam)
   const { sdk } = useGGovSDK()
   const navigate = useNavigate()
@@ -33,7 +33,7 @@ export default function AddTopic() {
       body: body.trim(),
     })
 
-    navigate(`/manage/period/${periodId}`)
+    navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
   }
 
   if (!sdk) {

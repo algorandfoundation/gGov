@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { usePeriods, useCommittees, toBase64Url, type CommitteeOption } from '@/hooks/queries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eyebrow } from '@/components/ui/eyebrow'
@@ -13,7 +13,7 @@ function CommitteeRow({ committee, usedBy }: { committee: CommitteeOption; usedB
   const days = roundsToDays(rounds)
   return (
     <Link
-      to={`/committees/${committee.idBase64Url}`}
+      to="/committees/$committeeId" params={{ committeeId: committee.idBase64Url }}
       className={`${ROW_GRID} border-b border-border px-4.5 py-4 transition-colors hover:bg-muted/40`}
     >
       <div className="min-w-0">

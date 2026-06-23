@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import { formatTimestamp } from "@/utils/time";

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet } from '@tanstack/react-router'
 import Brand from '@/components/Brand'
 import Footer from '@/components/Footer'
 import { Button } from '@/components/ui/button'
