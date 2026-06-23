@@ -18,6 +18,8 @@ import { type AccountVoteRecordProps, type AccountVoteTopic } from "@/components
 import PeriodInfoCard from "@/components/PeriodInfoCard";
 import BackButton from "@/components/BackButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import WalletPicker from "@/components/WalletPicker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -174,6 +176,8 @@ export default function VotePeriodDetail() {
 
   const votingForSelf = selectedVoter === activeAddress;
 
+  // Logged-out "connect a wallet to vote" CTA on active periods opens the picker.
+  const [connectOpen, setConnectOpen] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false);
   // Simple mode: selected option index per topic (-1 = none selected)
   const [simpleSelections, setSimpleSelections] = useState<number[]>([]);
@@ -210,10 +214,8 @@ export default function VotePeriodDetail() {
   const isUpcoming = status === "upcoming";
   const isEnded = status === "ended";
   // Council elections (period body carries `electSeats`) expose their live
-  // standings; the full Period Results page is reachable once ended, or while a
-  // council election is active (in-progress order).
+  // ranked standings while active; any ended period exposes its full results.
   const isCouncil = periodBody?.electSeats !== undefined;
-  const showResultsLink = isEnded || (isCouncil && isActive);
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;
 
@@ -426,14 +428,23 @@ export default function VotePeriodDetail() {
 
       {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
 
-      {showResultsLink && (
+      {isEnded && (
         <div>
           <Button asChild variant="outline" size="sm">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
-              {isCouncil && !isEnded ? "View live standings" : "View full results"}
+              View full results
             </Link>
           </Button>
         </div>
+      )}
+
+      {isActive && !activeAddress && (
+        <Callout variant="info" title="Connect a wallet to vote">
+          <p>Connect your Algorand wallet to cast your vote in this period.</p>
+          <Button className="mt-3" onClick={() => setConnectOpen(true)}>
+            Connect wallet
+          </Button>
+        </Callout>
       )}
 
       {isActive && activeAddress && voterAccounts.length >= 1 && (
@@ -493,6 +504,18 @@ export default function VotePeriodDetail() {
               you cannot vote on their behalf. A delegate cannot override a vote the account holder cast themselves.
             </Callout>
           )}
+        </div>
+      )}
+
+      {/* Active council elections expose their live ranked standings — shown to
+          everyone (connected or not), below the account selector / connect CTA. */}
+      {isActive && isCouncil && (
+        <div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
+              View Ranked Results
+            </Link>
+          </Button>
         </div>
       )}
 
@@ -600,6 +623,16 @@ export default function VotePeriodDetail() {
           />
         </div>
       )}
+
+      <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
+        <DialogContent onClose={() => setConnectOpen(false)} className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect wallet</DialogTitle>
+            <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
+          </DialogHeader>
+          <WalletPicker onConnected={() => setConnectOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
