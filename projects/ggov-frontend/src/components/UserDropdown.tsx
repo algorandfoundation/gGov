@@ -57,8 +57,8 @@ export default function UserDropdown({ small = false }: { small?: boolean }) {
             <div className="truncate text-sm font-semibold text-foreground">{headerLabel}</div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Wallet className="size-3 shrink-0 text-algo-teal" />
-              <span className="truncate">{activeWallet.metadata.name}</span>
-              {nfd && <span className="truncate font-mono">· {ellipsed}</span>}
+              <span className="min-w-0 truncate">{activeWallet.metadata.name}</span>
+              {nfd && <span className="shrink-0 font-mono">· {ellipsed}</span>}
             </div>
           </div>
         </div>
