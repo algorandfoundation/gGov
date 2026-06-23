@@ -10,10 +10,21 @@
   "observability": {
     "enabled": true
   },
+  // Per-network Worker deployments. Network config is baked in at build time
+  // (`vite build --mode testnet|mainnet` inlines the VITE_* vars), so testnet and
+  // mainnet are separate Workers. `wrangler deploy --env testnet|mainnet` targets the
+  // matching name; top-level main/compatibility_*/observability are inherited by each.
+  "env": {
+    "testnet": { "name": "ggov-frontend-testnet" },
+    "mainnet": { "name": "ggov-frontend-mainnet" }
+  },
   // Secrets (NOT committed here — `vars` would be public). Set server-only secrets
-  // via the CLI so they never touch the dashboard or the client bundle:
-  //   pnpm wrangler secret put ALGOD_TOKEN        # production
-  //   echo 'ALGOD_TOKEN=...' >> .dev.vars         # local dev (see .dev.vars.example)
+  // via the CLI so they never touch the dashboard or the client bundle. Secrets are
+  // per-environment, so scope with `--env` to hit the right Worker — a bare
+  // `secret put` targets the unused top-level `ggov-frontend`:
+  //   pnpm wrangler secret put ALGOD_TOKEN --env testnet   # testnet worker
+  //   pnpm wrangler secret put ALGOD_TOKEN --env mainnet   # mainnet worker
+  //   echo 'ALGOD_TOKEN=...' >> .dev.vars                  # local dev (see .dev.vars.example)
   // ALGOD_TOKEN is the privileged Algod token used for SSR chain reads on the
   // Worker (src/lib/serverReaderSdk.ts).
 }

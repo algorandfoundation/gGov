@@ -9,13 +9,16 @@
   "scripts": {
     "dev": "vite",
     "dev:testnet": "vite --mode testnet",
+    "dev:mainnet": "vite --mode mainnet",
     "build": "vite build",
     "build:testnet": "vite build --mode testnet",
+    "build:mainnet": "vite build --mode mainnet",
     "preview": "vite preview",
     "generate-routes": "tsr generate",
     "typecheck": "tsr generate && tsc --noEmit",
     "deploy": "pnpm typecheck && vite build && wrangler deploy",
-    "deploy:testnet": "pnpm typecheck && vite build --mode testnet && wrangler deploy",
+    "deploy:testnet": "pnpm typecheck && vite build --mode testnet && wrangler deploy --env testnet",
+    "deploy:mainnet": "pnpm typecheck && vite build --mode mainnet && wrangler deploy --env mainnet",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
