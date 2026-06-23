@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
-import { formatTimestamp } from "@/utils/time";
 import Address from "@/components/Address";
 import { TxButtonContent } from "@/components/TxButtonContent";
 

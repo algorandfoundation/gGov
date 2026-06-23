@@ -3,7 +3,7 @@
  * @returns Method decorator
  */
 export function requireWriter() {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  return function (_target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = descriptor.value
 
     descriptor.value = function (...args: any[]) {

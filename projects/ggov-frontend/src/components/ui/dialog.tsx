@@ -8,7 +8,7 @@ interface DialogProps {
   children: React.ReactNode
 }
 
-function Dialog({ open, onOpenChange, children }: DialogProps) {
+function Dialog({ open, onOpenChange: _onOpenChange, children }: DialogProps) {
   if (!open) return null
   return <>{children}</>
 }
