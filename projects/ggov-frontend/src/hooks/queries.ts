@@ -1,6 +1,6 @@
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes } from 'ggov-sdk'
+import type { GGovPeriod, BodyJson, PeriodBodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
 
 export interface PeriodWithId {
   id: number
@@ -46,14 +46,7 @@ export function usePeriods() {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.periods,
-    queryFn: async (): Promise<PeriodWithId[]> => {
-      const all = await readerSDK.getAllPeriods()
-      return all.map(({ id, period, summary }) => ({
-        id: Number(id),
-        period,
-        ready: summary.ready,
-      }))
-    },
+    queryFn: () => fetchPeriods(readerSDK),
     // Mutations (add/edit/set-ready) invalidate this key, so a modest staleTime
     // just avoids refetching the list on every navigation back to it.
     staleTime: 60_000,
@@ -64,7 +57,7 @@ export function usePeriod(periodId: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.period(periodId),
-    queryFn: () => readerSDK.getPeriod(BigInt(periodId)),
+    queryFn: () => fetchPeriod(readerSDK, periodId),
   })
 }
 
@@ -106,7 +99,7 @@ export function usePeriodBody(periodId: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.periodBody(periodId),
-    queryFn: () => readerSDK.getPeriodBody(BigInt(periodId)),
+    queryFn: () => fetchPeriodBody(readerSDK, periodId),
     // Body is effectively immutable once uploaded; mutations that change it
     // (useUploadPeriodBodyMutation) invalidate this key, overriding staleTime.
     staleTime: 3_600_000,
@@ -117,13 +110,7 @@ export function useTopicBodies(periodId: number, topicCount: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.topicBodies(periodId),
-    queryFn: async (): Promise<(BodyJson | null)[]> => {
-      return Promise.all(
-        Array.from({ length: topicCount }, (_, i) =>
-          readerSDK.getTopicBody(BigInt(periodId), BigInt(i))
-        )
-      )
-    },
+    queryFn: () => fetchTopicBodies(readerSDK, periodId, topicCount),
     enabled: topicCount > 0,
     // Topic bodies are immutable once uploaded; mutations that change them
     // (add/upload/remove topic) invalidate this key, overriding staleTime.
@@ -295,29 +282,101 @@ export function fromBase64Url(str: string): Uint8Array {
   return bytes
 }
 
+// --- Pure reader fetches, shared by the hooks below and the SSR route loaders ---
+// (src/routes/_app/vote.period.$periodId, committees, committees.$committeeId).
+// A loader seeds the query cache with these under the SAME query keys its page's
+// hooks use, so the page renders server-side data immediately and never diverges
+// from what the client would fetch.
+
+// Ids/counts come from URL params (e.g. /vote/period/:periodId) and flow into
+// BigInt(). Guard first so a malformed route (`/vote/period/abc` → Number() is
+// NaN) fails with a clear error instead of a cryptic `BigInt(NaN)` RangeError —
+// these helpers are shared by both the hooks and the SSR loaders.
+function assertNonNegativeInt(value: number, label: string): void {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`Invalid ${label}: ${value}`)
+  }
+}
+
+export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise<GGovPeriod> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getPeriod(BigInt(periodId))
+}
+
+export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<PeriodBodyJson | null> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getPeriodBody(BigInt(periodId))
+}
+
+export function fetchTopicBodies(
+  readerSDK: GGovReaderSDK,
+  periodId: number,
+  topicCount: number,
+): Promise<(BodyJson | null)[]> {
+  assertNonNegativeInt(periodId, 'period id')
+  assertNonNegativeInt(topicCount, 'topic count')
+  return Promise.all(
+    Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))),
+  )
+}
+
+export async function fetchPeriods(readerSDK: GGovReaderSDK): Promise<PeriodWithId[]> {
+  const all = await readerSDK.getAllPeriods()
+  return all.map(({ id, period, summary }) => ({ id: Number(id), period, ready: summary.ready }))
+}
+
+export async function fetchCommittees(readerSDK: GGovReaderSDK): Promise<CommitteeOption[]> {
+  const ids = await readerSDK.registry.getCommitteeIds()
+  // One batched simulate group instead of a serial metadata read per committee.
+  const metas = await readerSDK.registry.getCommitteesMetadata(ids)
+  const options: CommitteeOption[] = []
+  for (let i = 0; i < ids.length; i++) {
+    const meta = metas[i]
+    if (!meta) continue
+    options.push({
+      id: ids[i],
+      idBase64Url: toBase64Url(ids[i]),
+      periodStart: meta.periodStart,
+      periodEnd: meta.periodEnd,
+      totalMembers: meta.totalMembers,
+      totalVotes: meta.totalVotes,
+    })
+  }
+  options.sort((a, b) => b.periodStart - a.periodStart)
+  return options
+}
+
+export async function fetchCommittee(
+  readerSDK: GGovReaderSDK,
+  idBase64Url: string,
+): Promise<CommitteeOption | null> {
+  const bytes = fromBase64Url(idBase64Url)
+  const meta = await readerSDK.registry.getCommitteeMetadata(bytes)
+  if (!meta) return null
+  return {
+    id: bytes,
+    idBase64Url,
+    periodStart: meta.periodStart,
+    periodEnd: meta.periodEnd,
+    totalMembers: meta.totalMembers,
+    totalVotes: meta.totalVotes,
+  }
+}
+
+export function fetchCommitteeMembers(
+  readerSDK: GGovReaderSDK,
+  idBase64Url: string,
+): Promise<AccountWithVotes[]> {
+  return readerSDK.registry.getCommitteeXGovs(fromBase64Url(idBase64Url))
+}
+
 export function useCommittees() {
   const { readerSDK } = useGGovSDK()
   const queryClient = useQueryClient()
   return useQuery({
     queryKey: queryKeys.committees,
     queryFn: async (): Promise<CommitteeOption[]> => {
-      const ids = await readerSDK.registry.getCommitteeIds()
-      // One batched simulate group instead of a serial metadata read per committee.
-      const metas = await readerSDK.registry.getCommitteesMetadata(ids)
-      const options: CommitteeOption[] = []
-      for (let i = 0; i < ids.length; i++) {
-        const meta = metas[i]
-        if (!meta) continue
-        options.push({
-          id: ids[i],
-          idBase64Url: toBase64Url(ids[i]),
-          periodStart: meta.periodStart,
-          periodEnd: meta.periodEnd,
-          totalMembers: meta.totalMembers,
-          totalVotes: meta.totalVotes,
-        })
-      }
-      options.sort((a, b) => b.periodStart - a.periodStart)
+      const options = await fetchCommittees(readerSDK)
       // Seed the per-committee cache so useCommittee() reads warm data instead of
       // issuing its own metadata fetch.
       for (const option of options) {
@@ -339,19 +398,7 @@ export function useCommittee(idBase64Url: string | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.committee(idBase64Url ?? ''),
-    queryFn: async (): Promise<CommitteeOption | null> => {
-      const bytes = fromBase64Url(idBase64Url!)
-      const meta = await readerSDK.registry.getCommitteeMetadata(bytes)
-      if (!meta) return null
-      return {
-        id: bytes,
-        idBase64Url: idBase64Url!,
-        periodStart: meta.periodStart,
-        periodEnd: meta.periodEnd,
-        totalMembers: meta.totalMembers,
-        totalVotes: meta.totalVotes,
-      }
-    },
+    queryFn: () => fetchCommittee(readerSDK, idBase64Url!),
     enabled: !!idBase64Url,
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
@@ -515,10 +562,7 @@ export function useCommitteeMembers(idBase64Url: string | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.committeeMembers(idBase64Url ?? ''),
-    queryFn: async (): Promise<AccountWithVotes[]> => {
-      const bytes = fromBase64Url(idBase64Url!)
-      return readerSDK.registry.getCommitteeXGovs(bytes)
-    },
+    queryFn: () => fetchCommitteeMembers(readerSDK, idBase64Url!),
     enabled: !!idBase64Url,
     // A committee's membership is fixed once the committee exists.
     staleTime: 600_000,

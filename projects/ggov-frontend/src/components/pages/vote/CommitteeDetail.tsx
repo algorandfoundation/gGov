@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams } from '@tanstack/react-router'
 import { ChevronDown, Clock, Download } from 'lucide-react'
 import type { AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
 import {
@@ -222,7 +222,7 @@ function MemberRow({
   const ellipsed = ellipseAddress(address, 6)
   return (
     <Link
-      to={`/account/${address}`}
+      to="/account/$address" params={{ address }}
       className={cn(LEADERBOARD_GRID, 'border-b border-border px-4.5 py-3 transition-colors last:border-0 hover:bg-muted/40')}
     >
       <span
@@ -259,7 +259,7 @@ function MemberRow({
 }
 
 export default function CommitteeDetail() {
-  const { committeeId } = useParams<{ committeeId: string }>()
+  const { committeeId } = useParams({ strict: false })
   // Summary resolves from its own committee query (warm if the list loaded first).
   const { data: committee, isLoading: loadingCommittee } = useCommittee(committeeId)
   // Members resolve independently, so the table renders even when the committee

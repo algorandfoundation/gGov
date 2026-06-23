@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import {
   Sparkles,
   Network,
@@ -353,7 +353,7 @@ export default function Home() {
             </div>
             {displayPeriod && (
               <Button asChild variant="secondary" size="sm">
-                <Link to={`/vote/period/${displayPeriod.id}`}>View period</Link>
+                <Link to="/vote/period/$periodId" params={{ periodId: String(displayPeriod.id) }}>View period</Link>
               </Button>
             )}
           </div>

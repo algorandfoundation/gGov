@@ -1,0 +1,14 @@
+# Cloudflare Worker secrets for LOCAL development (`pnpm dev` / `wrangler dev`).
+# Copy this file to `.dev.vars` (gitignored) and fill in real values.
+# @cloudflare/vite-plugin loads `.dev.vars` into the Worker env for `vite dev`.
+#
+# These are server-only Worker secrets: NOT prefixed `VITE_`, so Vite never
+# inlines them into the client bundle. They are read only on the Worker, behind
+# the TanStack Start compiler (see src/lib/serverReaderSdk.ts).
+#
+# For production, set the secret via the CLI (not the Cloudflare dashboard):
+#   pnpm wrangler secret put ALGOD_TOKEN
+#   pnpm wrangler secret put ALGOD_TOKEN --env testnet   # if using named envs
+
+# Privileged Algod API token used for SSR/loader chain reads on the Worker.
+ALGOD_TOKEN=
