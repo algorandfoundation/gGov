@@ -15,7 +15,10 @@ export const queryKeys = {
   period: (id: number) => ['period', id] as const,
   periodAppId: (id: number) => ['periodAppId', id] as const,
   periodBody: (id: number) => ['periodBody', id] as const,
-  topicBodies: (id: number) => ['topicBodies', id] as const,
+  // `count` is part of the key so the query refetches when the topic count grows
+  // (adding a topic). Invalidations pass no count and prefix-match every count.
+  topicBodies: (id: number, count?: number) =>
+    count === undefined ? (['topicBodies', id] as const) : (['topicBodies', id, count] as const),
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
   canVoteMany: (periodId: number, key: string) => ['canVoteMany', periodId, key] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
@@ -113,7 +116,7 @@ export function usePeriodBody(periodId: number) {
 export function useTopicBodies(periodId: number, topicCount: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
-    queryKey: queryKeys.topicBodies(periodId),
+    queryKey: queryKeys.topicBodies(periodId, topicCount),
     queryFn: () => fetchTopicBodies(readerSDK, periodId, topicCount),
     enabled: topicCount > 0,
     // Topic bodies are immutable once uploaded; mutations that change them
