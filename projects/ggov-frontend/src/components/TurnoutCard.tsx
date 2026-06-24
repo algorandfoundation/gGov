@@ -3,7 +3,11 @@ import { formatCompact } from "@/utils/format";
 import { cn } from "@/lib/utils";
 
 interface TurnoutCardProps {
-  /** Voting power that voted (period tally sum) and the eligible committee power. */
+  /**
+   * Voting power that voted: the max per-topic tally sum, not a sum across topics —
+   * each topic re-counts the same power, so summing would multiply turnout by the
+   * topic count. The denominator below is the eligible committee power.
+   */
   votesCast: number;
   totalPower: number;
   /** Distinct governors that voted and the eligible governor count. */

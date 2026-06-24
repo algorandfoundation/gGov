@@ -23,12 +23,15 @@ export default function VotingRecordSection({ activeAddress, records, topicCount
   const ownVoted = records.some((r) => r.role === "self");
 
   const topicsLabel = `${topicCount} topic${topicCount === 1 ? "" : "s"}`;
+  // `recordTotal` is the combined voting power exercised — not a count of ballots
+  // summed across topics (each topic re-spends the same power), so frame it as a weight.
+  const weightLabel = n === 1 ? "a weight of" : "a combined weight of";
   const title = n === 1 ? "You voted in this period" : `You voted with ${n} accounts in this period`;
   const detail = ownVoted
     ? delegatedVoted > 0
-      ? `Your account plus ${delegatedVoted} delegated to you cast ${recordTotal.toLocaleString()} votes across ${topicsLabel}`
-      : `Your account cast ${recordTotal.toLocaleString()} votes across ${topicsLabel}`
-    : `${delegatedVoted} account${delegatedVoted === 1 ? "" : "s"} delegated to you cast ${recordTotal.toLocaleString()} votes across ${topicsLabel}`;
+      ? `Your account plus ${delegatedVoted} delegated to you voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`
+      : `Your account voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`
+    : `${delegatedVoted} account${delegatedVoted === 1 ? "" : "s"} delegated to you voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`;
 
   return (
     <div className="space-y-6">
