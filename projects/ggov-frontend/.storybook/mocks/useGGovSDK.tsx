@@ -14,7 +14,12 @@ import { useWallet } from './use-wallet-react'
 const inertStub = new Proxy(
   {},
   {
-    get() {
+    get(_target, prop) {
+      // Don't intercept `then` (or any symbol key): otherwise the stub is a
+      // thenable and `await inertStub` / `Promise.resolve(inertStub)` would call
+      // `.then()` — which never settles — and hang if the stub ever leaks into
+      // async code. Every other access is a harmless no-op async function.
+      if (prop === 'then' || typeof prop === 'symbol') return undefined
       return () => Promise.resolve(undefined)
     },
   },

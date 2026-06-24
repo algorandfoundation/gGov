@@ -194,7 +194,15 @@ export function useVoteStatuses(periodId: number, accounts: string[]): Record<st
   const s = useMockScenario()
   const out: Record<string, boolean | undefined> = {}
   for (const account of accounts) {
-    const rec = s.voteRecords[pakey(periodId, account)]
+    const key = pakey(periodId, account)
+    // An account the scenario never defines is unknown → `undefined` (matches the
+    // real hook while the record is still loading). An explicit `null` record is a
+    // resolved "eligible but didn't vote" → `false`.
+    if (!(key in s.voteRecords)) {
+      out[account] = undefined
+      continue
+    }
+    const rec = s.voteRecords[key]
     out[account] = rec ? rec.topicVotes != null : false
   }
   return out
