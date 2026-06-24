@@ -243,8 +243,8 @@ export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 ]
 
 /**
- * Election ballot: one topic PER candidate, each a For/Against/Abstain vote.
- * The results page derives a net score (For − Against) per candidate via
+ * Election ballot: one topic PER candidate, each a Yes/No/Abstain vote.
+ * The results page derives a net score (Yes − No) per candidate via
  * `tallyBallot` and ranks them; `electSeats` is the seat cutoff. Carries tallies so
  * the (live or final) ranked results render. Candidate name = the topic-body title.
  */
