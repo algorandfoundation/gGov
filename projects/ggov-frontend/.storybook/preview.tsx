@@ -21,6 +21,8 @@ const preview: Preview = {
     // dropdown here — just the global definition + its default (in initialGlobals).
     theme: { description: 'Color theme (Algorand light/dark)' },
     auth: { description: 'Wallet connection state' },
+    // `election` is also a two-option global → click-to-toggle button in manager.tsx.
+    election: { description: 'Period type (standard vs election)' },
     // Reusable period-phase toggle: drives the default single-period scenario for
     // any story without a pinned `parameters.scenario` (multi-period pages pin one).
     periodPhase: {
@@ -37,17 +39,25 @@ const preview: Preview = {
       },
     },
   },
-  initialGlobals: { theme: 'light', auth: 'connected', periodPhase: 'active' },
+  initialGlobals: { theme: 'light', auth: 'connected', periodPhase: 'active', election: 'standard' },
   parameters: {
     layout: 'fullscreen',
     // We paint our own themed surface, so Storybook's backgrounds addon is noise.
     backgrounds: { disable: true },
     controls: { expanded: true },
     // Sidebar order: Pages first, then Components, then the misc dialogs, then the
-    // rest. Within-group order is left to the (numeric-prefixed) titles.
+    // rest. The nested array pins the page order explicitly — within a group
+    // Storybook otherwise falls back to file-load order (which put Vote index after
+    // Vote detail). Leaf stories keep their definition order (playground first).
     options: {
       storySort: {
-        order: ['PAGES', 'COMPONENTS', 'MISC_DIALOGS', '*'],
+        order: [
+          'PAGES',
+          ['1. Landing page', '2. Vote index', '3. Vote detail', '4. Vote results'],
+          'COMPONENTS',
+          'MISC_DIALOGS',
+          '*',
+        ],
       },
     },
   },
@@ -70,6 +80,7 @@ const preview: Preview = {
 
       const auth = context.globals.auth === 'disconnected' ? 'disconnected' : 'connected'
       const phase = context.globals.periodPhase ?? 'active'
+      const election = context.globals.election === 'election'
       const pinnedWallet = context.parameters.wallet as MockWalletConfig | undefined
       const wallet = pinnedWallet ?? walletFromAuth(auth)
       // Remount the wallet provider when the auth global flips so its internal
@@ -80,8 +91,10 @@ const preview: Preview = {
       // default single-period scenario. Memoised so result objects stay referentially
       // stable across renders (the page effects depend on some of them).
       const scenario = useMemo(
-        () => (context.parameters.scenario as MockScenario | undefined) ?? defaultScenarioFromGlobals(auth, phase),
-        [context.parameters.scenario, auth, phase],
+        () =>
+          (context.parameters.scenario as MockScenario | undefined) ??
+          defaultScenarioFromGlobals(auth, phase, election),
+        [context.parameters.scenario, auth, phase, election],
       )
       const routeParams = (context.parameters.routeParams ?? {}) as Record<string, string>
 
