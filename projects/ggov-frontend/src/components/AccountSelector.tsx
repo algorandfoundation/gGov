@@ -63,9 +63,13 @@ function isDisabled(item: AccountSelectorItem, delegated?: boolean): boolean {
   return status === "ineligible" || status === "locked";
 }
 
-/** Accounts with no voting power for this period are hidden from the list entirely. */
+/**
+ * Accounts with no voting power this period are hidden entirely. An account that
+ * still has voting power but can't vote (e.g. a delegator who voted directly, so
+ * its delegate can't override) is kept — that standing is relevant, shown dimmed.
+ */
 function isHidden(item: AccountSelectorItem, delegated?: boolean): boolean {
-  return statusOf(item, delegated) === "ineligible";
+  return statusOf(item, delegated) === "ineligible" && (item.votingPower ?? 0n) <= 0n;
 }
 
 /** Two-line identity: NFD name (or ellipsed address) over the mono address. */
@@ -167,8 +171,9 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
  * Account selection: each connected/delegated account is a radio card showing an
  * avatar, identity, status and voting power. Accounts that delegated their power
  * to one of your accounts are nested beneath that delegatee, indented with a "↪"
- * branch. Ineligible accounts (no voting power this period) are hidden; a locked
- * account (voted directly, delegate can't override) is shown dimmed.
+ * branch. Accounts with no voting power this period are hidden; ones that still
+ * have voting power but can't vote (locked, or a delegator who voted directly)
+ * are shown dimmed.
  */
 export default function AccountSelector({
   accounts,
