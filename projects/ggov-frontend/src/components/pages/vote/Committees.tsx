@@ -5,7 +5,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import { roundsToDays } from "@/utils/time";
-import { ArrowRight } from "lucide-react";
 
 const ROW_GRID = "grid grid-cols-[1fr_88px_128px] items-center gap-4";
 

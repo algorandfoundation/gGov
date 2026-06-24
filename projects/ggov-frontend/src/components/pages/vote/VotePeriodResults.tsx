@@ -109,7 +109,7 @@ export default function VotePeriodResults() {
   const header = (
     <div className="flex items-center gap-3">
       <BackButton to={`/vote/period/${periodId}`} />
-      <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
+      <h1 className="text-2xl font-bold">{periodBody?.title ?? `Period ${periodId}`}</h1>
       <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
     </div>
   );
