@@ -102,7 +102,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="mx-auto w-full max-w-[760px] rounded-xl border border-border bg-muted/40 p-7">
+      <section className="mx-auto w-full max-w-[760px] rounded-xl bg-muted/40 p-7">
         <h2 className="mb-4 text-center font-display text-base font-bold">How Governance works</h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {STEPS.map((s) => (
@@ -120,14 +120,16 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-[760px]">
-        <div className="flex items-center gap-[18px] border-t border-border py-4">
-          <History className="size-[22px] shrink-0 text-muted-foreground" />
-          <div className="min-w-0 flex-1">
-            <div className="font-display text-[15px] font-bold">Periods 1–15 · Legacy governance</div>
-            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-              The 2021–2025 ALGO-commitment rounds ran on a separate portal. Results and historical votes remain available there.
-            </p>
+      <section className="mx-auto w-full max-w-[760px] pb-10">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-[18px]">
+          <div className="flex w-full items-center gap-[18px] sm:flex-1">
+            <History className="size-[22px] shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <div className="font-display text-[15px] font-bold">Periods 1–15 · Legacy governance</div>
+              <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
+                The 2021–2025 ALGO-commitment rounds ran on a separate portal. Results and historical votes remain available there.
+              </p>
+            </div>
           </div>
           <a
             href="https://governance.algorand.foundation/"
