@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { Button } from '@/components/ui/button'
-import ConnectWallet from '@/components/ConnectWallet'
 import { PeriodStatusTag } from '@/components/vote/PeriodRow'
 import { usePeriodBody, useCommittee, useXGovVotingPowers, useProducerRank, toBase64Url } from '@/hooks/queries'
 import { periodTurnoutPct } from '@/lib/turnout'
@@ -130,32 +129,26 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
 
       <div className="mt-7 flex flex-col items-center gap-3.5">
         {status === 'active' ? (
-          activeAddress ? (
-            <>
-              <div className="w-full max-w-[280px]">
-                <Button asChild size="lg" className="w-full">
-                  <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>
-                    Cast your vote
-                  </Link>
-                </Button>
-              </div>
-              {power != null && power > 0 && (
-                <div className="text-[13px] text-muted-foreground">
-                  Your weight:{' '}
-                  <strong className="font-bold text-algo-blue dark:text-algo-teal">{power.toLocaleString()}</strong>{' '}
-                  votes
-                  {rank ? ` · top ${rank.topPercentile}% of producers` : ''}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="w-full max-w-[280px]">
-                <ConnectWallet />
-              </div>
-              <div className="text-[13px] text-muted-foreground">Connect a wallet to see your voting weight</div>
-            </>
-          )
+          <>
+            <div className="w-full max-w-[280px]">
+              <Button asChild size="lg" className="w-full">
+                <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>
+                  Cast your vote
+                </Link>
+              </Button>
+            </div>
+            {activeAddress
+              ? power != null &&
+                power > 0 && (
+                  <div className="text-[13px] text-muted-foreground">
+                    Your weight:{' '}
+                    <strong className="font-bold text-algo-blue dark:text-algo-teal">{power.toLocaleString()}</strong>{' '}
+                    votes
+                    {rank ? ` · top ${rank.topPercentile}% of producers` : ''}
+                  </div>
+                )
+              : null}
+          </>
         ) : (
           <div className="w-full max-w-[280px]">
             <Button asChild size="lg" variant={status === 'ended' ? 'outline' : 'default'} className="w-full">

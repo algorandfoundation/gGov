@@ -31,9 +31,7 @@ export default function TopBarAccount({ fullWidth = false, small = false }: { fu
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>
-        Connect wallet
-      </Button>
+      <Button onClick={() => setOpen(true)}>Connect wallet</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent onClose={() => setOpen(false)} className="max-w-md">
           <DialogHeader>

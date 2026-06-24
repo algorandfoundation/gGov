@@ -136,8 +136,11 @@ function DesktopTopBar() {
   const navItems = useNavItems()
 
   return (
-    <header className="hidden border-b border-border md:block">
-      <div className="mx-auto flex h-[60px] w-full max-w-[1232px] items-center justify-between px-7">
+    // Mirror the landing header chrome (LandingLayout) — same px-4 py-4 padding and
+    // max-w-6xl container, no bottom border — so the brand lockup stays put and the
+    // header doesn't jump when navigating between the landing page and the app.
+    <header className="hidden px-4 py-4 md:block">
+      <div className="mx-auto flex max-w-6xl items-center justify-between">
         <div className="flex items-center gap-3">
           <Brand />
           <RefreshButton />
@@ -169,7 +172,7 @@ function DesktopTopBar() {
 /** Compact bar for mobile: hamburger (opens drawer) + brand lockup + account control. */
 function MobileTopBar() {
   return (
-    <header className="flex h-14 items-center justify-between gap-2 border-b border-border px-4 md:hidden">
+    <header className="flex h-14 items-center justify-between gap-2 px-4 md:hidden">
       <div className="flex items-center gap-2">
         <SidebarTrigger aria-label="Open menu" />
         <Brand />
