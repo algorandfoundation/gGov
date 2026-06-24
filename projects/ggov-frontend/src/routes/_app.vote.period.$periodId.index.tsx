@@ -45,7 +45,7 @@ export const Route = createFileRoute('/_app/vote/period/$periodId/')({
         }),
         period.topics.length > 0
           ? context.queryClient.ensureQueryData({
-              queryKey: queryKeys.topicBodies(periodId),
+              queryKey: queryKeys.topicBodies(periodId, period.topics.length),
               queryFn: () => fetchTopicBodies(reader, periodId, period.topics.length),
             })
           : Promise.resolve(),
