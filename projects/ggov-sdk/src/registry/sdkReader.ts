@@ -273,7 +273,7 @@ export class GGovRegistryReaderSDK {
     return this._getCommitteesMetadataChunked(committeeIds.map((id) => committeeIdToRaw(id)))
   }
 
-  @chunked(128)
+  @chunked(126)
   private async _getCommitteesMetadataChunked(committeeIds: Uint8Array[]): Promise<(CommitteeMetadata | null)[]> {
     if (committeeIds.length === 0) return []
     const committeeIdChunks = chunk(committeeIds, 63)
@@ -397,7 +397,7 @@ export class GGovRegistryReaderSDK {
     return new Map(accounts.map((account, index) => [account, gGovAccounts[index]]))
   }
 
-  @chunked(128)
+  @chunked(126)
   private async _getGGovAccountsChunked(accounts: string[]): Promise<GGovAccount[]> {
     if (accounts.length === 0) return []
     const accountArgs = chunk(accounts, 63)
@@ -470,7 +470,7 @@ export class GGovRegistryReaderSDK {
     )
   }
 
-  @chunked(128)
+  @chunked(126)
   @wrapErrors()
   async getDelegations(accounts: string[]): Promise<string[]> {
     if (accounts.length === 0) return []

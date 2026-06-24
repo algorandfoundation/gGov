@@ -268,6 +268,8 @@ export class GGovSDK extends GGovReaderSDK {
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup()
       for (const { index, data: chunkData } of group) {
+        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         builder = await this.makeUploadPeriodBodyPartialTxns({
           periodId,
           startOffset: index * BODY_CHUNK_BYTES,
@@ -305,6 +307,8 @@ export class GGovSDK extends GGovReaderSDK {
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup()
       for (const { index, data: chunkData } of group) {
+        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         builder = await this.makeUploadTopicBodyPartialTxns({
           periodId,
           topicIndex,

@@ -38,7 +38,7 @@ function parseElectSeats(): number | undefined {
   return n
 }
 
-;(async () => {
+void (async () => {
   const file = JSON.parse(readFileSync(process.argv[2], 'utf-8'))
   const electSeats = parseElectSeats()
   const isElection = electSeats !== undefined

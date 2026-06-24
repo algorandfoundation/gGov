@@ -27,7 +27,7 @@ import { getAlgorand, resolveRegistryAppId } from './env'
 /** Refuse to delete an app whose available balance is over this threshold. */
 const MAX_AVAILABLE_BALANCE = algo(10).microAlgo
 
-;(async () => {
+void (async () => {
   const appIdArg = process.argv[2]
   if (!appIdArg) {
     console.error('Usage: npx tsx examples/delete-app.ts <appId>')
@@ -74,7 +74,7 @@ const MAX_AVAILABLE_BALANCE = algo(10).microAlgo
   }
 
   // Not the registry — must be one of its period apps. Map appId → periodId.
-  const summaries = await sdk.getAllPeriodSummaries()
+  const summaries = await sdk.registry.getAllPeriodSummaries()
   const match = summaries.find(({ summary }) => BigInt(summary.appId) === targetAppId)
   if (!match) {
     const known = summaries.map(({ id, summary }) => `${summary.appId} (periodId ${id})`).join(', ')

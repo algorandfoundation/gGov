@@ -51,10 +51,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
     const committeeMetadata = await this.getCommitteeMetadata(committeeId)
     if (!committeeMetadata) {
-      this.debug && console.log('Registering committee...')
+      if (this.debug) console.log('Registering committee...')
       const { registryId: xGovRegistryId, ...rest } = committeeFile
       const { txIds } = await this.registerCommittee({ committeeId, xGovRegistryId, ...rest })
-      this.debug && console.log('Committee registered ', ...txIds)
+      if (this.debug) console.log('Committee registered ', ...txIds)
     }
     const accounts = committeeFile.xGovs.map(({ address }) => address)
     const [accountIds, lastIngestedXGov] = await Promise.all([
@@ -67,7 +67,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       .map(([address, id]) => ({ address, id }))
       .sort(({ id: a }, { id: b }) => (a === 0 && b !== 0 ? 1 : a !== 0 && b === 0 ? -1 : a - b))
 
-    this.debug && console.log({ acctLen: accountsInOrder.length, lastIngestedXGov })
+    if (this.debug) console.log({ acctLen: accountsInOrder.length, lastIngestedXGov })
     if (lastIngestedXGov.total) {
       const expectedLastId = accountsInOrder[lastIngestedXGov.total - 1].id
       if (lastIngestedXGov.last && lastIngestedXGov.last[0] !== expectedLastId) {
@@ -79,7 +79,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     }
     const accountsToIngest = accountsInOrder.slice(lastIngestedXGov.total ? lastIngestedXGov.total : 0)
     const chunks = chunk(accountsToIngest, 120)
-    this.debug && console.log(`Ingesting ${accountsToIngest.length} xGovs in ${chunks.length} chunks...`)
+    if (this.debug) console.log(`Ingesting ${accountsToIngest.length} xGovs in ${chunks.length} chunks...`)
     for (const accountsChunk of chunks) {
       const xGovs = accountsChunk.map(({ id, address }) => ({
         accountId: id,
@@ -88,7 +88,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       }))
       const { txIds } = await this.ingestXGovs({ committeeId, xGovs })
       const accountsLog = accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' ')
-      this.debug && console.log('xGov ingested ', accountsLog, txIds[txIds.length - 1])
+      if (this.debug) console.log('xGov ingested ', accountsLog, txIds[txIds.length - 1])
     }
     return committeeId
   }
@@ -327,7 +327,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     const chunks = chunk(sorted, 8)
     for (const accountsChunk of chunks) {
       await this.uningestXGovs({ committeeId, xGovs: accountsChunk.map(({ address }) => address) })
-      this.debug &&
+      if (this.debug)
         console.log('Uningest chunk:', accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' '))
     }
   }
@@ -425,6 +425,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       for (const { index, data: chunkData } of group) {
         const isLast = index === chunks.length - 1
         // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         builder = await this.makeUploadPeriodApprovalPartialTxns({
           startOffset: index * BODY_CHUNK_BYTES,
           data: new Uint8Array(chunkData),

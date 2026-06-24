@@ -15,7 +15,7 @@
  */
 import { GGovRegistryReaderSDK } from '..'
 import { getAlgorand, resolveRegistryAppId } from './env'
-;(async () => {
+void (async () => {
   const algorand = getAlgorand()
   const registryAppId = await resolveRegistryAppId(algorand)
   const sdk = new GGovRegistryReaderSDK({ algorand, registryAppId })

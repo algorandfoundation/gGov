@@ -19,7 +19,7 @@
  */
 import { GGovSDK } from '..'
 import { getAlgorand, resolveRegistryAppId } from './env'
-;(async () => {
+void (async () => {
   const title = process.argv[2] ?? 'Entertainment'
 
   const algorand = getAlgorand()
@@ -36,7 +36,7 @@ import { getAlgorand, resolveRegistryAppId } from './env'
 
   // Locate the period whose body title matches. getAllPeriodSummaries gives every live
   // periodId; getPeriodBody reads the title from each per-period app.
-  const summaries = await sdk.getAllPeriodSummaries()
+  const summaries = await sdk.registry.getAllPeriodSummaries()
   if (summaries.length === 0) throw new Error('Registry has no periods')
 
   const bodies = await Promise.all(summaries.map(async ({ id }) => ({ id, body: await sdk.getPeriodBody(id) })))

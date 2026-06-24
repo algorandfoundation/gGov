@@ -8,8 +8,11 @@ export default tseslint.config(
     languageOptions: {
       globals: globals.node,
     },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
   {
-    ignores: ['src/generated/**'],
+    ignores: ['src/generated/**', 'dist/**'],
   },
 )
