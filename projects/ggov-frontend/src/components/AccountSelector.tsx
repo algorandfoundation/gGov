@@ -125,7 +125,7 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
         />
       </span>
       <AccountAvatar address={item.address} name={item.label} size={30} />
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      <div className="flex flex-col md:flex-row min-w-0 flex-1 items-start md:items-center md:gap-2">
         <Identity item={item} />
         {delegated && (
           <span className="shrink-0 rounded-full bg-muted/50 px-[7px] py-[2px] text-[11px] text-muted-foreground">

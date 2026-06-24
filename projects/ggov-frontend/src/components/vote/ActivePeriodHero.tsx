@@ -68,7 +68,7 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
           <ProgressBar value={turnoutPct ?? 0} tone="sky" height={8} />
         </div>
         <Button asChild className="w-full">
-          <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>{activeAddress ? 'Cast your vote' : 'Connect wallet to vote'}</Link>
+          <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>Cast your vote</Link>
         </Button>
       </div>
     </div>

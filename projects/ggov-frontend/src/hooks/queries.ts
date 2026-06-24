@@ -19,6 +19,7 @@ export const queryKeys = {
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
   canVoteMany: (periodId: number, key: string) => ['canVoteMany', periodId, key] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
+  voters: (periodId: number) => ['voters', periodId] as const,
   appEscrow: (address: string) => ['appEscrow', address] as const,
   delegation: (account: string) => ['delegation', account] as const,
   allDelegations: ['allDelegations'] as const,
@@ -140,6 +141,15 @@ export function useVoteRecord(periodId: number, account: string | null | undefin
     queryKey: queryKeys.voteRecord(periodId, account ?? ''),
     queryFn: () => readerSDK.getVotingRecord(BigInt(periodId), account!),
     enabled: !!account,
+  })
+}
+
+/** Accounts that cast a vote in a period (one `voteRecords` box per voter); its length is the voter count. */
+export function useVoters(periodId: number) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery<string[]>({
+    queryKey: queryKeys.voters(periodId),
+    queryFn: () => fetchVoters(readerSDK, periodId),
   })
 }
 
@@ -309,6 +319,11 @@ export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise
 export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<PeriodBodyJson | null> {
   assertNonNegativeInt(periodId, 'period id')
   return readerSDK.getPeriodBody(BigInt(periodId))
+}
+
+export function fetchVoters(readerSDK: GGovReaderSDK, periodId: number): Promise<string[]> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getVoters(BigInt(periodId))
 }
 
 export function fetchTopicBodies(

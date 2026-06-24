@@ -1,5 +1,5 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { ABIType, makeEmptyTransactionSigner } from "algosdk";
+import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
 import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
 import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
@@ -270,6 +270,21 @@ export class GGovReaderSDK {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Addresses that cast a vote in a period. Scans the per-period app's box names for
+   * the `voteRecords` map (`BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })`) — one
+   * box per voter — so its length is the number of distinct voted governors. Mirrors the
+   * registry reader's `getAccounts`/`getAllDelegations` box-name scans.
+   */
+  @wrapErrors()
+  async getVoters(periodId: bigint | number): Promise<string[]> {
+    const appId = await this.getPeriodAppId(periodId);
+    const boxNames = await this.algorand.app.getBoxNames(appId);
+    return boxNames
+      .filter(({ nameRaw }) => nameRaw[0] === 0x76 && nameRaw.length === 33) // 'v' prefix + 32-byte address
+      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString());
   }
 
   // ── Spanning reads (registry summaries + per-period apps) ────────

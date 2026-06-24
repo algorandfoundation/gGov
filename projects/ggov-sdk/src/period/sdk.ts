@@ -550,7 +550,9 @@ export class GGovSDK extends GGovReaderSDK {
 function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {
   if (typeof body === "object" && !(body instanceof Uint8Array)) {
     if (!validateBodyJson(body)) {
-      throw new Error("Body must have 'title' (string) and 'body' (string) fields");
+      throw new Error(
+        "Body must have 'title' (string) and 'body' (string) fields, and 'electSeats' (if present) must be a positive integer",
+      );
     }
     return new TextEncoder().encode(JSON.stringify(body));
   }

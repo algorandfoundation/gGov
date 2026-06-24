@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useParams, Link } from "@tanstack/react-router";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
+import { usePeriod, usePeriodBody, useTopicBodies, useCanVote, useVoteRecord, useVoters, useAllDelegations, useVoteStatuses, useCanVoteMany, useVoteRecordMany, useCommittee, useXGovVotingPowers } from "@/hooks/queries";
 import { useVoteMutation } from "@/hooks/mutations";
 import { Check } from "lucide-react";
 import { Callout } from "@/components/ui/callout";
@@ -13,9 +13,13 @@ import SidebarLayout from "@/components/SidebarLayout";
 import CollectiveStatusCard from "@/components/CollectiveStatusCard";
 import ConnectedWalletsEligibility from "@/components/ConnectedWalletsEligibility";
 import PendingAccountsBanner, { type PendingAccount } from "@/components/PendingAccountsBanner";
+import VotingRecordSection from "@/components/VotingRecordSection";
+import { type AccountVoteRecordProps, type AccountVoteTopic } from "@/components/AccountVoteRecord";
 import PeriodInfoCard from "@/components/PeriodInfoCard";
 import BackButton from "@/components/BackButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import WalletPicker from "@/components/WalletPicker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -23,7 +27,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClampedMarkdown } from "@/components/ui/clamped-markdown";
 import PeriodStatusBadge from "@/components/PeriodStatusBadge";
 import TechnicalInfoCard from "@/components/TechnicalInfoCard";
-import { formatTimestamp, periodStatus, type PeriodStatus } from "@/utils/time";
+import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } from "@/utils/time";
+import { singleChoiceIndex } from "@/utils/vote";
 import { toBase64Url } from "@/hooks/queries";
 import { TxButton } from "@/components/TxButtonContent";
 
@@ -140,9 +145,13 @@ export default function VotePeriodDetail() {
   // voting window, unlike canVote), so the sidebar shows real standing in
   // upcoming/ended periods too.
   const xgovPowers = useXGovVotingPowers(committeeIdB64, voterAccounts);
-  // Records for delegators expose `isDelegated`, telling us when a delegator
-  // voted directly (a state the delegatee cannot override).
-  const delegatorRecords = useVoteRecordMany(periodId, allDelegators);
+  // Vote records for every account the wallet can act for. `isDelegated` tells us
+  // when a delegator voted directly (a state the delegatee cannot override), and
+  // the records drive the ended-period multi-account voting-record section.
+  const allRecords = useVoteRecordMany(periodId, voterAccounts);
+  // Distinct accounts that voted in the period (one vote-record box each) — the
+  // "{N} voters" figure on the ended-period results cards.
+  const { data: voters } = useVoters(periodId);
   // Eligibility + voting power. Own wallet accounts vote as themselves (sender =
   // voter); each delegator is checked against the account it delegated to.
   const walletEligibility = useCanVoteMany(periodId, walletAddresses);
@@ -167,6 +176,8 @@ export default function VotePeriodDetail() {
 
   const votingForSelf = selectedVoter === activeAddress;
 
+  // Logged-out "connect a wallet to vote" CTA on active periods opens the picker.
+  const [connectOpen, setConnectOpen] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false);
   // Simple mode: selected option index per topic (-1 = none selected)
   const [simpleSelections, setSimpleSelections] = useState<number[]>([]);
@@ -201,6 +212,10 @@ export default function VotePeriodDetail() {
   const status = periodStatus(period.votingStart, period.votingEnd);
   const isActive = status === "active";
   const isUpcoming = status === "upcoming";
+  const isEnded = status === "ended";
+  // Elections (period body carries `electSeats`) expose their live
+  // ranked standings while active; any ended period exposes its full results.
+  const isElection = periodBody?.electSeats !== undefined;
   const showVoteForm = isActive && canVoteResult?.canVote && sdk;
   const votingPower = canVoteResult?.votingPower ?? 0n;
 
@@ -324,6 +339,40 @@ export default function VotePeriodDetail() {
   // The committee's member count is the number of eligible governors.
   const eligibleGovernors = committee?.totalMembers;
 
+  // Ended-period multi-account voting record: for each account the wallet can act
+  // for that cast a vote, its final per-topic allocations. A voter re-spends its
+  // full power in every topic, so the per-account total is a topic's allocation
+  // sum (max over topics, mirroring `periodVotesCast`), not a sum across topics.
+  const accountRecords: AccountVoteRecordProps[] = isEnded
+    ? voterAccounts
+        .map((addr): AccountVoteRecordProps | null => {
+          const rec = allRecords[addr];
+          if (!rec || !rec.topicVotes) return null;
+          const role: AccountVoteRecordProps["role"] = walletAddresses.includes(addr)
+            ? "self"
+            : rec.isDelegated
+              ? "delegated"
+              : "direct";
+          let total = 0;
+          const topics = period.topics
+            .map(([options], ti): AccountVoteTopic | null => {
+              const votes = rec.topicVotes[ti] ?? [];
+              const topicSum = votes.reduce((a, b) => a + b, 0);
+              if (topicSum === 0) return null;
+              total = Math.max(total, topicSum);
+              const allocations = votes
+                .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, votes: v }))
+                .filter((a) => a.votes > 0)
+                .map((a) => ({ ...a, pct: Math.round((a.votes / topicSum) * 100) }));
+              return { index: ti, title: topicBodies[ti]?.title, split: allocations.length > 1, allocations };
+            })
+            .filter((t): t is AccountVoteTopic => t !== null);
+          if (topics.length === 0) return null;
+          return { address: addr, role, total, topics };
+        })
+        .filter((r): r is AccountVoteRecordProps => r !== null)
+    : [];
+
   // Post-vote nudge: once the selected voter has voted, surface the wallet's
   // *other* controlled accounts that are eligible and still haven't voted.
   const pendingAccounts: PendingAccount[] = voterAccounts
@@ -357,13 +406,46 @@ export default function VotePeriodDetail() {
 
   const mainContent = (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <BackButton to="/vote" />
-        <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
-        <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
+      <div>
+        <div className="flex items-center gap-3">
+          <BackButton to="/vote" />
+          <h1 className="text-2xl font-bold">{periodBody?.title}</h1>
+          <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
+        </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
+          <span>Period {periodId}</span>
+          <span>·</span>
+          <span>
+            {period.topics.length} topic{period.topics.length === 1 ? "" : "s"}
+          </span>
+          <span>·</span>
+          <span>
+            {isUpcoming ? "Opens" : isActive ? "Closes" : "Closed"}{" "}
+            {formatMonthDayYear(isUpcoming ? period.votingStart : period.votingEnd)}
+          </span>
+        </div>
       </div>
 
       {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
+
+      {isEnded && isElection && (
+        <div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
+              View Ranked Results
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      {isActive && !activeAddress && (
+        <Callout variant="info" title="Connect a wallet to vote">
+          <p>Connect your Algorand wallet to cast your vote in this period.</p>
+          <Button className="mt-3" onClick={() => setConnectOpen(true)}>
+            Connect wallet
+          </Button>
+        </Callout>
+      )}
 
       {isActive && activeAddress && voterAccounts.length >= 1 && (
         <div ref={votingAsRef} className="scroll-mt-6 rounded-xl border border-border bg-card px-5 py-[18px]">
@@ -379,7 +461,7 @@ export default function VotePeriodDetail() {
               hasVoted: voteStatuses[addr],
               // Accounts that delegated to this one nest under it as children.
               delegated: (delegatorsByDelegatee[addr] ?? []).map<AccountSelectorItem>((d) => {
-                const record = delegatorRecords[d];
+                const record = allRecords[d];
                 return {
                   address: d,
                   votingPower: delegatorEligibility[d]?.votingPower,
@@ -425,8 +507,25 @@ export default function VotePeriodDetail() {
         </div>
       )}
 
-      {activeAddress && !isActive && voterAccounts.length > 0 && collectiveStatusReady && (
+      {/* Active elections expose their live ranked standings — shown to
+          everyone (connected or not), below the account selector / connect CTA. */}
+      {isActive && isElection && (
+        <div className="mt-4 flex justify-end items-center gap-3 text-[13px] text-muted-foreground">
+          Election seats: {periodBody?.electSeats} &nbsp;·&nbsp;
+          <Button asChild variant="outline" size="sm">
+            <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
+              View Ranked Results
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      {activeAddress && isUpcoming && voterAccounts.length > 0 && collectiveStatusReady && (
         <ConnectedWalletsEligibility items={walletEligibilityItems} eligibleCount={collectiveEligible} />
+      )}
+
+      {isEnded && activeAddress && accountRecords.length > 0 && (
+        <VotingRecordSection activeAddress={activeAddress} records={accountRecords} topicCount={period.topics.length} />
       )}
 
       <Separator />
@@ -469,10 +568,8 @@ export default function VotePeriodDetail() {
             // Tag an option "YOUR VOTE" only when the recorded vote was single-choice
             // (exactly one non-zero option). Split/advanced votes get no tag rather than
             // misleadingly highlighting just the largest allocation.
-            const recorded = voteRecord?.topicVotes[topicIdx];
-            const nonZero = recorded?.filter((v) => v > 0) ?? [];
             const votedOptionIdx =
-              mode === "results" && nonZero.length === 1 ? recorded!.findIndex((v) => v > 0) : -1;
+              mode === "results" ? singleChoiceIndex(voteRecord?.topicVotes[topicIdx]) : undefined;
             return (
               <TopicVoteCard
                 key={topicIdx}
@@ -487,7 +584,9 @@ export default function VotePeriodDetail() {
                 advancedVotes={topicVotes[topicIdx]?.[0]}
                 onAdvancedChange={(optIdx, value) => handleAdvancedVoteChange(topicIdx, optIdx, value)}
                 votingPower={power}
-                votedOptionIdx={votedOptionIdx >= 0 && (recorded?.[votedOptionIdx] ?? 0) > 0 ? votedOptionIdx : undefined}
+                votedOptionIdx={votedOptionIdx}
+                outcome={isEnded ? "Final" : undefined}
+                voters={voters?.length}
                 footer={
                   showVoteForm && advancedMode ? (
                     <VoteAllocationSummary allocated={advancedTopicTotals[topicIdx]} power={power} />
@@ -525,6 +624,16 @@ export default function VotePeriodDetail() {
           />
         </div>
       )}
+
+      <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
+        <DialogContent onClose={() => setConnectOpen(false)} className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect wallet</DialogTitle>
+            <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
+          </DialogHeader>
+          <WalletPicker onConnected={() => setConnectOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
@@ -544,7 +653,7 @@ export default function VotePeriodDetail() {
           <Skeleton className="h-40" />
         )
       )}
-      {voteRecord && (
+      {voteRecord && !isEnded && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
