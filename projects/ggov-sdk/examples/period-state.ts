@@ -22,7 +22,7 @@ function fmtTime(secs: number | bigint): string {
   return n === 0 ? '—' : new Date(n * 1000).toISOString()
 }
 
-;(async () => {
+void (async () => {
   const algorand = getAlgorand()
   const registryAppId = await resolveRegistryAppId(algorand)
   const sdk = new GGovRegistryReaderSDK({ algorand, registryAppId })

@@ -1,7 +1,7 @@
 import { GGovRegistrySDK } from '..'
 import { getAlgorand, resolveRegistryAppId } from './env'
 import { readFileSync } from 'fs'
-;(async () => {
+void (async () => {
   const file = JSON.parse(readFileSync(process.argv[2], 'utf-8'))
 
   const algorand = getAlgorand()

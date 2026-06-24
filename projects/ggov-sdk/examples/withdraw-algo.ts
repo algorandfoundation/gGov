@@ -24,7 +24,7 @@
 import { algo } from '@algorandfoundation/algokit-utils'
 import { GGovSDK } from '..'
 import { getAlgorand, resolveRegistryAppId } from './env'
-;(async () => {
+void (async () => {
   const appIdArg = process.argv[2]
   const amountArg = process.argv[3]
   const receiverArg = process.argv[4]
@@ -66,7 +66,7 @@ import { getAlgorand, resolveRegistryAppId } from './env'
   }
 
   // Not the registry — must be one of its period apps. Map appId → periodId.
-  const summaries = await sdk.getAllPeriodSummaries()
+  const summaries = await sdk.registry.getAllPeriodSummaries()
   const match = summaries.find(({ summary }) => BigInt(summary.appId) === targetAppId)
   if (!match) {
     const known = summaries.map(({ id, summary }) => `${summary.appId} (periodId ${id})`).join(', ')

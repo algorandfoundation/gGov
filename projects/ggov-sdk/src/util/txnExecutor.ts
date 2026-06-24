@@ -39,7 +39,7 @@ export async function executeTxns<T extends { builder?: any }>({
  * Returns a function with the same signature as the per-SDK makeTxnExecutor.
  */
 export function createTxnExecutor(
-  sdkInstance: any,
+  sdkInstance: object,
   emptyGroupBuilder: () => any,
   wrapErrorsFn: <U>(p: Promise<U>) => Promise<U>,
   getWriterAccount: () => SenderWithSigner | undefined,

@@ -16,7 +16,7 @@
  */
 import { GGovSDK } from '..'
 import { getAlgorand } from './env'
-;(async () => {
+void (async () => {
   const algorand = getAlgorand()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 

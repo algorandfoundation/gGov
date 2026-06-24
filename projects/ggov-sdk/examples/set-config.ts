@@ -12,7 +12,7 @@
  */
 import { GGovRegistrySDK } from '..'
 import { getAlgorand, resolveRegistryAppId } from './env'
-;(async () => {
+void (async () => {
   const xGovRegistryAppIdArg = process.argv[2]
   const operatorAddressArg = process.argv[3]
 
