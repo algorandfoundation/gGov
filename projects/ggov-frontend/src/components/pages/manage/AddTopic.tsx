@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useAddTopicMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import BackButton from '@/components/BackButton'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton } from '@/components/TxButtonContent'
 
 export default function AddTopic() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>()
+  const { periodId: pidParam } = useParams({ strict: false })
   const periodId = Number(pidParam)
   const { sdk } = useGGovSDK()
   const navigate = useNavigate()
@@ -33,7 +33,7 @@ export default function AddTopic() {
       body: body.trim(),
     })
 
-    navigate(`/manage/period/${periodId}`)
+    navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
   }
 
   if (!sdk) {
@@ -127,19 +127,15 @@ export default function AddTopic() {
               </div>
             </div>
 
-            <Button
+            <TxButton
               type="submit"
-              disabled={addTopicMutation.isPending || options.filter((o) => o.trim()).length < 2}
-              aria-busy={addTopicMutation.isPending}
-            >
-              <TxButtonContent
-                pending={addTopicMutation.isPending}
-                success={addTopicMutation.isSuccess}
-                idleLabel="Add topic"
-                pendingLabel="Adding…"
-                confirmedLabel="Added"
-              />
-            </Button>
+              disabled={options.filter((o) => o.trim()).length < 2}
+              pending={addTopicMutation.isPending}
+              success={addTopicMutation.isSuccess}
+              idleLabel="Add topic"
+              pendingLabel="Adding…"
+              confirmedLabel="Added"
+            />
           </form>
         </CardContent>
       </Card>

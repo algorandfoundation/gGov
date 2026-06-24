@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
 import {
   useEditPeriodMutation,
   useUploadPeriodBodyMutation,
-  useEditTopicMutation,
   useUploadTopicBodyMutation,
   useRemoveTopicMutation,
   useSetReadyMutation,
@@ -20,13 +19,16 @@ import { MarkdownContent } from '@/components/ui/markdown-content'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Callout } from '@/components/ui/callout'
+import { EditOptionsDialog } from '@/components/pages/manage/EditOptionsDialog'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton, TxButtonContent } from '@/components/TxButtonContent'
 
 export default function ManagePeriodDetail() {
-  const { periodId: pidParam } = useParams<{ periodId: string }>()
+  const { periodId: pidParam } = useParams({ strict: false })
   const periodId = Number(pidParam)
   const { sdk } = useGGovSDK()
 
@@ -39,7 +41,6 @@ export default function ManagePeriodDetail() {
 
   const editPeriodMutation = useEditPeriodMutation()
   const uploadPeriodBodyMutation = useUploadPeriodBodyMutation()
-  const editTopicMutation = useEditTopicMutation()
   const uploadTopicBodyMutation = useUploadTopicBodyMutation()
   const removeTopicMutation = useRemoveTopicMutation()
   const setReadyMutation = useSetReadyMutation()
@@ -52,10 +53,11 @@ export default function ManagePeriodDetail() {
   // Edit period body
   const [editPeriodTitle, setEditPeriodTitle] = useState('')
   const [editPeriodBody, setEditPeriodBody] = useState('')
+  const [editIsElection, setEditIsElection] = useState(false)
+  const [editElectSeats, setEditElectSeats] = useState('')
 
-  // Edit topic dialog
+  // Edit topic options dialog: tracks which topic is open; the dialog owns the form state.
   const [editingTopic, setEditingTopic] = useState<number | null>(null)
-  const [editOptions, setEditOptions] = useState<string[]>([])
 
   // Edit topic body dialog
   const [editingTopicBody, setEditingTopicBody] = useState<number | null>(null)
@@ -64,6 +66,9 @@ export default function ManagePeriodDetail() {
 
   // Ready transition dialog
   const [readyDialogOpen, setReadyDialogOpen] = useState(false)
+
+  // Remove-topic confirm dialog: tracks which topic index is pending confirmation.
+  const [removingTopic, setRemovingTopic] = useState<number | null>(null)
 
   // Seed the edit forms once per period, keyed on periodId rather than the
   // query object identity — otherwise a background refetch (e.g. on window
@@ -85,6 +90,8 @@ export default function ManagePeriodDetail() {
       seededBodyPeriodId.current = periodId
       setEditPeriodTitle(periodBody?.title ?? '')
       setEditPeriodBody(periodBody?.body ?? '')
+      setEditIsElection(periodBody?.electSeats !== undefined)
+      setEditElectSeats(periodBody?.electSeats !== undefined ? String(periodBody.electSeats) : '')
     }
   }, [periodBody, periodId])
 
@@ -100,27 +107,20 @@ export default function ManagePeriodDetail() {
     })
   }
 
+  const editElectSeatsNum = Number(editElectSeats)
+  const editElectSeatsValid =
+    !editIsElection || (Number.isSafeInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
+
   function handleSavePeriodBody() {
-    if (!editPeriodTitle.trim() || !editPeriodBody.trim()) return
+    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectSeatsValid) return
     uploadPeriodBodyMutation.mutate({
       periodId,
-      body: { title: editPeriodTitle.trim(), body: editPeriodBody.trim() },
+      body: {
+        title: editPeriodTitle.trim(),
+        body: editPeriodBody.trim(),
+        ...(editIsElection ? { electSeats: editElectSeatsNum } : {}),
+      },
     })
-  }
-
-  function openEditTopic(topicIdx: number) {
-    if (!period) return
-    const [options] = period.topics[topicIdx]
-    setEditingTopic(topicIdx)
-    setEditOptions([...options])
-  }
-
-  function handleEditTopic() {
-    if (editingTopic === null) return
-    editTopicMutation.mutate(
-      { periodId, topicIndex: editingTopic, options: editOptions },
-      { onSuccess: () => setEditingTopic(null) },
-    )
   }
 
   function openEditTopicBody(topicIdx: number) {
@@ -171,8 +171,8 @@ export default function ManagePeriodDetail() {
           className={
             'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
             (ready
-              ? 'bg-green-500/20 text-green-700 dark:text-green-300'
-              : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300')
+              ? 'bg-success/15 text-success-strong'
+              : 'bg-warning/20 text-warning-strong')
           }
         >
           {ready ? 'Ready' : 'Draft'}
@@ -251,15 +251,15 @@ export default function ManagePeriodDetail() {
                   />
                 </div>
               </div>
-              <Button size="sm" onClick={handleEditPeriod} disabled={editPeriodMutation.isPending} aria-busy={editPeriodMutation.isPending}>
-                <TxButtonContent
-                  pending={editPeriodMutation.isPending}
-                  success={editPeriodMutation.isSuccess}
-                  idleLabel="Save changes"
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
+              <TxButton
+                size="sm"
+                onClick={handleEditPeriod}
+                pending={editPeriodMutation.isPending}
+                success={editPeriodMutation.isSuccess}
+                idleLabel="Save changes"
+                pendingLabel="Saving…"
+                confirmedLabel="Saved"
+              />
             </div>
           ) : (
             <div className="text-sm">
@@ -300,15 +300,46 @@ export default function ManagePeriodDetail() {
                   placeholder="Period description..."
                 />
               </div>
-              <Button size="sm" onClick={handleSavePeriodBody} disabled={uploadPeriodBodyMutation.isPending} aria-busy={uploadPeriodBodyMutation.isPending}>
-                <TxButtonContent
-                  pending={uploadPeriodBodyMutation.isPending}
-                  success={uploadPeriodBodyMutation.isSuccess}
-                  idleLabel={periodBody ? 'Update body' : 'Add body'}
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={editIsElection}
+                    onChange={(e) => setEditIsElection(e.target.checked)}
+                  />
+                  Election type
+                </label>
+                {editIsElection && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-elect-seats">Seats to elect</Label>
+                    <Input
+                      id="edit-elect-seats"
+                      name="edit-elect-seats"
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={editElectSeats}
+                      onChange={(e) => setEditElectSeats(e.target.value)}
+                      placeholder="Number of seats being elected"
+                      required
+                    />
+                    {!editElectSeatsValid && (
+                      <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <TxButton
+                size="sm"
+                onClick={handleSavePeriodBody}
+                disabled={!editElectSeatsValid}
+                pending={uploadPeriodBodyMutation.isPending}
+                success={uploadPeriodBodyMutation.isSuccess}
+                idleLabel={periodBody ? 'Update body' : 'Add body'}
+                pendingLabel="Saving…"
+                confirmedLabel="Saved"
+              />
             </>
           ) : periodBody && (
             <div>
@@ -323,7 +354,7 @@ export default function ManagePeriodDetail() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Topics ({period.topics.length})</h2>
-        <Link to={`/manage/period/${periodId}/add-topic`}>
+        <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
           <Button variant="outline" size="sm">Add topic</Button>
         </Link>
       </div>
@@ -356,17 +387,13 @@ export default function ManagePeriodDetail() {
                       )}
                       {canEdit && (
                         <>
-                          <Button variant="ghost" size="sm" onClick={() => openEditTopic(topicIdx)}>
+                          <Button variant="ghost" size="sm" onClick={() => setEditingTopic(topicIdx)}>
                             Edit options
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              if (window.confirm(`Remove topic ${topicIdx + 1}? This cannot be undone.`)) {
-                                removeTopicMutation.mutate({ periodId, topicIndex: topicIdx })
-                              }
-                            }}
+                            onClick={() => setRemovingTopic(topicIdx)}
                             disabled={removeTopicMutation.isPending}
                             aria-busy={removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx}
                           >
@@ -405,52 +432,12 @@ export default function ManagePeriodDetail() {
 
       {/* Edit Topic Options Dialog */}
       {editingTopic !== null && (
-        <Dialog open={true} onOpenChange={() => setEditingTopic(null)}>
-          <DialogContent onClose={() => setEditingTopic(null)}>
-            <DialogHeader>
-              <DialogTitle>Edit Topic {editingTopic + 1} Options</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              {editOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    name={`topic-option-${i}`}
-                    aria-label={`Option ${i + 1}`}
-                    value={opt}
-                    onChange={(e) => {
-                      const next = [...editOptions]
-                      next[i] = e.target.value
-                      setEditOptions(next)
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditOptions(editOptions.filter((_, j) => j !== i))}
-                    disabled={editOptions.length <= 1}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={() => setEditOptions([...editOptions, ''])}>
-                Add Option
-              </Button>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingTopic(null)}>Cancel</Button>
-              <Button onClick={handleEditTopic} disabled={editTopicMutation.isPending} aria-busy={editTopicMutation.isPending}>
-                <TxButtonContent
-                  pending={editTopicMutation.isPending}
-                  success={editTopicMutation.isSuccess}
-                  idleLabel="Save"
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <EditOptionsDialog
+          periodId={periodId}
+          topicIndex={editingTopic}
+          initialOptions={period.topics[editingTopic][0]}
+          onClose={() => setEditingTopic(null)}
+        />
       )}
 
       {/* Ready Transition Dialog */}
@@ -488,14 +475,13 @@ export default function ManagePeriodDetail() {
                 You can revert to Draft later only if no votes have been cast yet.
               </p>
               {readyWarnings.length > 0 && (
-                <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-yellow-700 dark:text-yellow-300">
-                  <p className="font-medium">Heads up:</p>
-                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                <Callout variant="warning" title="Heads up">
+                  <ul className="list-disc space-y-0.5 pl-5">
                     {readyWarnings.map((w) => (
                       <li key={w}>{w}</li>
                     ))}
                   </ul>
-                </div>
+                </Callout>
               )}
             </div>
           )}
@@ -521,6 +507,19 @@ export default function ManagePeriodDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Remove-topic confirm (replaces window.confirm) */}
+      <ConfirmDialog
+        open={removingTopic !== null}
+        onOpenChange={(o) => { if (!o) setRemovingTopic(null) }}
+        title={removingTopic !== null ? `Remove topic ${removingTopic + 1}?` : 'Remove topic?'}
+        description="This can't be undone. The topic and its options will be permanently deleted from this draft."
+        confirmLabel="Remove topic"
+        onConfirm={() => {
+          if (removingTopic !== null) removeTopicMutation.mutate({ periodId, topicIndex: removingTopic })
+          setRemovingTopic(null)
+        }}
+      />
 
       {/* Edit Topic Body Dialog */}
       {editingTopicBody !== null && (
@@ -555,15 +554,14 @@ export default function ManagePeriodDetail() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingTopicBody(null)}>Cancel</Button>
-              <Button onClick={handleSaveTopicBody} disabled={uploadTopicBodyMutation.isPending} aria-busy={uploadTopicBodyMutation.isPending}>
-                <TxButtonContent
-                  pending={uploadTopicBodyMutation.isPending}
-                  success={uploadTopicBodyMutation.isSuccess}
-                  idleLabel="Save"
-                  pendingLabel="Saving…"
-                  confirmedLabel="Saved"
-                />
-              </Button>
+              <TxButton
+                onClick={handleSaveTopicBody}
+                pending={uploadTopicBodyMutation.isPending}
+                success={uploadTopicBodyMutation.isSuccess}
+                idleLabel="Save"
+                pendingLabel="Saving…"
+                confirmedLabel="Saved"
+              />
             </DialogFooter>
           </DialogContent>
         </Dialog>

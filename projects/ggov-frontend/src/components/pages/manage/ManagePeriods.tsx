@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { usePeriods, useCommittees } from '@/hooks/queries'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -66,8 +66,8 @@ export default function ManagePeriods() {
                     className={
                       'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
                       (ready
-                        ? 'bg-success/15 text-success-foreground'
-                        : 'bg-warning/15 text-warning-foreground')
+                        ? 'bg-success/15 text-success-strong'
+                        : 'bg-warning/15 text-warning-strong')
                     }
                   >
                     {ready ? 'Ready' : 'Draft'}
@@ -77,7 +77,7 @@ export default function ManagePeriods() {
                   <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
                 </TableCell>
                 <TableCell>
-                  <Link to={`/manage/period/${id}`}>
+                  <Link to="/manage/period/$periodId" params={{ periodId: String(id) }}>
                     <Button variant="ghost" size="sm">Edit</Button>
                   </Link>
                 </TableCell>

@@ -4,7 +4,7 @@
  * Map of error codes to human-readable error messages
  */
 export const ErrorMessages: Record<string, string> = {
-  "ERR:AUTH": "Unauthorized - caller must be admin",
+  "ERR:AUTH": "Unauthorized - you do not have permissions to perform this action",
   "ERR:C_EX": "Committee already exists",
   "ERR:C_NX": "Committee does not exist",
   "ERR:PE_LT": "Period end must be greater than period start",

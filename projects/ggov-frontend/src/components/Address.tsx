@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAddressName } from '@/hooks/use-nfd'

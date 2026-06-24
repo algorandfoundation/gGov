@@ -5,6 +5,7 @@ import { GGovPeriodClient, GGovPeriodComposer } from "../generated/GGovPeriodCli
 import { GGovReaderSDK } from "./sdkReader";
 import {
   BodyJson,
+  PeriodBodyJson,
   CommitteeId,
   ConstructorArgs,
   GGovPeriodContractArgs,
@@ -254,7 +255,7 @@ export class GGovSDK extends GGovReaderSDK {
     note,
   }: {
     periodId: bigint | number;
-    body: BodyJson | string | Uint8Array;
+    body: PeriodBodyJson | string | Uint8Array;
     note?: string | Uint8Array;
   }): Promise<void> {
     const client = await this.getPeriodWriteClient(periodId);
@@ -549,7 +550,9 @@ export class GGovSDK extends GGovReaderSDK {
 function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {
   if (typeof body === "object" && !(body instanceof Uint8Array)) {
     if (!validateBodyJson(body)) {
-      throw new Error("Body must have 'title' (string) and 'body' (string) fields");
+      throw new Error(
+        "Body must have 'title' (string) and 'body' (string) fields, and 'electSeats' (if present) must be a positive integer",
+      );
     }
     return new TextEncoder().encode(JSON.stringify(body));
   }

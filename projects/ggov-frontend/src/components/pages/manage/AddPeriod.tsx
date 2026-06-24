@@ -1,15 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useCommittees } from '@/hooks/queries'
 import { useAddPeriodMutation } from '@/hooks/mutations'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { fromDatetimeLocalUTC } from '@/utils/time'
-import { TxButtonContent } from '@/components/TxButtonContent'
+import { TxButton } from '@/components/TxButtonContent'
 
 export default function AddPeriod() {
   const { sdk } = useGGovSDK()
@@ -22,10 +21,16 @@ export default function AddPeriod() {
   const [votingEnd, setVotingEnd] = useState('')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [isElection, setIsElection] = useState(false)
+  const [electSeats, setElectSeats] = useState('')
+
+  const electSeatsNum = Number(electSeats)
+  const electSeatsValid = !isElection || (Number.isSafeInteger(electSeatsNum) && electSeatsNum >= 1)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedCommittee || !votingStart || !votingEnd || !title.trim() || !body.trim()) return
+    if (!electSeatsValid) return
 
     const committee = committees.find((c) => c.idBase64Url === selectedCommittee)
     if (!committee) return
@@ -36,9 +41,10 @@ export default function AddPeriod() {
       votingEnd: BigInt(fromDatetimeLocalUTC(votingEnd)),
       title: title.trim(),
       body: body.trim(),
+      electSeats: isElection ? electSeatsNum : undefined,
     })
 
-    navigate(`/manage/period/${periodId}`)
+    navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
   }
 
   if (!sdk) {
@@ -127,15 +133,46 @@ export default function AddPeriod() {
               />
             </div>
 
-            <Button type="submit" disabled={addPeriodMutation.isPending} aria-busy={addPeriodMutation.isPending}>
-              <TxButtonContent
-                pending={addPeriodMutation.isPending}
-                success={addPeriodMutation.isSuccess}
-                idleLabel="Create period"
-                pendingLabel="Creating…"
-                confirmedLabel="Created"
-              />
-            </Button>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input"
+                  checked={isElection}
+                  onChange={(e) => setIsElection(e.target.checked)}
+                />
+                Election type
+              </label>
+              {isElection && (
+                <div className="space-y-2">
+                  <Label htmlFor="elect-seats">Seats to elect</Label>
+                  <Input
+                    id="elect-seats"
+                    name="elect-seats"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={electSeats}
+                    onChange={(e) => setElectSeats(e.target.value)}
+                    placeholder="Number of seats being elected"
+                    required
+                  />
+                  {!electSeatsValid && (
+                    <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <TxButton
+              type="submit"
+              disabled={!electSeatsValid}
+              pending={addPeriodMutation.isPending}
+              success={addPeriodMutation.isSuccess}
+              idleLabel="Create period"
+              pendingLabel="Creating…"
+              confirmedLabel="Created"
+            />
           </form>
         </CardContent>
       </Card>

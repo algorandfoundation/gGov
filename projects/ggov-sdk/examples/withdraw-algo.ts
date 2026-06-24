@@ -5,7 +5,7 @@
  * so the DEPLOYER environment account must be the registry admin (creator).
  *
  * The target contract is identified by its on-chain application id. The script locates the
- * registry deployed by DEPLOYER, then:
+ * registry (APP_ID env if set, else the one created by DEPLOYER), then:
  *   - if <appId> is the registry app  → registry.withdrawALGO
  *   - if <appId> is one of its periods → withdrawPeriodALGO (resolved appId → periodId)
  *
@@ -21,9 +21,9 @@
  *   # withdraw 2.5 ALGO from period app 1012 to a specific address
  *   npx tsx examples/withdraw-algo.ts 1012 2.5 ABC...XYZ
  */
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
 import { algo } from "@algorandfoundation/algokit-utils";
-import { GGovSDK, GGovRegistryFactory } from "..";
+import { GGovSDK } from "..";
+import { getAlgorand, resolveRegistryAppId } from "./env";
 
 (async () => {
   const appIdArg = process.argv[2];
@@ -43,19 +43,14 @@ import { GGovSDK, GGovRegistryFactory } from "..";
   }
   const amount = algo(amountAlgo).microAlgo; // uint64 µAlgo expected by the contract
 
-  const algorand = AlgorandClient.fromEnvironment();
+  const algorand = getAlgorand();
   const deployer = await algorand.account.fromEnvironment("DEPLOYER");
   const receiver = receiverArg ?? deployer.addr.toString();
 
-  // Locate the GGovRegistry deployed by DEPLOYER — needed even for period withdrawals,
-  // since a period's withdrawALGO routes its admin check through the registry.
-  const factory = algorand.client.getTypedAppFactory(GGovRegistryFactory, {
-    defaultSender: deployer.addr,
-  });
-  const { appId: registryAppId } = await factory.getAppClientByCreatorAndName({
-    creatorAddress: deployer.addr,
-    appName: "GGovRegistry",
-  });
+  // Locate the GGovRegistry (APP_ID env, else the one created by DEPLOYER) — needed even
+  // for period withdrawals, since a period's withdrawALGO routes its admin check through
+  // the registry.
+  const registryAppId = await resolveRegistryAppId(algorand, deployer.addr);
 
   const sdk = new GGovSDK({
     algorand,
