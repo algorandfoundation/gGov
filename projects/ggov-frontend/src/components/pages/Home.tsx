@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
+import { History } from 'lucide-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { usePeriods, usePeriodBody, type PeriodWithId } from '@/hooks/queries'
 import { periodStatus, formatDateRange, type PeriodStatus } from '@/utils/time'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import FocusedPeriodHero from '@/components/vote/FocusedPeriodHero'
 import { PeriodStatusTag } from '@/components/vote/PeriodRow'
@@ -38,7 +40,8 @@ const STEPS = [
  * gGov homepage — a focused single-column ballot. One featured period (the active
  * one, else the soonest upcoming, else the latest closed) leads with a progress
  * dial and CTA; the rest collapse into a quiet "Other periods" list (with a link
- * through to the full list), followed by a short "How gGov works" explainer.
+ * through to the full list), then a "How Governance works" explainer and a quiet
+ * pointer to the legacy (periods 1–15) portal.
  */
 export default function Home() {
   const { data: periods = [], isLoading } = usePeriods()
@@ -100,12 +103,7 @@ export default function Home() {
       )}
 
       <section className="mx-auto w-full max-w-[760px] rounded-xl border border-border bg-muted/40 p-7">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-xs uppercase tracking-[0.12em] text-muted-foreground">How gGov works</span>
-          <Link to="/docs" className="text-[13px] font-semibold text-algo-blue dark:text-algo-teal">
-            Read the docs →
-          </Link>
-        </div>
+        <h2 className="mb-4 text-center font-display text-base font-bold">How Governance works</h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {STEPS.map((s) => (
             <div key={s.n}>
@@ -115,15 +113,29 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <div className="mt-5 text-center text-[12.5px] text-muted-foreground">
-          Periods 1–15 (2021–2025) live on the{' '}
+        <div className="mt-6 flex justify-center">
+          <Button asChild variant="secondary">
+            <Link to="/docs">Read the Governance docs</Link>
+          </Button>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[760px]">
+        <div className="flex items-center gap-[18px] border-t border-border py-4">
+          <History className="size-[22px] shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-[15px] font-bold">Periods 1–15 · Legacy governance</div>
+            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
+              The 2021–2025 ALGO-commitment rounds ran on a separate portal. Results and historical votes remain available there.
+            </p>
+          </div>
           <a
             href="https://governance.algorand.foundation/"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-algo-blue dark:text-algo-teal"
+            className="shrink-0 whitespace-nowrap text-[13.5px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
           >
-            legacy portal →
+            Open legacy portal →
           </a>
         </div>
       </section>
