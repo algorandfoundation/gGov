@@ -45,8 +45,20 @@ export const NoActivePeriod: Story = {
     wallet: { connected: false },
     scenario: buildScenario(
       [
-        { id: 8, phase: 'upcoming', title: 'Period 8 · Treasury direction', body: 'Opens soon.', topics: SAMPLE_TOPICS },
-        { id: 7, phase: 'ended', title: 'Period 7 · Protocol upgrade', body: 'Closed last week.', topics: SAMPLE_TOPICS },
+        {
+          id: 8,
+          phase: 'upcoming',
+          title: 'Period 8 · Treasury direction',
+          body: 'Opens soon.',
+          topics: SAMPLE_TOPICS,
+        },
+        {
+          id: 7,
+          phase: 'ended',
+          title: 'Period 7 · Protocol upgrade',
+          body: 'Closed last week.',
+          topics: SAMPLE_TOPICS,
+        },
       ],
       { globalLastPeriodId: 8 },
     ),

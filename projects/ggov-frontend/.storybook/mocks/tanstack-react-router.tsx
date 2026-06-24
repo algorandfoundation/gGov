@@ -12,13 +12,7 @@ import { createContext, forwardRef, useContext, type AnchorHTMLAttributes, type 
  */
 const RouteParamsContext = createContext<Record<string, string>>({})
 
-export function RouteParamsProvider({
-  params,
-  children,
-}: {
-  params: Record<string, string>
-  children: ReactNode
-}) {
+export function RouteParamsProvider({ params, children }: { params: Record<string, string>; children: ReactNode }) {
   return <RouteParamsContext.Provider value={params}>{children}</RouteParamsContext.Provider>
 }
 export const Link = forwardRef<

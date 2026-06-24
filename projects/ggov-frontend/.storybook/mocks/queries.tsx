@@ -88,7 +88,10 @@ export function usePeriods() {
 
 export function usePeriod(periodId: number) {
   const s = useMockScenario()
-  return useMemo(() => result(s.periodDetail[periodId]?.period ?? null, { loading: s.flags?.periodLoading }), [s, periodId])
+  return useMemo(
+    () => result(s.periodDetail[periodId]?.period ?? null, { loading: s.flags?.periodLoading }),
+    [s, periodId],
+  )
 }
 
 export function usePeriodAppId(periodId: number) {
@@ -166,7 +169,9 @@ export function useProducerRank(committeeIdBase64Url?: string, account?: string 
   const s = useMockScenario()
   return useMemo(
     () =>
-      result(committeeIdBase64Url && account ? (s.producerRanks?.[cakey(committeeIdBase64Url, account)] ?? null) : null),
+      result(
+        committeeIdBase64Url && account ? (s.producerRanks?.[cakey(committeeIdBase64Url, account)] ?? null) : null,
+      ),
     [s, committeeIdBase64Url, account],
   )
 }

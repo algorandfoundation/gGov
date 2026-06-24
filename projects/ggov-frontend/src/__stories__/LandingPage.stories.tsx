@@ -43,8 +43,20 @@ export const FeaturedUpcoming: Story = {
   parameters: {
     scenario: buildScenario(
       [
-        { id: 8, phase: 'upcoming', title: 'Period 8 · Treasury direction', body: 'Voting opens next week.', topics: SAMPLE_TOPICS },
-        { id: 7, phase: 'ended', title: 'Period 7 · Protocol upgrade', body: 'Closed last week.', topics: SAMPLE_TOPICS },
+        {
+          id: 8,
+          phase: 'upcoming',
+          title: 'Period 8 · Treasury direction',
+          body: 'Voting opens next week.',
+          topics: SAMPLE_TOPICS,
+        },
+        {
+          id: 7,
+          phase: 'ended',
+          title: 'Period 7 · Protocol upgrade',
+          body: 'Closed last week.',
+          topics: SAMPLE_TOPICS,
+        },
       ],
       { globalLastPeriodId: 8 },
     ),
@@ -77,7 +89,15 @@ export const SinglePeriod: Story = {
   name: 'Single period (no "Other periods")',
   parameters: {
     scenario: buildScenario(
-      [{ id: 9, phase: 'active', title: 'Period 9 · Reward policy', body: 'The only open period.', topics: SAMPLE_TOPICS }],
+      [
+        {
+          id: 9,
+          phase: 'active',
+          title: 'Period 9 · Reward policy',
+          body: 'The only open period.',
+          topics: SAMPLE_TOPICS,
+        },
+      ],
       { globalLastPeriodId: 9 },
     ),
   },

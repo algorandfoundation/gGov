@@ -245,18 +245,35 @@ const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 // --- Page presets ------------------------------------------------------------
 
 /** Landing/index list with one period of every phase (alice connected & eligible). */
-export function listScenario(
-  opts: { connected?: boolean; account?: string } = {},
-): MockScenario {
+export function listScenario(opts: { connected?: boolean; account?: string } = {}): MockScenario {
   const account = opts.account ?? alice.address
-  const accounts =
-    opts.connected ?? true ? { [account]: { power: 4200, producerRank: rank(4) } } : {}
+  const accounts = (opts.connected ?? true) ? { [account]: { power: 4200, producerRank: rank(4) } } : {}
   return buildScenario(
     [
-      { id: 9, phase: 'active', title: 'Period 9 · Reward policy', body: 'The active reward-policy vote.', topics: SAMPLE_TOPICS, accounts },
+      {
+        id: 9,
+        phase: 'active',
+        title: 'Period 9 · Reward policy',
+        body: 'The active reward-policy vote.',
+        topics: SAMPLE_TOPICS,
+        accounts,
+      },
       { id: 8, phase: 'upcoming', title: 'Period 8 · Treasury direction', body: 'Opens soon.', topics: SAMPLE_TOPICS },
-      { id: 7, phase: 'ended', title: 'Period 7 · Protocol upgrade', body: 'Closed last week.', topics: SAMPLE_TOPICS_TALLIED, committee: { totalVotes: 84_500 } },
-      { id: 6, phase: 'ended', title: 'Period 6 · Grants framework', body: 'An earlier closed period.', topics: SAMPLE_TOPICS_TALLIED },
+      {
+        id: 7,
+        phase: 'ended',
+        title: 'Period 7 · Protocol upgrade',
+        body: 'Closed last week.',
+        topics: SAMPLE_TOPICS_TALLIED,
+        committee: { totalVotes: 84_500 },
+      },
+      {
+        id: 6,
+        phase: 'ended',
+        title: 'Period 6 · Grants framework',
+        body: 'An earlier closed period.',
+        topics: SAMPLE_TOPICS_TALLIED,
+      },
     ],
     { globalLastPeriodId: 9 },
   )
@@ -293,7 +310,9 @@ export function detailScenario(o: DetailOptions): MockScenario {
   if (connected) {
     const power = eligible ? 4200 : 0
     const voteRecord =
-      o.voted && eligible ? allOptionCounts.map((n) => Array.from({ length: n }, (_, i) => (i === 0 ? power : 0))) : undefined
+      o.voted && eligible
+        ? allOptionCounts.map((n) => Array.from({ length: n }, (_, i) => (i === 0 ? power : 0)))
+        : undefined
     accounts[account] = {
       power,
       canVote: o.phase === 'active' && eligible,
@@ -306,7 +325,9 @@ export function detailScenario(o: DetailOptions): MockScenario {
     for (const d of o.delegators ?? []) {
       const dPower = d.power ?? 2100
       const dVoted = d.voted || d.votedDirectly
-      const dRecord = dVoted ? allOptionCounts.map((n) => Array.from({ length: n }, (_, i) => (i === 1 ? dPower : 0))) : undefined
+      const dRecord = dVoted
+        ? allOptionCounts.map((n) => Array.from({ length: n }, (_, i) => (i === 1 ? dPower : 0)))
+        : undefined
       accounts[d.address] = {
         power: dPower,
         canVote: o.phase === 'active' && !d.votedDirectly,
@@ -327,8 +348,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
         id,
         phase: o.phase,
         title: `Period ${id} · Reward policy`,
-        body:
-          'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.',
+        body: 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.',
         electSeats: o.electSeats,
         topics,
         voters,
@@ -370,7 +390,12 @@ export function defaultScenarioFromGlobals(auth: string, phase: string): MockSce
 
   // Lower-id context periods so period 7 stays the featured/most-recent one, while
   // never introducing a higher-priority phase than the requested one.
-  const past: PeriodConfig = { id: 5, phase: 'ended', title: 'Period 5 · Protocol upgrade', topics: SAMPLE_TOPICS_TALLIED }
+  const past: PeriodConfig = {
+    id: 5,
+    phase: 'ended',
+    title: 'Period 5 · Protocol upgrade',
+    topics: SAMPLE_TOPICS_TALLIED,
+  }
   const context: PeriodConfig[] =
     p === 'active'
       ? [{ id: 6, phase: 'upcoming', title: 'Period 6 · Treasury direction', topics: SAMPLE_TOPICS }, past]
