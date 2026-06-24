@@ -113,9 +113,12 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
       ref={(el) => registerRef(item.address, el)}
       onClick={() => onSelect(item.address)}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition-all',
+        // Keep the border width constant (1px) and only animate colors: selecting a
+        // row used to grow the border from 1px to 2px under `transition-all`, which
+        // reflowed the box (and its neighbours) and made the selection look laggy.
+        'flex w-full cursor-pointer items-center gap-3 rounded-xl border-1 p-3 text-left transition-colors',
         isSelected
-          ? 'border-2 border-primary bg-primary/5'
+          ? 'border-primary bg-primary/5'
           : 'border-border hover:bg-muted/50 hover:border-foreground/20',
         disabled && 'cursor-not-allowed opacity-60 hover:bg-transparent hover:border-border',
       )}
