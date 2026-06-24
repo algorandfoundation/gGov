@@ -117,9 +117,7 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
         // row used to grow the border from 1px to 2px under `transition-all`, which
         // reflowed the box (and its neighbours) and made the selection look laggy.
         'flex w-full cursor-pointer items-center gap-3 rounded-xl border-1 p-3 text-left transition-colors',
-        isSelected
-          ? 'border-primary bg-primary/5'
-          : 'border-border hover:bg-muted/50 hover:border-foreground/20',
+        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50 hover:border-foreground/20',
         disabled && 'cursor-not-allowed opacity-60 hover:bg-transparent hover:border-border',
       )}
     >
