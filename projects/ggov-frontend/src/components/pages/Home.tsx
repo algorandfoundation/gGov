@@ -102,7 +102,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="mx-auto w-full max-w-[760px] rounded-xl bg-muted/40 p-7">
+      <section className="mx-auto w-full max-w-[760px] bg-muted/40 p-7">
         <h2 className="mb-4 text-center font-display text-base font-bold">How Governance works</h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {STEPS.map((s) => (

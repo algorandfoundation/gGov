@@ -109,7 +109,9 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
         {body?.title ?? `Period ${periodId}`}
       </h1>
       {body?.body && (
-        <p className="mx-auto mt-4 max-w-[52ch] text-base leading-[1.55] text-muted-foreground">{toPlainText(body.body)}</p>
+        <p className="mt-4 line-clamp-4 w-full text-left text-base leading-[1.55] text-muted-foreground">
+          {toPlainText(body.body)}
+        </p>
       )}
 
       <div className="mt-9 flex justify-center">
