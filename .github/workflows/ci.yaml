@@ -102,9 +102,6 @@ jobs:
       # - name: Lint
       #   run: algokit project run lint
 
-      - name: Typecheck
-        run: algokit project run typecheck
-
       - name: Build smart contracts
         run: algokit project run build --project-name 'contracts'
 
@@ -118,6 +115,9 @@ jobs:
 
       - name: Build SDKs
         run: algokit project run build --project-name 'ggov-sdk' --project-name 'delegator-sdk'
+
+      - name: Typecheck
+        run: algokit project run typecheck
 
       - name: Build frontend
         run: algokit project run build --project-name 'ggov-frontend'
