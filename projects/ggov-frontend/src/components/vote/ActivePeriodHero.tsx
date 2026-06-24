@@ -19,7 +19,7 @@ interface Props {
  * description + key dates on the left, a countdown / turnout meter / CTA on the right.
  */
 export default function ActivePeriodHero({ periodId, period }: Props) {
-  const { activeAddress } = useWallet()
+  const { activeAddress: _activeAddress } = useWallet()
   const { data: body } = usePeriodBody(periodId)
   const committeeId = toBase64Url(period.committeeId)
   const { data: committee } = useCommittee(committeeId)

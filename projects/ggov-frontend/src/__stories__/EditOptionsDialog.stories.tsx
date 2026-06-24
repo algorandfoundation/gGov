@@ -31,7 +31,7 @@ export const MinimumOptions: Story = {
 export const ValidationError: Story = {
   name: 'Validation — duplicate option',
   args: { initialOptions: ['Alice', 'Bob', 'Carol'] },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement: _canvasElement }) => {
     // Type a duplicate into the third option to surface the inline error.
     const canvas = within(document.body)
     const third = canvas.getByLabelText('Option 3') as HTMLInputElement
