@@ -39,7 +39,7 @@ export function useVoteMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       txnSuccessToast('Vote submitted', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -54,7 +54,7 @@ export function useDelegateMutation() {
       queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation set', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -69,7 +69,7 @@ export function useUndelegateMutation() {
       queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation removed', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -93,7 +93,7 @@ export function useRedelegateMutation() {
       })
       txnSuccessToast('Delegation redirected', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -145,7 +145,7 @@ export function useAddPeriodMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast('Period created')
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -166,7 +166,7 @@ export function useEditPeriodMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       txnSuccessToast('Period updated', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -185,7 +185,7 @@ export function useUploadPeriodBodyMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.periodBody(vars.periodId) })
       txnSuccessToast('Period body saved')
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -227,7 +227,7 @@ export function useAddTopicMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
       txnSuccessToast('Topic added')
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -247,7 +247,7 @@ export function useEditTopicMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       txnSuccessToast('Topic updated', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -267,7 +267,7 @@ export function useUploadTopicBodyMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
       txnSuccessToast('Topic body saved')
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -288,7 +288,7 @@ export function useRemoveTopicMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast('Topic removed', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }
 
@@ -308,6 +308,6 @@ export function useSetReadyMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast(vars.ready ? 'Period marked ready' : 'Period marked draft', data)
     },
-    onError: showError,
+    onError: (err) => showError(err, { transaction: true }),
   })
 }

@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button'
 /**
  * §3 — the transaction / error dialog. Raised by `showError(err)` for any failure
  * that isn't a user-rejection. Shows the raw error in a selectable monospace block
- * with a "Copy error" affordance.
+ * with a "Copy error" affordance. The description copy is transaction-specific only
+ * when the caller passes `{ transaction: true }` (see the `TransactionError` story);
+ * otherwise it reads as a generic error.
  */
 const meta: Meta = {
   title: 'MISC_DIALOGS/3. Error dialog',
@@ -25,10 +27,10 @@ const SAMPLE_ERROR =
   'TransactionPool.Remember: transaction VN3…Q2A: logic eval error: assert failed pc=842. ' +
   'Details: app=1043, opcode=assert, source: voting power exceeds eligible weight for this period.'
 
-function ErrorTrigger({ message }: { message: string }) {
+function ErrorTrigger({ message, transaction }: { message: string; transaction?: boolean }) {
   const { showError } = useErrorDialog()
   return (
-    <Button variant="destructive" onClick={() => showError(new Error(message))}>
+    <Button variant="destructive" onClick={() => showError(new Error(message), { transaction })}>
       Trigger error
     </Button>
   )
@@ -36,6 +38,13 @@ function ErrorTrigger({ message }: { message: string }) {
 
 export const Default: Story = {
   render: () => <ErrorTrigger message={SAMPLE_ERROR} />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /trigger error/i }))
+  },
+}
+
+export const TransactionError: Story = {
+  render: () => <ErrorTrigger message={SAMPLE_ERROR} transaction />,
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: /trigger error/i }))
   },
