@@ -10,8 +10,10 @@ import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } fr
 // elsewhere. use-wallet v4 defers all window/localStorage access (its manager
 // guards on `typeof window`), so constructing this during SSR is safe — the
 // provider simply renders with no active account on the server.
+// Derived from the resolved config (not the raw env) so a no-env checkout —
+// which defaults to localnet — gets the localnet wallets, not the production set.
 let supportedWallets: SupportedWallet[]
-if (import.meta.env.VITE_ALGOD_NETWORK === 'localnet') {
+if (getAlgodConfigFromViteEnvironment().network === 'localnet') {
   const kmdConfig = getKmdConfigFromViteEnvironment()
   supportedWallets = [
     {

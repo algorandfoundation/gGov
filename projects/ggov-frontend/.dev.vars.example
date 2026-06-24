@@ -12,3 +12,10 @@
 
 # Privileged Algod API token used for SSR/loader chain reads on the Worker.
 ALGOD_TOKEN=
+
+# Optional: Algod node URL for SSR/loader reads on the Worker. Overrides the
+# build-time VITE_ALGOD_SERVER for SERVER reads only (the client bundle keeps
+# using the inlined Vite value). Leave unset to use the Vite config — which
+# itself defaults to LocalNet (http://localhost:4001) when no .env is present.
+# Deployed Workers get this from wrangler.jsonc `vars` (testnet/mainnet → Nodely).
+# ALGOD_SERVER=

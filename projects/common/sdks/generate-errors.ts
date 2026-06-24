@@ -23,11 +23,25 @@ const content = readFileSync(errorsFilePath, 'utf-8')
 const errorRegex = /export const \w+ = '(ERR:[^']+)'\s*\/\/\s*(.+)$/gm
 
 const errors: Record<string, string> = {}
+const duplicates: string[] = []
 let match: RegExpExecArray | null
 
 while ((match = errorRegex.exec(content)) !== null) {
   const [, code, message] = match
+  if (Object.prototype.hasOwnProperty.call(errors, code)) {
+    duplicates.push(`${code} (existing: "${errors[code]}", duplicate: "${message.trim()}")`)
+    continue
+  }
   errors[code] = message.trim()
+}
+
+if (duplicates.length > 0) {
+  console.error(`Duplicate error code(s) found in ${errorsFilePath}:`)
+  for (const dup of duplicates) {
+    console.error(`  - ${dup}`)
+  }
+  console.error('Error codes must be unique. Aborting.')
+  process.exit(1)
 }
 
 const output = `// Auto-generated from errors.algo.ts - do not edit manually
