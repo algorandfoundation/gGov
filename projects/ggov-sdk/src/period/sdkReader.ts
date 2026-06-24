@@ -1,11 +1,11 @@
 import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { ABIType, makeEmptyTransactionSigner } from "algosdk";
+import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
 import pMap from "p-map";
 import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
 import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
 import { GGovPeriodClient, GGovPeriodComposer, GGovPeriod, GGovVoteRecord, APP_SPEC as PERIOD_APP_SPEC } from "../generated/GGovPeriodClient";
 import { getConstructorConfig } from "../networkConfig";
-import { BodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
+import { BodyJson, PeriodBodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
 import { chunked } from "../util/chunked";
 import { errorTransformer, wrapErrors } from "../util/wrapErrors";
 
@@ -245,7 +245,7 @@ export class GGovReaderSDK {
   }
 
   /** Read the body JSON for a period from its per-period app. */
-  async getPeriodBody(periodId: bigint | number): Promise<BodyJson | null> {
+  async getPeriodBody(periodId: bigint | number): Promise<PeriodBodyJson | null> {
     try {
       const appId = await this.getPeriodAppId(periodId);
       const key = new Uint8Array(1);
@@ -270,6 +270,21 @@ export class GGovReaderSDK {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Addresses that cast a vote in a period. Scans the per-period app's box names for
+   * the `voteRecords` map (`BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })`) — one
+   * box per voter — so its length is the number of distinct voted governors. Mirrors the
+   * registry reader's `getAccounts`/`getAllDelegations` box-name scans.
+   */
+  @wrapErrors()
+  async getVoters(periodId: bigint | number): Promise<string[]> {
+    const appId = await this.getPeriodAppId(periodId);
+    const boxNames = await this.algorand.app.getBoxNames(appId);
+    return boxNames
+      .filter(({ nameRaw }) => nameRaw[0] === 0x76 && nameRaw.length === 33) // 'v' prefix + 32-byte address
+      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString());
   }
 
   // ── Spanning reads (registry summaries + per-period apps) ────────

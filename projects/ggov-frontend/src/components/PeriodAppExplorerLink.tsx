@@ -23,7 +23,7 @@ export default function PeriodAppExplorerLink({ periodId, className }: { periodI
     <a
       href={url}
       target="_blank"
-      rel="noreferrer"
+      rel="noopener noreferrer"
       className={cn('inline-flex items-center gap-1 text-sm text-primary hover:underline', className)}
     >
       View period app #{appId.toString()}

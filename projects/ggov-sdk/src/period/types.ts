@@ -40,22 +40,35 @@ export interface PeriodMethodBuilderArgs {
 export type GGovRegistryContractArgs = GGovRegistryArgs["obj"];
 export type GGovPeriodContractArgs = GGovPeriodArgs["obj"];
 
-/** Schema for period and topic body JSON stored on-chain */
+/** Schema for topic and base period body JSON stored on-chain */
 export interface BodyJson {
   title: string;
   body: string;
 }
 
-export function validateBodyJson(obj: unknown): obj is BodyJson {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof (obj as any).title === "string" &&
-    typeof (obj as any).body === "string"
-  );
+/** Period body JSON: a {@link BodyJson} that may carry election metadata. */
+export interface PeriodBodyJson extends BodyJson {
+  /**
+   * Number of seats being elected on an election-type period (a safe positive
+   * integer). Omitted on non-election periods.
+   */
+  electSeats?: number;
 }
 
-export function parseBodyJson(raw: Uint8Array): BodyJson | null {
+export function validateBodyJson(obj: unknown): obj is PeriodBodyJson {
+  if (typeof obj !== "object" || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  if (typeof o.title !== "string" || typeof o.body !== "string") return false;
+  if (
+    o.electSeats !== undefined &&
+    (typeof o.electSeats !== "number" || !Number.isSafeInteger(o.electSeats) || o.electSeats < 1)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export function parseBodyJson(raw: Uint8Array): PeriodBodyJson | null {
   try {
     const text = new TextDecoder().decode(raw);
     const parsed = JSON.parse(text);

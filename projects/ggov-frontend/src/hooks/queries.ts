@@ -1,6 +1,6 @@
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import type { GGovPeriod, BodyJson, GGovVoteRecord, AccountWithVotes } from 'ggov-sdk'
+import type { GGovPeriod, BodyJson, PeriodBodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
 
 export interface PeriodWithId {
   id: number
@@ -19,6 +19,8 @@ export const queryKeys = {
   canVote: (periodId: number, account: string, sender = '') => ['canVote', periodId, account, sender] as const,
   canVoteMany: (periodId: number, key: string) => ['canVoteMany', periodId, key] as const,
   voteRecord: (periodId: number, account: string) => ['voteRecord', periodId, account] as const,
+  voters: (periodId: number) => ['voters', periodId] as const,
+  appEscrow: (address: string) => ['appEscrow', address] as const,
   delegation: (account: string) => ['delegation', account] as const,
   allDelegations: ['allDelegations'] as const,
   delegatedToMe: (account: string) => ['delegatedToMe', account] as const,
@@ -28,6 +30,8 @@ export const queryKeys = {
   committeeVotingPowers: (account: string) => ['committeeVotingPowers', account] as const,
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
   xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
+  producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
+  blockHeader: (round: number) => ['blockHeader', round] as const,
 }
 
 export function useGlobalState() {
@@ -36,6 +40,7 @@ export function useGlobalState() {
     queryKey: queryKeys.globalState,
     queryFn: () => readerSDK.registry.getGlobalState(),
     staleTime: 60_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -43,17 +48,11 @@ export function usePeriods() {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.periods,
-    queryFn: async (): Promise<PeriodWithId[]> => {
-      const all = await readerSDK.getAllPeriods()
-      return all.map(({ id, period, summary }) => ({
-        id: Number(id),
-        period,
-        ready: summary.ready,
-      }))
-    },
+    queryFn: () => fetchPeriods(readerSDK),
     // Mutations (add/edit/set-ready) invalidate this key, so a modest staleTime
     // just avoids refetching the list on every navigation back to it.
     staleTime: 60_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -61,7 +60,8 @@ export function usePeriod(periodId: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.period(periodId),
-    queryFn: () => readerSDK.getPeriod(BigInt(periodId)),
+    queryFn: () => fetchPeriod(readerSDK, periodId),
+    meta: { surfaceError: true },
   })
 }
 
@@ -75,11 +75,35 @@ export function usePeriodAppId(periodId: number) {
   })
 }
 
+/**
+ * Resolve whether an address is an application escrow via the Escreg registry,
+ * returning the owning app ID (or null when it isn't a registered escrow).
+ * Whether an address is an app escrow is immutable, so this never goes stale; a
+ * lookup failure resolves to null so the page just renders as a plain account.
+ * (React Query forbids returning undefined from a queryFn, hence null.)
+ */
+export function useAppEscrow(address: string | null | undefined) {
+  const { escregSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.appEscrow(address ?? ''),
+    queryFn: async (): Promise<bigint | null> => {
+      try {
+        const result = await escregSDK.lookup({ addresses: [address!] })
+        return result[address!] ?? null
+      } catch {
+        return null
+      }
+    },
+    enabled: !!address,
+    staleTime: Infinity,
+  })
+}
+
 export function usePeriodBody(periodId: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.periodBody(periodId),
-    queryFn: () => readerSDK.getPeriodBody(BigInt(periodId)),
+    queryFn: () => fetchPeriodBody(readerSDK, periodId),
     // Body is effectively immutable once uploaded; mutations that change it
     // (useUploadPeriodBodyMutation) invalidate this key, overriding staleTime.
     staleTime: 3_600_000,
@@ -90,13 +114,7 @@ export function useTopicBodies(periodId: number, topicCount: number) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.topicBodies(periodId),
-    queryFn: async (): Promise<(BodyJson | null)[]> => {
-      return Promise.all(
-        Array.from({ length: topicCount }, (_, i) =>
-          readerSDK.getTopicBody(BigInt(periodId), BigInt(i))
-        )
-      )
-    },
+    queryFn: () => fetchTopicBodies(readerSDK, periodId, topicCount),
     enabled: topicCount > 0,
     // Topic bodies are immutable once uploaded; mutations that change them
     // (add/upload/remove topic) invalidate this key, overriding staleTime.
@@ -123,6 +141,15 @@ export function useVoteRecord(periodId: number, account: string | null | undefin
     queryKey: queryKeys.voteRecord(periodId, account ?? ''),
     queryFn: () => readerSDK.getVotingRecord(BigInt(periodId), account!),
     enabled: !!account,
+  })
+}
+
+/** Accounts that cast a vote in a period (one `voteRecords` box per voter); its length is the voter count. */
+export function useVoters(periodId: number) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery<string[]>({
+    queryKey: queryKeys.voters(periodId),
+    queryFn: () => fetchVoters(readerSDK, periodId),
   })
 }
 
@@ -268,29 +295,106 @@ export function fromBase64Url(str: string): Uint8Array {
   return bytes
 }
 
+// --- Pure reader fetches, shared by the hooks below and the SSR route loaders ---
+// (src/routes/_app/vote.period.$periodId, committees, committees.$committeeId).
+// A loader seeds the query cache with these under the SAME query keys its page's
+// hooks use, so the page renders server-side data immediately and never diverges
+// from what the client would fetch.
+
+// Ids/counts come from URL params (e.g. /vote/period/:periodId) and flow into
+// BigInt(). Guard first so a malformed route (`/vote/period/abc` → Number() is
+// NaN) fails with a clear error instead of a cryptic `BigInt(NaN)` RangeError —
+// these helpers are shared by both the hooks and the SSR loaders.
+function assertNonNegativeInt(value: number, label: string): void {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`Invalid ${label}: ${value}`)
+  }
+}
+
+export function fetchPeriod(readerSDK: GGovReaderSDK, periodId: number): Promise<GGovPeriod> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getPeriod(BigInt(periodId))
+}
+
+export function fetchPeriodBody(readerSDK: GGovReaderSDK, periodId: number): Promise<PeriodBodyJson | null> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getPeriodBody(BigInt(periodId))
+}
+
+export function fetchVoters(readerSDK: GGovReaderSDK, periodId: number): Promise<string[]> {
+  assertNonNegativeInt(periodId, 'period id')
+  return readerSDK.getVoters(BigInt(periodId))
+}
+
+export function fetchTopicBodies(
+  readerSDK: GGovReaderSDK,
+  periodId: number,
+  topicCount: number,
+): Promise<(BodyJson | null)[]> {
+  assertNonNegativeInt(periodId, 'period id')
+  assertNonNegativeInt(topicCount, 'topic count')
+  return Promise.all(
+    Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))),
+  )
+}
+
+export async function fetchPeriods(readerSDK: GGovReaderSDK): Promise<PeriodWithId[]> {
+  const all = await readerSDK.getAllPeriods()
+  return all.map(({ id, period, summary }) => ({ id: Number(id), period, ready: summary.ready }))
+}
+
+export async function fetchCommittees(readerSDK: GGovReaderSDK): Promise<CommitteeOption[]> {
+  const ids = await readerSDK.registry.getCommitteeIds()
+  // One batched simulate group instead of a serial metadata read per committee.
+  const metas = await readerSDK.registry.getCommitteesMetadata(ids)
+  const options: CommitteeOption[] = []
+  for (let i = 0; i < ids.length; i++) {
+    const meta = metas[i]
+    if (!meta) continue
+    options.push({
+      id: ids[i],
+      idBase64Url: toBase64Url(ids[i]),
+      periodStart: meta.periodStart,
+      periodEnd: meta.periodEnd,
+      totalMembers: meta.totalMembers,
+      totalVotes: meta.totalVotes,
+    })
+  }
+  options.sort((a, b) => b.periodStart - a.periodStart)
+  return options
+}
+
+export async function fetchCommittee(
+  readerSDK: GGovReaderSDK,
+  idBase64Url: string,
+): Promise<CommitteeOption | null> {
+  const bytes = fromBase64Url(idBase64Url)
+  const meta = await readerSDK.registry.getCommitteeMetadata(bytes)
+  if (!meta) return null
+  return {
+    id: bytes,
+    idBase64Url,
+    periodStart: meta.periodStart,
+    periodEnd: meta.periodEnd,
+    totalMembers: meta.totalMembers,
+    totalVotes: meta.totalVotes,
+  }
+}
+
+export function fetchCommitteeMembers(
+  readerSDK: GGovReaderSDK,
+  idBase64Url: string,
+): Promise<AccountWithVotes[]> {
+  return readerSDK.registry.getCommitteeXGovs(fromBase64Url(idBase64Url))
+}
+
 export function useCommittees() {
   const { readerSDK } = useGGovSDK()
   const queryClient = useQueryClient()
   return useQuery({
     queryKey: queryKeys.committees,
     queryFn: async (): Promise<CommitteeOption[]> => {
-      const ids = await readerSDK.registry.getCommitteeIds()
-      // One batched simulate group instead of a serial metadata read per committee.
-      const metas = await readerSDK.registry.getCommitteesMetadata(ids)
-      const options: CommitteeOption[] = []
-      for (let i = 0; i < ids.length; i++) {
-        const meta = metas[i]
-        if (!meta) continue
-        options.push({
-          id: ids[i],
-          idBase64Url: toBase64Url(ids[i]),
-          periodStart: meta.periodStart,
-          periodEnd: meta.periodEnd,
-          totalMembers: meta.totalMembers,
-          totalVotes: meta.totalVotes,
-        })
-      }
-      options.sort((a, b) => b.periodStart - a.periodStart)
+      const options = await fetchCommittees(readerSDK)
       // Seed the per-committee cache so useCommittee() reads warm data instead of
       // issuing its own metadata fetch.
       for (const option of options) {
@@ -300,6 +404,7 @@ export function useCommittees() {
     },
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -312,22 +417,11 @@ export function useCommittee(idBase64Url: string | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.committee(idBase64Url ?? ''),
-    queryFn: async (): Promise<CommitteeOption | null> => {
-      const bytes = fromBase64Url(idBase64Url!)
-      const meta = await readerSDK.registry.getCommitteeMetadata(bytes)
-      if (!meta) return null
-      return {
-        id: bytes,
-        idBase64Url: idBase64Url!,
-        periodStart: meta.periodStart,
-        periodEnd: meta.periodEnd,
-        totalMembers: meta.totalMembers,
-        totalVotes: meta.totalVotes,
-      }
-    },
+    queryFn: () => fetchCommittee(readerSDK, idBase64Url!),
     enabled: !!idBase64Url,
     // Committee metadata is effectively static historical data.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
 }
 
@@ -438,16 +532,106 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
   })
 }
 
+/** An account's standing among a committee's producers, ranked by votes (= blocks produced). */
+export type ProducerRank = {
+  /** 1-indexed position by votes (1 = most votes); accounts tied on votes share the same rank. */
+  rank: number
+  /** Total committee members ranked. */
+  totalMembers: number
+  /** The account's own votes. */
+  votes: number
+  /** Smallest p such that the account sits within the top p% of producers (1–100). */
+  topPercentile: number
+}
+
+/**
+ * Rank an account among a committee's producers by votes (= blocks produced),
+ * derived from committee membership. Accounts tied on votes share a rank.
+ * Returns null when the committee has no members or the account isn't one of them.
+ */
+function rankProducer(members: AccountWithVotes[], account: string): ProducerRank | null {
+  if (members.length === 0) return null
+  const mine = members.find((member) => member.account.toString() === account)
+  if (!mine) return null
+  // Standard competition ranking: position is the count of strictly-higher producers, plus one.
+  const rank = members.filter((member) => member.votes > mine.votes).length + 1
+  const topPercentile = Math.max(1, Math.min(100, Math.ceil((rank / members.length) * 100)))
+  return { rank, totalMembers: members.length, votes: mine.votes, topPercentile }
+}
+
+/**
+ * The connected account's producer rank within a committee (by votes = blocks
+ * produced). Derives the standing from committee membership. `null` when the
+ * account isn't a member.
+ */
+export function useProducerRank(committeeIdBase64Url: string | undefined, account: string | null | undefined) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.producerRank(committeeIdBase64Url ?? '', account ?? ''),
+    queryFn: async (): Promise<ProducerRank | null> => {
+      const members = await readerSDK.registry.getCommitteeXGovs(fromBase64Url(committeeIdBase64Url!))
+      return rankProducer(members, account!)
+    },
+    enabled: !!committeeIdBase64Url && !!account,
+    // Committee membership/votes are fixed once the committee exists.
+    staleTime: 600_000,
+  })
+}
+
 export function useCommitteeMembers(idBase64Url: string | undefined) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.committeeMembers(idBase64Url ?? ''),
-    queryFn: async (): Promise<AccountWithVotes[]> => {
-      const bytes = fromBase64Url(idBase64Url!)
-      return readerSDK.registry.getCommitteeXGovs(bytes)
-    },
+    queryFn: () => fetchCommitteeMembers(readerSDK, idBase64Url!),
     enabled: !!idBase64Url,
     // A committee's membership is fixed once the committee exists.
     staleTime: 600_000,
+    meta: { surfaceError: true },
   })
+}
+
+/** Header-only details for a single block round, as surfaced in the UI. */
+export interface BlockHeaderInfo {
+  round: number
+  /** Block timestamp in unix seconds. */
+  timestamp: number
+}
+
+/**
+ * Header-only block lookups for several rounds at once (one algod `block` call
+ * each, header-only). Backs the committee detail's start/end block panel. Each
+ * round resolves independently and a failed lookup yields `null` rather than
+ * throwing, so the panel can degrade to "round known, fields unavailable".
+ * Value per round: the header info, `null` if the lookup failed, or `undefined`
+ * while still loading.
+ */
+export function useBlockHeaders(rounds: number[]): Record<number, BlockHeaderInfo | null | undefined> {
+  const { readerSDK } = useGGovSDK()
+  const results = useQueries({
+    queries: rounds.map((round) => ({
+      queryKey: queryKeys.blockHeader(round),
+      queryFn: async (): Promise<BlockHeaderInfo | null> => {
+        try {
+          // Header-only: skip the payset/certificate — we only need round metadata.
+          const res = await readerSDK.algorand.client.algod.block(round).headerOnly(true).do()
+          const header = res.block.header
+          return {
+            round: Number(header.round),
+            timestamp: Number(header.timestamp),
+          }
+        } catch {
+          // Archival/header data may be unavailable (e.g. non-archival node) — degrade gracefully.
+          return null
+        }
+      },
+      enabled: round > 0,
+      // Block headers are immutable once the round is final.
+      staleTime: Infinity,
+    })),
+  })
+  const out: Record<number, BlockHeaderInfo | null | undefined> = {}
+  rounds.forEach((round, i) => {
+    out[round] = results[i]?.isSuccess ? results[i].data : undefined
+  })
+  return out
 }

@@ -1,0 +1,69 @@
+name: Deploy frontend (mainnet)
+
+# Deploys the ggov-frontend-mainnet Cloudflare Worker (CLOUDFLARE_ENV=mainnet build).
+# Manual only — there is no push trigger. Run it from the Actions tab once the
+# mainnet registry App ID is set in .env.mainnet and the frontend-mainnet
+# environment secrets are configured.
+#
+# Required secrets (repo or `frontend-mainnet` environment):
+#   CLOUDFLARE_API_TOKEN   - Workers deploy token (Account > Workers Scripts: Edit)
+#   CLOUDFLARE_ACCOUNT_ID  - target Cloudflare account id
+#   ALGOD_TOKEN            - privileged Algod token; uploaded as a Worker secret
+#                            (optional — if unset, SSR reads fall back to the
+#                            public VITE_ALGOD_TOKEN from .env.mainnet)
+on:
+  workflow_dispatch:
+
+# One mainnet deploy at a time; a newer run supersedes an in-flight one.
+concurrency:
+  group: frontend-cd-mainnet
+  cancel-in-progress: true
+
+jobs:
+  deploy-mainnet:
+    runs-on: "ubuntu-latest"
+    environment: frontend-mainnet
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ALGOD_TOKEN: ${{ secrets.ALGOD_TOKEN }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.x'
+          cache: 'pnpm'
+          cache-dependency-path: "**/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ggov-frontend consumes ggov-sdk via `link:../ggov-sdk` (built dist/). The
+      # generated clients are committed, so a plain tsc builds it — no algokit.
+      - name: Build ggov-sdk
+        run: pnpm --filter ggov-sdk build
+
+      # `deploy:mainnet` = typecheck && CLOUDFLARE_ENV=mainnet vite build --mode mainnet && wrangler deploy.
+      # CLOUDFLARE_ENV makes @cloudflare/vite-plugin emit the ggov-frontend-mainnet config.
+      # Reads public client config from .env.mainnet; authenticates to Cloudflare
+      # with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID.
+      - name: Build & deploy Worker (mainnet)
+        working-directory: projects/ggov-frontend
+        run: pnpm deploy:mainnet
+
+      # Upload the privileged Algod token as a Worker secret (server-only; never in
+      # the client bundle). `--env mainnet` targets the ggov-frontend-mainnet worker.
+      # Runs after deploy so the Worker exists; secrets persist across deploys, so this
+      # just keeps it in sync. Skipped when the secret is unset.
+      - name: Set ALGOD_TOKEN Worker secret
+        if: ${{ env.ALGOD_TOKEN != '' }}
+        working-directory: projects/ggov-frontend
+        run: printf '%s' "$ALGOD_TOKEN" | pnpm wrangler secret put ALGOD_TOKEN --env mainnet

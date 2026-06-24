@@ -6,6 +6,7 @@ import { Bold, Italic, Strikethrough, Heading2, List, ListOrdered, Link2, Code }
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { MarkdownContent, proseClass } from "@/components/ui/markdown-content"
+import { PromptDialog } from "@/components/ui/prompt-dialog"
 import { cn } from "@/lib/utils"
 
 /** tiptap-markdown doesn't augment TipTap's Storage type, so access it explicitly. */
@@ -48,15 +49,15 @@ function ToolbarButton({ onClick, active, label, children }: ToolbarButtonProps)
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
-  function setLink() {
-    const previous = editor.getAttributes("link").href as string | undefined
-    const url = window.prompt("Link URL", previous ?? "https://")
-    if (url === null) return
-    if (url === "") {
+  const [linkOpen, setLinkOpen] = useState(false)
+
+  function applyLink(url: string) {
+    const trimmed = url.trim()
+    if (trimmed === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run()
       return
     }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run()
+    editor.chain().focus().extendMarkRange("link").setLink({ href: trimmed }).run()
   }
 
   return (
@@ -84,9 +85,20 @@ function Toolbar({ editor }: { editor: Editor }) {
         <ListOrdered />
       </ToolbarButton>
       <Separator orientation="vertical" className="mx-1 h-5" />
-      <ToolbarButton label="Link" active={editor.isActive("link")} onClick={setLink}>
+      <ToolbarButton label="Link" active={editor.isActive("link")} onClick={() => setLinkOpen(true)}>
         <Link2 />
       </ToolbarButton>
+      <PromptDialog
+        open={linkOpen}
+        onOpenChange={setLinkOpen}
+        title="Add link"
+        description="Paste the URL this text should link to."
+        label="Link URL"
+        placeholder="https://"
+        initialValue={(editor.getAttributes("link").href as string | undefined) ?? "https://"}
+        confirmLabel="Add link"
+        onSubmit={applyLink}
+      />
     </div>
   )
 }
@@ -144,7 +156,7 @@ export function MarkdownEditor({ value, onChange, placeholder, id, className }: 
       </div>
 
       {/* Keep the editor mounted across tab switches so its view isn't destroyed. */}
-      <div className={cn("relative", tab !== "edit" && "hidden")}>
+      <div className={cn("relative max-h-[24rem] overflow-y-auto", tab !== "edit" && "hidden")}>
         {isEmpty && placeholder && (
           <span className="pointer-events-none absolute left-3 top-2 text-sm text-muted-foreground">{placeholder}</span>
         )}
@@ -152,7 +164,7 @@ export function MarkdownEditor({ value, onChange, placeholder, id, className }: 
       </div>
 
       {tab === "preview" && (
-        <div className="min-h-[7rem] px-3 py-2">
+        <div className="max-h-[24rem] min-h-[7rem] overflow-y-auto px-3 py-2">
           {isEmpty ? (
             <p className="text-sm text-muted-foreground">Nothing to preview.</p>
           ) : (
