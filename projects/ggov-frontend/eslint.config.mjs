@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint'
 import { baseConfig } from '../../eslint.config.base.mjs'
 
 export default tseslint.config(
-  { ignores: ['dist', '**/*.gen.ts'] },
+  { ignores: ['dist', 'storybook-static', '**/*.gen.ts'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [reactHooks.configs.flat.recommended, reactRefresh.configs.vite],

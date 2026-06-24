@@ -42,6 +42,14 @@ const config: StorybookConfig = {
     // More-specific aliases first; keep the project's other aliases (ggov-sdk, shims).
     config.resolve.alias = [
       { find: '@/hooks/mutations', replacement: path.resolve(dirname, 'mocks/mutations.tsx') },
+      // Mock the data layer so the data-driven pages render from scenario fixtures
+      // (see mocks/queries.tsx + mocks/scenarios.ts) without an SDK or network.
+      { find: '@/hooks/queries', replacement: path.resolve(dirname, 'mocks/queries.tsx') },
+      // The query hooks (and the detail page) read the SDK context; stub it so it
+      // never throws or builds network clients. `sdk` tracks the mock wallet.
+      { find: '@/hooks/useGGovSDK', replacement: path.resolve(dirname, 'mocks/useGGovSDK.tsx') },
+      // Resolve NFD names from a static map instead of hitting the NFD API.
+      { find: '@/hooks/use-nfd', replacement: path.resolve(dirname, 'mocks/use-nfd.tsx') },
       { find: '@txnlab/use-wallet-react', replacement: path.resolve(dirname, 'mocks/use-wallet-react.tsx') },
       // The app migrated to @tanstack/react-router; mock it so leaf components render
       // without a router context (Link → anchor).

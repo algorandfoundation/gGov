@@ -1,0 +1,21 @@
+{
+  // Static-assets Cloudflare Worker for the built Storybook.
+  //
+  // Storybook exports a plain static site to ./storybook-static (the STORYBOOK=true
+  // build drops the TanStack Start / Cloudflare vite plugins, so there's no server
+  // entry). This is an assets-only Worker — no `main` — that just serves those files.
+  //
+  // Deployed by .github/workflows/storybook-cd.yaml:
+  //   pnpm build-storybook && pnpm wrangler deploy --config wrangler.storybook.jsonc
+  //
+  // Auth reuses the SAME credentials as the app deploy (CLOUDFLARE_API_TOKEN with
+  // Workers Scripts: Edit + CLOUDFLARE_ACCOUNT_ID), so no extra token scope is needed.
+  // Served at https://ggov-storybook.<account>.workers.dev.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ggov-storybook",
+  "compatibility_date": "2026-06-22",
+  "assets": { "directory": "./storybook-static" },
+  "observability": {
+    "enabled": true,
+  },
+}
