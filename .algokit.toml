@@ -8,6 +8,3 @@ projects_root_path = 'projects'
 [project.run]
 build = ['contracts', 'ggov-sdk', 'delegator-sdk', 'ggov-frontend']
 test = ['contracts']
-lint = ['contracts', 'ggov-sdk', 'delegator-sdk', 'ggov-frontend']
-format-check = ['contracts', 'ggov-sdk', 'delegator-sdk', 'ggov-frontend']
-typecheck = ['contracts', 'ggov-sdk', 'delegator-sdk', 'ggov-frontend']
