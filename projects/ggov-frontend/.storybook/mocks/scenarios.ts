@@ -237,9 +237,30 @@ export const SAMPLE_TOPICS: TopicConfig[] = [
   },
 ]
 
-const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
+export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
   { ...SAMPLE_TOPICS[0], tallies: [52_000, 21_000, 11_500] },
   { ...SAMPLE_TOPICS[1], tallies: [38_000, 30_500, 16_000] },
+]
+
+/**
+ * Election ballot: one topic PER candidate, each a For/Against/Abstain vote.
+ * The results page derives a net score (For − Against) per candidate via
+ * `tallyBallot` and ranks them; `electSeats` is the seat cutoff. Carries tallies so
+ * the (live or final) ranked results render. Candidate name = the topic-body title.
+ */
+const candidate = (name: string, yes: number, no: number, abstain: number): TopicConfig => ({
+  title: name,
+  body: 'Candidate for a governance council seat.',
+  options: ['Yes', 'No', 'Abstain'],
+  tallies: [yes, no, abstain],
+})
+
+export const ELECTION_TOPICS: TopicConfig[] = [
+  candidate('Alice Acharya', 42_000, 6_000, 3_000),
+  candidate('Bob Bauer', 38_000, 9_000, 2_500),
+  candidate('Carol Chen', 31_000, 14_000, 4_000),
+  candidate('Dave Diaz', 19_000, 22_000, 5_000),
+  candidate('Erin Engel', 12_000, 28_000, 6_000),
 ]
 
 // --- Page presets ------------------------------------------------------------
@@ -377,26 +398,19 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
   const power = 4200
 
   // Election periods carry `electSeats` (drives the detail page's "Election seats" /
-  // "View Ranked Results" UI) plus an election-flavoured title + candidate topics —
-  // the title is visible on the landing hero and the index row too, so the toggle
-  // shows on all three pages.
-  const electionTopic: TopicConfig = {
-    title: 'Governance council seats',
-    body: 'Rank the candidates; the top seats are elected to the council.',
-    options: ['Alice', 'Bob', 'Carol', 'Dave', 'Erin'],
-    tallies: p === 'ended' ? [42_000, 38_000, 21_000, 12_000, 8_000] : undefined,
-  }
-
+  // "View Ranked Results" UI and the results page's ranked layout) plus an
+  // election-flavoured title + per-candidate topics. The title is visible on the
+  // landing hero and the index row too, so the toggle shows on all four pages.
   const featured: PeriodConfig = {
     id: 7,
     phase: p,
     title: election ? 'Period 7 · Council election' : 'Period 7 · Reward policy',
     body: election
-      ? 'Elect the next governance council — rank the candidates; the top 3 are seated.'
+      ? 'Elect the next governance council — vote Yes/No/Abstain on each candidate; the top 3 are seated.'
       : 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
     electSeats: election ? 3 : undefined,
-    topics: election ? [electionTopic] : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,
-    committee: p === 'ended' ? { totalVotes: 84_500 } : undefined,
+    topics: election ? ELECTION_TOPICS : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,
+    committee: p === 'ended' || election ? { totalVotes: 84_500 } : undefined,
     accounts: connected
       ? { [alice.address]: { power, canVote: p === 'active', votingPower: BigInt(power), producerRank: rank(4) } }
       : {},

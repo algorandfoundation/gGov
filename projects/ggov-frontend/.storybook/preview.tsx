@@ -46,10 +46,18 @@ const preview: Preview = {
     backgrounds: { disable: true },
     controls: { expanded: true },
     // Sidebar order: Pages first, then Components, then the misc dialogs, then the
-    // rest. Within-group order is left to the (numeric-prefixed) titles.
+    // rest. The nested array pins the page order explicitly — within a group
+    // Storybook otherwise falls back to file-load order (which put Vote index after
+    // Vote detail). Leaf stories keep their definition order (playground first).
     options: {
       storySort: {
-        order: ['PAGES', 'COMPONENTS', 'MISC_DIALOGS', '*'],
+        order: [
+          'PAGES',
+          ['1. Landing page', '2. Vote index', '3. Vote detail', '4. Vote results'],
+          'COMPONENTS',
+          'MISC_DIALOGS',
+          '*',
+        ],
       },
     },
   },
