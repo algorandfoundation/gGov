@@ -97,7 +97,7 @@ jobs:
 
       # - name: Format check
       #   run: algokit project run format-check
-      
+
       # - name: Lint
       #   run: algokit project run lint
 
@@ -118,15 +118,6 @@ jobs:
       - name: Build SDKs
         run: algokit project run build --project-name 'ggov-sdk' --project-name 'delegator-sdk'
 
-      - name: Upload SDK build output
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: sdk-build
-          path: |
-            projects/ggov-sdk/dist
-            projects/delegator-sdk/dist
-          retention-days: 1
-
       - name: Build frontend
         run: algokit project run build --project-name 'ggov-frontend'
 
@@ -141,8 +132,8 @@ jobs:
         run: algokit project deploy localnet --project-name 'contracts'
 
   test:
-    name: Test ${{ matrix.name }}
-    needs: [changes, validate]
+    name: test ${{ matrix.name }}
+    needs: changes
     if: needs.changes.outputs.contracts == 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -151,7 +142,7 @@ jobs:
         include:
           - name: registry
             args: smart_contracts/ggov-registry --exclude '**/ggovRegistry.reader*'
-          - name: registry-reader
+          - name: registry reader
             args: ggovRegistry.reader
           - name: period
             args: smart_contracts/ggov-period
@@ -178,11 +169,8 @@ jobs:
       - name: Install algokit
         run: pipx install algokit
 
-      - name: Download SDK build output
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: sdk-build
-          path: projects
+      - name: Build SDKs
+        run: algokit project run build --project-name 'ggov-sdk' --project-name 'delegator-sdk'
 
       - name: Start LocalNet
         run: algokit localnet start
