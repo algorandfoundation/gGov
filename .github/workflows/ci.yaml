@@ -96,14 +96,14 @@ jobs:
       - name: Install algokit
         run: pipx install algokit
 
-      # - name: Format check
-      #   run: algokit project run format-check
+      - name: Format check
+        run: algokit project run format-check
 
       # - name: Lint
       #   run: algokit project run lint
 
-      # - name: Typecheck
-      #   run: algokit project run typecheck
+      - name: Typecheck
+        run: algokit project run typecheck
 
       - name: Build smart contracts
         run: algokit project run build --project-name 'contracts'
