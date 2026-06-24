@@ -63,6 +63,11 @@ function isDisabled(item: AccountSelectorItem, delegated?: boolean): boolean {
   return status === "ineligible" || status === "locked";
 }
 
+/** Accounts with no voting power for this period are hidden from the list entirely. */
+function isHidden(item: AccountSelectorItem, delegated?: boolean): boolean {
+  return statusOf(item, delegated) === "ineligible";
+}
+
 /** Two-line identity: NFD name (or ellipsed address) over the mono address. */
 function Identity({ item }: { item: AccountSelectorItem }) {
   const { data: name } = useAddressName(item.address);
@@ -162,7 +167,8 @@ function AccountRow({ item, selected, onSelect, delegated, tabIndex, registerRef
  * Account selection: each connected/delegated account is a radio card showing an
  * avatar, identity, status and voting power. Accounts that delegated their power
  * to one of your accounts are nested beneath that delegatee, indented with a "↪"
- * branch. Ineligible / locked accounts are dimmed and not selectable.
+ * branch. Ineligible accounts (no voting power this period) are hidden; a locked
+ * account (voted directly, delegate can't override) is shown dimmed.
  */
 export default function AccountSelector({
   accounts,
@@ -178,11 +184,21 @@ export default function AccountSelector({
     else buttonRefs.current.delete(address);
   };
 
+  // Drop ineligible accounts from the list. Ineligible delegated children are
+  // pruned from each parent; an ineligible parent is kept only when it still has
+  // visible children, since it remains the nesting header for those delegators.
+  const visibleAccounts = accounts
+    .map((item) => ({
+      ...item,
+      delegated: (item.delegated ?? []).filter((c) => !isHidden(c, true)),
+    }))
+    .filter((item) => !isHidden(item) || item.delegated.length > 0);
+
   // Selectable addresses in render order (top-level rows interleaved with their
   // delegated children), used to drive arrow-key navigation and roving tabindex.
-  const enabledAddrs = accounts.flatMap((item) => [
+  const enabledAddrs = visibleAccounts.flatMap((item) => [
     ...(isDisabled(item) ? [] : [item.address]),
-    ...(item.delegated ?? []).filter((c) => !isDisabled(c, true)).map((c) => c.address),
+    ...item.delegated.filter((c) => !isDisabled(c, true)).map((c) => c.address),
   ]);
   // Only one radio sits in the tab order: the selected one, else the first eligible.
   const tabbable = selected && enabledAddrs.includes(selected) ? selected : enabledAddrs[0];
@@ -220,7 +236,12 @@ export default function AccountSelector({
         aria-label="Select account to vote as"
         onKeyDown={onKeyDown}
       >
-        {accounts.map((item) => (
+        {visibleAccounts.length === 0 && (
+          <p className="rounded-xl border border-dashed border-border px-3 py-4 text-center text-[13px] text-muted-foreground">
+            None of your accounts have voting power this period.
+          </p>
+        )}
+        {visibleAccounts.map((item) => (
           <Fragment key={item.address}>
             <AccountRow
               item={item}
@@ -229,7 +250,7 @@ export default function AccountSelector({
               tabIndex={item.address === tabbable ? 0 : -1}
               registerRef={registerRef}
             />
-            {item.delegated?.map((child) => (
+            {item.delegated.map((child) => (
               <div key={child.address} className="relative pl-8">
                 <span
                   className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 select-none text-muted-foreground"
