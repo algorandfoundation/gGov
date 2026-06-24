@@ -57,7 +57,7 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
                 <DialogTitle>Something went wrong</DialogTitle>
                 <DialogDescription>
                   {error.transaction
-                    ? 'Your transaction couldn\'t be completed. The technical detail below can be copied for support.'
+                    ? "Your transaction couldn't be completed. The technical detail below can be copied for support."
                     : 'An unexpected error occurred. The technical detail below can be copied for support.'}
                 </DialogDescription>
               </DialogHeader>
