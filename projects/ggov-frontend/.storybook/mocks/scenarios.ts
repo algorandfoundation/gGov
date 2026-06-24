@@ -371,17 +371,31 @@ export function detailScenario(o: DetailOptions): MockScenario {
  * Period 7 always carries `phase`: it's the featured/context period for the list
  * pages and the single period the detail playground renders (routeParams `7`).
  */
-export function defaultScenarioFromGlobals(auth: string, phase: string): MockScenario {
+export function defaultScenarioFromGlobals(auth: string, phase: string, election = false): MockScenario {
   const p = (phase === 'upcoming' || phase === 'ended' ? phase : 'active') as Phase
   const connected = auth !== 'disconnected'
   const power = 4200
 
+  // Election periods carry `electSeats` (drives the detail page's "Election seats" /
+  // "View Ranked Results" UI) plus an election-flavoured title + candidate topics —
+  // the title is visible on the landing hero and the index row too, so the toggle
+  // shows on all three pages.
+  const electionTopic: TopicConfig = {
+    title: 'Governance council seats',
+    body: 'Rank the candidates; the top seats are elected to the council.',
+    options: ['Alice', 'Bob', 'Carol', 'Dave', 'Erin'],
+    tallies: p === 'ended' ? [42_000, 38_000, 21_000, 12_000, 8_000] : undefined,
+  }
+
   const featured: PeriodConfig = {
     id: 7,
     phase: p,
-    title: 'Period 7 · Reward policy',
-    body: 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
-    topics: p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,
+    title: election ? 'Period 7 · Council election' : 'Period 7 · Reward policy',
+    body: election
+      ? 'Elect the next governance council — rank the candidates; the top 3 are seated.'
+      : 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
+    electSeats: election ? 3 : undefined,
+    topics: election ? [electionTopic] : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,
     committee: p === 'ended' ? { totalVotes: 84_500 } : undefined,
     accounts: connected
       ? { [alice.address]: { power, canVote: p === 'active', votingPower: BigInt(power), producerRank: rank(4) } }

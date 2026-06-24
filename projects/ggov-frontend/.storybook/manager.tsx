@@ -3,11 +3,11 @@ import { addons, types, useGlobals } from 'storybook/manager-api'
 import { IconButton } from 'storybook/internal/components'
 
 /**
- * Custom toolbar tools for the two-option globals (`theme`, `auth`). Built-in
- * `globalTypes` toolbars only render as a dropdown; these render a single button
- * that flips the global on click. Their `globalTypes.toolbar` config is removed in
- * `preview.tsx` so there's exactly one control each. (`periodPhase` has three
- * options, so it stays a dropdown there.)
+ * Custom toolbar tools for the two-option globals (`theme`, `auth`, `election`).
+ * Built-in `globalTypes` toolbars only render as a dropdown; these render a single
+ * button that flips the global on click. Their `globalTypes.toolbar` config is
+ * omitted in `preview.tsx` so there's exactly one control each. (`periodPhase` has
+ * three options, so it stays a dropdown there.)
  */
 const ADDON_ID = 'ggov/toolbar-toggles'
 
@@ -41,6 +41,21 @@ function AuthToggle() {
   )
 }
 
+function ElectionToggle() {
+  const [globals, updateGlobals] = useGlobals()
+  const election = globals.election === 'election'
+  return (
+    <IconButton
+      key="election"
+      active={election}
+      title="Toggle period type: standard vote / election"
+      onClick={() => updateGlobals({ election: election ? 'standard' : 'election' })}
+    >
+      <span style={{ fontSize: 13 }}>{election ? '🗳️ Election' : '📄 Standard'}</span>
+    </IconButton>
+  )
+}
+
 addons.register(ADDON_ID, () => {
   // Show on the main canvas (story + docs), not on custom addon tabs.
   const match = ({ tabId }: { tabId?: string }) => !tabId
@@ -56,5 +71,11 @@ addons.register(ADDON_ID, () => {
     title: 'Auth',
     match,
     render: () => <AuthToggle />,
+  })
+  addons.add(`${ADDON_ID}/election`, {
+    type: types.TOOL,
+    title: 'Period type',
+    match,
+    render: () => <ElectionToggle />,
   })
 })
