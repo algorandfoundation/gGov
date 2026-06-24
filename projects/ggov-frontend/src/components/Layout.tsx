@@ -3,9 +3,9 @@ import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useGlobalState } from '@/hooks/queries'
-import { useTheme } from '@/hooks/useTheme'
 import { useIsMobile } from '@/hooks/use-mobile'
 import Brand from '@/components/Brand'
+import ThemeToggle from '@/components/ThemeToggle'
 import TopBarAccount from '@/components/TopBarAccount'
 import Footer from '@/components/Footer'
 import { Button } from '@/components/ui/button'
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Vote, Users, Settings, BookOpen, Sun, Moon, RefreshCw, type LucideIcon } from 'lucide-react'
+import { Vote, Users, Settings, BookOpen, RefreshCw, type LucideIcon } from 'lucide-react'
 
 interface NavItem {
   to: string
@@ -45,26 +45,6 @@ function useNavItems(): NavItem[] {
     { to: '/committees', label: 'Committees', icon: Users },
     { to: '/docs', label: 'Docs', icon: BookOpen },
   ]
-}
-
-function ThemeToggle({ showLabel = false }: { showLabel?: boolean }) {
-  const { theme, toggle } = useTheme()
-  const label = theme === 'dark' ? 'Light mode' : 'Dark mode'
-  const ariaLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-  const icon = theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />
-  if (showLabel) {
-    return (
-      <Button variant="ghost" className="w-full justify-start gap-2 px-2" onClick={toggle} aria-label={ariaLabel}>
-        {icon}
-        <span className="text-sm font-normal text-muted-foreground">{label}</span>
-      </Button>
-    )
-  }
-  return (
-    <Button variant="ghost" size="icon" className="size-8" onClick={toggle} aria-label={ariaLabel} title={label}>
-      {icon}
-    </Button>
-  )
 }
 
 function RefreshButton({ showLabel = false }: { showLabel?: boolean }) {

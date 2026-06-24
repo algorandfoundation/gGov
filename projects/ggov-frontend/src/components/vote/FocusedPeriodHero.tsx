@@ -79,7 +79,7 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   if (status === 'active') {
     const daysLeft = Math.max(0, daysUntil(period.votingEnd))
     dialCenter = `${daysLeft}d`
-    dialLabel = 'Until close'
+    dialLabel = 'Time remaining'
     dialPct = Math.max(0, Math.min(100, ((period.votingEnd - nowSecs) / windowSecs) * 100))
     scheduleLine = `Closes ${formatMonthDayYear(period.votingEnd)} · ${plural(daysLeft, 'day')} left`
   } else if (status === 'upcoming') {
