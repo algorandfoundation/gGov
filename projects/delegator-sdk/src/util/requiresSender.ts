@@ -17,4 +17,3 @@ export function requireWriter() {
     return descriptor
   }
 }
-

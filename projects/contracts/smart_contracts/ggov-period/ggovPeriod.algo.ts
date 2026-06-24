@@ -319,7 +319,7 @@ export class GGovPeriodContract extends BaseContract {
    * Public voting method. Period must be ready=true and within the voting window.
    * Sender can be the voter (not delegated) or the delegatee (delegated). Delegation is verified via an inner-call to the registry.
    * Votes are tallied into global topic vote counts, and the voter's individual vote record is updated.
-   * Re-votes are allowed and will overwrite the previous vote; if re-voting via delegation, the delegation override guard applies (a delegatee cannot override a direct vote by the delegator). 
+   * Re-votes are allowed and will overwrite the previous vote; if re-voting via delegation, the delegation override guard applies (a delegatee cannot override a direct vote by the delegator).
    * @param voterAccount Account with voting power
    * @param topicVotes Votes per topic, parallel to the period's topics/options. Each topic's votes are an array of Uint32, parallel to that topic's options, with the count of votes for each option. The sum of every topic's votes must equal the voter's total voting power (enforced in code, not ABI).
    */
@@ -327,7 +327,7 @@ export class GGovPeriodContract extends BaseContract {
     ensure(this.ready.value, errGGovNotReady)
     ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
-    
+
     const newTopicVotes = clone(topicVotes) // renaming for clarity. noop in approval
 
     // Delegation check (inner-call registry)

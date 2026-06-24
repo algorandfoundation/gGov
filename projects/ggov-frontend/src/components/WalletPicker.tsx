@@ -1,7 +1,7 @@
-import { useState } from "react"
-import { useWallet } from "@txnlab/use-wallet-react"
-import { useErrorDialog } from "@/hooks/useErrorDialog"
-import { WalletTile } from "@/components/ui/wallet-tile"
+import { useState } from 'react'
+import { useWallet } from '@txnlab/use-wallet-react'
+import { useErrorDialog } from '@/hooks/useErrorDialog'
+import { WalletTile } from '@/components/ui/wallet-tile'
 
 /**
  * The single connect-wallet picker, shared by the top bar and the sidebar. Renders a

@@ -14,10 +14,7 @@ export default function ManagePeriods() {
 
   // Index committees by id once, so each table row is an O(1) lookup rather than
   // a linear scan (O(periods × committees) across the whole table).
-  const committeeById = useMemo(
-    () => new Map(committees.map((c) => [c.idBase64Url, c])),
-    [committees],
-  )
+  const committeeById = useMemo(() => new Map(committees.map((c) => [c.idBase64Url, c])), [committees])
 
   function committeeRounds(committeeId: Uint8Array): string {
     const c = committeeById.get(toBase64Url(committeeId))
@@ -35,7 +32,9 @@ export default function ManagePeriods() {
 
       {isLoading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12" />
+          ))}
         </div>
       ) : periods.length === 0 ? (
         <p className="text-muted-foreground">No periods created yet.</p>
@@ -65,9 +64,7 @@ export default function ManagePeriods() {
                   <span
                     className={
                       'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
-                      (ready
-                        ? 'bg-success/15 text-success-strong'
-                        : 'bg-warning/15 text-warning-strong')
+                      (ready ? 'bg-success/15 text-success-strong' : 'bg-warning/15 text-warning-strong')
                     }
                   >
                     {ready ? 'Ready' : 'Draft'}
@@ -78,7 +75,9 @@ export default function ManagePeriods() {
                 </TableCell>
                 <TableCell>
                   <Link to="/manage/period/$periodId" params={{ periodId: String(id) }}>
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button variant="ghost" size="sm">
+                      Edit
+                    </Button>
                   </Link>
                 </TableCell>
               </TableRow>

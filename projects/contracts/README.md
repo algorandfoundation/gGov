@@ -26,6 +26,7 @@ gGov is two cooperating smart contracts:
 > **Note on naming**: the "Committee Oracle" referenced in earlier docs is now folded into the **`GGovRegistry`** contract (see [historical note](#xgov-committee-oracle-historical-name)). The original [`Delegator`](#delegator-experiment) contract that gave this repo its `xgov-delegator` name is an earlier experiment and is documented last.
 
 <a id="ggovregistry"></a>
+
 # GGovRegistry
 
 The durable, never-redeployed root of the gGov system. It stores committees and their xGov voting power, identity (`admin`/`operator`), gGov delegations, and a per-period summary index. New voting periods are spawned as independent `GGovPeriod` apps via inner transaction from `createPeriod`.
@@ -67,8 +68,8 @@ key: address
 
 value: GGovAccount struct
 
-  - `accountId`: uint32 - incrementing ID assigned to the account (saves 28 bytes per reference)
-  - `committeeOffsets`: [committeeNumericId uint16, accountOffset uint16][] - per-committee superbox offset hints, for opcode-cheap voting-power lookups
+- `accountId`: uint32 - incrementing ID assigned to the account (saves 28 bytes per reference)
+- `committeeOffsets`: [committeeNumericId uint16, accountOffset uint16][] - per-committee superbox offset hints, for opcode-cheap voting-power lookups
 
 ### Committee Metadata (keyPrefix: 'c')
 
@@ -76,13 +77,13 @@ key: committee_id (byte[32])
 
 value: CommitteeMetadata struct
 
-  - `numericId`: uint16 - committee numeric ID (drives the superbox prefix)
-  - `periodStart`: uint32
-  - `periodEnd`: uint32 (exclusive)
-  - `totalMembers`: uint32 - total xGovs in the committee
-  - `totalVotes`: uint32 - total votes across the committee
-  - `xGovRegistryId`: uint64
-  - `ingestedVotes`: uint32 - running tally of ingested voting power, for verification
+- `numericId`: uint16 - committee numeric ID (drives the superbox prefix)
+- `periodStart`: uint32
+- `periodEnd`: uint32 (exclusive)
+- `totalMembers`: uint32 - total xGovs in the committee
+- `totalVotes`: uint32 - total votes across the committee
+- `xGovRegistryId`: uint64
+- `ingestedVotes`: uint32 - running tally of ingested voting power, for verification
 
 ### Committee > xGov voting power
 
@@ -100,11 +101,11 @@ key: period_id (uint32)
 
 value: GGovPeriodSummary struct
 
-  - `appId`: uint64 - spawned `GGovPeriod` app ID
-  - `votingStart`: uint32
-  - `votingEnd`: uint32 (exclusive)
-  - `numTopics`: uint32
-  - `ready`: boolean - whether the period has been marked ready (voting open, edits locked)
+- `appId`: uint64 - spawned `GGovPeriod` app ID
+- `votingStart`: uint32
+- `votingEnd`: uint32 (exclusive)
+- `numTopics`: uint32
+- `ready`: boolean - whether the period has been marked ready (voting open, edits locked)
 
 ### Delegations (keyPrefix: 'd')
 
@@ -199,6 +200,7 @@ store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false
 - `logAccounts(accounts[])` - Log multiple accounts' records for quick fetching with simulate
 
 <a id="ggovperiod"></a>
+
 # GGovPeriod
 
 One app per voting period, spawned by the registry's `createPeriod`. It owns the period's topics, vote tallies, vote records, and period/topic body JSON. All operator/admin checks, delegation resolution, and voting-power lookups are delegated to the registry via inner call; every edit mirrors the summary back via `registry.updatePeriodSummary`.
@@ -246,8 +248,8 @@ key: voter address
 
 value: GGovVoteRecord struct
 
-  - `byDelegator`: boolean - whether the record was cast by a delegatee on the voter's behalf
-  - `topicVotes`: uint32[][] - the voter's per-topic vote allocation (used to subtract old votes when re-voting)
+- `byDelegator`: boolean - whether the record was cast by a delegatee on the voter's behalf
+- `topicVotes`: uint32[][] - the voter's per-topic vote allocation (used to subtract old votes when re-voting)
 
 ## Methods
 
@@ -297,6 +299,7 @@ store vote record { byDelegator, topicVotes }
 ---
 
 <a id="delegator-experiment"></a>
+
 # Delegator (experiment)
 
 > **Experiment.** The `Delegator` contract is the earlier experiment that gave this repo its `xgov-delegator` name. It explores delegating pooled/liquid-staking xGov voting power via an on-chain "algohours" metric. It predates the gGov design above and is not part of the current gGov flow. It is kept here for reference.
@@ -350,8 +353,8 @@ key: period_start (uint64, aligned to 1M)
 
 value: AlgohourPeriodTotals struct
 
-  - `totalAlgohours`: uint64 - total algohours between [period_start, period_start+1M)
-  - `final`: boolean - indicates account algohour records are complete for this period
+- `totalAlgohours`: uint64 - total algohours between [period_start, period_start+1M)
+- `final`: boolean - indicates account algohour records are complete for this period
 
 ### Algohour per Account (keyPrefix: 'h')
 
@@ -369,10 +372,10 @@ key: committee_id (byte[32])
 
 value: DelegatorCommittee struct
 
-  - `periodStart`: uint32
-  - `periodEnd`: uint32
-  - `extDelegatedVotes`: uint32 - total voting power delegated by xGov. Can be split across multiple accounts
-  - `extDelegatedAccountVotes`: [accountId uint32, votes uint32][] - individual delegated xGov accounts & their voting power
+- `periodStart`: uint32
+- `periodEnd`: uint32
+- `extDelegatedVotes`: uint32 - total voting power delegated by xGov. Can be split across multiple accounts
+- `extDelegatedAccountVotes`: [accountId uint32, votes uint32][] - individual delegated xGov accounts & their voting power
 
 ### Proposal Metadata (keyPrefix: 'P')
 
@@ -380,20 +383,20 @@ key: proposal_id (Application)
 
 value: DelegatorProposal struct
 
-  - `status`: string - 'WAIT' | 'VOTE' | 'VOTD' | 'CANC'
-  - `committeeId`: byte[32]
-  - `extVoteStartTime`: uint32
-  - `extVoteEndTime`: uint32
-  - `extTotalVotingPower`: uint32 (not dupe - committee member may have been removed for absenteeism)
-  - `extAccountsPendingVotes`: [accountId uint32, votes uint32][] - added when synced, removed when vote is cast
-  - `extAccountsVoted`: [accountId uint32, votes uint32][] - accounts that have voted
-  - `intVoteEndTime`: uint32 - set earlier than external to allow for vote submission before xGov proposal voting ends
-  - `intTotalAlgohours`: uint64 - sum of algohour period totals for committee periods
-  - `intVotedAlgohours`: uint64
-  - `intVotesYesAlgohours`: uint64
-  - `intVotesNoAlgohours`: uint64
-  - `intVotesAbstainAlgohours`: uint64
-  - `intVotesBoycottAlgohours`: uint64
+- `status`: string - 'WAIT' | 'VOTE' | 'VOTD' | 'CANC'
+- `committeeId`: byte[32]
+- `extVoteStartTime`: uint32
+- `extVoteEndTime`: uint32
+- `extTotalVotingPower`: uint32 (not dupe - committee member may have been removed for absenteeism)
+- `extAccountsPendingVotes`: [accountId uint32, votes uint32][] - added when synced, removed when vote is cast
+- `extAccountsVoted`: [accountId uint32, votes uint32][] - accounts that have voted
+- `intVoteEndTime`: uint32 - set earlier than external to allow for vote submission before xGov proposal voting ends
+- `intTotalAlgohours`: uint64 - sum of algohour period totals for committee periods
+- `intVotedAlgohours`: uint64
+- `intVotesYesAlgohours`: uint64
+- `intVotesNoAlgohours`: uint64
+- `intVotesAbstainAlgohours`: uint64
+- `intVotesBoycottAlgohours`: uint64
 
 ### Vote Receipts (keyPrefix: 'V')
 
@@ -403,10 +406,10 @@ key: [proposal_id (Application), account_id (uint32)]
 
 value: DelegatorVote struct
 
-  - `yesVotes`: uint64
-  - `noVotes`: uint64
-  - `abstainVotes`: uint64
-  - `boycottVotes`: uint64
+- `yesVotes`: uint64
+- `noVotes`: uint64
+- `abstainVotes`: uint64
+- `boycottVotes`: uint64
 
 ## Methods
 
@@ -439,6 +442,7 @@ value: DelegatorVote struct
 ---
 
 <a id="xgov-committee-oracle-historical-name"></a>
+
 # xgov-committee-oracle (historical name)
 
 The committee oracle has been folded into [`GGovRegistry`](#ggovregistry). Its committee storage, account-ID system, and xGov voting-power superbox live there now, alongside the operator, delegations, and period factory. This section is kept as a historical reference to the standalone oracle design.
@@ -463,13 +467,13 @@ Key: committee_id (byte[32])
 
 Value: CommitteeMetadata struct
 
-  - `periodStart`: uint32
-  - `periodEnd`: uint32 (exclusive)
-  - `totalMembers`: uint32
-  - `totalVotes`: uint32
-  - `xGovRegistryId`: uint64
-  - `ingestedVotes`: uint32 - keep track of ingested voting power for verification
-  - `superboxPrefix`: string
+- `periodStart`: uint32
+- `periodEnd`: uint32 (exclusive)
+- `totalMembers`: uint32
+- `totalVotes`: uint32
+- `xGovRegistryId`: uint64
+- `ingestedVotes`: uint32 - keep track of ingested voting power for verification
+- `superboxPrefix`: string
 
 ### Committee > xGov voting power
 

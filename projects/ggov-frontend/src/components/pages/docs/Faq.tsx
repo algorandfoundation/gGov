@@ -86,7 +86,10 @@ export default function Faq() {
       <H2>Glossary</H2>
       <div className="mt-2 flex flex-col">
         {glossary.map((g) => (
-          <div key={g.term} className="grid grid-cols-[120px_1fr] gap-[18px] border-t border-border py-[15px] sm:grid-cols-[180px_1fr]">
+          <div
+            key={g.term}
+            className="grid grid-cols-[120px_1fr] gap-[18px] border-t border-border py-[15px] sm:grid-cols-[180px_1fr]"
+          >
             <div className="font-sans text-[15px] font-semibold text-foreground">{g.term}</div>
             <div className="font-sans text-[15px] leading-[1.6] text-muted-foreground">{g.def}</div>
           </div>

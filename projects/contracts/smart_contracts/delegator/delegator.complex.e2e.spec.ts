@@ -29,8 +29,15 @@ describe.skip('Delegator complex e2e tests', () => {
       await localnet.newScope()
       const { testAccount } = localnet.context
       adminAccount = testAccount
-      ;({ committee, delegatorAdminSDK, delegatorUserSDK, ggovRegistrySDK, proposalAppClient, registryAppClient, xGovs } =
-        await deployDelegatorFull(localnet, adminAccount, 3, 6))
+      ;({
+        committee,
+        delegatorAdminSDK,
+        delegatorUserSDK,
+        ggovRegistrySDK,
+        proposalAppClient,
+        registryAppClient,
+        xGovs,
+      } = await deployDelegatorFull(localnet, adminAccount, 3, 6))
     })
 
     async function syncCommitteeMetadata() {

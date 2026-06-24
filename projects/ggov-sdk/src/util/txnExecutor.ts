@@ -1,7 +1,7 @@
-import { SendParams } from "@algorandfoundation/algokit-utils/types/transaction";
-import { Algodv2 } from "algosdk";
-import { getIncreaseBudgetBuilder } from "./increaseBudget";
-import { SendResult, SenderWithSigner } from "../types";
+import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
+import { Algodv2 } from 'algosdk'
+import { getIncreaseBudgetBuilder } from './increaseBudget'
+import { SendResult, SenderWithSigner } from '../types'
 
 /**
  * Execute a transaction group with automatic budget increase.
@@ -15,23 +15,23 @@ export async function executeTxns<T extends { builder?: any }>({
   writerAccount,
   algod,
 }: {
-  txnBuilder: (args: T) => Promise<any>;
-  txnBuilderArgs: T;
-  emptyGroupBuilder: () => any;
-  sendParams?: SendParams;
-  writerAccount: SenderWithSigner;
-  algod: Algodv2;
+  txnBuilder: (args: T) => Promise<any>
+  txnBuilderArgs: T
+  emptyGroupBuilder: () => any
+  sendParams?: SendParams
+  writerAccount: SenderWithSigner
+  algod: Algodv2
 }): Promise<SendResult> {
-  let builder = await txnBuilder(txnBuilderArgs);
+  let builder = await txnBuilder(txnBuilderArgs)
   const increasedBudgetBuilder = await getIncreaseBudgetBuilder(
     builder,
     emptyGroupBuilder,
     writerAccount.sender.toString(),
     writerAccount.signer,
     algod,
-  );
-  if (increasedBudgetBuilder) builder = await txnBuilder({ ...txnBuilderArgs, builder: increasedBudgetBuilder });
-  return builder.send(sendParams);
+  )
+  if (increasedBudgetBuilder) builder = await txnBuilder({ ...txnBuilderArgs, builder: increasedBudgetBuilder })
+  return builder.send(sendParams)
 }
 
 /**
@@ -50,14 +50,14 @@ export function createTxnExecutor(
     returnTransformer,
     sendParams,
   }: {
-    maker: T;
-    returnTransformer?: (result: SendResult) => R;
-    sendParams?: SendParams;
+    maker: T
+    returnTransformer?: (result: SendResult) => R
+    sendParams?: SendParams
   }) => {
-    return async (args: Omit<Parameters<T>[0], "builder">): Promise<R> => {
-      const writerAccount = getWriterAccount();
+    return async (args: Omit<Parameters<T>[0], 'builder'>): Promise<R> => {
+      const writerAccount = getWriterAccount()
       if (!writerAccount) {
-        throw new Error(`writerAccount not set on the SDK instance`);
+        throw new Error(`writerAccount not set on the SDK instance`)
       }
       const result = await wrapErrorsFn(
         executeTxns({
@@ -68,11 +68,11 @@ export function createTxnExecutor(
           writerAccount,
           algod: getAlgod(),
         }),
-      );
+      )
       if (returnTransformer) {
-        return returnTransformer(result);
+        return returnTransformer(result)
       }
-      return result as R;
-    };
-  };
+      return result as R
+    }
+  }
 }

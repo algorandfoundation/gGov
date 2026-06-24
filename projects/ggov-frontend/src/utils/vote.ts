@@ -1,5 +1,5 @@
 /** Sentiment a free-form option label maps to (`other` = candidate names / unrecognized). */
-export type OptionSentiment = "yes" | "no" | "abstain" | "other"
+export type OptionSentiment = 'yes' | 'no' | 'abstain' | 'other'
 
 // Free-form on-chain option labels, classified by leading keyword. Single source of
 // truth so the election net-score tally and the per-account record swatches never
@@ -11,12 +11,12 @@ const ABSTAIN_RE = /^(abstain|neutral|none|no vote)/
 /** Classify an option label into a Yes/No/Abstain sentiment, or `other`. */
 export function classifyOption(label: string): OptionSentiment {
   const l = label.trim().toLowerCase()
-  if (YES_RE.test(l)) return "yes"
+  if (YES_RE.test(l)) return 'yes'
   // Abstain before No: NO_RE's `no\b` matches "no vote", so abstain phrases that
   // start with "no " must be claimed here first or they'd be miscounted as No.
-  if (ABSTAIN_RE.test(l)) return "abstain"
-  if (NO_RE.test(l)) return "no"
-  return "other"
+  if (ABSTAIN_RE.test(l)) return 'abstain'
+  if (NO_RE.test(l)) return 'no'
+  return 'other'
 }
 
 /**
@@ -32,15 +32,15 @@ export function tallyBallot(options: string[], tallies: number[]): { yes: number
   options.forEach((opt, i) => {
     const t = tallies[i] ?? 0
     switch (classifyOption(opt)) {
-      case "yes":
+      case 'yes':
         yes += t
         matched = true
         break
-      case "no":
+      case 'no':
         no += t
         matched = true
         break
-      case "abstain":
+      case 'abstain':
         abstain += t
         matched = true
         break

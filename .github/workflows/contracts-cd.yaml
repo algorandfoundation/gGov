@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy-testnet:
-    runs-on: "ubuntu-latest"
+    runs-on: 'ubuntu-latest'
 
     environment: contract-testnet
     steps:
@@ -23,12 +23,12 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'pnpm'
-          cache-dependency-path: "**/pnpm-lock.yaml"
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install algokit
         run: pipx install algokit

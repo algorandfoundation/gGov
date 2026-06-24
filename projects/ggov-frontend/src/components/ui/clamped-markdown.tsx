@@ -1,6 +1,6 @@
-import { useState } from "react"
-import { MarkdownContent } from "@/components/ui/markdown-content"
-import { cn } from "@/lib/utils"
+import { useState } from 'react'
+import { MarkdownContent } from '@/components/ui/markdown-content'
+import { cn } from '@/lib/utils'
 
 interface ClampedMarkdownProps {
   children: string
@@ -22,11 +22,16 @@ const CHARS_PER_LINE = 47
  * a "Show more…" toggle, matching the homepage period cards. Short content that
  * fits within the collapsed height renders without a toggle.
  */
-export function ClampedMarkdown({ children, fadeFrom = "from-background", lines = 3, className }: ClampedMarkdownProps) {
+export function ClampedMarkdown({
+  children,
+  fadeFrom = 'from-background',
+  lines = 3,
+  className,
+}: ClampedMarkdownProps) {
   const [expanded, setExpanded] = useState(false)
 
   // Roughly the collapsed height; short descriptions don't need a toggle.
-  const isLong = children.length > lines * CHARS_PER_LINE || children.split("\n").length > lines
+  const isLong = children.length > lines * CHARS_PER_LINE || children.split('\n').length > lines
   const clamped = isLong && !expanded
 
   return (
@@ -35,12 +40,17 @@ export function ClampedMarkdown({ children, fadeFrom = "from-background", lines 
           first-child top margin doesn't collapse out when expanding (which would jump the
           text). Unlike always-on `overflow-hidden` it doesn't clip wide tables/code. */}
       <div
-        className={cn("flow-root", clamped && "relative overflow-hidden")}
+        className={cn('flow-root', clamped && 'relative overflow-hidden')}
         style={clamped ? { maxHeight: `${lines * LINE_HEIGHT_REM}rem` } : undefined}
       >
         <MarkdownContent>{children}</MarkdownContent>
         {clamped && (
-          <div className={cn("pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t to-transparent", fadeFrom)} />
+          <div
+            className={cn(
+              'pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t to-transparent',
+              fadeFrom,
+            )}
+          />
         )}
       </div>
       {isLong && (
@@ -53,7 +63,7 @@ export function ClampedMarkdown({ children, fadeFrom = "from-background", lines 
             setExpanded((v) => !v)
           }}
         >
-          {expanded ? "Show less" : "Show more…"}
+          {expanded ? 'Show less' : 'Show more…'}
         </button>
       )}
     </div>

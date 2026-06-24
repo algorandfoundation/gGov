@@ -23,7 +23,13 @@ export interface DocsPage {
 
 export const docsPages: DocsPage[] = [
   { to: '/docs', label: 'Home', title: 'Start here', navGroup: '' },
-  { to: '/docs/getting-started', label: 'Getting started', title: 'Getting started', eyebrow: 'Get started', navGroup: '' },
+  {
+    to: '/docs/getting-started',
+    label: 'Getting started',
+    title: 'Getting started',
+    eyebrow: 'Get started',
+    navGroup: '',
+  },
   {
     to: '/docs/voting-power',
     label: 'How voting power works',

@@ -699,7 +699,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
   /**
    * Facilitates fetching committee in "one shot" / parallel queries.
-   * When `logMetadata` is true, logs committee metadata and superbox metadata first. 
+   * When `logMetadata` is true, logs committee metadata and superbox metadata first.
    * Then, logs `dataPageLength` consecutive superbox data pages, starting at `startDataPage`.
    * If a requested page does not exist, logs an empty byte string in its place.
    * @param committeeId Committee ID

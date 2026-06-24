@@ -1,15 +1,15 @@
 {
-    "id": "3674009751370172821",
-    "transaction_id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
-    "rounded_at": "2025-07-07 16:06:06+00",
-    "processed_at": "2025-07-07 16:06:09.055054+00",
-    "governor_activity": {
-        "id": "3674009753923692320",
-        "activity_type": "voted",
-        "committed_amount": null,
-        "asset_commitments": [],
-        "message": "Voted for Period 15, Voting Session 1.",
-        "creation_datetime": "2025-07-07 16:06:10.271329+00",
-        "round_number": 51578748
-    }
+  "id": "3674009751370172821",
+  "transaction_id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
+  "rounded_at": "2025-07-07 16:06:06+00",
+  "processed_at": "2025-07-07 16:06:09.055054+00",
+  "governor_activity": {
+    "id": "3674009753923692320",
+    "activity_type": "voted",
+    "committed_amount": null,
+    "asset_commitments": [],
+    "message": "Voted for Period 15, Voting Session 1.",
+    "creation_datetime": "2025-07-07 16:06:10.271329+00",
+    "round_number": 51578748
+  }
 }

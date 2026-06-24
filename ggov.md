@@ -6,9 +6,9 @@ I propose we migrate general governance to a smart-contract based system utilizi
 
 Value Proposition:
 
-- Significantly reduce governance operational complexity  
-- Removes AF trust requirement (closed backend vs open contracts)  
-- Further Incentivize ALGO Staking  
+- Significantly reduce governance operational complexity
+- Removes AF trust requirement (closed backend vs open contracts)
+- Further Incentivize ALGO Staking
 - Relevant to future governance without AF involvement (2030+)
 
 ## Operational Complexity

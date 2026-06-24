@@ -97,11 +97,7 @@ export class GGovRegistryAccountContract extends BaseContract {
     this.accounts(account).value = clone(gGovAccount)
   }
 
-  protected removeCommitteeAccountOffsetHint(
-    committeeNumId: Uint16,
-    account: Account,
-    gGovAccount: GGovAccount,
-  ): void {
+  protected removeCommitteeAccountOffsetHint(committeeNumId: Uint16, account: Account, gGovAccount: GGovAccount): void {
     let found = false
     const nextOffsets: [Uint16, Uint16][] = []
     for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {

@@ -2,33 +2,33 @@
   "folders": [
     {
       "path": "./",
-      "name": "ROOT"
+      "name": "ROOT",
     },
     {
-      "path": "./projects/contracts"
+      "path": "./projects/contracts",
     },
     {
-      "path": "./projects/ggov-frontend"
+      "path": "./projects/ggov-frontend",
     },
     {
-      "path": "./projects/ggov-sdk"
+      "path": "./projects/ggov-sdk",
     },
     {
-      "path": "./projects/delegator-sdk"
+      "path": "./projects/delegator-sdk",
     },
     {
-      "path": "./projects/common"
-    }
+      "path": "./projects/common",
+    },
   ],
   "settings": {
     "files.exclude": {
-      "projects/": true
+      "projects/": true,
     },
     "jest.disabledWorkspaceFolders": ["ROOT", "projects"],
-    "dotenv.enableAutocloaking": false
+    "dotenv.enableAutocloaking": false,
   },
   "extensions": {
-    "recommendations": ["joshx.workspace-terminals"]
+    "recommendations": ["joshx.workspace-terminals"],
   },
 
   "tasks": {
@@ -39,10 +39,10 @@
         "command": "algokit",
         "args": ["project", "run", "build"],
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "dependsOn": "Start AlgoKit LocalNet",
-        "problemMatcher": []
+        "problemMatcher": [],
       },
       {
         "label": "Start AlgoKit LocalNet",
@@ -50,11 +50,11 @@
         "args": ["localnet", "start"],
         "type": "shell",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
-        "problemMatcher": []
-      }
-    ]
+        "problemMatcher": [],
+      },
+    ],
   },
   "launch": {
     "configurations": [],
@@ -65,15 +65,15 @@
         "configurations": [
           {
             "name": "Deploy contracts",
-            "folder": "contracts"
+            "folder": "contracts",
           },
-          { "name": "Run dApp", "folder": "ggov-frontend" }
+          { "name": "Run dApp", "folder": "ggov-frontend" },
         ],
         "presentation": {
           "hidden": false,
-          "group": "0. Run workspace"
-        }
-      }
-    ]
-  }
+          "group": "0. Run workspace",
+        },
+      },
+    ],
+  },
 }

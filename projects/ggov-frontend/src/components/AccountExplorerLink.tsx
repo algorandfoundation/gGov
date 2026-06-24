@@ -9,13 +9,7 @@ import { cn } from '@/lib/utils'
  * Pera on testnet, Allo on mainnet). Renders nothing when no explorer supports
  * the network.
  */
-export default function AccountExplorerLink({
-  address,
-  className,
-}: {
-  address: string
-  className?: string
-}) {
+export default function AccountExplorerLink({ address, className }: { address: string; className?: string }) {
   const network = getAlgodConfigFromViteEnvironment().network as Network
   const [explorer] = getOpenInEntries(network, 'account')
   const url = explorer?.getUrl(network, 'account', address)

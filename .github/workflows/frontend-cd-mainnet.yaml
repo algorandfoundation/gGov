@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   deploy-mainnet:
-    runs-on: "ubuntu-latest"
+    runs-on: 'ubuntu-latest'
     environment: frontend-mainnet
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: '22.19.x'
           cache: 'pnpm'
-          cache-dependency-path: "**/pnpm-lock.yaml"
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

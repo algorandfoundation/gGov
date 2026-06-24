@@ -19,71 +19,71 @@
  *   cd projects/ggov-sdk
  *   npx tsx examples/delete-app.ts <appId>
  */
-import { algo } from "@algorandfoundation/algokit-utils";
-import { getApplicationAddress } from "algosdk";
-import { GGovSDK } from "..";
-import { getAlgorand, resolveRegistryAppId } from "./env";
+import { algo } from '@algorandfoundation/algokit-utils'
+import { getApplicationAddress } from 'algosdk'
+import { GGovSDK } from '..'
+import { getAlgorand, resolveRegistryAppId } from './env'
 
 /** Refuse to delete an app whose available balance is over this threshold. */
-const MAX_AVAILABLE_BALANCE = algo(10).microAlgo;
+const MAX_AVAILABLE_BALANCE = algo(10).microAlgo
 
-(async () => {
-  const appIdArg = process.argv[2];
+;(async () => {
+  const appIdArg = process.argv[2]
   if (!appIdArg) {
-    console.error("Usage: npx tsx examples/delete-app.ts <appId>");
-    process.exit(1);
+    console.error('Usage: npx tsx examples/delete-app.ts <appId>')
+    process.exit(1)
   }
-  const targetAppId = BigInt(appIdArg);
+  const targetAppId = BigInt(appIdArg)
 
-  const algorand = getAlgorand();
-  const deployer = await algorand.account.fromEnvironment("DEPLOYER");
+  const algorand = getAlgorand()
+  const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 
   // Locate the GGovRegistry (APP_ID env, else the one created by DEPLOYER) — needed even
   // for period deletions, since a period's deleteApplication routes its admin check
   // through the registry.
-  const registryAppId = await resolveRegistryAppId(algorand, deployer.addr);
+  const registryAppId = await resolveRegistryAppId(algorand, deployer.addr)
 
   const sdk = new GGovSDK({
     algorand,
     registryAppId: registryAppId,
     writerAccount: { sender: deployer.addr, signer: deployer.signer },
-  });
-  console.log(`Connected to registry app ${registryAppId} as ${deployer.addr}`);
+  })
+  console.log(`Connected to registry app ${registryAppId} as ${deployer.addr}`)
 
   // Guard: refuse if the app still escrows more than the threshold of available ALGO.
-  const appAddress = getApplicationAddress(targetAppId);
-  const info = await algorand.account.getInformation(appAddress);
-  const available = info.balance.microAlgo - info.minBalance.microAlgo;
+  const appAddress = getApplicationAddress(targetAppId)
+  const info = await algorand.account.getInformation(appAddress)
+  const available = info.balance.microAlgo - info.minBalance.microAlgo
   console.log(
     `App ${targetAppId} (${appAddress}): balance ${info.balance.algo} ALGO, ` +
       `min-balance ${info.minBalance.algo} ALGO, available ${Number(available) / 1e6} ALGO`,
-  );
+  )
   if (available > MAX_AVAILABLE_BALANCE) {
     console.error(
       `Refusing to delete: available balance ${Number(available) / 1e6} ALGO exceeds the ` +
         `${Number(MAX_AVAILABLE_BALANCE) / 1e6} ALGO limit. Withdraw the surplus first ` +
         `(examples/withdraw-algo.ts), then re-run.`,
-    );
-    process.exit(1);
+    )
+    process.exit(1)
   }
 
   if (targetAppId === registryAppId) {
-    await sdk.registry.deleteApplication({});
-    console.log(`Deleted registry app ${registryAppId}`);
-    return;
+    await sdk.registry.deleteApplication({})
+    console.log(`Deleted registry app ${registryAppId}`)
+    return
   }
 
   // Not the registry — must be one of its period apps. Map appId → periodId.
-  const summaries = await sdk.getAllPeriodSummaries();
-  const match = summaries.find(({ summary }) => BigInt(summary.appId) === targetAppId);
+  const summaries = await sdk.getAllPeriodSummaries()
+  const match = summaries.find(({ summary }) => BigInt(summary.appId) === targetAppId)
   if (!match) {
-    const known = summaries.map(({ id, summary }) => `${summary.appId} (periodId ${id})`).join(", ");
+    const known = summaries.map(({ id, summary }) => `${summary.appId} (periodId ${id})`).join(', ')
     throw new Error(
       `App ${targetAppId} is neither the registry (${registryAppId}) nor a known period app. ` +
-        `Known period apps: ${known || "(none)"}`,
-    );
+        `Known period apps: ${known || '(none)'}`,
+    )
   }
 
-  await sdk.deletePeriodApp({ periodId: match.id });
-  console.log(`Deleted period app ${targetAppId} (periodId ${match.id})`);
-})();
+  await sdk.deletePeriodApp({ periodId: match.id })
+  console.log(`Deleted period app ${targetAppId} (periodId ${match.id})`)
+})()

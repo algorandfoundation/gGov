@@ -35,10 +35,7 @@ export default function VotePeriods() {
   const [filter, setFilter] = useState<StatusFilter>('all')
 
   // Voters only see periods the operator has marked ready, latest first.
-  const readyPeriods = useMemo(
-    () => periods.filter((p) => p.ready).sort((a, b) => b.id - a.id),
-    [periods],
-  )
+  const readyPeriods = useMemo(() => periods.filter((p) => p.ready).sort((a, b) => b.id - a.id), [periods])
 
   // The single active period drives the hero; latest one wins if several overlap.
   const activePeriod = useMemo(
@@ -98,14 +95,21 @@ export default function VotePeriods() {
               <Tabs value={filter} onValueChange={(v) => setFilter(v as StatusFilter)}>
                 <TabsList>
                   {FILTERS.map((f) => (
-                    <TabsTrigger key={f.value} value={f.value}>{f.label}</TabsTrigger>
+                    <TabsTrigger key={f.value} value={f.value}>
+                      {f.label}
+                    </TabsTrigger>
                   ))}
                 </TabsList>
               </Tabs>
             </div>
 
             {/* Column header (desktop) */}
-            <div className={cn('hidden gap-3.5 px-4 pb-2 text-[11.5px] uppercase tracking-[0.04em] text-muted-foreground md:grid', PERIOD_ROW_GRID)}>
+            <div
+              className={cn(
+                'hidden gap-3.5 px-4 pb-2 text-[11.5px] uppercase tracking-[0.04em] text-muted-foreground md:grid',
+                PERIOD_ROW_GRID,
+              )}
+            >
               <span>ID</span>
               <span>Period</span>
               <span>Dates</span>

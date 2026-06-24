@@ -22,15 +22,13 @@ const config: StorybookConfig = {
     // so here we only dedupe by name — the app's react/tailwind copies otherwise
     // collide with Storybook's own.
     const seen = new Set<string>()
-    config.plugins = (config.plugins as Array<{ name?: string }>)
-      .flat()
-      .filter((p) => {
-        const name = p?.name
-        if (!name) return true
-        if (seen.has(name)) return false
-        seen.add(name)
-        return true
-      })
+    config.plugins = (config.plugins as Array<{ name?: string }>).flat().filter((p) => {
+      const name = p?.name
+      if (!name) return true
+      if (seen.has(name)) return false
+      seen.add(name)
+      return true
+    })
 
     config.resolve = config.resolve ?? {}
     const existing = config.resolve.alias

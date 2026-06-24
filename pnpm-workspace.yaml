@@ -2,7 +2,7 @@ packages:
   - 'projects/*'
 
 # https://pnpm.io/supply-chain-security
-minimumReleaseAge: 10080  # 1 week
+minimumReleaseAge: 10080 # 1 week
 blockExoticSubdeps: true
 ignoreScripts: true
 allowBuilds:
@@ -13,8 +13,8 @@ overrides:
   flatted: ^3.4.2 # eslint>file-entry-cache>flat-cache>flatted
   rollup: ^4.59.0 # contracts>@rollup/plugin-typescript>rollup
   tar: ^7.5.11 # contracts>@algorandfoundation/puya-ts>tar
-  "minimatch@9": ^9.0.9 # contracts>@vitest/coverage-v8>test-exclude>minimatch
-  "minimatch@10": ^10.2.5 # contracts>@algorandfoundation/puya-ts>minimatch
-  "picomatch@4": ^4.0.4 # eslint-plugin-unused-imports>@typescript-eslint>tinyglobby>picomatch
-  "ws@7": ^7.5.11 # ggov-frontend>@blockshake/defly-connect>@walletconnect>ws
-  "@isaacs/brace-expansion": ^5.0.1 # contracts>@algorandfoundation/puya-ts>minimatch>@isaacs/brace-expansion
+  'minimatch@9': ^9.0.9 # contracts>@vitest/coverage-v8>test-exclude>minimatch
+  'minimatch@10': ^10.2.5 # contracts>@algorandfoundation/puya-ts>minimatch
+  'picomatch@4': ^4.0.4 # eslint-plugin-unused-imports>@typescript-eslint>tinyglobby>picomatch
+  'ws@7': ^7.5.11 # ggov-frontend>@blockshake/defly-connect>@walletconnect>ws
+  '@isaacs/brace-expansion': ^5.0.1 # contracts>@algorandfoundation/puya-ts>minimatch>@isaacs/brace-expansion

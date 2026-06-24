@@ -29,9 +29,7 @@ export default function CompactAccountSwitcher({ className }: { className?: stri
             }}
             className={cn(
               'flex items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors',
-              isActive
-                ? 'border-primary bg-primary/5'
-                : 'border-border hover:border-foreground/20 hover:bg-muted/50',
+              isActive ? 'border-primary bg-primary/5' : 'border-border hover:border-foreground/20 hover:bg-muted/50',
             )}
           >
             <span
@@ -41,7 +39,10 @@ export default function CompactAccountSwitcher({ className }: { className?: stri
               )}
             >
               <span
-                className={cn('size-2 rounded-full bg-primary transition-opacity', isActive ? 'opacity-100' : 'opacity-0')}
+                className={cn(
+                  'size-2 rounded-full bg-primary transition-opacity',
+                  isActive ? 'opacity-100' : 'opacity-0',
+                )}
               />
             </span>
             <AccountAvatar address={account.address} name={label} size={24} />

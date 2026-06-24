@@ -1,4 +1,4 @@
-import { forwardRef, type AnchorHTMLAttributes, type ReactNode } from "react"
+import { forwardRef, type AnchorHTMLAttributes, type ReactNode } from 'react'
 
 /**
  * Storybook mock for `@tanstack/react-router`. Aliased in `.storybook/main.ts` so
@@ -30,7 +30,7 @@ export function useParams() {
 }
 
 export function useLocation() {
-  return { pathname: "/", search: "", hash: "" }
+  return { pathname: '/', search: '', hash: '' }
 }
 
 export function useRouter() {

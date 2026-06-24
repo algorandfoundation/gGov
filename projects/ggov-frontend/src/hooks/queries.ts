@@ -125,11 +125,7 @@ export function useTopicBodies(periodId: number, topicCount: number) {
   })
 }
 
-export function useCanVote(
-  periodId: number,
-  account: string | null | undefined,
-  senderAccount?: string | null,
-) {
+export function useCanVote(periodId: number, account: string | null | undefined, senderAccount?: string | null) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.canVote(periodId, account ?? '', senderAccount ?? ''),
@@ -228,7 +224,10 @@ export function useCanVoteMany(
       // When no sender is given the SDK defaults each voter's sender to itself, so seed under
       // that effective sender (the account) — matching how `useCanVote` keys the self case.
       accounts.forEach((account) => {
-        queryClient.setQueryData(queryKeys.canVote(periodId, account, senderFor(account) ?? account), results.get(account))
+        queryClient.setQueryData(
+          queryKeys.canVote(periodId, account, senderFor(account) ?? account),
+          results.get(account),
+        )
       })
       return results
     },
@@ -336,9 +335,7 @@ export function fetchTopicBodies(
 ): Promise<(BodyJson | null)[]> {
   assertNonNegativeInt(periodId, 'period id')
   assertNonNegativeInt(topicCount, 'topic count')
-  return Promise.all(
-    Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))),
-  )
+  return Promise.all(Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))))
 }
 
 export async function fetchPeriods(readerSDK: GGovReaderSDK): Promise<PeriodWithId[]> {
@@ -367,10 +364,7 @@ export async function fetchCommittees(readerSDK: GGovReaderSDK): Promise<Committ
   return options
 }
 
-export async function fetchCommittee(
-  readerSDK: GGovReaderSDK,
-  idBase64Url: string,
-): Promise<CommitteeOption | null> {
+export async function fetchCommittee(readerSDK: GGovReaderSDK, idBase64Url: string): Promise<CommitteeOption | null> {
   const bytes = fromBase64Url(idBase64Url)
   const meta = await readerSDK.registry.getCommitteeMetadata(bytes)
   if (!meta) return null
@@ -384,10 +378,7 @@ export async function fetchCommittee(
   }
 }
 
-export function fetchCommitteeMembers(
-  readerSDK: GGovReaderSDK,
-  idBase64Url: string,
-): Promise<AccountWithVotes[]> {
+export function fetchCommitteeMembers(readerSDK: GGovReaderSDK, idBase64Url: string): Promise<AccountWithVotes[]> {
   return readerSDK.registry.getCommitteeXGovs(fromBase64Url(idBase64Url))
 }
 
@@ -481,15 +472,15 @@ export function useMyVotes(account: string | null | undefined) {
               readerSDK.getPeriodBody(id),
               Promise.all(
                 Array.from({ length: period.topics.length }, (_, ti) =>
-                  readerSDK.getTopicBody(id, BigInt(ti)).catch(() => null)
-                )
+                  readerSDK.getTopicBody(id, BigInt(ti)).catch(() => null),
+                ),
               ),
             ])
             return { periodId: Number(id), period, record, body, topicBodies }
           } catch {
             return null /* no vote for this period */
           }
-        })
+        }),
       )
       return entries.filter((e): e is VoteEntry => e !== null)
     },

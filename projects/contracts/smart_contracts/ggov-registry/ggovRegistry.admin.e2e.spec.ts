@@ -50,7 +50,12 @@ describe('GGovRegistry admin', () => {
           },
         } = await sdk
           .writeClient!.newGroup()
-          .increaseBudget({ sender: testAccount.toString(), signer: testAccount.signer, args: { itxns: BigInt(i) }, extraFee: (i * 1000).microAlgo() })
+          .increaseBudget({
+            sender: testAccount.toString(),
+            signer: testAccount.signer,
+            args: { itxns: BigInt(i) },
+            extraFee: (i * 1000).microAlgo(),
+          })
           .simulate()
         expect(appBudgetConsumed).toBe(increaseBudgetBaseCost + i * increaseBudgetIncrementCost) // if this fails then update the new value in SDK/constants
       })

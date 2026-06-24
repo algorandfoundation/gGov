@@ -1,33 +1,33 @@
-import { Check } from "lucide-react";
-import { AccountAvatar } from "@/components/AccountAvatar";
-import { Button } from "@/components/ui/button";
-import { useAddressName } from "@/hooks/use-nfd";
-import { ellipseAddress } from "@/utils/ellipseAddress";
-import { cn } from "@/lib/utils";
+import { Check } from 'lucide-react'
+import { AccountAvatar } from '@/components/AccountAvatar'
+import { Button } from '@/components/ui/button'
+import { useAddressName } from '@/hooks/use-nfd'
+import { ellipseAddress } from '@/utils/ellipseAddress'
+import { cn } from '@/lib/utils'
 
 export interface PendingAccount {
-  address: string;
-  votingPower: number;
+  address: string
+  votingPower: number
   /** Whether this account reached the wallet via delegation. */
-  delegated: boolean;
+  delegated: boolean
 }
 
 interface PendingAccountsBannerProps {
   /** Accounts the wallet controls that are eligible and haven't voted yet. */
-  pending: PendingAccount[];
+  pending: PendingAccount[]
   /** The account that just voted (anchors the "Done" row). */
-  votedAccount: { address: string; votingPower: number };
+  votedAccount: { address: string; votingPower: number }
   /** Total accounts the wallet can act for (the `n` in "k of n"). */
-  totalAccounts: number;
+  totalAccounts: number
   /** Switch the active voter to `address` and scroll to the ballot. */
-  onSwitchAndVote: (address: string) => void;
-  className?: string;
+  onSwitchAndVote: (address: string) => void
+  className?: string
 }
 
 /** Resolved NFD name, falling back to the ellipsed address. */
 function NameText({ address }: { address: string }) {
-  const { data: name } = useAddressName(address);
-  return <>{name ?? ellipseAddress(address, 6)}</>;
+  const { data: name } = useAddressName(address)
+  return <>{name ?? ellipseAddress(address, 6)}</>
 }
 
 /**
@@ -43,11 +43,11 @@ export default function PendingAccountsBanner({
   onSwitchAndVote,
   className,
 }: PendingAccountsBannerProps) {
-  const votedCount = totalAccounts - pending.length;
+  const votedCount = totalAccounts - pending.length
   return (
     <div
       className={cn(
-        "max-w-[560px] overflow-hidden rounded-xl border border-border border-t-[3px] border-t-warning-strong bg-card shadow-sm",
+        'max-w-[560px] overflow-hidden rounded-xl border border-border border-t-[3px] border-t-warning-strong bg-card shadow-sm',
         className,
       )}
     >
@@ -80,15 +80,15 @@ export default function PendingAccountsBanner({
         <span className="shrink-0 text-[12px] font-semibold text-success-strong">Done</span>
       </div>
     </div>
-  );
+  )
 }
 
 function PendingRow({
   account,
   onSwitchAndVote,
 }: {
-  account: PendingAccount;
-  onSwitchAndVote: (address: string) => void;
+  account: PendingAccount
+  onSwitchAndVote: (address: string) => void
 }) {
   return (
     <div className="flex items-center gap-3 border-t border-border px-[18px] py-3">
@@ -105,7 +105,8 @@ function PendingRow({
           )}
         </div>
         <div className="text-[12.5px] text-muted-foreground">
-          <strong className="text-foreground tabular-nums">{account.votingPower.toLocaleString()}</strong> votes · eligible
+          <strong className="text-foreground tabular-nums">{account.votingPower.toLocaleString()}</strong> votes ·
+          eligible
         </div>
       </div>
       <Button
@@ -117,5 +118,5 @@ function PendingRow({
         Switch &amp; vote
       </Button>
     </div>
-  );
+  )
 }

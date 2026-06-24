@@ -14,12 +14,11 @@
  *      the registry — call sdk.uploadPeriodApprovalProgram() with the new bytecode.
  *   4. Optionally setOperator and setXGovRegistryApp.
  */
-import { GGovSDK } from "..";
-import { getAlgorand } from "./env";
-
-(async () => {
-  const algorand = getAlgorand();
-  const deployer = await algorand.account.fromEnvironment("DEPLOYER");
+import { GGovSDK } from '..'
+import { getAlgorand } from './env'
+;(async () => {
+  const algorand = getAlgorand()
+  const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 
   const { sdk, appClient } = await GGovSDK.createRegistry({
     algorand,
@@ -27,12 +26,12 @@ import { getAlgorand } from "./env";
     operatorAccount: deployer.addr.toString(),
     // xGovRegistryAppId: 1234n, // optional: pre-configure the xGov registry app id
     initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
-  });
+  })
 
-  console.log("Registry deployed:", appClient.appId);
-  console.log("Registry app address:", appClient.appAddress);
-  console.log("Operator:", deployer.addr.toString());
-  console.log("SDK is ready to addPeriod/setOperator/etc. via this writer:", deployer.addr.toString());
+  console.log('Registry deployed:', appClient.appId)
+  console.log('Registry app address:', appClient.appAddress)
+  console.log('Operator:', deployer.addr.toString())
+  console.log('SDK is ready to addPeriod/setOperator/etc. via this writer:', deployer.addr.toString())
   // The returned `sdk` is a writer-enabled GGovSDK pre-bound to the new registry app id.
-  void sdk;
-})();
+  void sdk
+})()

@@ -22,17 +22,17 @@ AlgoKit PuyaTs project. Contracts compile to TEAL; typed clients are auto-genera
 
 ### Smart Contracts
 
-| Contract | File | Purpose |
-|----------|------|---------|
-| `BaseContract` | `base/base.algo.ts` | Abstract base: admin checks, `increaseBudget()` |
-| `EmptyContract` | `base/base.algo.ts` | Empty contract used for budget increases |
-| Account ID mixin | `base/account-id.algo.ts` | Assigns uint32 IDs to addresses (saves 28 bytes/ref) |
-| `Delegator` | `delegator/delegator.algo.ts` | Main delegator: internal voting (algohours) + external delegated xGov votes, proposal voting |
-| `GGovRegistryContract` | `ggov-registry/ggovRegistry.algo.ts` | Committee oracle + operator + delegations + period factory (spawns ggov-period apps) |
-| `GGovRegistryAccountContract` | `ggov-registry/ggovRegistryAccount.algo.ts` | Account management base for the registry |
-| `GGovPeriodContract` | `ggov-period/ggovPeriod.algo.ts` | One app per voting period: topics, vote tallies, vote records, period/topic bodies |
-| `XGovRegistryMock` | `xgov-registry-mock/xGovRegistryMock.algo.ts` | Mock for testing |
-| `XGovProposalMock` | `xgov-proposal-mock/xGovProposalMock.algo.ts` | Mock for testing |
+| Contract                      | File                                          | Purpose                                                                                      |
+| ----------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `BaseContract`                | `base/base.algo.ts`                           | Abstract base: admin checks, `increaseBudget()`                                              |
+| `EmptyContract`               | `base/base.algo.ts`                           | Empty contract used for budget increases                                                     |
+| Account ID mixin              | `base/account-id.algo.ts`                     | Assigns uint32 IDs to addresses (saves 28 bytes/ref)                                         |
+| `Delegator`                   | `delegator/delegator.algo.ts`                 | Main delegator: internal voting (algohours) + external delegated xGov votes, proposal voting |
+| `GGovRegistryContract`        | `ggov-registry/ggovRegistry.algo.ts`          | Committee oracle + operator + delegations + period factory (spawns ggov-period apps)         |
+| `GGovRegistryAccountContract` | `ggov-registry/ggovRegistryAccount.algo.ts`   | Account management base for the registry                                                     |
+| `GGovPeriodContract`          | `ggov-period/ggovPeriod.algo.ts`              | One app per voting period: topics, vote tallies, vote records, period/topic bodies           |
+| `XGovRegistryMock`            | `xgov-registry-mock/xGovRegistryMock.algo.ts` | Mock for testing                                                                             |
+| `XGovProposalMock`            | `xgov-proposal-mock/xGovProposalMock.algo.ts` | Mock for testing                                                                             |
 
 The registry holds the `periodId → GGovPeriodSummary` box. Each `GGovPeriod` app is created via inner-txn from the registry's `createPeriod`. The period app syncs `votingStart`/`votingEnd`/`numTopics` back to the registry on every `editPeriod` / `addTopic` via inner-call to `registry.updatePeriodSummary`, which validates the inner-call caller is the registered period app.
 
@@ -44,16 +44,16 @@ The registry holds the `periodId → GGovPeriodSummary` box. Each `GGovPeriod` a
 
 ### Tests
 
-| File | Scope |
-|------|-------|
-| `base/base.algo.spec.ts` | Base contract unit tests |
-| `base/account-id.algo.spec.ts` | Account ID tests |
-| `delegator/delegator.algo.spec.ts` | Delegator unit tests |
-| `delegator/delegator.simple.e2e.spec.ts` | Delegator simple E2E |
-| `delegator/delegator.complex.e2e.spec.ts` | Delegator complex E2E |
-| `ggov-registry/ggovRegistry.e2e.spec.ts` | GGovRegistry (committee oracle) E2E tests |
-| `ggov-period/ggovPeriod.e2e.spec.ts` | GGovPeriod E2E: addPeriod/edit/addTopic/vote + summary-sync + trust-boundary tests |
-| `common-tests.ts` | Shared test utilities (deployRegistry, createCommittee, etc.) |
+| File                                      | Scope                                                                              |
+| ----------------------------------------- | ---------------------------------------------------------------------------------- |
+| `base/base.algo.spec.ts`                  | Base contract unit tests                                                           |
+| `base/account-id.algo.spec.ts`            | Account ID tests                                                                   |
+| `delegator/delegator.algo.spec.ts`        | Delegator unit tests                                                               |
+| `delegator/delegator.simple.e2e.spec.ts`  | Delegator simple E2E                                                               |
+| `delegator/delegator.complex.e2e.spec.ts` | Delegator complex E2E                                                              |
+| `ggov-registry/ggovRegistry.e2e.spec.ts`  | GGovRegistry (committee oracle) E2E tests                                          |
+| `ggov-period/ggovPeriod.e2e.spec.ts`      | GGovPeriod E2E: addPeriod/edit/addTopic/vote + summary-sync + trust-boundary tests |
+| `common-tests.ts`                         | Shared test utilities (deployRegistry, createCommittee, etc.)                      |
 
 ### Artifacts
 

@@ -1,36 +1,36 @@
-import { AccountAvatar } from "@/components/AccountAvatar";
-import { useAddressName } from "@/hooks/use-nfd";
-import { ellipseAddress } from "@/utils/ellipseAddress";
-import { classifyOption } from "@/utils/vote";
-import { cn } from "@/lib/utils";
+import { AccountAvatar } from '@/components/AccountAvatar'
+import { useAddressName } from '@/hooks/use-nfd'
+import { ellipseAddress } from '@/utils/ellipseAddress'
+import { classifyOption } from '@/utils/vote'
+import { cn } from '@/lib/utils'
 
 /** How the connected wallet relates to this account, driving the header tag. */
-export type AccountVoteRole = "self" | "delegated" | "direct";
+export type AccountVoteRole = 'self' | 'delegated' | 'direct'
 
 export interface VoteAllocation {
   /** Option label as stored on-chain. */
-  label: string;
+  label: string
   /** Votes this account put on the option. */
-  votes: number;
+  votes: number
   /** Share of the account's power on this topic, 0–100 (rounded). */
-  pct: number;
+  pct: number
 }
 
 export interface AccountVoteTopic {
   /** 0-based topic index, rendered as the mono `T.0N` chip. */
-  index: number;
-  title?: string;
+  index: number
+  title?: string
   /** Power spread across more than one option (advanced mode). */
-  split: boolean;
-  allocations: VoteAllocation[];
+  split: boolean
+  allocations: VoteAllocation[]
 }
 
 export interface AccountVoteRecordProps {
-  address: string;
-  role: AccountVoteRole;
+  address: string
+  role: AccountVoteRole
   /** The account's voting power exercised in the period. */
-  total: number;
-  topics: AccountVoteTopic[];
+  total: number
+  topics: AccountVoteTopic[]
 }
 
 /**
@@ -40,35 +40,35 @@ export interface AccountVoteRecordProps {
  */
 export function sentimentTone(label: string): string {
   switch (classifyOption(label)) {
-    case "yes":
-      return "bg-success";
-    case "no":
-      return "bg-algo-orange";
-    case "abstain":
-      return "bg-algo-navy-40";
+    case 'yes':
+      return 'bg-success'
+    case 'no':
+      return 'bg-algo-orange'
+    case 'abstain':
+      return 'bg-algo-navy-40'
     default:
-      return "bg-algo-blue";
+      return 'bg-algo-blue'
   }
 }
 
 const ROLE_META: Record<AccountVoteRole, { label: string; className: string }> = {
   // Mirrors the AccountSelector / vote-warning language so delegation reads consistently.
-  self: { label: "Your account", className: "bg-primary/10 text-primary dark:bg-algo-teal/15 dark:text-algo-teal" },
-  delegated: { label: "Delegated to you", className: "bg-muted text-muted-foreground" },
-  direct: { label: "Voted directly", className: "bg-warning/20 text-[#7A5A00] dark:text-warning" },
-};
+  self: { label: 'Your account', className: 'bg-primary/10 text-primary dark:bg-algo-teal/15 dark:text-algo-teal' },
+  delegated: { label: 'Delegated to you', className: 'bg-muted text-muted-foreground' },
+  direct: { label: 'Voted directly', className: 'bg-warning/20 text-[#7A5A00] dark:text-warning' },
+}
 
 /** Small pill, matching TopicVoteCard's `ResultTag` (LEADING / YOUR VOTE) sizing. */
-const PILL = "shrink-0 rounded-full px-[7px] py-[2px] text-[10.5px] font-semibold tracking-[0.03em]";
+const PILL = 'shrink-0 rounded-full px-[7px] py-[2px] text-[10.5px] font-semibold tracking-[0.03em]'
 
 /** Account name: resolved NFD name, falling back to the ellipsed address. */
 function AccountName({ address }: { address: string }) {
-  const { data: name } = useAddressName(address);
+  const { data: name } = useAddressName(address)
   return (
-    <span className={cn("min-w-0 truncate text-[14px] font-medium text-foreground", !name && "font-mono")}>
+    <span className={cn('min-w-0 truncate text-[14px] font-medium text-foreground', !name && 'font-mono')}>
       {name ?? ellipseAddress(address, 6)}
     </span>
-  );
+  )
 }
 
 /**
@@ -79,7 +79,7 @@ function AccountName({ address }: { address: string }) {
  * while the vote figure stays pinned top-right.
  */
 export default function AccountVoteRecord({ address, role, total, topics }: AccountVoteRecordProps) {
-  const roleMeta = ROLE_META[role];
+  const roleMeta = ROLE_META[role]
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-center gap-[11px] border-b bg-muted/50 px-[15px] py-[13px]">
@@ -97,7 +97,7 @@ export default function AccountVoteRecord({ address, role, total, topics }: Acco
 
       <div className="flex flex-col">
         {topics.map((topic) => {
-          const indexLabel = `T.${String(topic.index + 1).padStart(2, "0")}`;
+          const indexLabel = `T.${String(topic.index + 1).padStart(2, '0')}`
           return (
             <div key={topic.index} className="border-b px-[15px] py-3 last:border-b-0">
               <div className="mb-[9px] flex items-baseline gap-2">
@@ -108,37 +108,37 @@ export default function AccountVoteRecord({ address, role, total, topics }: Acco
                   {topic.title}
                 </span>
                 {topic.split && (
-                  <span className={cn(PILL, "bg-warning/20 text-[#7A5A00] dark:text-warning")}>Split</span>
+                  <span className={cn(PILL, 'bg-warning/20 text-[#7A5A00] dark:text-warning')}>Split</span>
                 )}
               </div>
               <div className="flex flex-col gap-[9px]">
                 {topic.allocations.map((alloc, i) => {
-                  const tone = sentimentTone(alloc.label);
+                  const tone = sentimentTone(alloc.label)
                   return (
                     <div key={i}>
                       <div className="flex items-start gap-[9px]">
-                        <span className={cn("mt-1 size-[9px] shrink-0 rounded-[3px]", tone)} />
+                        <span className={cn('mt-1 size-[9px] shrink-0 rounded-[3px]', tone)} />
                         <span className="min-w-0 flex-1 text-[13px] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                           {alloc.label}
                         </span>
                         <span className="shrink-0 whitespace-nowrap text-[12.5px] text-muted-foreground">
-                          <strong className="tabular-nums text-foreground">{alloc.votes.toLocaleString()}</strong> ·{" "}
+                          <strong className="tabular-nums text-foreground">{alloc.votes.toLocaleString()}</strong> ·{' '}
                           {alloc.pct}%
                         </span>
                       </div>
                       {topic.split && (
                         <div className="ml-[18px] mt-1.5 h-[5px] overflow-hidden rounded-full bg-muted">
-                          <div className={cn("h-full rounded-full", tone)} style={{ width: `${alloc.pct}%` }} />
+                          <div className={cn('h-full rounded-full', tone)} style={{ width: `${alloc.pct}%` }} />
                         </div>
                       )}
                     </div>
-                  );
+                  )
                 })}
               </div>
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }

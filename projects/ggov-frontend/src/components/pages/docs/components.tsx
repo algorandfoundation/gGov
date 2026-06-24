@@ -55,7 +55,10 @@ export function Strong({ children }: { children: ReactNode }) {
 /** Inline cross-link to another docs page ("How voting power works →"). */
 export function InlineLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className="text-primary no-underline [border-bottom:1px_solid] border-primary/30 hover:border-primary">
+    <Link
+      to={to}
+      className="text-primary no-underline [border-bottom:1px_solid] border-primary/30 hover:border-primary"
+    >
       {children}
     </Link>
   )
@@ -78,12 +81,7 @@ export function Callout({
   children: ReactNode
 }) {
   return (
-    <UICallout
-      variant={variant === 'warning' ? 'danger' : variant}
-      size="md"
-      icon={icon}
-      className="my-2 mb-[18px]"
-    >
+    <UICallout variant={variant === 'warning' ? 'danger' : variant} size="md" icon={icon} className="my-2 mb-[18px]">
       {children}
     </UICallout>
   )

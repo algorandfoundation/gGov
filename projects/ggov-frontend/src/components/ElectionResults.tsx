@@ -1,21 +1,21 @@
-import { ListOrdered, Minus } from "lucide-react";
-import { Avatar, avatarTone } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { ListOrdered, Minus } from 'lucide-react'
+import { Avatar, avatarTone } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
 
 export interface ElectionCandidate {
   /** Candidate handle — the topic title. */
-  name: string;
-  yes: number;
-  no: number;
-  abstain: number;
+  name: string
+  yes: number
+  no: number
+  abstain: number
 }
 
 interface ElectionResultsProps {
-  candidates: ElectionCandidate[];
+  candidates: ElectionCandidate[]
   /** Seats being elected (`electSeats`). The top `threshold` lead. */
-  threshold: number;
+  threshold: number
   /** Active period → in-progress framing (ranking may still change). */
-  live?: boolean;
+  live?: boolean
 }
 
 /**
@@ -25,11 +25,9 @@ interface ElectionResultsProps {
  * negative left). Provisional language only — ranking, never seating verdicts.
  */
 export default function ElectionResults({ candidates, threshold, live }: ElectionResultsProps) {
-  const scored = candidates
-    .map((c) => ({ ...c, score: c.yes - c.no }))
-    .sort((a, b) => b.score - a.score);
-  const maxAbs = Math.max(1, ...scored.map((c) => Math.abs(c.score)));
-  const seatsLabel = `${threshold} seat${threshold === 1 ? "" : "s"}`;
+  const scored = candidates.map((c) => ({ ...c, score: c.yes - c.no })).sort((a, b) => b.score - a.score)
+  const maxAbs = Math.max(1, ...scored.map((c) => Math.abs(c.score)))
+  const seatsLabel = `${threshold} seat${threshold === 1 ? '' : 's'}`
 
   return (
     <div>
@@ -58,23 +56,23 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
       {/* ranked rows */}
       <div className="overflow-hidden rounded-b-xl border border-t-0 border-border sm:rounded-b-xl">
         {scored.map((c, i) => {
-          const rank = i + 1;
-          const leading = rank <= threshold;
-          const neg = c.score < 0;
-          const half = Math.round((Math.abs(c.score) / maxAbs) * 50);
-          const showCutoff = rank === threshold && rank < scored.length;
+          const rank = i + 1
+          const leading = rank <= threshold
+          const neg = c.score < 0
+          const half = Math.round((Math.abs(c.score) / maxAbs) * 50)
+          const showCutoff = rank === threshold && rank < scored.length
           return (
             <div key={`${c.name}-${i}`}>
               <div
                 className={cn(
-                  "grid grid-cols-[28px_1fr_auto] items-center gap-3 border-b border-border px-3.5 py-3.5 sm:grid-cols-[30px_1fr_minmax(160px,220px)_84px] sm:gap-3.5 sm:px-[18px]",
-                  leading ? "bg-primary/5" : "bg-card",
+                  'grid grid-cols-[28px_1fr_auto] items-center gap-3 border-b border-border px-3.5 py-3.5 sm:grid-cols-[30px_1fr_minmax(160px,220px)_84px] sm:gap-3.5 sm:px-[18px]',
+                  leading ? 'bg-primary/5' : 'bg-card',
                 )}
               >
                 <span
                   className={cn(
-                    "text-center font-display text-base font-bold tabular-nums",
-                    leading ? "text-algo-blue" : "text-muted-foreground",
+                    'text-center font-display text-base font-bold tabular-nums',
+                    leading ? 'text-algo-blue' : 'text-muted-foreground',
                   )}
                 >
                   {rank}
@@ -101,13 +99,13 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
                   {neg ? (
                     <div
                       className="absolute bottom-0 right-1/2 top-0 rounded-l-[3px]"
-                      style={{ width: `${half}%`, background: "#E79B7A" }}
+                      style={{ width: `${half}%`, background: '#E79B7A' }}
                     />
                   ) : (
                     <div
                       className={cn(
-                        "absolute bottom-0 left-1/2 top-0 rounded-r-[3px]",
-                        leading ? "bg-algo-blue" : "bg-algo-navy-40",
+                        'absolute bottom-0 left-1/2 top-0 rounded-r-[3px]',
+                        leading ? 'bg-algo-blue' : 'bg-algo-navy-40',
                       )}
                       style={{ width: `${half}%` }}
                     />
@@ -115,13 +113,13 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
                 </div>
                 <span
                   className={cn(
-                    "text-right font-display text-xl font-bold tabular-nums",
-                    !neg && leading && "text-algo-blue",
-                    !neg && !leading && "text-muted-foreground",
+                    'text-right font-display text-xl font-bold tabular-nums',
+                    !neg && leading && 'text-algo-blue',
+                    !neg && !leading && 'text-muted-foreground',
                   )}
-                  style={neg ? { color: "#C24A1E" } : undefined}
+                  style={neg ? { color: '#C24A1E' } : undefined}
                 >
-                  {(neg ? "−" : "+") + Math.abs(c.score).toLocaleString()}
+                  {(neg ? '−' : '+') + Math.abs(c.score).toLocaleString()}
                 </span>
               </div>
               {showCutoff && (
@@ -135,14 +133,14 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
                 </div>
               )}
             </div>
-          );
+          )
         })}
       </div>
 
       <p className="mt-3 text-[12px] text-muted-foreground">
-        Score = total Yes votes minus total No votes. Abstain votes don't change a candidate's score.{" "}
-        {live ? "Live tallies — recorded on-chain; ranking may change." : "Final tallies recorded on-chain."}
+        Score = total Yes votes minus total No votes. Abstain votes don't change a candidate's score.{' '}
+        {live ? 'Live tallies — recorded on-chain; ranking may change.' : 'Final tallies recorded on-chain.'}
       </p>
     </div>
-  );
+  )
 }

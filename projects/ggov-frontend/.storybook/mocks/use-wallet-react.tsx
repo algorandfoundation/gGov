@@ -63,18 +63,12 @@ export const demoAccounts: MockAccount[] = [
   { address: addr('7TMAQX', 'R4RAGQ'), name: 'Lute Wallet 3' },
 ]
 
-export function MockWalletProvider({
-  config = {},
-  children,
-}: {
-  config?: MockWalletConfig
-  children: ReactNode
-}) {
+export function MockWalletProvider({ config = {}, children }: { config?: MockWalletConfig; children: ReactNode }) {
   const accounts = config.accounts ?? []
   const startConnected = config.connected ?? accounts.length > 0
   const walletName = config.walletName ?? 'Lute'
   const [activeAddress, setActiveAddress] = useState<string | null>(
-    startConnected ? config.activeAddress ?? accounts[0]?.address ?? null : null,
+    startConnected ? (config.activeAddress ?? accounts[0]?.address ?? null) : null,
   )
 
   const activeWallet: MockWallet | null = activeAddress

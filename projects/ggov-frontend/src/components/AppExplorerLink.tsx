@@ -25,7 +25,12 @@ export default function AppExplorerLink({
   const url = explorer?.getUrl(network, 'application', id)
 
   if (!explorer || !url) {
-    return <span className={cn('tabular-nums', className)}>{prefix}{id}</span>
+    return (
+      <span className={cn('tabular-nums', className)}>
+        {prefix}
+        {id}
+      </span>
+    )
   }
 
   return (
@@ -33,9 +38,13 @@ export default function AppExplorerLink({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn('inline-flex items-center gap-1 tabular-nums text-primary hover:underline dark:text-algo-teal', className)}
+      className={cn(
+        'inline-flex items-center gap-1 tabular-nums text-primary hover:underline dark:text-algo-teal',
+        className,
+      )}
     >
-      {prefix}{id}
+      {prefix}
+      {id}
       <ExternalLink className="size-3.5" />
     </a>
   )

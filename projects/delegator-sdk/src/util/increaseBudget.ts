@@ -1,7 +1,7 @@
-import { TransactionSignerAccount } from "@algorandfoundation/algokit-utils/types/account"
-import { modelsv2, TransactionSigner, Algodv2, makeEmptyTransactionSigner } from "algosdk"
-import { DelegatorComposer } from "../generated/DelegatorClient"
-import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from "../constants"
+import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
+import { modelsv2, TransactionSigner, Algodv2, makeEmptyTransactionSigner } from 'algosdk'
+import { DelegatorComposer } from '../generated/DelegatorClient'
+import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants'
 
 export const SIMULATE_PARAMS = {
   allowMoreLogging: true,
@@ -19,9 +19,7 @@ const simulateRequest = new modelsv2.SimulateRequest({
 /* Utility to increase the budget of a transaction group if needed.
  * Simulates and returns undefines if we are under budget, otherwise returns a new builder with an increaseBudget call prepended.
  */
-export async function getIncreaseBudgetBuilder<
-  T extends DelegatorComposer<any>
->(
+export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>(
   builder: T,
   newBuilderFactory: () => T,
   sender: string,
@@ -58,7 +56,7 @@ export async function getIncreaseBudgetBuilder<
   // get existing budget: count app calls
   // NOTE only goes 1 level deep in itxns
   const numAppCalls = txnResults.map(({ txnResult }) => {
-    if (txnResult?.txn.txn.type !== "appl") return 0
+    if (txnResult?.txn.txn.type !== 'appl') return 0
     const innerTxns = txnResult.innerTxns ?? []
     return 1 + innerTxns.length
   }).length

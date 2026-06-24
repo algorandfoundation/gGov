@@ -5,7 +5,7 @@ replacement for the legacy Django platform), mirroring the **last voting
 period**:
 
 - Period: `governance-period-15` — "Governance Period 15"
-- Voting session: `period-15-voting-session-1` — *xGov Council Election 2025*
+- Voting session: `period-15-voting-session-1` — _xGov Council Election 2025_
   (22 candidate topics, each with Yes / No / Abstain options)
 
 Source API: `https://governance.algorand.foundation/api`
@@ -14,18 +14,18 @@ responses are stable.
 
 ## Files → endpoint
 
-| File | Endpoint | Storage | Notes |
-|------|----------|---------|-------|
-| `periods.json` | `GET /api/periods/` | KV | All 15 periods, DRF-paginated envelope |
-| `period-15.json` | `GET /api/periods/governance-period-15/` | KV | Period detail incl. nested voting session summary |
-| `voting-session-period-15-voting-session-1.json` | `GET /api/voting-sessions/period-15-voting-session-1/` | KV | **The core fixture** — full session with all 22 topics + topic_options |
-| `period-15-accepted-assets.json` | `GET /api/periods/governance-period-15/accepted-assets/` | KV | Paginated (default page) |
-| `statistics.json` | `GET /api/periods/statistics/` | KV | Cross-period statistics |
-| `period-15-governors-page1.json` | `GET /api/periods/governance-period-15/governors/?limit=5` | D1 | First page sample; full count in `.count` |
-| `period-15-governor-detail-sample.json` | `GET /api/periods/governance-period-15/governors/{address}/` | D1+KV | Governor who voted; `voting_session_history` expanded |
-| `period-15-governor-activities-sample.json` | `GET /api/periods/governance-period-15/governors/{address}/activities/` | D1 | Same governor |
-| `topic-option-votes-sample.json` | `GET /api/topic-options/{id}/votes/?limit=20` | D1 | First page; `.count` is the true total |
-| `transaction-sample.json` | `GET /api/transactions/{transaction_id}/` | D1 | A vote transaction + its governor activity |
+| File                                             | Endpoint                                                                | Storage | Notes                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------- |
+| `periods.json`                                   | `GET /api/periods/`                                                     | KV      | All 15 periods, DRF-paginated envelope                                 |
+| `period-15.json`                                 | `GET /api/periods/governance-period-15/`                                | KV      | Period detail incl. nested voting session summary                      |
+| `voting-session-period-15-voting-session-1.json` | `GET /api/voting-sessions/period-15-voting-session-1/`                  | KV      | **The core fixture** — full session with all 22 topics + topic_options |
+| `period-15-accepted-assets.json`                 | `GET /api/periods/governance-period-15/accepted-assets/`                | KV      | Paginated (default page)                                               |
+| `statistics.json`                                | `GET /api/periods/statistics/`                                          | KV      | Cross-period statistics                                                |
+| `period-15-governors-page1.json`                 | `GET /api/periods/governance-period-15/governors/?limit=5`              | D1      | First page sample; full count in `.count`                              |
+| `period-15-governor-detail-sample.json`          | `GET /api/periods/governance-period-15/governors/{address}/`            | D1+KV   | Governor who voted; `voting_session_history` expanded                  |
+| `period-15-governor-activities-sample.json`      | `GET /api/periods/governance-period-15/governors/{address}/activities/` | D1      | Same governor                                                          |
+| `topic-option-votes-sample.json`                 | `GET /api/topic-options/{id}/votes/?limit=20`                           | D1      | First page; `.count` is the true total                                 |
+| `transaction-sample.json`                        | `GET /api/transactions/{transaction_id}/`                               | D1      | A vote transaction + its governor activity                             |
 
 ## Sampled identifiers
 

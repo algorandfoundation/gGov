@@ -1,5 +1,5 @@
-import { Avatar, avatarTone, type AvatarTone } from "@/components/ui/avatar"
-import { useAddressNfd } from "@/hooks/use-nfd"
+import { Avatar, avatarTone, type AvatarTone } from '@/components/ui/avatar'
+import { useAddressNfd } from '@/hooks/use-nfd'
 
 interface AccountAvatarProps {
   /** Algorand address the avatar represents. */
