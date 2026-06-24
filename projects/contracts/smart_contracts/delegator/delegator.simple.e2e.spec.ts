@@ -1,20 +1,13 @@
-import { Config } from '@algorandfoundation/algokit-utils'
-import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from 'xgov-delegator-sdk'
 import { errAlgoHoursExist, errPeriodStartInvalid, errUnauthorized } from '../base/errors.algo'
 import { deployDelegatorSimple, transformedError } from '../common-tests'
+import { configureTestLogging } from '../test-utils'
 
 describe.skip('Delegator simple e2e tests', () => {
   const localnet = algorandFixture()
-  beforeAll(() => {
-    Config.configure({
-      // debug: true,
-      // traceAll: true,
-    })
-    registerDebugEventHandlers()
-  })
+  beforeAll(configureTestLogging)
   beforeEach(localnet.newScope)
 
   describe('increaseBudget opcode cost', () => {

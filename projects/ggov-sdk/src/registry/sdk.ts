@@ -318,7 +318,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     builder,
   }: GGovRegistryContractArgs["mirrorXGovDelegation(address)void"] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup();
-    return builder.mirrorXGovDelegation({ args: { account }, note });
+    return builder.mirrorXGovDelegation({ args: { account }, note, extraFee: (1000).microAlgo() });
   }
 
   mirrorXGovDelegation = this.makeTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns });

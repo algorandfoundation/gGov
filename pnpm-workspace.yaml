@@ -1,2 +1,6 @@
 packages:
   - 'projects/*'
+allowBuilds:
+  esbuild: true
+  sharp: false
+  workerd: false

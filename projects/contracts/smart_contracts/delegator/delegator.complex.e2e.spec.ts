@@ -1,5 +1,3 @@
-import { Config } from '@algorandfoundation/algokit-utils'
-import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { Account, Address } from 'algosdk'
@@ -9,17 +7,12 @@ import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import { XGovProposalMockClient } from '../artifacts/xgov-proposal-mock/XGovProposalMockClient'
 import { errCommitteeNotExists, errState } from '../base/errors.algo'
 import { configureProposal, deployDelegatorFull, transformedError } from '../common-tests'
+import { configureTestLogging } from '../test-utils'
 import { STATUS_EMPTY } from '../xgov-proposal-mock/xGovProposalMock.algo'
 
 describe.skip('Delegator complex e2e tests', () => {
   const localnet = algorandFixture()
-  beforeAll(() => {
-    Config.configure({
-      debug: true,
-      // traceAll: true,
-    })
-    registerDebugEventHandlers()
-  })
+  beforeAll(configureTestLogging)
   beforeEach(localnet.newScope)
 
   describe('Scenario 1', () => {

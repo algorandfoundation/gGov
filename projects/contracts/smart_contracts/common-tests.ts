@@ -49,6 +49,18 @@ export const deployRegistry = async (localnet: AlgorandFixture, account: Address
   }
 }
 
+export const createSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
+  new GGovRegistrySDK({
+    algorand: localnet.algorand,
+    registryAppId,
+    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
+  })
+
+export const generateAccountWithSDK = async (localnet: AlgorandFixture, registryAppId: bigint, initialFunds = (1).algos()) => {
+  const account = await localnet.context.generateAccount({ initialFunds })
+  return { account, sdk: createSDK(localnet, registryAppId, account) }
+}
+
 async function createCommittee(
   localnet: AlgorandFixture,
   registryAppId: bigint,
@@ -81,7 +93,9 @@ export async function configureProposal(args: {
 }) {
   const { proposalAppClient, ...rest } = args
   const { committee, status, voteOpenTs, votingDuration } = rest
-  console.log('Configuring proposal', rest)
+  if (process.env.NOOP_TEST_LOGGER !== 'true') {
+    console.log('Configuring proposal', rest)
+  }
   const builder: XGovProposalMockComposer<any> = proposalAppClient.newGroup()
   if (committee !== undefined) {
     builder.setCommitteeId({

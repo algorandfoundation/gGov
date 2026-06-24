@@ -1,5 +1,3 @@
-import { Config } from '@algorandfoundation/algokit-utils'
-import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { createHash } from 'node:crypto'
 import { ABIType, Address, encodeAddress, getApplicationAddress } from 'algosdk'
@@ -27,6 +25,7 @@ import {
 } from '../base/errors.algo'
 import { transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
+import { configureTestLogging } from '../test-utils'
 
 async function deployRegistryAndSDK(
   localnet: ReturnType<typeof algorandFixture>,
@@ -141,10 +140,7 @@ async function createVotingPeriod(
 
 describe('GGovPeriod contract', () => {
   const localnet = algorandFixture()
-  beforeAll(() => {
-    Config.configure({ debug: true })
-    registerDebugEventHandlers()
-  })
+  beforeAll(configureTestLogging)
   beforeEach(localnet.newScope)
 
   // ── setOperator ──────────────────────────────────────────────────

@@ -42,7 +42,7 @@ export class GGovRegistryAccountContract extends BaseContract {
     else return this.getEmptyGGovAccount(u32(0))
   }
 
-  /** Get empty gGov account struct with $accountId */
+  /** Get empty gGov account struct with `accountId` */
   protected getEmptyGGovAccount(accountId: Uint32): GGovAccount {
     return { accountId: accountId, committeeOffsets: [] }
   }
