@@ -60,9 +60,11 @@ function VoteAllocationSummary({ allocated, power }: { allocated: number; power:
 /**
  * Tense-adjusted eligibility wording for the connected voter. `self` is the full
  * sentence when voting for yourself; `suffix` follows an `<Address>` when voting
- * for someone else; `muted` styles it as secondary rather than emphasised.
+ * for someone else; `muted` styles it as secondary rather than emphasised. `self`
+ * is omitted for the active/ineligible case — there the UI names the account
+ * inline (`<Address> is not eligible…`) instead of a generic "You…" sentence.
  */
-function eligibilityCopy(status: PeriodStatus, canVote: boolean): { self: string; suffix: string; muted: boolean } {
+function eligibilityCopy(status: PeriodStatus, canVote: boolean): { self?: string; suffix: string; muted: boolean } {
   if (canVote) {
     if (status === "active") return { self: "You are eligible to vote", suffix: "is eligible to vote", muted: false };
     if (status === "upcoming")
@@ -73,7 +75,7 @@ function eligibilityCopy(status: PeriodStatus, canVote: boolean): { self: string
       };
     return { self: "Voting has closed — you did not vote in this period", suffix: "did not vote in this period", muted: true };
   }
-  if (status === "active") return { self: "You cannot vote in this period", suffix: "cannot vote in this period", muted: true };
+  if (status === "active") return { suffix: "cannot vote in this period", muted: true };
   if (status === "upcoming")
     return { self: "You are not eligible to vote in this period", suffix: "is not eligible to vote in this period", muted: true };
   return { self: "You were not eligible to vote in this period", suffix: "were not eligible to vote in this period", muted: true };
@@ -488,7 +490,17 @@ export default function VotePeriodDetail() {
                     <strong>{formatTimestamp(period.votingEnd)}</strong>.
                   </>
                 ) : votingForSelf ? (
-                  eligibility!.self
+                  // Name the active account explicitly when it can't vote, rather than
+                  // the generic "You cannot vote in this period". (This block is
+                  // active-only, so ineligible here means !canVote in the open window.)
+                  eligibleToVote ? (
+                    eligibility!.self
+                  ) : (
+                    <>
+                      <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> is not eligible to vote
+                      in this period
+                    </>
+                  )
                 ) : (
                   <>
                     <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility!.suffix}
