@@ -127,7 +127,8 @@ export default function Home() {
             <div className="min-w-0 flex-1">
               <div className="font-display text-[15px] font-bold">Periods 1–15 · Legacy governance</div>
               <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-                The 2021–2025 ALGO-commitment rounds ran on a separate portal. Results and historical votes remain available there.
+                The 2021–2025 ALGO-commitment rounds ran on a separate portal. Results and historical votes remain
+                available there.
               </p>
             </div>
           </div>

@@ -6,8 +6,8 @@ export default function Delegation() {
       <ArticleHeader to="/docs/delegation" />
       <div className="mt-[22px]">
         <Lead>
-          Don't want to vote yourself? Hand your voting power to an account you trust. Want to do the voting? You can act
-          for accounts that delegated to you.
+          Don't want to vote yourself? Hand your voting power to an account you trust. Want to do the voting? You can
+          act for accounts that delegated to you.
         </Lead>
 
         <H2>What delegation does</H2>

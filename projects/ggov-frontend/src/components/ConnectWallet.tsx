@@ -25,7 +25,9 @@ export default function ConnectWallet() {
 
   return (
     <>
-      <Button className="w-full" onClick={() => setOpen(true)}>Connect wallet</Button>
+      <Button className="w-full" onClick={() => setOpen(true)}>
+        Connect wallet
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent onClose={() => setOpen(false)} className="max-w-md">
           <DialogHeader>

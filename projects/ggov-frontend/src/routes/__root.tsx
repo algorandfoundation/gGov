@@ -50,11 +50,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           actions={
             <>
               {/* window is only touched in the click handler, so SSR is safe. */}
-              <button
-                type="button"
-                className={cn(buttonVariants())}
-                onClick={() => window.location.reload()}
-              >
+              <button type="button" className={cn(buttonVariants())} onClick={() => window.location.reload()}>
                 Reload
               </button>
               <a href="/" className={cn(buttonVariants({ variant: 'outline' }))}>

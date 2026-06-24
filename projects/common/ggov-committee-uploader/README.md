@@ -16,13 +16,13 @@ For each governance period the xGov host publishes, under the network path
 
 A gGov committee combines the two:
 
-| gGov committee field            | Source                                              |
-| ------------------------------- | --------------------------------------------------- |
-| `xGovs` (members)               | the xGov **candidate** committee map                |
-| `networkGenesisHash`            | the xGov committee file                             |
-| `periodStart` / `periodEnd`     | the xGov committee file                             |
-| `registryId`                    | **placeholder `1`** (mainnet gGov registry TBD)     |
-| `totalMembers` / `totalVotes`   | recomputed from the candidate members               |
+| gGov committee field          | Source                                          |
+| ----------------------------- | ----------------------------------------------- |
+| `xGovs` (members)             | the xGov **candidate** committee map            |
+| `networkGenesisHash`          | the xGov committee file                         |
+| `periodStart` / `periodEnd`   | the xGov committee file                         |
+| `registryId`                  | **placeholder `1`** (mainnet gGov registry TBD) |
+| `totalMembers` / `totalVotes` | recomputed from the candidate members           |
 
 Members are sorted by address ascending; fields are emitted in the canonical
 xGov order so the committee id (`sha512_256` over `JSON.stringify`, per
@@ -52,8 +52,8 @@ creator + name `"GGovRegistry"`, or set `GGOV_REGISTRY_APP_ID` to override.
 
 ### Overrides (build)
 
-| Env            | Default                                              |
-| -------------- | ---------------------------------------------------- |
-| `REGISTRY_ID`  | `1`                                                  |
-| `BASE_URL`     | `https://xgov-committees.algorand.tech`              |
+| Env            | Default                                                     |
+| -------------- | ----------------------------------------------------------- |
+| `REGISTRY_ID`  | `1`                                                         |
+| `BASE_URL`     | `https://xgov-committees.algorand.tech`                     |
 | `NETWORK_PATH` | `mainnet-v1.0-wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8_` |

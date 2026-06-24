@@ -39,25 +39,36 @@ function useFakeMutation(): FakeMutation {
   }, [])
   useEffect(() => clearTimers, [clearTimers])
 
-  const mutate = useCallback((_vars?: unknown, options?: FakeMutateOptions) => {
-    clearTimers()
-    setIsSuccess(false)
-    setIsPending(true)
-    setPhase('signing')
-    // signing (wallet prompt) → sending (submitted) → confirmed (✓ flash) → idle
-    timers.current.push(window.setTimeout(() => setPhase('sending'), 900))
-    timers.current.push(window.setTimeout(() => {
-      setIsPending(false)
-      setIsSuccess(true)
-      confirmPhase()
-      options?.onSuccess?.()
-    }, 1900))
-  }, [clearTimers])
+  const mutate = useCallback(
+    (_vars?: unknown, options?: FakeMutateOptions) => {
+      clearTimers()
+      setIsSuccess(false)
+      setIsPending(true)
+      setPhase('signing')
+      // signing (wallet prompt) → sending (submitted) → confirmed (✓ flash) → idle
+      timers.current.push(window.setTimeout(() => setPhase('sending'), 900))
+      timers.current.push(
+        window.setTimeout(() => {
+          setIsPending(false)
+          setIsSuccess(true)
+          confirmPhase()
+          options?.onSuccess?.()
+        }, 1900),
+      )
+    },
+    [clearTimers],
+  )
 
   const mutateAsync = useCallback(
     (vars?: unknown, options?: FakeMutateOptions) =>
       new Promise<void>((resolve) => {
-        mutate(vars, { ...options, onSuccess: () => { options?.onSuccess?.(); resolve() } })
+        mutate(vars, {
+          ...options,
+          onSuccess: () => {
+            options?.onSuccess?.()
+            resolve()
+          },
+        })
       }),
     [mutate],
   )

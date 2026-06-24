@@ -1,5 +1,5 @@
-import pMap from "p-map"
-import { chunk } from "./chunk"
+import pMap from 'p-map'
+import { chunk } from './chunk'
 
 /**
  * Decorator that automatically chunks array arguments and aggregates results
@@ -8,7 +8,7 @@ import { chunk } from "./chunk"
  * @returns Method decorator
  */
 export function chunked(chunkSize: number, chunkArgIndex = 0) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = descriptor.value
 
     descriptor.value = async function (...args: any[]) {
@@ -17,7 +17,7 @@ export function chunked(chunkSize: number, chunkArgIndex = 0) {
         return originalMethod.apply(this, args)
       }
       // read concurrency from 'this' if available
-      const concurrency = this && typeof (this as any).concurrency === "number" ? (this as any).concurrency : 2
+      const concurrency = this && typeof (this as any).concurrency === 'number' ? (this as any).concurrency : 2
 
       // Chunk the array argument
       const chunks = chunk(args[chunkArgIndex], chunkSize)

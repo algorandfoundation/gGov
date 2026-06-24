@@ -37,11 +37,7 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
     })
   }, [activeAddress, transactionSigner])
 
-  return React.createElement(
-    GGovSDKContext.Provider,
-    { value: { readerSDK, sdk, escregSDK } },
-    children
-  )
+  return React.createElement(GGovSDKContext.Provider, { value: { readerSDK, sdk, escregSDK } }, children)
 }
 
 export function useGGovSDK() {

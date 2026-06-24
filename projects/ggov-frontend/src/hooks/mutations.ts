@@ -7,16 +7,19 @@ import { signingProgress } from '@/lib/signingProgress'
 import type { BodyJson, PeriodBodyJson } from 'ggov-sdk'
 
 function txnSuccessToast(message: string, data?: unknown) {
-  const txIds = data && typeof data === 'object' && 'txIds' in data
-    ? (data as { txIds: string[] }).txIds
-    : undefined
+  const txIds = data && typeof data === 'object' && 'txIds' in data ? (data as { txIds: string[] }).txIds : undefined
   const txId = txIds && txIds.length > 0 ? txIds[txIds.length - 1] : undefined
-  toast.success(message, txId ? {
-    action: {
-      label: 'Copy Txn ID',
-      onClick: () => navigator.clipboard.writeText(txId),
-    },
-  } : undefined)
+  toast.success(
+    message,
+    txId
+      ? {
+          action: {
+            label: 'Copy Txn ID',
+            onClick: () => navigator.clipboard.writeText(txId),
+          },
+        }
+      : undefined,
+  )
 }
 
 export function useVoteMutation() {
@@ -113,11 +116,11 @@ export function useAddPeriodMutation() {
       const progress = signingProgress(willUploadBody ? 2 : 1)
       try {
         progress.step('Creating period')
-        const periodId = await sdk!.registry.addPeriod({
+        const periodId = (await sdk!.registry.addPeriod({
           committeeId: args.committeeId,
           votingStart: args.votingStart,
           votingEnd: args.votingEnd,
-        }) as bigint
+        })) as bigint
 
         if (willUploadBody) {
           progress.step('Uploading period body')
@@ -192,21 +195,16 @@ export function useAddTopicMutation() {
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: async (args: {
-      periodId: number
-      options: string[]
-      title?: string
-      body?: string
-    }) => {
+    mutationFn: async (args: { periodId: number; options: string[]; title?: string; body?: string }) => {
       // A body is only uploaded (a second signed group) when a title is provided.
       const willUploadBody = !!args.title?.trim()
       const progress = signingProgress(willUploadBody ? 2 : 1)
       try {
         progress.step('Adding topic')
-        const topicIndex = await sdk!.addTopic({
+        const topicIndex = (await sdk!.addTopic({
           periodId: BigInt(args.periodId),
           options: args.options,
-        }) as bigint
+        })) as bigint
 
         if (willUploadBody) {
           progress.step('Uploading topic body')

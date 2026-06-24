@@ -1,78 +1,84 @@
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
-import { ABIType, encodeAddress, makeEmptyTransactionSigner } from "algosdk";
-import pMap from "p-map";
-import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from "../registry";
-import { GGovRegistryClient, GGovPeriodSummary } from "../generated/GGovRegistryClient";
-import { GGovPeriodClient, GGovPeriodComposer, GGovPeriod, GGovVoteRecord, APP_SPEC as PERIOD_APP_SPEC } from "../generated/GGovPeriodClient";
-import { getConstructorConfig } from "../networkConfig";
-import { BodyJson, PeriodBodyJson, parseBodyJson, ReaderConstructorArgs } from "./types";
-import { chunked } from "../util/chunked";
-import { errorTransformer, wrapErrors } from "../util/wrapErrors";
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { ABIType, encodeAddress, makeEmptyTransactionSigner } from 'algosdk'
+import pMap from 'p-map'
+import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from '../registry'
+import { GGovRegistryClient, GGovPeriodSummary } from '../generated/GGovRegistryClient'
+import {
+  GGovPeriodClient,
+  GGovPeriodComposer,
+  GGovPeriod,
+  GGovVoteRecord,
+  APP_SPEC as PERIOD_APP_SPEC,
+} from '../generated/GGovPeriodClient'
+import { getConstructorConfig } from '../networkConfig'
+import { BodyJson, PeriodBodyJson, parseBodyJson, ReaderConstructorArgs } from './types'
+import { chunked } from '../util/chunked'
+import { errorTransformer, wrapErrors } from '../util/wrapErrors'
 
 const EMPTY_PERIOD: GGovPeriod = {
   committeeId: new Uint8Array(32),
   votingStart: 0,
   votingEnd: 0,
   topics: [],
-};
+}
 
 /** Per-address voting eligibility + power, as returned by `canVote`/`canVoteMany`. */
 export interface CanVoteResult {
-  canVote: boolean;
-  votingPower: bigint;
+  canVote: boolean
+  votingPower: bigint
 }
 
 /** Max `canVote` app calls packed into a single simulate group (Algorand 16-txn group limit). */
-const CAN_VOTE_GROUP_SIZE = 16;
+const CAN_VOTE_GROUP_SIZE = 16
 
 export interface PeriodWithSummary {
-  id: bigint;
-  period: GGovPeriod;
-  summary: GGovPeriodSummary;
+  id: bigint
+  period: GGovPeriod
+  summary: GGovPeriodSummary
 }
 
 export class GGovReaderSDK {
-  static PERIOD_APP_SPEC = PERIOD_APP_SPEC;
+  static PERIOD_APP_SPEC = PERIOD_APP_SPEC
 
-  public algorand: AlgorandClient;
+  public algorand: AlgorandClient
   /** Composed registry reader SDK (committee registry + operator + delegations + periods). */
-  public registry: GGovRegistryReaderSDK;
+  public registry: GGovRegistryReaderSDK
   /** Registry app ID. */
-  public registryAppId: bigint;
-  public concurrency: number;
-  public debug?: boolean;
-  protected readerAccount?: string;
+  public registryAppId: bigint
+  public concurrency: number
+  public debug?: boolean
+  protected readerAccount?: string
   /** periodId → period contract appId */
-  protected periodAppCache: Map<bigint, bigint> = new Map();
+  protected periodAppCache: Map<bigint, bigint> = new Map()
   /** periodId → cached read-only client */
-  protected periodReadClientCache: Map<bigint, GGovPeriodClient> = new Map();
+  protected periodReadClientCache: Map<bigint, GGovPeriodClient> = new Map()
 
   constructor({ algorand, concurrency = 4, debug, ...rest }: ReaderConstructorArgs) {
-    const { appId, readerAccount } = getConstructorConfig(rest);
-    this.algorand = algorand;
-    algorand.setSuggestedParamsCacheTimeout(6000);
-    algorand.registerErrorTransformer(errorTransformer);
-    this.registryAppId = appId;
-    this.concurrency = concurrency;
-    this.debug = debug;
-    this.readerAccount = readerAccount;
+    const { appId, readerAccount } = getConstructorConfig(rest)
+    this.algorand = algorand
+    algorand.setSuggestedParamsCacheTimeout(6000)
+    algorand.registerErrorTransformer(errorTransformer)
+    this.registryAppId = appId
+    this.concurrency = concurrency
+    this.debug = debug
+    this.readerAccount = readerAccount
     this.registry = new GGovRegistryReaderSDK({
       algorand,
       concurrency,
       debug,
       registryAppId: appId,
       readerAccount,
-    });
+    })
   }
 
   /** Convenience accessor — same as `registry.appId`. */
   get appId(): bigint {
-    return this.registryAppId;
+    return this.registryAppId
   }
 
   /** Registry read client. */
   get registryReadClient(): GGovRegistryClient {
-    return this.registry.readClient as unknown as GGovRegistryClient;
+    return this.registry.readClient as unknown as GGovRegistryClient
   }
 
   // ── Registry passthroughs (end-user delegation reads) ────────────
@@ -80,39 +86,39 @@ export class GGovReaderSDK {
   // Admin/analytics/committee reads (getAllDelegations, getCommitteeIds, getCommittee*, …) stay on `.registry`.
 
   /** "Who am I delegating my voting power to?" */
-  getDelegation = (...args: Parameters<GGovRegistryReaderSDK["getDelegation"]>) => this.registry.getDelegation(...args);
+  getDelegation = (...args: Parameters<GGovRegistryReaderSDK['getDelegation']>) => this.registry.getDelegation(...args)
   /** "Who has delegated their voting power to me?" */
-  getDelegators = (...args: Parameters<GGovRegistryReaderSDK["getDelegators"]>) => this.registry.getDelegators(...args);
+  getDelegators = (...args: Parameters<GGovRegistryReaderSDK['getDelegators']>) => this.registry.getDelegators(...args)
 
   // ── Period app resolution ────────────────────────────────────────
 
   /** Resolve the on-chain app ID for a periodId. Throws if the period is unknown. */
   @wrapErrors()
   async getPeriodAppId(periodId: bigint | number): Promise<bigint> {
-    const pid = BigInt(periodId);
-    const cached = this.periodAppCache.get(pid);
-    if (cached !== undefined) return cached;
-    const { return: appId } = await this.registryReadClient.send.getPeriodApp({ args: { periodId: pid } });
-    const idBig = BigInt(appId ?? 0);
-    if (idBig === 0n) throw new Error(`Period ${pid} not found in registry`);
-    this.periodAppCache.set(pid, idBig);
-    return idBig;
+    const pid = BigInt(periodId)
+    const cached = this.periodAppCache.get(pid)
+    if (cached !== undefined) return cached
+    const { return: appId } = await this.registryReadClient.send.getPeriodApp({ args: { periodId: pid } })
+    const idBig = BigInt(appId ?? 0)
+    if (idBig === 0n) throw new Error(`Period ${pid} not found in registry`)
+    this.periodAppCache.set(pid, idBig)
+    return idBig
   }
 
   /** Build (and cache) a read-only per-period client. */
   protected async getPeriodReadClient(periodId: bigint | number): Promise<GGovPeriodClient> {
-    const pid = BigInt(periodId);
-    const cached = this.periodReadClientCache.get(pid);
-    if (cached) return cached;
-    const appId = await this.getPeriodAppId(pid);
+    const pid = BigInt(periodId)
+    const cached = this.periodReadClientCache.get(pid)
+    if (cached) return cached
+    const appId = await this.getPeriodAppId(pid)
     const client = new GGovPeriodClient({
       algorand: this.algorand,
       appId,
       defaultSender: this.readerAccount,
       defaultSigner: makeEmptyTransactionSigner(),
-    });
-    this.periodReadClientCache.set(pid, client);
-    return client;
+    })
+    this.periodReadClientCache.set(pid, client)
+    return client
   }
 
   // ── Per-period reads ─────────────────────────────────────────────
@@ -122,12 +128,12 @@ export class GGovReaderSDK {
   // with dummy methods with these return types for client-generation, and import the dummy client app spec.
 
   // ARC-4 layouts logged by GGovPeriod.logPeriod(): the header line then one topic per line.
-  private static readonly PERIOD_META_TYPE = ABIType.from("(byte[32],uint32,uint32,uint32)");
-  private static readonly PERIOD_TOPIC_TYPE = ABIType.from("(string[],uint32[])");
+  private static readonly PERIOD_META_TYPE = ABIType.from('(byte[32],uint32,uint32,uint32)')
+  private static readonly PERIOD_TOPIC_TYPE = ABIType.from('(string[],uint32[])')
 
   // ARC-4 layouts logged by GGovPeriod.logVotingRecord(): the header line then one topic's votes per line.
-  private static readonly VOTE_RECORD_META_TYPE = ABIType.from("(bool,uint32)");
-  private static readonly VOTE_RECORD_TOPIC_TYPE = ABIType.from("(uint32[])");
+  private static readonly VOTE_RECORD_META_TYPE = ABIType.from('(bool,uint32)')
+  private static readonly VOTE_RECORD_TOPIC_TYPE = ABIType.from('(uint32[])')
 
   /**
    * Read a full period. Uses the contract's `logPeriod` (one log line for the header, one
@@ -138,22 +144,25 @@ export class GGovReaderSDK {
   @wrapErrors()
   async getPeriod(periodId: bigint | number): Promise<GGovPeriod> {
     try {
-      const client = await this.getPeriodReadClient(periodId);
-      const { confirmations } = await client.newGroup().logPeriod({ args: {} }).simulate(SIMULATE_PARAMS);
-      const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[]);
-      if (logs.length === 0) return EMPTY_PERIOD;
+      const client = await this.getPeriodReadClient(periodId)
+      const { confirmations } = await client.newGroup().logPeriod({ args: {} }).simulate(SIMULATE_PARAMS)
+      const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[])
+      if (logs.length === 0) return EMPTY_PERIOD
 
-      const [committeeId, votingStart, votingEnd] = GGovReaderSDK.PERIOD_META_TYPE.decode(
-        new Uint8Array(logs[0]),
-      ) as [Uint8Array, bigint, bigint, bigint];
+      const [committeeId, votingStart, votingEnd] = GGovReaderSDK.PERIOD_META_TYPE.decode(new Uint8Array(logs[0])) as [
+        Uint8Array,
+        bigint,
+        bigint,
+        bigint,
+      ]
       const topics = logs.slice(1).map((log) => {
-        const [options, votes] = GGovReaderSDK.PERIOD_TOPIC_TYPE.decode(new Uint8Array(log)) as [string[], bigint[]];
-        return [options, votes.map((v) => Number(v))] as [string[], number[]];
-      });
+        const [options, votes] = GGovReaderSDK.PERIOD_TOPIC_TYPE.decode(new Uint8Array(log)) as [string[], bigint[]]
+        return [options, votes.map((v) => Number(v))] as [string[], number[]]
+      })
 
-      return { committeeId, votingStart: Number(votingStart), votingEnd: Number(votingEnd), topics };
+      return { committeeId, votingStart: Number(votingStart), votingEnd: Number(votingEnd), topics }
     } catch {
-      return EMPTY_PERIOD;
+      return EMPTY_PERIOD
     }
   }
 
@@ -165,33 +174,29 @@ export class GGovReaderSDK {
    */
   @wrapErrors()
   async getVotingRecord(periodId: bigint | number, account: string): Promise<GGovVoteRecord | null> {
-    const client = await this.getPeriodReadClient(periodId);
-    const { confirmations } = await client.newGroup().logVotingRecord({ args: { account } }).simulate(SIMULATE_PARAMS);
-    const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[]);
-    if (logs.length === 0) return null;
+    const client = await this.getPeriodReadClient(periodId)
+    const { confirmations } = await client.newGroup().logVotingRecord({ args: { account } }).simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap((c: any) => (c.logs ?? []) as Uint8Array[])
+    if (logs.length === 0) return null
 
-    const [isDelegated] = GGovReaderSDK.VOTE_RECORD_META_TYPE.decode(new Uint8Array(logs[0])) as [boolean, bigint];
+    const [isDelegated] = GGovReaderSDK.VOTE_RECORD_META_TYPE.decode(new Uint8Array(logs[0])) as [boolean, bigint]
     const topicVotes = logs.slice(1).map((log) => {
-      const [votes] = GGovReaderSDK.VOTE_RECORD_TOPIC_TYPE.decode(new Uint8Array(log)) as [bigint[]];
-      return votes.map((v) => Number(v));
-    });
-    if (topicVotes.length === 0) return null;
-    return { isDelegated, topicVotes };
+      const [votes] = GGovReaderSDK.VOTE_RECORD_TOPIC_TYPE.decode(new Uint8Array(log)) as [bigint[]]
+      return votes.map((v) => Number(v))
+    })
+    if (topicVotes.length === 0) return null
+    return { isDelegated, topicVotes }
   }
 
   @wrapErrors()
-  async canVote(
-    periodId: bigint | number,
-    voterAccount: string,
-    senderAccount?: string,
-  ): Promise<CanVoteResult> {
-    const client = await this.getPeriodReadClient(periodId);
+  async canVote(periodId: bigint | number, voterAccount: string, senderAccount?: string): Promise<CanVoteResult> {
+    const client = await this.getPeriodReadClient(periodId)
     const { return: result } = await client.send.canVote({
       args: { voterAccount, senderAccount: senderAccount ?? voterAccount },
       // canVote does inner calls to registry — pay extra fee for 2 inner calls
       extraFee: (2000).microAlgo(),
-    });
-    return { canVote: result![0], votingPower: result![1] };
+    })
+    return { canVote: result![0], votingPower: result![1] }
   }
 
   /**
@@ -211,12 +216,12 @@ export class GGovReaderSDK {
     const senderFor = (voter: string): string =>
       senderAccount == null
         ? voter
-        : typeof senderAccount === "string"
+        : typeof senderAccount === 'string'
           ? senderAccount
-          : senderAccount[voter] ?? voter;
-    const pairs = voterAccounts.map((voterAccount) => ({ voterAccount, senderAccount: senderFor(voterAccount) }));
-    const results = await this._canVoteManyChunked(periodId, pairs);
-    return new Map(voterAccounts.map((voterAccount, i) => [voterAccount, results[i]]));
+          : (senderAccount[voter] ?? voter)
+    const pairs = voterAccounts.map((voterAccount) => ({ voterAccount, senderAccount: senderFor(voterAccount) }))
+    const results = await this._canVoteManyChunked(periodId, pairs)
+    return new Map(voterAccounts.map((voterAccount, i) => [voterAccount, results[i]]))
   }
 
   /**
@@ -230,45 +235,45 @@ export class GGovReaderSDK {
     periodId: bigint | number,
     pairs: { voterAccount: string; senderAccount: string }[],
   ): Promise<CanVoteResult[]> {
-    if (pairs.length === 0) return [];
-    const client = await this.getPeriodReadClient(periodId);
-    let builder: GGovPeriodComposer<any> = client.newGroup();
+    if (pairs.length === 0) return []
+    const client = await this.getPeriodReadClient(periodId)
+    let builder: GGovPeriodComposer<any> = client.newGroup()
     for (const { voterAccount, senderAccount } of pairs) {
       builder = builder.canVote({
         args: { voterAccount, senderAccount },
         // each canVote does 2 inner calls to the registry — cover their fees via pooling
         extraFee: (2000).microAlgo(),
-      });
+      })
     }
-    const { returns } = await builder.simulate(SIMULATE_PARAMS);
-    return (returns ?? []).map((result: any) => ({ canVote: result![0], votingPower: result![1] }));
+    const { returns } = await builder.simulate(SIMULATE_PARAMS)
+    return (returns ?? []).map((result: any) => ({ canVote: result![0], votingPower: result![1] }))
   }
 
   /** Read the body JSON for a period from its per-period app. */
   async getPeriodBody(periodId: bigint | number): Promise<PeriodBodyJson | null> {
     try {
-      const appId = await this.getPeriodAppId(periodId);
-      const key = new Uint8Array(1);
-      key[0] = 0x50; // 'P'
-      const raw = await this.algorand.app.getBoxValue(appId, key);
-      return parseBodyJson(raw);
+      const appId = await this.getPeriodAppId(periodId)
+      const key = new Uint8Array(1)
+      key[0] = 0x50 // 'P'
+      const raw = await this.algorand.app.getBoxValue(appId, key)
+      return parseBodyJson(raw)
     } catch {
-      return null;
+      return null
     }
   }
 
   /** Read the body JSON for a topic from its per-period app. */
   async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<BodyJson | null> {
     try {
-      const appId = await this.getPeriodAppId(periodId);
-      const key = new Uint8Array(5);
-      key[0] = 0x54; // 'T'
-      const view = new DataView(key.buffer);
-      view.setUint32(1, Number(topicIndex));
-      const raw = await this.algorand.app.getBoxValue(appId, key);
-      return parseBodyJson(raw);
+      const appId = await this.getPeriodAppId(periodId)
+      const key = new Uint8Array(5)
+      key[0] = 0x54 // 'T'
+      const view = new DataView(key.buffer)
+      view.setUint32(1, Number(topicIndex))
+      const raw = await this.algorand.app.getBoxValue(appId, key)
+      return parseBodyJson(raw)
     } catch {
-      return null;
+      return null
     }
   }
 
@@ -280,11 +285,11 @@ export class GGovReaderSDK {
    */
   @wrapErrors()
   async getVoters(periodId: bigint | number): Promise<string[]> {
-    const appId = await this.getPeriodAppId(periodId);
-    const boxNames = await this.algorand.app.getBoxNames(appId);
+    const appId = await this.getPeriodAppId(periodId)
+    const boxNames = await this.algorand.app.getBoxNames(appId)
     return boxNames
       .filter(({ nameRaw }) => nameRaw[0] === 0x76 && nameRaw.length === 33) // 'v' prefix + 32-byte address
-      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString());
+      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString())
   }
 
   // ── Spanning reads (registry summaries + per-period apps) ────────
@@ -293,18 +298,18 @@ export class GGovReaderSDK {
   @wrapErrors()
   async getPeriods(periodIds: bigint[]): Promise<GGovPeriod[]> {
     // TODO can be made more efficient by logPeriods() on registry
-    const summaries = await this.registry.getPeriodSummaries(periodIds);
+    const summaries = await this.registry.getPeriodSummaries(periodIds)
     return pMap(
       periodIds,
       async (pid, i) => {
-        const summary = summaries[i];
-        if (!summary || BigInt(summary.appId) === 0n) return EMPTY_PERIOD;
+        const summary = summaries[i]
+        if (!summary || BigInt(summary.appId) === 0n) return EMPTY_PERIOD
         // populate cache so getPeriod doesn't re-query the registry
-        this.periodAppCache.set(BigInt(pid), BigInt(summary.appId));
-        return this.getPeriod(pid);
+        this.periodAppCache.set(BigInt(pid), BigInt(summary.appId))
+        return this.getPeriod(pid)
       },
       { concurrency: this.concurrency },
-    );
+    )
   }
 
   /**
@@ -313,26 +318,23 @@ export class GGovReaderSDK {
    */
   @wrapErrors()
   async getAllPeriods(): Promise<PeriodWithSummary[]> {
-    const summaries = await this.registry.getAllPeriodSummaries();
+    const summaries = await this.registry.getAllPeriodSummaries()
     return pMap(
       summaries,
       async ({ id, summary }) => {
         // populate cache so getPeriod doesn't re-query the registry for the appId
-        this.periodAppCache.set(id, BigInt(summary.appId));
-        return { id, period: await this.getPeriod(id), summary };
+        this.periodAppCache.set(id, BigInt(summary.appId))
+        return { id, period: await this.getPeriod(id), summary }
       },
       { concurrency: this.concurrency },
-    );
+    )
   }
 
   /** Read all global state of a period app, plus the current network round. */
   async getPeriodGlobalState(periodId: bigint | number) {
-    const client = await this.getPeriodReadClient(periodId);
+    const client = await this.getPeriodReadClient(periodId)
     // TODO not atomic, could simulate a logGlobalState to get the current round atomically
-    const [state, status] = await Promise.all([
-      client.state.global.getAll(),
-      this.algorand.client.algod.status().do(),
-    ]);
-    return { ...state, currentRound: status.lastRound };
+    const [state, status] = await Promise.all([client.state.global.getAll(), this.algorand.client.algod.status().do()])
+    return { ...state, currentRound: status.lastRound }
   }
 }

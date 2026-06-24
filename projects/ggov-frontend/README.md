@@ -24,8 +24,8 @@ inside a `createIsomorphicFn().server()` body, which the TanStack Start compiler
 strips from the browser build along with its `cloudflare:workers` import
 (see [`src/lib/serverReaderSdk.ts`](./src/lib/serverReaderSdk.ts)).
 
-| Secret        | Purpose                                                        |
-| ------------- | -------------------------------------------------------------- |
+| Secret        | Purpose                                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `ALGOD_TOKEN` | Privileged Algod API token for SSR/loader chain reads on the Worker. Browser reads fall back to the public `VITE_ALGOD_TOKEN`. |
 
 Configure via code (no dashboard):
@@ -50,8 +50,8 @@ selected via wrangler environments in [`wrangler.jsonc`](./wrangler.jsonc). With
 `CLOUDFLARE_ENV` variable (the plugin writes a redirected `dist/server/wrangler.json`);
 the subsequent `wrangler deploy` ships that — `wrangler deploy --env` has no effect.
 
-| Network | Worker name             | Command             |
-| ------- | ----------------------- | ------------------- |
+| Network | Worker name             | Command               |
+| ------- | ----------------------- | --------------------- |
 | testnet | `ggov-frontend-testnet` | `pnpm deploy:testnet` |
 | mainnet | `ggov-frontend-mainnet` | `pnpm deploy:mainnet` |
 
@@ -81,8 +81,8 @@ Merging to `main` deploys the Worker to **testnet** via
 — run it from the Actions tab. Configure these secrets on the repo or the matching
 environment (`frontend-testnet` / `frontend-mainnet`):
 
-| Secret                  | Purpose                                                              |
-| ----------------------- | ------------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | Wrangler deploy auth (Workers Scripts: Edit).                       |
-| `CLOUDFLARE_ACCOUNT_ID` | Target Cloudflare account.                                          |
+| Secret                  | Purpose                                                                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Wrangler deploy auth (Workers Scripts: Edit).                                                                                      |
+| `CLOUDFLARE_ACCOUNT_ID` | Target Cloudflare account.                                                                                                         |
 | `ALGOD_TOKEN`           | Privileged Algod token, uploaded as the Worker secret on each deploy. Optional — SSR reads fall back to the public token if unset. |

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react"
-import { Trash2 } from "lucide-react"
+import type { ReactNode } from 'react'
+import { Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 /**
  * Branded confirm dialog — the on-system replacement for `window.confirm`. Leads with
@@ -23,7 +23,7 @@ export function ConfirmDialog({
   description,
   icon,
   confirmLabel,
-  cancelLabel = "Cancel",
+  cancelLabel = 'Cancel',
   destructive = true,
   pending = false,
   onConfirm,
@@ -45,8 +45,8 @@ export function ConfirmDialog({
         <div className="flex items-start gap-3">
           <span
             className={cn(
-              "flex size-9 flex-none items-center justify-center rounded-full",
-              destructive ? "bg-destructive/10 text-destructive-strong" : "bg-primary/10 text-primary",
+              'flex size-9 flex-none items-center justify-center rounded-full',
+              destructive ? 'bg-destructive/10 text-destructive-strong' : 'bg-primary/10 text-primary',
             )}
           >
             {icon ?? <Trash2 className="size-[19px]" />}
@@ -57,16 +57,11 @@ export function ConfirmDialog({
           </DialogHeader>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => onOpenChange(false)}
-            disabled={pending}
-          >
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)} disabled={pending}>
             {cancelLabel}
           </Button>
           <Button
-            variant={destructive ? "destructive" : "default"}
+            variant={destructive ? 'destructive' : 'default'}
             className="w-full sm:w-auto"
             onClick={onConfirm}
             disabled={pending}

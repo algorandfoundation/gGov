@@ -61,53 +61,53 @@
  * single-return log limit that plain getPeriod() overflows past ~21 topics.
  */
 
-import { createRequire } from "node:module";
-import { randomBytes } from "node:crypto";
-import * as path from "node:path";
-import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
+import { createRequire } from 'node:module'
+import { randomBytes } from 'node:crypto'
+import * as path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { execSync } from 'node:child_process'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Resolve runtime deps from the ggov-sdk package (the fixtures dir has no node_modules
 // of its own; ggov-sdk depends on algokit-utils + algosdk). The local JSON fixtures and
 // the SDK dist are required by absolute path.
-const sdkDir = path.resolve(__dirname, "../../ggov-sdk");
-const sdkRequire = createRequire(path.join(sdkDir, "package.json"));
-const require = createRequire(import.meta.url);
+const sdkDir = path.resolve(__dirname, '../../ggov-sdk')
+const sdkRequire = createRequire(path.join(sdkDir, 'package.json'))
+const require = createRequire(import.meta.url)
 
 // CJS dist to dodge ESM-source resolution issues (matches deploy-sample-data.ts).
-const { AlgorandClient, microAlgos } = sdkRequire("@algorandfoundation/algokit-utils");
-const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, "dist/index.js"));
-const algosdk = sdkRequire("algosdk");
+const { AlgorandClient, microAlgos } = sdkRequire('@algorandfoundation/algokit-utils')
+const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, 'dist/index.js'))
+const algosdk = sdkRequire('algosdk')
 
-const votingSession = require("./voting-session-period-15-voting-session-1.json");
-const committeeTemplate = require("../committee-files/template.json");
+const votingSession = require('./voting-session-period-15-voting-session-1.json')
+const committeeTemplate = require('../committee-files/template.json')
 
-const KMD_TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const KMD_TOKEN = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 
 const LOCALNET_CONFIG = {
-  algodConfig: { server: "http://localhost", port: 4001, token: KMD_TOKEN },
-  indexerConfig: { server: "http://localhost", port: 8980, token: KMD_TOKEN },
-  kmdConfig: { server: "http://localhost", port: 4002, token: KMD_TOKEN },
-};
+  algodConfig: { server: 'http://localhost', port: 4001, token: KMD_TOKEN },
+  indexerConfig: { server: 'http://localhost', port: 8980, token: KMD_TOKEN },
+  kmdConfig: { server: 'http://localhost', port: 4002, token: KMD_TOKEN },
+}
 
 // ── Config ──────────────────────────────────────────────────────────────────
 // When ALGOD_SERVER is set we use the standard AlgoKit environment (fromEnvironment);
 // otherwise we target localnet with the fixed config above.
-const USE_ENV = !!process.env.ALGOD_SERVER;
-const REGISTRY_APP_ID = process.env.REGISTRY_APP_ID ? BigInt(process.env.REGISTRY_APP_ID) : undefined;
+const USE_ENV = !!process.env.ALGOD_SERVER
+const REGISTRY_APP_ID = process.env.REGISTRY_APP_ID ? BigInt(process.env.REGISTRY_APP_ID) : undefined
 
-const REAL_VOTER_COUNT = Number(votingSession.total_voted_governors_count); // 1394
-const NUM_VOTERS = Number(process.env.VOTERS ?? REAL_VOTER_COUNT);
+const REAL_VOTER_COUNT = Number(votingSession.total_voted_governors_count) // 1394
+const NUM_VOTERS = Number(process.env.VOTERS ?? REAL_VOTER_COUNT)
 // Reset only a fresh localnet deployment — never a remote network or a reused registry.
-const RESET = !USE_ENV && REGISTRY_APP_ID === undefined && process.env.RESET !== "0";
-const CONCURRENCY = Number(process.env.CONCURRENCY ?? (USE_ENV ? 8 : 24));
-const FUND_CONCURRENCY = Number(process.env.FUND_CONCURRENCY ?? 8);
-const CLOSEOUT = process.env.CLOSEOUT !== "0";
+const RESET = !USE_ENV && REGISTRY_APP_ID === undefined && process.env.RESET !== '0'
+const CONCURRENCY = Number(process.env.CONCURRENCY ?? (USE_ENV ? 8 : 24))
+const FUND_CONCURRENCY = Number(process.env.FUND_CONCURRENCY ?? 8)
+const CLOSEOUT = process.env.CLOSEOUT !== '0'
 
-const GROUP_SIZE = 16; // Algorand atomic-group limit; fund / close out in groups this big.
+const GROUP_SIZE = 16 // Algorand atomic-group limit; fund / close out in groups this big.
 
 // Per-voter funding — "just enough to transact", reclaimed by the end-of-run close-out.
 // NB: the SDK's opcode-budget pre-simulate temporarily sets the first txn's fee to
@@ -118,13 +118,13 @@ const GROUP_SIZE = 16; // Algorand atomic-group limit; fund / close out in group
 // silently skipped — making the real 22-topic vote fail at the 700-opcode cap. So fund each
 // voter just over that bar, plus a little headroom for the vote + budget-increase +
 // close-out fees. Override with VOTER_FUND (µAlgo).
-const VOTER_PRESIM_BAR_UALGO = 543_210n + 100_000n; // pre-sim first-txn fee + min balance = 643_210
-const VOTER_FUND_UALGO = process.env.VOTER_FUND ? BigInt(process.env.VOTER_FUND) : VOTER_PRESIM_BAR_UALGO + 16_790n; // 660_000
-const APP_MBR_PER_VOTER_UALGO = 220_000n; // one account box (registry) / vote box (period)
-const APP_MBR_BASE_UALGO = 20_000_000n; // committee superbox, topic bodies, period body
+const VOTER_PRESIM_BAR_UALGO = 543_210n + 100_000n // pre-sim first-txn fee + min balance = 643_210
+const VOTER_FUND_UALGO = process.env.VOTER_FUND ? BigInt(process.env.VOTER_FUND) : VOTER_PRESIM_BAR_UALGO + 16_790n // 660_000
+const APP_MBR_PER_VOTER_UALGO = 220_000n // one account box (registry) / vote box (period)
+const APP_MBR_BASE_UALGO = 20_000_000n // committee superbox, topic bodies, period body
 
 function randomNote(): Uint8Array {
-  return new Uint8Array(randomBytes(8));
+  return new Uint8Array(randomBytes(8))
 }
 
 /**
@@ -134,61 +134,70 @@ function randomNote(): Uint8Array {
  * &rsquo;/&lsquo; family of entities. Unknown tags are stripped.
  */
 function htmlToMarkdown(html: string): string {
-  if (!html) return "";
-  let s = html;
-  s = s.replace(/<a\b[^>]*?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, txt) => `[${txt.trim()}](${href})`);
-  s = s.replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, txt) => `**${txt.trim()}**`);
-  s = s.replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, txt) => `*${txt.trim()}*`);
-  s = s.replace(/<li\b[^>]*>([\s\S]*?)<\/li>/gi, (_m, txt) => `- ${txt.trim()}\n`);
-  s = s.replace(/<\/?(ul|ol)\b[^>]*>/gi, "\n");
-  s = s.replace(/<br\s*\/?>/gi, "\n");
-  s = s.replace(/<\/p>/gi, "\n\n").replace(/<p\b[^>]*>/gi, "");
-  s = s.replace(/<[^>]+>/g, ""); // strip any remaining tags
+  if (!html) return ''
+  let s = html
+  s = s.replace(/<a\b[^>]*?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, txt) => `[${txt.trim()}](${href})`)
+  s = s.replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, txt) => `**${txt.trim()}**`)
+  s = s.replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, txt) => `*${txt.trim()}*`)
+  s = s.replace(/<li\b[^>]*>([\s\S]*?)<\/li>/gi, (_m, txt) => `- ${txt.trim()}\n`)
+  s = s.replace(/<\/?(ul|ol)\b[^>]*>/gi, '\n')
+  s = s.replace(/<br\s*\/?>/gi, '\n')
+  s = s.replace(/<\/p>/gi, '\n\n').replace(/<p\b[^>]*>/gi, '')
+  s = s.replace(/<[^>]+>/g, '') // strip any remaining tags
   const entities: Record<string, string> = {
-    "&rsquo;": "’", "&lsquo;": "‘", "&ldquo;": "“", "&rdquo;": "”",
-    "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " ",
-  };
-  s = s.replace(/&[a-zA-Z#0-9]+;/g, (m) => entities[m] ?? m);
-  return s.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    '&rsquo;': '’',
+    '&lsquo;': '‘',
+    '&ldquo;': '“',
+    '&rdquo;': '”',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&nbsp;': ' ',
+  }
+  s = s.replace(/&[a-zA-Z#0-9]+;/g, (m) => entities[m] ?? m)
+  return s
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 /** Largest-remainder apportionment: split `total` into integer parts ∝ weights. */
 function largestRemainder(weights: number[], total: number): number[] {
-  const sum = weights.reduce((a, b) => a + b, 0) || 1;
-  const exact = weights.map((w) => (w / sum) * total);
-  const floors = exact.map((x) => Math.floor(x));
-  let remaining = total - floors.reduce((a, b) => a + b, 0);
-  const order = exact
-    .map((x, i) => ({ i, frac: x - Math.floor(x) }))
-    .sort((a, b) => b.frac - a.frac);
-  const out = [...floors];
-  for (let k = 0; k < order.length && remaining > 0; k++, remaining--) out[order[k].i]++;
-  return out;
+  const sum = weights.reduce((a, b) => a + b, 0) || 1
+  const exact = weights.map((w) => (w / sum) * total)
+  const floors = exact.map((x) => Math.floor(x))
+  let remaining = total - floors.reduce((a, b) => a + b, 0)
+  const order = exact.map((x, i) => ({ i, frac: x - Math.floor(x) })).sort((a, b) => b.frac - a.frac)
+  const out = [...floors]
+  for (let k = 0; k < order.length && remaining > 0; k++, remaining--) out[order[k].i]++
+  return out
 }
 
 /** Split `arr` into contiguous chunks of at most `n`. */
 function chunk<T>(arr: T[], n: number): T[][] {
-  return Array.from({ length: Math.ceil(arr.length / n) }, (_, b) => arr.slice(b * n, b * n + n));
+  return Array.from({ length: Math.ceil(arr.length / n) }, (_, b) => arr.slice(b * n, b * n + n))
 }
 
 /** Run `tasks` with bounded concurrency, reporting progress every `tick`. */
 async function pool<T>(items: T[], limit: number, fn: (item: T, i: number) => Promise<void>, label: string) {
-  let next = 0;
-  let done = 0;
-  const tick = Math.max(1, Math.floor(items.length / 20));
+  let next = 0
+  let done = 0
+  const tick = Math.max(1, Math.floor(items.length / 20))
   async function worker() {
     while (true) {
-      const i = next++;
-      if (i >= items.length) return;
-      await fn(items[i], i);
-      done++;
+      const i = next++
+      if (i >= items.length) return
+      await fn(items[i], i)
+      done++
       if (done % tick === 0 || done === items.length) {
-        process.stdout.write(`\r  ${label}: ${done}/${items.length}`);
+        process.stdout.write(`\r  ${label}: ${done}/${items.length}`)
       }
     }
   }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  process.stdout.write("\n");
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  process.stdout.write('\n')
 }
 
 /**
@@ -198,53 +207,53 @@ async function pool<T>(items: T[], limit: number, fn: (item: T, i: number) => Pr
  * is safe to call from a finally without masking an earlier failure.
  */
 async function closeOutAccounts(algorand: any, accounts: string[], to: string, label: string) {
-  if (!accounts.length) return;
-  let failed = 0;
+  if (!accounts.length) return
+  let failed = 0
   await pool(
     chunk(accounts, GROUP_SIZE),
     FUND_CONCURRENCY,
     async (group) => {
       try {
-        let g = algorand.newGroup();
+        let g = algorand.newGroup()
         for (const addr of group) {
-          g = g.addPayment({ sender: addr, receiver: to, amount: microAlgos(0n), closeRemainderTo: to });
+          g = g.addPayment({ sender: addr, receiver: to, amount: microAlgos(0n), closeRemainderTo: to })
         }
-        await g.send();
+        await g.send()
       } catch {
-        failed += group.length;
+        failed += group.length
       }
     },
     label,
-  );
-  if (failed) console.log(`  (${failed} account(s) skipped — already empty or never funded)`);
+  )
+  if (failed) console.log(`  (${failed} account(s) skipped — already empty or never funded)`)
 }
 
 async function main() {
   const topics: Array<{ title: string; body: string; options: string[]; percentages: number[] }> =
     votingSession.topics.map((t: any) => ({
       title: t.title,
-      body: htmlToMarkdown(t.description_html ?? ""),
+      body: htmlToMarkdown(t.description_html ?? ''),
       options: t.topic_options.map((o: any) => o.title),
       percentages: t.topic_options.map((o: any) => Number(o.vote_percentage)),
-    }));
+    }))
 
-  console.log("=== Replay Governance Period 15 — xGov Council Election 2025 ===");
-  console.log(`Network: ${USE_ENV ? "environment (ALGOD_SERVER)" : "localnet"}`);
-  console.log(`Registry: ${REGISTRY_APP_ID === undefined ? "deploy fresh" : `reuse app ${REGISTRY_APP_ID}`}`);
-  console.log(`Real voters: ${REAL_VOTER_COUNT}  |  synthetic voters this run: ${NUM_VOTERS}`);
-  console.log(`Topics: ${topics.length} (each Yes / No / Abstain)\n`);
+  console.log('=== Replay Governance Period 15 — xGov Council Election 2025 ===')
+  console.log(`Network: ${USE_ENV ? 'environment (ALGOD_SERVER)' : 'localnet'}`)
+  console.log(`Registry: ${REGISTRY_APP_ID === undefined ? 'deploy fresh' : `reuse app ${REGISTRY_APP_ID}`}`)
+  console.log(`Real voters: ${REAL_VOTER_COUNT}  |  synthetic voters this run: ${NUM_VOTERS}`)
+  console.log(`Topics: ${topics.length} (each Yes / No / Abstain)\n`)
 
   // Per-topic integer voter counts per option, summing to NUM_VOTERS.
-  const topicCounts = topics.map((t) => largestRemainder(t.percentages, NUM_VOTERS));
+  const topicCounts = topics.map((t) => largestRemainder(t.percentages, NUM_VOTERS))
 
   // ── Reset & connect ─────────────────────────────────────────────────────
   if (RESET) {
-    console.log("Resetting localnet...");
-    execSync("algokit localnet reset", { stdio: "inherit" });
-    await new Promise((r) => setTimeout(r, 3000));
+    console.log('Resetting localnet...')
+    execSync('algokit localnet reset', { stdio: 'inherit' })
+    await new Promise((r) => setTimeout(r, 3000))
   }
-  console.log(`Connecting (${USE_ENV ? "fromEnvironment" : "localnet"})...`);
-  const algorand = USE_ENV ? AlgorandClient.fromEnvironment() : AlgorandClient.fromConfig(LOCALNET_CONFIG);
+  console.log(`Connecting (${USE_ENV ? 'fromEnvironment' : 'localnet'})...`)
+  const algorand = USE_ENV ? AlgorandClient.fromEnvironment() : AlgorandClient.fromConfig(LOCALNET_CONFIG)
 
   // The DEPLOYER account is the single funder, registry operator/admin and setup SDK writer; it
   // pays for voter funding and app MBR, and receives every voter's close-out at the end. Each
@@ -256,136 +265,138 @@ async function main() {
     BigInt(NUM_VOTERS) * VOTER_FUND_UALGO + // voter accounts (cover their own vote + budget-increase fees)
     2n * (BigInt(NUM_VOTERS) * APP_MBR_PER_VOTER_UALGO + APP_MBR_BASE_UALGO) + // registry + period boxes
     BigInt(Math.ceil(NUM_VOTERS * 0.06) + 30) * 1_000_000n + // working headroom (voters self-pay budget-increase)
-    50_000_000n; // working buffer + own min balance
+    50_000_000n // working buffer + own min balance
 
-  const deployer = await algorand.account.fromEnvironment("DEPLOYER", microAlgos(totalNeeded));
-  algorand.account.setSignerFromAccount(deployer);
-  const deployerStr = deployer.addr.toString();
-  const writer = { sender: deployer.addr, signer: algorand.account.getSigner(deployer.addr) };
-  console.log(`Deployer / funder: ${deployerStr}`);
+  const deployer = await algorand.account.fromEnvironment('DEPLOYER', microAlgos(totalNeeded))
+  algorand.account.setSignerFromAccount(deployer)
+  const deployerStr = deployer.addr.toString()
+  const writer = { sender: deployer.addr, signer: algorand.account.getSigner(deployer.addr) }
+  console.log(`Deployer / funder: ${deployerStr}`)
 
-  const deployerInfo = await algorand.account.getInformation(deployer.addr);
+  const deployerInfo = await algorand.account.getInformation(deployer.addr)
   if (BigInt(deployerInfo.balance.microAlgo) < totalNeeded) {
     throw new Error(
       `Deployer ${deployerStr} balance ${deployerInfo.balance.microAlgo} < required ~${totalNeeded} µAlgo. ` +
-        (USE_ENV ? "Lower VOTERS or top up DEPLOYER (faucet)." : "Lower VOTERS or top up the localnet dispenser."),
-    );
+        (USE_ENV ? 'Lower VOTERS or top up DEPLOYER (faucet).' : 'Lower VOTERS or top up the localnet dispenser.'),
+    )
   }
 
   // Created accounts tracked for end-of-run close-out (reclaim funds → deployer).
-  let voters: string[] = [];
+  let voters: string[] = []
   try {
     // ── Registry: deploy fresh, or attach to an existing deployment ─────────
-    let sdk: any;
-    let registryAppId: bigint;
-    let registryAppAddr: string;
+    let sdk: any
+    let registryAppId: bigint
+    let registryAppAddr: string
     if (REGISTRY_APP_ID === undefined) {
-      console.log("Deploying GGovRegistry...");
+      console.log('Deploying GGovRegistry...')
       const created = await GGovRegistrySDK.createRegistry({
         algorand,
         deployer: writer,
         operatorAccount: deployer.addr,
         initialFundingAlgos: 10n,
-      });
-      registryAppId = created.appClient.appId;
-      registryAppAddr = created.appClient.appAddress.toString();
+      })
+      registryAppId = created.appClient.appId
+      registryAppAddr = created.appClient.appAddress.toString()
       // Combined SDK for period ops; registry ops go through sdk.registry.
-      sdk = new GGovSDK({ algorand, registryAppId, writerAccount: writer });
+      sdk = new GGovSDK({ algorand, registryAppId, writerAccount: writer })
     } else {
-      console.log(`Attaching to existing GGovRegistry app ${REGISTRY_APP_ID}...`);
+      console.log(`Attaching to existing GGovRegistry app ${REGISTRY_APP_ID}...`)
       // The DEPLOYER must already be this registry's operator (and admin for setReady).
-      sdk = new GGovSDK({ algorand, registryAppId: REGISTRY_APP_ID, writerAccount: writer });
-      registryAppId = REGISTRY_APP_ID;
-      registryAppAddr = algosdk.getApplicationAddress(REGISTRY_APP_ID).toString();
+      sdk = new GGovSDK({ algorand, registryAppId: REGISTRY_APP_ID, writerAccount: writer })
+      registryAppId = REGISTRY_APP_ID
+      registryAppAddr = algosdk.getApplicationAddress(REGISTRY_APP_ID).toString()
     }
-    console.log(`  Registry app ID: ${registryAppId}`);
+    console.log(`  Registry app ID: ${registryAppId}`)
 
     // Top up the registry app for the committee superbox + per-account boxes this run creates.
-    const registryTopUp = BigInt(NUM_VOTERS) * APP_MBR_PER_VOTER_UALGO + APP_MBR_BASE_UALGO;
+    const registryTopUp = BigInt(NUM_VOTERS) * APP_MBR_PER_VOTER_UALGO + APP_MBR_BASE_UALGO
     await algorand.send.payment({
       sender: deployer.addr,
       receiver: registryAppAddr,
       amount: microAlgos(registryTopUp),
-    });
+    })
 
     // ── Synthetic voters ──────────────────────────────────────────────────
-    console.log(`\nGenerating ${NUM_VOTERS} synthetic voter accounts...`);
+    console.log(`\nGenerating ${NUM_VOTERS} synthetic voter accounts...`)
     voters = Array.from({ length: NUM_VOTERS }, () => {
-      const acct = algorand.account.random();
-      algorand.account.setSignerFromAccount(acct);
-      return acct.addr.toString();
-    });
+      const acct = algorand.account.random()
+      algorand.account.setSignerFromAccount(acct)
+      return acct.addr.toString()
+    })
 
-    console.log(`Funding voters (${VOTER_FUND_UALGO} µAlgo each, groups of ${GROUP_SIZE}, ${FUND_CONCURRENCY} parallel)...`);
+    console.log(
+      `Funding voters (${VOTER_FUND_UALGO} µAlgo each, groups of ${GROUP_SIZE}, ${FUND_CONCURRENCY} parallel)...`,
+    )
     await pool(
       chunk(voters, GROUP_SIZE),
       FUND_CONCURRENCY,
       async (batch) => {
-        let group = algorand.newGroup();
+        let group = algorand.newGroup()
         for (const addr of batch) {
-          group = group.addPayment({ sender: deployer.addr, receiver: addr, amount: microAlgos(VOTER_FUND_UALGO) });
+          group = group.addPayment({ sender: deployer.addr, receiver: addr, amount: microAlgos(VOTER_FUND_UALGO) })
         }
-        await group.send();
+        await group.send()
       },
-      "funded",
-    );
+      'funded',
+    )
 
     // ── Committee file (1 vote of power each) ───────────────────────────────
-    console.log("\nUploading committee (synthetic voters as xGovs, 1 vote each)...");
+    console.log('\nUploading committee (synthetic voters as xGovs, 1 vote each)...')
     const committeeFile = {
       ...committeeTemplate,
       totalMembers: voters.length,
       totalVotes: voters.length,
       registryId: 0,
       xGovs: voters.map((address) => ({ address, votes: 1 })),
-    };
-    const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile);
-    const committeeHex = Buffer.from(committeeId as Uint8Array).toString("hex");
-    console.log(`  Committee ID: ${committeeHex.slice(0, 16)}...`);
+    }
+    const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile)
+    const committeeHex = Buffer.from(committeeId as Uint8Array).toString('hex')
+    console.log(`  Committee ID: ${committeeHex.slice(0, 16)}...`)
 
     // ── Period + topics ─────────────────────────────────────────────────────
-    const now = BigInt(Math.floor(Date.now() / 1000));
-    console.log("\nCreating period (future window so topics can be added)...");
+    const now = BigInt(Math.floor(Date.now() / 1000))
+    console.log('\nCreating period (future window so topics can be added)...')
     const periodId = await sdk.registry.addPeriod({
       committeeId,
       votingStart: now + 100_000n,
       votingEnd: now + 200_000n,
-    });
-    console.log(`  Period #${periodId}`);
+    })
+    console.log(`  Period #${periodId}`)
 
     await sdk.uploadPeriodBody({
       periodId: periodId!,
       body: {
         title: votingSession.short_description || votingSession.title,
-        body: htmlToMarkdown(votingSession.description_html || ""),
+        body: htmlToMarkdown(votingSession.description_html || ''),
       },
-    });
+    })
 
     // Pre-fund the period app for the per-voter vote-record boxes.
-    const periodAppId = await sdk.getPeriodAppId(periodId!);
-    const periodAppAddr = algosdk.getApplicationAddress(periodAppId).toString();
-    const periodTopUp = BigInt(NUM_VOTERS) * APP_MBR_PER_VOTER_UALGO + APP_MBR_BASE_UALGO;
+    const periodAppId = await sdk.getPeriodAppId(periodId!)
+    const periodAppAddr = algosdk.getApplicationAddress(periodAppId).toString()
+    const periodTopUp = BigInt(NUM_VOTERS) * APP_MBR_PER_VOTER_UALGO + APP_MBR_BASE_UALGO
     await algorand.send.payment({
       sender: deployer.addr,
       receiver: periodAppAddr,
       amount: microAlgos(periodTopUp),
-    });
+    })
 
-    console.log(`Adding ${topics.length} candidate topics...`);
+    console.log(`Adding ${topics.length} candidate topics...`)
     for (let t = 0; t < topics.length; t++) {
       const topicIndex = await sdk.addTopic({
         periodId: periodId!,
         options: topics[t].options,
         note: randomNote(),
-      });
+      })
       await sdk.uploadTopicBody({
         periodId: periodId!,
         topicIndex: topicIndex!,
         body: { title: topics[t].title, body: topics[t].body },
-      });
-      process.stdout.write(`\r  topic ${t + 1}/${topics.length}: ${topics[t].title.padEnd(28)}`);
+      })
+      process.stdout.write(`\r  topic ${t + 1}/${topics.length}: ${topics[t].title.padEnd(28)}`)
     }
-    process.stdout.write("\n");
+    process.stdout.write('\n')
 
     // Open voting now, mark ready.
     await sdk.editPeriod({
@@ -393,21 +404,21 @@ async function main() {
       committeeId,
       votingStart: now - 600n,
       votingEnd: now + 86_400n,
-    });
-    await sdk.setReady({ periodId: periodId!, ready: true });
-    console.log("Period is ACTIVE and ready for voting.");
+    })
+    await sdk.setReady({ periodId: periodId!, ready: true })
+    console.log('Period is ACTIVE and ready for voting.')
 
     // ── Build ballots ───────────────────────────────────────────────────────
     // ballots[voter][topic] = one-hot [Yes,No,Abstain] (power 1). Per topic we assign
     // voters to options in contiguous blocks (rotated per topic) to hit the exact counts.
-    const ballots: number[][][] = voters.map(() => topics.map(() => [0, 0, 0]));
+    const ballots: number[][][] = voters.map(() => topics.map(() => [0, 0, 0]))
     for (let t = 0; t < topics.length; t++) {
-      const [cy, cn] = topicCounts[t];
-      const rot = (t * 257) % NUM_VOTERS;
+      const [cy, cn] = topicCounts[t]
+      const rot = (t * 257) % NUM_VOTERS
       for (let k = 0; k < NUM_VOTERS; k++) {
-        const v = (k + rot) % NUM_VOTERS;
-        const opt = k < cy ? 0 : k < cy + cn ? 1 : 2;
-        ballots[v][t][opt] = 1;
+        const v = (k + rot) % NUM_VOTERS
+        const opt = k < cy ? 0 : k < cy + cn ? 1 : 2
+        ballots[v][t][opt] = 1
       }
     }
 
@@ -416,7 +427,7 @@ async function main() {
     // sender of both its vote and the auto-prepended opcode-budget-increase txn. Per-voter
     // instances are concurrency-safe (no shared mutable writerAccount); the period-app-id cache
     // is primed so each instance skips an otherwise-redundant getPeriodApp read.
-    console.log(`\nCasting ${NUM_VOTERS} ballots (concurrency ${CONCURRENCY})...`);
+    console.log(`\nCasting ${NUM_VOTERS} ballots (concurrency ${CONCURRENCY})...`)
     await pool(
       voters,
       CONCURRENCY,
@@ -425,66 +436,66 @@ async function main() {
           algorand,
           registryAppId: registryAppId,
           writerAccount: { sender: addr, signer: algorand.account.getSigner(addr) },
-        });
-        (voterSdk as any).periodAppCache.set(BigInt(periodId!), BigInt(periodAppId));
+        })
+        ;(voterSdk as any).periodAppCache.set(BigInt(periodId!), BigInt(periodAppId))
         await voterSdk.vote({
           periodId: periodId!,
           voterAccount: addr,
           topicVotes: ballots[i],
           note: randomNote(),
-        });
+        })
       },
-      "voted",
-    );
+      'voted',
+    )
 
     // ── Verify ──────────────────────────────────────────────────────────────
     // Read tallies via sdk.getPeriod(), which now uses the contract's logPeriod (one log
     // line per topic) and so handles all 22 topics without hitting the 1024-byte log limit.
-    console.log("\nReading back on-chain tallies...\n");
-    const period = await sdk.getPeriod(periodId!);
-    const tallies: number[][] = period.topics.map((t: [string[], number[]]) => t[1]);
+    console.log('\nReading back on-chain tallies...\n')
+    const period = await sdk.getPeriod(periodId!)
+    const tallies: number[][] = period.topics.map((t: [string[], number[]]) => t[1])
 
-    let allMatch = true;
-    console.log("Candidate                      On-chain (Y/N/A)        chain%  fixture%   ✓");
-    console.log("─".repeat(86));
+    let allMatch = true
+    console.log('Candidate                      On-chain (Y/N/A)        chain%  fixture%   ✓')
+    console.log('─'.repeat(86))
     for (let t = 0; t < topics.length; t++) {
-      const tally = tallies[t];
-      const total = tally.reduce((a, b) => a + b, 0) || 1;
-      const chainPct = tally.map((n) => ((n / total) * 100).toFixed(2));
-      const expected = topicCounts[t];
-      const ok = tally.every((n, j) => n === expected[j]);
-      allMatch = allMatch && ok;
-      const yChain = `${chainPct[0]}/${chainPct[1]}/${chainPct[2]}`;
-      const yFix = topics[t].percentages.map((p) => p.toFixed(2)).join("/");
+      const tally = tallies[t]
+      const total = tally.reduce((a, b) => a + b, 0) || 1
+      const chainPct = tally.map((n) => ((n / total) * 100).toFixed(2))
+      const expected = topicCounts[t]
+      const ok = tally.every((n, j) => n === expected[j])
+      allMatch = allMatch && ok
+      const yChain = `${chainPct[0]}/${chainPct[1]}/${chainPct[2]}`
+      const yFix = topics[t].percentages.map((p) => p.toFixed(2)).join('/')
       console.log(
         `${topics[t].title.padEnd(28)} ${`${tally[0]}/${tally[1]}/${tally[2]}`.padEnd(22)} ` +
-          `${yChain.padEnd(20)} ${yFix.padEnd(18)} ${ok ? "✓" : "✗"}`,
-      );
+          `${yChain.padEnd(20)} ${yFix.padEnd(18)} ${ok ? '✓' : '✗'}`,
+      )
     }
-    console.log("─".repeat(86));
+    console.log('─'.repeat(86))
 
-    console.log("\n=== Summary ===");
-    console.log(`Registry app:  ${registryAppId}`);
-    console.log(`Period app:    ${periodAppId}  (period #${periodId})`);
-    console.log(`Voters:        ${NUM_VOTERS} (1 vote each)`);
-    console.log(`Tallies match fixture proportions: ${allMatch ? "YES ✓" : "NO ✗"}`);
-    if (!allMatch) process.exitCode = 1;
+    console.log('\n=== Summary ===')
+    console.log(`Registry app:  ${registryAppId}`)
+    console.log(`Period app:    ${periodAppId}  (period #${periodId})`)
+    console.log(`Voters:        ${NUM_VOTERS} (1 vote each)`)
+    console.log(`Tallies match fixture proportions: ${allMatch ? 'YES ✓' : 'NO ✗'}`)
+    if (!allMatch) process.exitCode = 1
   } finally {
     // Reclaim every funded voter account back to the deployer (matters most on a remote
     // network, where the ALGO is real). Runs even if the replay threw partway, so a failed
     // run still cleans up. The deployer is the persistent funder and is left as-is.
     if (CLOSEOUT && voters.length) {
-      console.log(`\nClosing out ${voters.length} voter accounts to the deployer...`);
-      const before = BigInt((await algorand.account.getInformation(deployer.addr)).balance.microAlgo);
-      await closeOutAccounts(algorand, voters, deployerStr, "closed");
-      const after = BigInt((await algorand.account.getInformation(deployer.addr)).balance.microAlgo);
-      console.log(`  Reclaimed ~${after - before} µAlgo to ${deployerStr}`);
-      console.log("Note: app-account MBR (registry + period boxes) stays locked until the apps are deleted.");
+      console.log(`\nClosing out ${voters.length} voter accounts to the deployer...`)
+      const before = BigInt((await algorand.account.getInformation(deployer.addr)).balance.microAlgo)
+      await closeOutAccounts(algorand, voters, deployerStr, 'closed')
+      const after = BigInt((await algorand.account.getInformation(deployer.addr)).balance.microAlgo)
+      console.log(`  Reclaimed ~${after - before} µAlgo to ${deployerStr}`)
+      console.log('Note: app-account MBR (registry + period boxes) stays locked until the apps are deleted.')
     }
   }
 }
 
 main().catch((err) => {
-  console.error("\nError:", err);
-  process.exit(1);
-});
+  console.error('\nError:', err)
+  process.exit(1)
+})

@@ -19,7 +19,7 @@ interface Props {
  * description + key dates on the left, a countdown / turnout meter / CTA on the right.
  */
 export default function ActivePeriodHero({ periodId, period }: Props) {
-  const { activeAddress } = useWallet()
+  const { activeAddress: _activeAddress } = useWallet()
   const { data: body } = usePeriodBody(periodId)
   const committeeId = toBase64Url(period.committeeId)
   const { data: committee } = useCommittee(committeeId)
@@ -36,7 +36,9 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
           <Badge className="border-transparent bg-algo-teal text-[#001324]">Active</Badge>
           <span>Period {periodId}</span>
           <span aria-hidden>·</span>
-          <span>{topicCount} topic{topicCount !== 1 ? 's' : ''}</span>
+          <span>
+            {topicCount} topic{topicCount !== 1 ? 's' : ''}
+          </span>
         </div>
         <h2 className="mt-3.5 text-[27px] leading-[1.08]">{body?.title ?? `Period ${periodId}`}</h2>
         {body?.body && (
@@ -45,10 +47,17 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
           </p>
         )}
         <div className="mt-[18px] flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
-          <span><span className="text-muted-foreground">Opened</span> {formatMonthDay(period.votingStart)}</span>
-          <span><span className="text-muted-foreground">Closes</span> {formatMonthDayYear(period.votingEnd)}</span>
+          <span>
+            <span className="text-muted-foreground">Opened</span> {formatMonthDay(period.votingStart)}
+          </span>
+          <span>
+            <span className="text-muted-foreground">Closes</span> {formatMonthDayYear(period.votingEnd)}
+          </span>
           {committee && (
-            <span><span className="text-muted-foreground">Blocks</span> {formatBlockRange(committee.periodStart, committee.periodEnd)}</span>
+            <span>
+              <span className="text-muted-foreground">Blocks</span>{' '}
+              {formatBlockRange(committee.periodStart, committee.periodEnd)}
+            </span>
           )}
         </div>
       </div>
@@ -57,7 +66,10 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
       <div className="flex w-full flex-none flex-col gap-4 border-t border-border bg-muted/40 p-6 md:w-[296px] md:border-l md:border-t-0">
         {closesInDays >= 0 && (
           <div className="text-[13px] text-muted-foreground">
-            Closes in <strong className="font-display text-lg text-foreground">{closesInDays} day{closesInDays !== 1 ? 's' : ''}</strong>
+            Closes in{' '}
+            <strong className="font-display text-lg text-foreground">
+              {closesInDays} day{closesInDays !== 1 ? 's' : ''}
+            </strong>
           </div>
         )}
         <div>
@@ -68,7 +80,9 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
           <ProgressBar value={turnoutPct ?? 0} tone="sky" height={8} />
         </div>
         <Button asChild className="w-full">
-          <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>Cast your vote</Link>
+          <Link to="/vote/period/$periodId" params={{ periodId: String(periodId) }}>
+            Cast your vote
+          </Link>
         </Button>
       </div>
     </div>

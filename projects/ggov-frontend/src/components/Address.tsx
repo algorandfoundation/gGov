@@ -22,14 +22,28 @@ interface AddressProps {
   className?: string
 }
 
-export default function Address({ address, width = 6, to, copy = true, tooltip = true, long = false, className }: AddressProps) {
+export default function Address({
+  address,
+  width = 6,
+  to,
+  copy = true,
+  tooltip = true,
+  long = false,
+  className,
+}: AddressProps) {
   const { data: name } = useAddressName(address)
   const ellipsed = ellipseAddress(address, width)
-  const display = name
-    ? long
-      ? <>{name} <span className="font-mono font-normal opacity-60">({ellipsed})</span></>
-      : name
-    : ellipsed
+  const display = name ? (
+    long ? (
+      <>
+        {name} <span className="font-mono font-normal opacity-60">({ellipsed})</span>
+      </>
+    ) : (
+      name
+    )
+  ) : (
+    ellipsed
+  )
   // Raw addresses get monospace; resolved .algo names render in the normal font.
   const textClassName = cn(!name && 'font-mono', className)
 

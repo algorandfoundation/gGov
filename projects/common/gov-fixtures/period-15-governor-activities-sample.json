@@ -1,52 +1,52 @@
 {
-    "count": 3,
-    "next": null,
-    "previous": null,
-    "results": [
-        {
-            "id": "3674009753923692320",
-            "activity_type": "voted",
-            "committed_amount": null,
-            "asset_commitments": [],
-            "message": "Voted for Period 15, Voting Session 1.",
-            "creation_datetime": "2025-07-07 16:06:10.271329+00",
-            "round_number": 51578748,
-            "transaction": {
-                "id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
-                "transaction_id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
-                "rounded_at": null,
-                "processed_at": null
-            }
-        },
-        {
-            "id": "3674008717280727030",
-            "activity_type": "commit-changed",
-            "committed_amount": "134623696526",
-            "asset_commitments": [],
-            "message": "The commitment has been changed to 134623.696526 ALGOs.",
-            "creation_datetime": "2025-07-07 15:57:55.961524+00",
-            "round_number": 51578570,
-            "transaction": {
-                "id": "AGTFLXOMZQVV676KRXJSYD3IBSFBULLB5NHEHG5J3ZLPA7SHF6WA",
-                "transaction_id": "AGTFLXOMZQVV676KRXJSYD3IBSFBULLB5NHEHG5J3ZLPA7SHF6WA",
-                "rounded_at": null,
-                "processed_at": null
-            }
-        },
-        {
-            "id": "3672753126715595156",
-            "activity_type": "committed",
-            "committed_amount": "134470665298",
-            "asset_commitments": [],
-            "message": "134470.665298 ALGOs have been committed.",
-            "creation_datetime": "2025-06-30 17:39:23.724689+00",
-            "round_number": 51365174,
-            "transaction": {
-                "id": "3GXSJTMOHGGXSQ4IF6KTNKYQVBH6LGCIDVMMW65F7SRBXU2757YQ",
-                "transaction_id": "3GXSJTMOHGGXSQ4IF6KTNKYQVBH6LGCIDVMMW65F7SRBXU2757YQ",
-                "rounded_at": null,
-                "processed_at": null
-            }
-        }
-    ]
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "3674009753923692320",
+      "activity_type": "voted",
+      "committed_amount": null,
+      "asset_commitments": [],
+      "message": "Voted for Period 15, Voting Session 1.",
+      "creation_datetime": "2025-07-07 16:06:10.271329+00",
+      "round_number": 51578748,
+      "transaction": {
+        "id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
+        "transaction_id": "V7TYKRDC2ASBBMNGQSG7WGGSJPERNTBJIURTJNTTJVCKSRWR7MPA",
+        "rounded_at": null,
+        "processed_at": null
+      }
+    },
+    {
+      "id": "3674008717280727030",
+      "activity_type": "commit-changed",
+      "committed_amount": "134623696526",
+      "asset_commitments": [],
+      "message": "The commitment has been changed to 134623.696526 ALGOs.",
+      "creation_datetime": "2025-07-07 15:57:55.961524+00",
+      "round_number": 51578570,
+      "transaction": {
+        "id": "AGTFLXOMZQVV676KRXJSYD3IBSFBULLB5NHEHG5J3ZLPA7SHF6WA",
+        "transaction_id": "AGTFLXOMZQVV676KRXJSYD3IBSFBULLB5NHEHG5J3ZLPA7SHF6WA",
+        "rounded_at": null,
+        "processed_at": null
+      }
+    },
+    {
+      "id": "3672753126715595156",
+      "activity_type": "committed",
+      "committed_amount": "134470665298",
+      "asset_commitments": [],
+      "message": "134470.665298 ALGOs have been committed.",
+      "creation_datetime": "2025-06-30 17:39:23.724689+00",
+      "round_number": 51365174,
+      "transaction": {
+        "id": "3GXSJTMOHGGXSQ4IF6KTNKYQVBH6LGCIDVMMW65F7SRBXU2757YQ",
+        "transaction_id": "3GXSJTMOHGGXSQ4IF6KTNKYQVBH6LGCIDVMMW65F7SRBXU2757YQ",
+        "rounded_at": null,
+        "processed_at": null
+      }
+    }
+  ]
 }

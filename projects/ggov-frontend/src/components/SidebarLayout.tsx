@@ -1,15 +1,15 @@
-import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface SidebarLayoutProps {
   /** Primary page content. */
-  children: ReactNode;
+  children: ReactNode
   /** Content rendered in the secondary sidebar column. */
-  sidebar: ReactNode;
+  sidebar: ReactNode
   /** Which side the sidebar sits on at desktop widths. Defaults to "right". */
-  side?: "left" | "right";
-  className?: string;
-  sidebarClassName?: string;
+  side?: 'left' | 'right'
+  className?: string
+  sidebarClassName?: string
 }
 
 /**
@@ -21,22 +21,22 @@ interface SidebarLayoutProps {
 export default function SidebarLayout({
   children,
   sidebar,
-  side = "right",
+  side = 'right',
   className,
   sidebarClassName,
 }: SidebarLayoutProps) {
   return (
-    <div className={cn("flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8", className)}>
-      <main className={cn("min-w-0 flex-1", side === "left" && "lg:order-2")}>{children}</main>
+    <div className={cn('flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8', className)}>
+      <main className={cn('min-w-0 flex-1', side === 'left' && 'lg:order-2')}>{children}</main>
       <aside
         className={cn(
-          "w-full lg:sticky lg:top-6 lg:w-80 lg:shrink-0",
-          side === "left" && "lg:order-1",
+          'w-full lg:sticky lg:top-6 lg:w-80 lg:shrink-0',
+          side === 'left' && 'lg:order-1',
           sidebarClassName,
         )}
       >
         {sidebar}
       </aside>
     </div>
-  );
+  )
 }

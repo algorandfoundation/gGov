@@ -2,6 +2,9 @@
 # Add the full SHA of reformat/style commits so blame shows real authors.
 # Configure locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
 
+# style: apply prettier formatting
+95b449bb1ba76d897c9968d55e02a80c5d46e12e
+
 # refactor: split registry e2e suite by domain to increase maintainability and performance
 1badf19aba1055394be2b0931b26fac983e3fbc1
 

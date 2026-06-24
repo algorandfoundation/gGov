@@ -23,7 +23,14 @@ function Dial({ pct, center, label }: { pct: number; center: string; label: stri
   return (
     <div className="relative size-[184px]" role="img" aria-label={`${center} — ${label}`}>
       <svg width="184" height="184" viewBox="0 0 184 184" className="-rotate-90">
-        <circle cx="92" cy="92" r={r} fill="none" strokeWidth={14} className="stroke-algo-blue/15 dark:stroke-algo-teal/25" />
+        <circle
+          cx="92"
+          cy="92"
+          r={r}
+          fill="none"
+          strokeWidth={14}
+          className="stroke-algo-blue/15 dark:stroke-algo-teal/25"
+        />
         <circle
           cx="92"
           cy="92"
@@ -38,7 +45,9 @@ function Dial({ pct, center, label }: { pct: number; center: string; label: stri
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-display text-[38px] font-bold leading-none tabular-nums text-foreground">{center}</span>
-        <span className="mt-1.5 text-[11.5px] font-medium uppercase tracking-[0.07em] text-muted-foreground">{label}</span>
+        <span className="mt-1.5 text-[11.5px] font-medium uppercase tracking-[0.07em] text-muted-foreground">
+          {label}
+        </span>
       </div>
     </div>
   )
@@ -132,7 +141,9 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
               </div>
               {power != null && power > 0 && (
                 <div className="text-[13px] text-muted-foreground">
-                  Your weight: <strong className="font-bold text-algo-blue dark:text-algo-teal">{power.toLocaleString()}</strong> votes
+                  Your weight:{' '}
+                  <strong className="font-bold text-algo-blue dark:text-algo-teal">{power.toLocaleString()}</strong>{' '}
+                  votes
                   {rank ? ` · top ${rank.topPercentile}% of producers` : ''}
                 </div>
               )}

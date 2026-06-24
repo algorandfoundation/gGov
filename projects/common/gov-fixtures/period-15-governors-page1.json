@@ -1,97 +1,97 @@
 {
-    "count": 2217,
-    "next": "https://governance.algorand.foundation/api/periods/governance-period-15/governors/?limit=5&offset=5",
-    "previous": null,
-    "results": [
-        {
-            "id": "3672740778775749693",
-            "account": {
-                "id": "3557779289696934023",
-                "address": "PBW2OUVI3YHFPHVVGF4KNNY4FLG6ZIHCNAPITYFRSZ67HK7A5CHNLNSZPE"
-            },
-            "beneficiary_account": null,
-            "xgov_controller_account": null,
-            "committed_algo_amount": "14434620320",
-            "committed_assets_amount_in_algo": "0",
-            "committed_algo_amount_for_extra_rewards": null,
-            "is_eligible": false,
-            "is_xgov": false,
-            "not_eligible_reason": "incomplete-vote",
-            "registration_datetime": "2025-06-30 16:01:15.768907+00",
-            "voted_voting_session_count": 0,
-            "asset_commitments": []
-        },
-        {
-            "id": "3672740790918725005",
-            "account": {
-                "id": "3474520534657866795",
-                "address": "C6VLOB46CHDMTNGFC3F5WRNGELPVUNDSJCW24FU577WUFXWIXXCMSGR2BQ"
-            },
-            "beneficiary_account": null,
-            "xgov_controller_account": null,
-            "committed_algo_amount": "206182527058",
-            "committed_assets_amount_in_algo": "0",
-            "committed_algo_amount_for_extra_rewards": null,
-            "is_eligible": true,
-            "is_xgov": false,
-            "not_eligible_reason": "",
-            "registration_datetime": "2025-06-30 16:01:21.559139+00",
-            "voted_voting_session_count": 1,
-            "asset_commitments": []
-        },
-        {
-            "id": "3672740836102373376",
-            "account": {
-                "id": "3425087155089018886",
-                "address": "KEXFAU2TWG4X3DDCFKRY6CQDWZOYCNWCEBM255GHKJBFOJJVJAZAHINLCE"
-            },
-            "beneficiary_account": null,
-            "xgov_controller_account": null,
-            "committed_algo_amount": "310166122",
-            "committed_assets_amount_in_algo": "0",
-            "committed_algo_amount_for_extra_rewards": null,
-            "is_eligible": true,
-            "is_xgov": false,
-            "not_eligible_reason": "",
-            "registration_datetime": "2025-06-30 16:01:43.104058+00",
-            "voted_voting_session_count": 1,
-            "asset_commitments": []
-        },
-        {
-            "id": "3672740901094816936",
-            "account": {
-                "id": "3440132035936772113",
-                "address": "Z2PHFWPP334DRPLKHGDNU3T5GEDSMJXEBCPRLLQSVOLJHNMACLYYCFKTVU"
-            },
-            "beneficiary_account": null,
-            "xgov_controller_account": null,
-            "committed_algo_amount": "94700000000",
-            "committed_assets_amount_in_algo": "0",
-            "committed_algo_amount_for_extra_rewards": null,
-            "is_eligible": true,
-            "is_xgov": false,
-            "not_eligible_reason": "",
-            "registration_datetime": "2025-06-30 16:02:14.094617+00",
-            "voted_voting_session_count": 1,
-            "asset_commitments": []
-        },
-        {
-            "id": "3672741159187670543",
-            "account": {
-                "id": "3523874295549349580",
-                "address": "MSXB5CWRWB7V6C2S6DVGD6GYLNDR6ERKMU4BBOBAT45DZ7FHCWEK4CCTWU"
-            },
-            "beneficiary_account": null,
-            "xgov_controller_account": null,
-            "committed_algo_amount": "49000000000",
-            "committed_assets_amount_in_algo": "0",
-            "committed_algo_amount_for_extra_rewards": null,
-            "is_eligible": true,
-            "is_xgov": false,
-            "not_eligible_reason": "",
-            "registration_datetime": "2025-06-30 16:04:17.16301+00",
-            "voted_voting_session_count": 1,
-            "asset_commitments": []
-        }
-    ]
+  "count": 2217,
+  "next": "https://governance.algorand.foundation/api/periods/governance-period-15/governors/?limit=5&offset=5",
+  "previous": null,
+  "results": [
+    {
+      "id": "3672740778775749693",
+      "account": {
+        "id": "3557779289696934023",
+        "address": "PBW2OUVI3YHFPHVVGF4KNNY4FLG6ZIHCNAPITYFRSZ67HK7A5CHNLNSZPE"
+      },
+      "beneficiary_account": null,
+      "xgov_controller_account": null,
+      "committed_algo_amount": "14434620320",
+      "committed_assets_amount_in_algo": "0",
+      "committed_algo_amount_for_extra_rewards": null,
+      "is_eligible": false,
+      "is_xgov": false,
+      "not_eligible_reason": "incomplete-vote",
+      "registration_datetime": "2025-06-30 16:01:15.768907+00",
+      "voted_voting_session_count": 0,
+      "asset_commitments": []
+    },
+    {
+      "id": "3672740790918725005",
+      "account": {
+        "id": "3474520534657866795",
+        "address": "C6VLOB46CHDMTNGFC3F5WRNGELPVUNDSJCW24FU577WUFXWIXXCMSGR2BQ"
+      },
+      "beneficiary_account": null,
+      "xgov_controller_account": null,
+      "committed_algo_amount": "206182527058",
+      "committed_assets_amount_in_algo": "0",
+      "committed_algo_amount_for_extra_rewards": null,
+      "is_eligible": true,
+      "is_xgov": false,
+      "not_eligible_reason": "",
+      "registration_datetime": "2025-06-30 16:01:21.559139+00",
+      "voted_voting_session_count": 1,
+      "asset_commitments": []
+    },
+    {
+      "id": "3672740836102373376",
+      "account": {
+        "id": "3425087155089018886",
+        "address": "KEXFAU2TWG4X3DDCFKRY6CQDWZOYCNWCEBM255GHKJBFOJJVJAZAHINLCE"
+      },
+      "beneficiary_account": null,
+      "xgov_controller_account": null,
+      "committed_algo_amount": "310166122",
+      "committed_assets_amount_in_algo": "0",
+      "committed_algo_amount_for_extra_rewards": null,
+      "is_eligible": true,
+      "is_xgov": false,
+      "not_eligible_reason": "",
+      "registration_datetime": "2025-06-30 16:01:43.104058+00",
+      "voted_voting_session_count": 1,
+      "asset_commitments": []
+    },
+    {
+      "id": "3672740901094816936",
+      "account": {
+        "id": "3440132035936772113",
+        "address": "Z2PHFWPP334DRPLKHGDNU3T5GEDSMJXEBCPRLLQSVOLJHNMACLYYCFKTVU"
+      },
+      "beneficiary_account": null,
+      "xgov_controller_account": null,
+      "committed_algo_amount": "94700000000",
+      "committed_assets_amount_in_algo": "0",
+      "committed_algo_amount_for_extra_rewards": null,
+      "is_eligible": true,
+      "is_xgov": false,
+      "not_eligible_reason": "",
+      "registration_datetime": "2025-06-30 16:02:14.094617+00",
+      "voted_voting_session_count": 1,
+      "asset_commitments": []
+    },
+    {
+      "id": "3672741159187670543",
+      "account": {
+        "id": "3523874295549349580",
+        "address": "MSXB5CWRWB7V6C2S6DVGD6GYLNDR6ERKMU4BBOBAT45DZ7FHCWEK4CCTWU"
+      },
+      "beneficiary_account": null,
+      "xgov_controller_account": null,
+      "committed_algo_amount": "49000000000",
+      "committed_assets_amount_in_algo": "0",
+      "committed_algo_amount_for_extra_rewards": null,
+      "is_eligible": true,
+      "is_xgov": false,
+      "not_eligible_reason": "",
+      "registration_datetime": "2025-06-30 16:04:17.16301+00",
+      "voted_voting_session_count": 1,
+      "asset_commitments": []
+    }
+  ]
 }

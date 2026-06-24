@@ -64,8 +64,7 @@ export const ScrollingBody: Story = {
         <div className="space-y-3">
           {Array.from({ length: 20 }, (_, i) => (
             <p key={i}>
-              Paragraph {i + 1}. The panel caps at <code>max-h-[calc(100dvh-2rem)]</code> and the inner region
-              scrolls.
+              Paragraph {i + 1}. The panel caps at <code>max-h-[calc(100dvh-2rem)]</code> and the inner region scrolls.
             </p>
           ))}
         </div>

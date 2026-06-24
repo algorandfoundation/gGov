@@ -1,14 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { within, userEvent } from 'storybook/test'
 import { Vote, Users, BookOpen } from 'lucide-react'
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 
 /**

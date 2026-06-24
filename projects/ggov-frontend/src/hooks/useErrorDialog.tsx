@@ -1,7 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
 import { getErrorMessage, isUserRejectionError } from '@/lib/errors'
@@ -54,7 +61,9 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
               {error.message}
             </div>
             <DialogFooter>
-              <CopyButton value={error.message} size="default">Copy error</CopyButton>
+              <CopyButton value={error.message} size="default">
+                Copy error
+              </CopyButton>
               <Button onClick={clearError}>Close</Button>
             </DialogFooter>
           </DialogContent>

@@ -107,21 +107,11 @@ export default function AddTopic() {
                 </div>
               ))}
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setOptions([...options, ''])}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => setOptions([...options, ''])}>
                   Add option
                 </Button>
                 <span className="text-xs text-muted-foreground">or</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOptions(['Yes', 'No', 'Abstain'])}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={() => setOptions(['Yes', 'No', 'Abstain'])}>
                   Use Yes / No / Abstain
                 </Button>
               </div>

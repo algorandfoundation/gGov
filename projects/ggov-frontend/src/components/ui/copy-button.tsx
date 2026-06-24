@@ -10,13 +10,7 @@ interface CopyButtonProps extends VariantProps<typeof buttonVariants> {
 }
 
 /** Button that copies `value` to the clipboard and briefly confirms the copy. */
-export function CopyButton({
-  value,
-  children = 'Copy',
-  variant = 'outline',
-  size = 'sm',
-  className,
-}: CopyButtonProps) {
+export function CopyButton({ value, children = 'Copy', variant = 'outline', size = 'sm', className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false)
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 

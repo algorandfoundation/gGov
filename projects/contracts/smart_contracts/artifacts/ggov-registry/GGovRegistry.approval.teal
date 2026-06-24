@@ -2006,21 +2006,21 @@ uningestXGovs_after_if_else@34:
     dig 11
     callsub getStoredXGovAt
     bury 19
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:105
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:101
     // let found = false
     intc_0 // 0
     bury 15
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:106
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:102
     // const nextOffsets: [Uint16, Uint16][] = []
     bytec 19 // 0x0000
     bury 21
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:107
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     intc_0 // 0
     bury 14
 
 uningestXGovs_while_top@9:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:107
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     dig 21
     dup
@@ -2036,7 +2036,7 @@ uningestXGovs_while_top@9:
     dig 14
     >
     bz uningestXGovs_after_while@14
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:107-108
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103-104
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     //   const [cNumId, existingOffset] = gGovAccount.committeeOffsets[i]
     dig 24
@@ -2053,19 +2053,19 @@ uningestXGovs_while_top@9:
     extract 2 2
     bury 24
     intc_0 // 0
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:109
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:105
     // if (cNumId.asUint64() === committeeNumId.asUint64()) {
     extract_uint16
     dig 4
     ==
     bz uningestXGovs_else_body@12
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:110
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:106
     // found = true
     intc_1 // 1
     bury 15
 
 uningestXGovs_after_if_else@13:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:107
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     dig 13
     intc_1 // 1
@@ -2074,7 +2074,7 @@ uningestXGovs_after_if_else@13:
     b uningestXGovs_while_top@9
 
 uningestXGovs_else_body@12:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:112
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:108
     // nextOffsets.push([cNumId, existingOffset])
     dig 23
     dig 23
@@ -2099,7 +2099,7 @@ uningestXGovs_after_while@14:
     // if (!cond) {
     dig 14
     bnz uningestXGovs_after_if_else@22
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:115
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:111
     // ensure(found, errAccountOffsetNotExists)
     bytec 26 // "ERR:AO_NX"
     // smart_contracts/base/utils.algo.ts:34
@@ -2110,11 +2110,11 @@ uningestXGovs_after_while@14:
     err
 
 uningestXGovs_after_if_else@22:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:117
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:113
     // accountId: gGovAccount.accountId,
     dig 21
     extract 0 4
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:116-119
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:112-115
     // this.accounts(account).value = {
     //   accountId: gGovAccount.accountId,
     //   committeeOffsets: clone(nextOffsets),
@@ -4679,7 +4679,7 @@ tryGetXGovVotingPower_after_if_else@15:
 
 // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getAccount[routing]() -> void:
 getAccount:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:127
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:123
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -4687,10 +4687,10 @@ getAccount:
     intc_2 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:129
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:125
     // return this.getAccountIfExists(account)
     callsub getAccountIfExists
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:127
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:123
     // @abimethod({ readonly: true })
     bytec_1 // 0x151f7c75
     swap
@@ -4702,7 +4702,7 @@ getAccount:
 
 // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.logAccounts[routing]() -> void:
 logAccounts:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:137
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:133
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dupn 2
@@ -4721,7 +4721,7 @@ logAccounts:
     intc_0 // 0
 
 logAccounts_for_header@2:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:139
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:135
     // for (const account of accounts) {
     dup
     dig 2
@@ -4736,7 +4736,7 @@ logAccounts_for_header@2:
     *
     intc_2 // 32
     extract3 // on error: index access is out of bounds
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:140
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:136
     // log(encodeArc4(this.getAccountIfExists(account)))
     callsub getAccountIfExists
     log
@@ -4746,7 +4746,7 @@ logAccounts_for_header@2:
     b logAccounts_for_header@2
 
 logAccounts_after_for@5:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:137
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:133
     // @abimethod({ readonly: true })
     intc_1 // 1
     return

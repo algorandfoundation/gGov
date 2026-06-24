@@ -108,8 +108,7 @@ export default function ManagePeriodDetail() {
   }
 
   const editElectSeatsNum = Number(editElectSeats)
-  const editElectSeatsValid =
-    !editIsElection || (Number.isSafeInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
+  const editElectSeatsValid = !editIsElection || (Number.isSafeInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
 
   function handleSavePeriodBody() {
     if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectSeatsValid) return
@@ -170,9 +169,7 @@ export default function ManagePeriodDetail() {
         <span
           className={
             'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
-            (ready
-              ? 'bg-success/15 text-success-strong'
-              : 'bg-warning/20 text-warning-strong')
+            (ready ? 'bg-success/15 text-success-strong' : 'bg-warning/20 text-warning-strong')
           }
         >
           {ready ? 'Ready' : 'Draft'}
@@ -263,8 +260,8 @@ export default function ManagePeriodDetail() {
             </div>
           ) : (
             <div className="text-sm">
-              <span className="text-muted-foreground">Voting:</span>{' '}
-              {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
+              <span className="text-muted-foreground">Voting:</span> {formatTimestampUTC(period.votingStart)} —{' '}
+              {formatTimestampUTC(period.votingEnd)}
             </div>
           )}
 
@@ -341,11 +338,13 @@ export default function ManagePeriodDetail() {
                 confirmedLabel="Saved"
               />
             </>
-          ) : periodBody && (
-            <div>
-              <p className="font-medium">{periodBody.title}</p>
-              <MarkdownContent className="mt-1">{periodBody.body}</MarkdownContent>
-            </div>
+          ) : (
+            periodBody && (
+              <div>
+                <p className="font-medium">{periodBody.title}</p>
+                <MarkdownContent className="mt-1">{periodBody.body}</MarkdownContent>
+              </div>
+            )
           )}
         </CardContent>
       </Card>
@@ -355,7 +354,9 @@ export default function ManagePeriodDetail() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Topics ({period.topics.length})</h2>
         <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
-          <Button variant="outline" size="sm">Add topic</Button>
+          <Button variant="outline" size="sm">
+            Add topic
+          </Button>
         </Link>
       </div>
 
@@ -395,10 +396,14 @@ export default function ManagePeriodDetail() {
                             size="sm"
                             onClick={() => setRemovingTopic(topicIdx)}
                             disabled={removeTopicMutation.isPending}
-                            aria-busy={removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx}
+                            aria-busy={
+                              removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx
+                            }
                           >
                             <TxButtonContent
-                              pending={removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx}
+                              pending={
+                                removeTopicMutation.isPending && removeTopicMutation.variables?.topicIndex === topicIdx
+                              }
                               idleLabel="Remove"
                               pendingLabel="Removing…"
                             />
@@ -444,9 +449,7 @@ export default function ManagePeriodDetail() {
       <Dialog open={readyDialogOpen} onOpenChange={setReadyDialogOpen}>
         <DialogContent onClose={() => setReadyDialogOpen(false)}>
           <DialogHeader>
-            <DialogTitle>
-              {ready ? 'Revert period to Draft?' : 'Mark period as Ready?'}
-            </DialogTitle>
+            <DialogTitle>{ready ? 'Revert period to Draft?' : 'Mark period as Ready?'}</DialogTitle>
           </DialogHeader>
           {ready ? (
             <div className="space-y-2 text-sm">
@@ -456,8 +459,8 @@ export default function ManagePeriodDetail() {
                 <li>Re-enable edits to the committee, voting window, topics, and options</li>
               </ul>
               <p className="text-muted-foreground">
-                This is only possible because no votes have been cast yet. Once any vote is recorded,
-                the period is locked in Ready and cannot be reverted.
+                This is only possible because no votes have been cast yet. Once any vote is recorded, the period is
+                locked in Ready and cannot be reverted.
               </p>
             </div>
           ) : (
@@ -467,8 +470,8 @@ export default function ManagePeriodDetail() {
                 <li>Make it visible to voters</li>
                 <li>Allow voting once the voting window opens</li>
                 <li>
-                  <span className="text-foreground font-medium">Once a vote is cast, lock all edits</span>{' '}
-                  to the committee, voting window, topics, and options
+                  <span className="text-foreground font-medium">Once a vote is cast, lock all edits</span> to the
+                  committee, voting window, topics, and options
                 </li>
               </ul>
               <p className="text-muted-foreground">
@@ -486,14 +489,13 @@ export default function ManagePeriodDetail() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReadyDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setReadyDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button
               variant={ready ? 'outline' : 'default'}
               onClick={() =>
-                setReadyMutation.mutate(
-                  { periodId, ready: !ready },
-                  { onSuccess: () => setReadyDialogOpen(false) },
-                )
+                setReadyMutation.mutate({ periodId, ready: !ready }, { onSuccess: () => setReadyDialogOpen(false) })
               }
               disabled={setReadyMutation.isPending}
               aria-busy={setReadyMutation.isPending}
@@ -511,7 +513,9 @@ export default function ManagePeriodDetail() {
       {/* Remove-topic confirm (replaces window.confirm) */}
       <ConfirmDialog
         open={removingTopic !== null}
-        onOpenChange={(o) => { if (!o) setRemovingTopic(null) }}
+        onOpenChange={(o) => {
+          if (!o) setRemovingTopic(null)
+        }}
         title={removingTopic !== null ? `Remove topic ${removingTopic + 1}?` : 'Remove topic?'}
         description="This can't be undone. The topic and its options will be permanently deleted from this draft."
         confirmLabel="Remove topic"
@@ -553,7 +557,9 @@ export default function ManagePeriodDetail() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingTopicBody(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setEditingTopicBody(null)}>
+                Cancel
+              </Button>
               <TxButton
                 onClick={handleSaveTopicBody}
                 pending={uploadTopicBodyMutation.isPending}

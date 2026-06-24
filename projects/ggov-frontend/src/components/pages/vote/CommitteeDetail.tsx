@@ -13,12 +13,7 @@ import { formatMonthDayYear, formatTime, roundsToDays } from '@/utils/time'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eyebrow } from '@/components/ui/eyebrow'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { useAddressName } from '@/hooks/use-nfd'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { AccountAvatar } from '@/components/AccountAvatar'
@@ -159,7 +154,13 @@ function BoundaryBlock({
       </div>
       <div className="mt-3.5 flex flex-col gap-1.5">
         <BlockField label="Date">
-          {loading ? <Skeleton className="ml-auto h-3.5 w-20" /> : header ? formatMonthDayYear(header.timestamp) : <Muted />}
+          {loading ? (
+            <Skeleton className="ml-auto h-3.5 w-20" />
+          ) : header ? (
+            formatMonthDayYear(header.timestamp)
+          ) : (
+            <Muted />
+          )}
         </BlockField>
         <BlockField label="Time">
           {loading ? (
@@ -184,7 +185,12 @@ function StartEndPanel({ committee }: { committee: CommitteeOption }) {
 
   return (
     <Surface className="mt-5 grid grid-cols-1 overflow-hidden sm:grid-cols-[1fr_auto_1fr]">
-      <BoundaryBlock kind="start" round={committee.periodStart} header={startHeader} loading={startHeader === undefined} />
+      <BoundaryBlock
+        kind="start"
+        round={committee.periodStart}
+        header={startHeader}
+        loading={startHeader === undefined}
+      />
       <div className="relative flex flex-row items-center justify-center gap-3 border-y border-border bg-muted/40 px-5 py-3 sm:flex-col sm:gap-1 sm:border-x sm:border-y-0">
         <Clock className="absolute left-5 size-5 text-muted-foreground sm:static sm:left-auto" />
         <div className="text-center">
@@ -222,8 +228,12 @@ function MemberRow({
   const ellipsed = ellipseAddress(address, 6)
   return (
     <Link
-      to="/account/$address" params={{ address }}
-      className={cn(LEADERBOARD_GRID, 'border-b border-border px-4.5 py-3 transition-colors last:border-0 hover:bg-muted/40')}
+      to="/account/$address"
+      params={{ address }}
+      className={cn(
+        LEADERBOARD_GRID,
+        'border-b border-border px-4.5 py-3 transition-colors last:border-0 hover:bg-muted/40',
+      )}
     >
       <span
         className={cn(
@@ -244,10 +254,7 @@ function MemberRow({
       </div>
       <div className="flex items-center gap-2.5">
         <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-algo-blue dark:bg-algo-teal"
-            style={{ width: `${barPct}%` }}
-          />
+          <div className="h-full rounded-full bg-algo-blue dark:bg-algo-teal" style={{ width: `${barPct}%` }} />
         </div>
         <span className="w-[46px] shrink-0 text-right text-xs tabular-nums text-muted-foreground">
           {share.toFixed(2)}%
@@ -320,16 +327,13 @@ export default function CommitteeDetail() {
             </span>
           )}
         </h1>
-        {committee && (
-          <ExportMenu disabled={!hasMembers || exporting} onExport={handleExport} />
-        )}
+        {committee && <ExportMenu disabled={!hasMembers || exporting} onExport={handleExport} />}
       </div>
 
       {committee && (
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-muted-foreground">
           <span>
-            <strong className="text-foreground tabular-nums">{committee.totalMembers.toLocaleString()}</strong>{' '}
-            members
+            <strong className="text-foreground tabular-nums">{committee.totalMembers.toLocaleString()}</strong> members
           </span>
           <span aria-hidden>·</span>
           <span>

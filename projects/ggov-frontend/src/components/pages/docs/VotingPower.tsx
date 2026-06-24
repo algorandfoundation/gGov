@@ -18,8 +18,8 @@ export default function VotingPower() {
         <H2>What counts as voting power</H2>
         <P>
           Every account on Algorand can help produce blocks. The more blocks your account produced during a period's
-          window, the more voting power you have for that period. Power is a simple, whole count of blocks — shown in the
-          app as a number of votes.
+          window, the more voting power you have for that period. Power is a simple, whole count of blocks — shown in
+          the app as a number of votes.
         </P>
 
         <H2>No staking, no lock-up</H2>

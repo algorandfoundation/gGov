@@ -1,7 +1,7 @@
 /**
  * Script to parse errors.algo.ts and generate SDK error map
  * Parses lines like: export const errName = 'ERR:CODE' // Error message
- * 
+ *
  * Usage: tsx generate-errors.ts <sdk-root-path>
  * Example: tsx ../common/sdks/generate-errors.ts .
  */

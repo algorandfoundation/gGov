@@ -13,9 +13,7 @@ import { getAlgodConfigFromViteEnvironment } from '@/utils/network'
 
 export const registryAppId = BigInt(import.meta.env.VITE_GGOV_REGISTRY_APP_ID || '0')
 
-export const escregAppId = import.meta.env.VITE_ESCREG_APP_ID
-  ? BigInt(import.meta.env.VITE_ESCREG_APP_ID)
-  : undefined
+export const escregAppId = import.meta.env.VITE_ESCREG_APP_ID ? BigInt(import.meta.env.VITE_ESCREG_APP_ID) : undefined
 
 // Server-only overrides sourced from the Cloudflare Worker env (see
 // serverReaderSdk.ts): `token` lets the Worker authenticate to Algod with a

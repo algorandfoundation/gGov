@@ -1,32 +1,32 @@
 {
-    "id": "3672143933686667601",
-    "title": "Governance Period 15",
-    "slug": "governance-period-15",
-    "sign_up_address": "RW466IANOKLA36QARHMBX5VCY3PYDR3H2N5XHPDARG6UBOKCIK7WAMLSCA",
-    "xgov_escrow_address": "",
-    "registration_end_datetime": "2025-07-07 15:59:59+00",
-    "start_datetime": "2025-06-30 16:00:00+00",
-    "active_state_end_datetime": "2025-07-15 15:59:58+00",
-    "end_datetime": "2025-07-15 15:59:59+00",
-    "is_active": false,
-    "total_committed_stake": 77790352875480,
-    "total_committed_algo": 68907876968344,
-    "total_committed_lp_tokens_in_algo": 8882475907136,
-    "total_committed_stake_for_extra_rewards": null,
-    "algo_amount_in_reward_pool": "0",
-    "algo_rewards_reserved_for_non_defi_participants": "0",
-    "algo_rewards_reserved_for_defi_participants": "0",
-    "governor_count": 1394,
-    "voting_sessions": [
-        {
-            "id": "18",
-            "title": "Period 15, Voting Session 1",
-            "slug": "period-15-voting-session-1",
-            "short_description": "xGov Council Election 2025",
-            "voting_start_datetime": "2025-07-07 16:00:00+00",
-            "voting_end_datetime": "2025-07-15 15:58:00+00",
-            "cooldown_end_datetime": "2025-07-15 15:58:50+00",
-            "topic_count": 22
-        }
-    ]
+  "id": "3672143933686667601",
+  "title": "Governance Period 15",
+  "slug": "governance-period-15",
+  "sign_up_address": "RW466IANOKLA36QARHMBX5VCY3PYDR3H2N5XHPDARG6UBOKCIK7WAMLSCA",
+  "xgov_escrow_address": "",
+  "registration_end_datetime": "2025-07-07 15:59:59+00",
+  "start_datetime": "2025-06-30 16:00:00+00",
+  "active_state_end_datetime": "2025-07-15 15:59:58+00",
+  "end_datetime": "2025-07-15 15:59:59+00",
+  "is_active": false,
+  "total_committed_stake": 77790352875480,
+  "total_committed_algo": 68907876968344,
+  "total_committed_lp_tokens_in_algo": 8882475907136,
+  "total_committed_stake_for_extra_rewards": null,
+  "algo_amount_in_reward_pool": "0",
+  "algo_rewards_reserved_for_non_defi_participants": "0",
+  "algo_rewards_reserved_for_defi_participants": "0",
+  "governor_count": 1394,
+  "voting_sessions": [
+    {
+      "id": "18",
+      "title": "Period 15, Voting Session 1",
+      "slug": "period-15-voting-session-1",
+      "short_description": "xGov Council Election 2025",
+      "voting_start_datetime": "2025-07-07 16:00:00+00",
+      "voting_end_datetime": "2025-07-15 15:58:00+00",
+      "cooldown_end_datetime": "2025-07-15 15:58:50+00",
+      "topic_count": 22
+    }
+  ]
 }

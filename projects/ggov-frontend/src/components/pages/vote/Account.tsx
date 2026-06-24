@@ -1,36 +1,36 @@
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useWallet } from "@txnlab/use-wallet-react";
-import { toast } from "sonner";
-import { ArrowDown, ArrowLeftRight, BookOpen, Copy, Info, Target } from "lucide-react";
-import { useGGovSDK } from "@/hooks/useGGovSDK";
-import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe, useAppEscrow } from "@/hooks/queries";
-import { useDelegateMutation, useUndelegateMutation, useRedelegateMutation } from "@/hooks/mutations";
-import { useAddressName } from "@/hooks/use-nfd";
-import { ellipseAddress } from "@/utils/ellipseAddress";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Eyebrow } from "@/components/ui/eyebrow";
-import { AccountAvatar } from "@/components/AccountAvatar";
-import AppExplorerLink from "@/components/AppExplorerLink";
-import AccountExplorerLink from "@/components/AccountExplorerLink";
-import PeriodStatusBadge from "@/components/PeriodStatusBadge";
-import { TxButton, TxButtonContent } from "@/components/TxButtonContent";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { useWallet } from '@txnlab/use-wallet-react'
+import { toast } from 'sonner'
+import { ArrowDown, ArrowLeftRight, BookOpen, Copy, Info, Target } from 'lucide-react'
+import { useGGovSDK } from '@/hooks/useGGovSDK'
+import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe, useAppEscrow } from '@/hooks/queries'
+import { useDelegateMutation, useUndelegateMutation, useRedelegateMutation } from '@/hooks/mutations'
+import { useAddressName } from '@/hooks/use-nfd'
+import { ellipseAddress } from '@/utils/ellipseAddress'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Eyebrow } from '@/components/ui/eyebrow'
+import { AccountAvatar } from '@/components/AccountAvatar'
+import AppExplorerLink from '@/components/AppExplorerLink'
+import AccountExplorerLink from '@/components/AccountExplorerLink'
+import PeriodStatusBadge from '@/components/PeriodStatusBadge'
+import { TxButton, TxButtonContent } from '@/components/TxButtonContent'
+import { cn } from '@/lib/utils'
 
-const DELEGATION_DOCS_URL = "/docs/delegation";
+const DELEGATION_DOCS_URL = '/docs/delegation'
 
 function copyAddress(address: string) {
   navigator.clipboard.writeText(address).then(
-    () => toast.success("Address copied"),
+    () => toast.success('Address copied'),
     () => toast.error("Couldn't copy address"),
-  );
+  )
 }
 
 /** Restyled card surface matching the vote/period pages (hairline border + sm shadow). */
 function Surface({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-xl border border-border bg-card shadow-sm", className)} {...props} />;
+  return <div className={cn('rounded-xl border border-border bg-card shadow-sm', className)} {...props} />
 }
 
 /** Avatar + resolved name over the mono address, in an inset chip (optionally a link). */
@@ -40,37 +40,37 @@ function AccountChip({
   to,
   compact,
 }: {
-  address: string;
-  size?: number;
-  to?: string;
-  compact?: boolean;
+  address: string
+  size?: number
+  to?: string
+  compact?: boolean
 }) {
-  const { data: name } = useAddressName(address);
-  const ellipsed = ellipseAddress(address, 6);
+  const { data: name } = useAddressName(address)
+  const ellipsed = ellipseAddress(address, 6)
   const inner = (
     <>
       <AccountAvatar address={address} name={name} size={size} />
       <div className="min-w-0 flex-1">
-        <div className={cn("truncate font-medium", compact ? "text-[13.5px]" : "text-sm")}>{name ?? ellipsed}</div>
+        <div className={cn('truncate font-medium', compact ? 'text-[13.5px]' : 'text-sm')}>{name ?? ellipsed}</div>
         {name && (
-          <div className={cn("truncate font-mono text-muted-foreground", compact ? "text-[11.5px]" : "text-xs")}>
+          <div className={cn('truncate font-mono text-muted-foreground', compact ? 'text-[11.5px]' : 'text-xs')}>
             {ellipsed}
           </div>
         )}
       </div>
     </>
-  );
+  )
   const cls = cn(
-    "flex items-center gap-2.5 rounded-lg border border-border bg-muted/40",
-    compact ? "px-3 py-2.5" : "px-3.5 py-3",
-  );
+    'flex items-center gap-2.5 rounded-lg border border-border bg-muted/40',
+    compact ? 'px-3 py-2.5' : 'px-3.5 py-3',
+  )
   return to ? (
-    <Link to={to} className={cn(cls, "transition-colors hover:bg-muted/60")}>
+    <Link to={to} className={cn(cls, 'transition-colors hover:bg-muted/60')}>
       {inner}
     </Link>
   ) : (
     <div className={cls}>{inner}</div>
-  );
+  )
 }
 
 /** "Read more about delegation" docs deep-link in every delegation card footer. */
@@ -85,7 +85,7 @@ function DocsLink() {
         Read more about delegation
       </Link>
     </div>
-  );
+  )
 }
 
 /** Blue-accented info note used under the delegate / change forms. */
@@ -95,14 +95,14 @@ function InfoNote({ children }: { children: ReactNode }) {
       <Info className="mt-px size-3.5 shrink-0 text-primary dark:text-algo-teal" />
       <span>{children}</span>
     </div>
-  );
+  )
 }
 
 /** Uppercase tracked field label. */
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <label className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">{children}</label>
-  );
+  )
 }
 
 /** Dashed empty-state panel. */
@@ -110,30 +110,29 @@ function EmptyPanel({ children, className }: { children: ReactNode; className?: 
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-7 text-center text-[13px] text-muted-foreground",
+        'flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-7 text-center text-[13px] text-muted-foreground',
         className,
       )}
     >
       {children}
     </div>
-  );
+  )
 }
 
-const ORANGE_BTN =
-  "text-destructive-strong hover:bg-destructive/10 disabled:opacity-50";
+const ORANGE_BTN = 'text-destructive-strong hover:bg-destructive/10 disabled:opacity-50'
 
 /** Status pill on the delegation card header. */
 function DelegationBadge({ delegating }: { delegating: boolean }) {
   return (
     <span
       className={cn(
-        "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        delegating ? "bg-primary/10 text-primary dark:text-algo-teal" : "bg-muted text-muted-foreground",
+        'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+        delegating ? 'bg-primary/10 text-primary dark:text-algo-teal' : 'bg-muted text-muted-foreground',
       )}
     >
-      {delegating ? "Delegating" : "Self-voting"}
+      {delegating ? 'Delegating' : 'Self-voting'}
     </span>
-  );
+  )
 }
 
 /**
@@ -151,33 +150,33 @@ function DelegationCard({
   undelegateMutation,
   sdk,
 }: {
-  isOwnAccount: boolean;
-  loading: boolean;
-  delegation: { delegatee: string; exists: boolean } | undefined;
-  ownerName: string | null | undefined;
-  ownerAddress: string;
-  delegateMutation: ReturnType<typeof useDelegateMutation>;
-  undelegateMutation: ReturnType<typeof useUndelegateMutation>;
-  sdk: ReturnType<typeof useGGovSDK>["sdk"];
+  isOwnAccount: boolean
+  loading: boolean
+  delegation: { delegatee: string; exists: boolean } | undefined
+  ownerName: string | null | undefined
+  ownerAddress: string
+  delegateMutation: ReturnType<typeof useDelegateMutation>
+  undelegateMutation: ReturnType<typeof useUndelegateMutation>
+  sdk: ReturnType<typeof useGGovSDK>['sdk']
 }) {
-  const [mode, setMode] = useState<"view" | "form" | "change">("view");
-  const [input, setInput] = useState("");
-  const exists = !!delegation?.exists;
-  const submitting = delegateMutation.isPending || undelegateMutation.isPending;
-  const ownerLabel = ownerName ?? ellipseAddress(ownerAddress, 6);
+  const [mode, setMode] = useState<'view' | 'form' | 'change'>('view')
+  const [input, setInput] = useState('')
+  const exists = !!delegation?.exists
+  const submitting = delegateMutation.isPending || undelegateMutation.isPending
+  const ownerLabel = ownerName ?? ellipseAddress(ownerAddress, 6)
 
   function submitDelegate() {
     delegateMutation.mutate(input, {
       onSuccess: () => {
-        setMode("view");
-        setInput("");
+        setMode('view')
+        setInput('')
       },
-    });
+    })
   }
 
-  let body: ReactNode;
+  let body: ReactNode
   if (loading) {
-    body = <Skeleton className="mt-3.5 h-16" />;
+    body = <Skeleton className="mt-3.5 h-16" />
   } else if (!isOwnAccount) {
     // Read-only public profile.
     body = exists ? (
@@ -195,11 +194,13 @@ function DelegationCard({
           <div className="text-[12.5px] text-muted-foreground">No delegation — this account votes directly.</div>
         </div>
       </div>
-    );
-  } else if (exists && mode === "change") {
+    )
+  } else if (exists && mode === 'change') {
     body = (
       <div className="mt-3.5">
-        <p className="mb-3 text-[13px] text-muted-foreground">Move this account's voting power to a different address.</p>
+        <p className="mb-3 text-[13px] text-muted-foreground">
+          Move this account's voting power to a different address.
+        </p>
         <div className="mb-1.5">
           <FieldLabel>Currently delegated to</FieldLabel>
         </div>
@@ -227,12 +228,12 @@ function DelegationCard({
             pendingLabel="Updating…"
             confirmedLabel="Updated"
           />
-          <Button variant="ghost" onClick={() => setMode("view")} disabled={submitting}>
+          <Button variant="ghost" onClick={() => setMode('view')} disabled={submitting}>
             Cancel
           </Button>
         </div>
       </div>
-    );
+    )
   } else if (exists) {
     body = (
       <div className="mt-3.5">
@@ -242,8 +243,8 @@ function DelegationCard({
           <button
             type="button"
             onClick={() => {
-              setMode("change");
-              setInput("");
+              setMode('change')
+              setInput('')
             }}
             disabled={submitting}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-primary bg-background px-3 py-2.5 text-[13.5px] font-semibold text-primary transition-colors hover:bg-primary/5 disabled:opacity-50"
@@ -257,7 +258,7 @@ function DelegationCard({
             disabled={submitting}
             aria-busy={undelegateMutation.isPending}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-md border border-algo-orange/40 bg-algo-orange/[0.06] px-3 py-2.5 text-[13.5px] font-semibold transition-colors",
+              'flex flex-1 items-center justify-center gap-1.5 rounded-md border border-algo-orange/40 bg-algo-orange/[0.06] px-3 py-2.5 text-[13.5px] font-semibold transition-colors',
               ORANGE_BTN,
             )}
           >
@@ -271,11 +272,13 @@ function DelegationCard({
           </button>
         </div>
       </div>
-    );
-  } else if (mode === "form") {
+    )
+  } else if (mode === 'form') {
     body = (
       <div className="mt-3.5">
-        <p className="mb-2 text-[13px] text-muted-foreground">Delegate this account's voting power to another address.</p>
+        <p className="mb-2 text-[13px] text-muted-foreground">
+          Delegate this account's voting power to another address.
+        </p>
         <FieldLabel>Delegate to address</FieldLabel>
         <Input
           className="mt-1.5 font-mono"
@@ -299,8 +302,8 @@ function DelegationCard({
           <Button
             variant="ghost"
             onClick={() => {
-              setMode("view");
-              setInput("");
+              setMode('view')
+              setInput('')
             }}
             disabled={submitting}
           >
@@ -308,7 +311,7 @@ function DelegationCard({
           </Button>
         </div>
       </div>
-    );
+    )
   } else {
     body = (
       <div className="mt-3.5">
@@ -317,10 +320,10 @@ function DelegationCard({
           let another account vote with this power.
         </p>
         <div className="mt-3.5">
-          <Button onClick={() => setMode("form")}>Delegate</Button>
+          <Button onClick={() => setMode('form')}>Delegate</Button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -332,7 +335,7 @@ function DelegationCard({
       {body}
       <DocsLink />
     </Surface>
-  );
+  )
 }
 
 /**
@@ -344,18 +347,18 @@ function DelegatorRow({
   delegator,
   redelegateMutation,
 }: {
-  delegator: string;
-  redelegateMutation: ReturnType<typeof useRedelegateMutation>;
+  delegator: string
+  redelegateMutation: ReturnType<typeof useRedelegateMutation>
 }) {
-  const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState("");
-  const { data: name } = useAddressName(delegator);
-  const ellipsed = ellipseAddress(delegator, 6);
-  const active = redelegateMutation.isPending && redelegateMutation.variables?.account === delegator;
+  const [open, setOpen] = useState(false)
+  const [target, setTarget] = useState('')
+  const { data: name } = useAddressName(delegator)
+  const ellipsed = ellipseAddress(delegator, 6)
+  const active = redelegateMutation.isPending && redelegateMutation.variables?.account === delegator
   // Distinguish redirecting onward from undoing: undoing points the delegator's voting account back
   // at itself, so its votingAddress equals the delegator.
-  const removing = active && redelegateMutation.variables?.votingAddress === delegator;
-  const pending = active && !removing;
+  const removing = active && redelegateMutation.variables?.votingAddress === delegator
+  const pending = active && !removing
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background">
@@ -373,21 +376,21 @@ function DelegatorRow({
           disabled={removing}
           className="flex flex-1 items-center justify-center gap-1.5 border-r border-border py-2.5 text-primary transition-colors hover:bg-muted/50 disabled:opacity-50 dark:text-algo-teal"
         >
-          {open ? "Close" : "Re-delegate"}
+          {open ? 'Close' : 'Re-delegate'}
         </button>
         <button
           type="button"
           disabled={active}
           aria-busy={removing}
           onClick={() => redelegateMutation.mutate({ account: delegator, votingAddress: delegator })}
-          className={cn("flex flex-1 items-center justify-center gap-1.5 py-2.5 transition-colors", ORANGE_BTN)}
+          className={cn('flex flex-1 items-center justify-center gap-1.5 py-2.5 transition-colors', ORANGE_BTN)}
         >
           <TxButtonContent pending={removing} idleLabel="Remove delegation" pendingLabel="Removing…" />
         </button>
       </div>
       {open && (
         <div className="border-t border-border bg-muted/40 px-3.5 py-3">
-          <label className="text-xs font-semibold">Forward {name ?? "this account"}'s delegation to</label>
+          <label className="text-xs font-semibold">Forward {name ?? 'this account'}'s delegation to</label>
           <div className="mt-1.5 flex gap-2">
             <Input
               name={`redelegate-${delegator}`}
@@ -405,8 +408,8 @@ function DelegatorRow({
                   { account: delegator, votingAddress: target },
                   {
                     onSuccess: () => {
-                      setTarget("");
-                      setOpen(false);
+                      setTarget('')
+                      setOpen(false)
                     },
                   },
                 )
@@ -416,21 +419,25 @@ function DelegatorRow({
             </Button>
           </div>
           <p className="mt-1.5 text-[11.5px] text-muted-foreground">
-            Redirects this incoming delegation to a third address. {name ?? "This account"} keeps delegating, just to
+            Redirects this incoming delegation to a third address. {name ?? 'This account'} keeps delegating, just to
             someone else.
           </p>
         </div>
       )}
     </div>
-  );
+  )
 }
 
 /** Read-only delegator row on another account's profile: a plain linked address. */
 function DelegatorLink({ address }: { address: string }) {
-  const { data: name } = useAddressName(address);
-  const ellipsed = ellipseAddress(address, 6);
+  const { data: name } = useAddressName(address)
+  const ellipsed = ellipseAddress(address, 6)
   return (
-    <Link to="/account/$address" params={{ address }} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0">
+    <Link
+      to="/account/$address"
+      params={{ address }}
+      className="flex items-center gap-3 border-b border-border py-2.5 last:border-0"
+    >
       <AccountAvatar address={address} name={name} size={30} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13.5px] font-medium text-primary hover:underline dark:text-algo-teal">
@@ -439,7 +446,7 @@ function DelegatorLink({ address }: { address: string }) {
         {name && <div className="truncate font-mono text-xs text-muted-foreground">{ellipsed}</div>}
       </div>
     </Link>
-  );
+  )
 }
 
 /** App-escrow badge: links the owning app ID to its explorer page, labelled "App" rather than "#". */
@@ -448,7 +455,7 @@ function AppLabel({ appId }: { appId: bigint }) {
     <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-xs font-semibold">
       <AppExplorerLink appId={appId} prefix="App " />
     </span>
-  );
+  )
 }
 
 /** Page heading identity line: own account shows the full address + "This is you"; another shows avatar + name. */
@@ -457,11 +464,11 @@ function HeadingIdentity({
   isOwnAccount,
   appId,
 }: {
-  address: string;
-  isOwnAccount: boolean;
-  appId?: bigint | null;
+  address: string
+  isOwnAccount: boolean
+  appId?: bigint | null
 }) {
-  const { data: name } = useAddressName(address);
+  const { data: name } = useAddressName(address)
   if (isOwnAccount) {
     return (
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -483,7 +490,7 @@ function HeadingIdentity({
         </span>
         {appId != null && <AppLabel appId={appId} />}
       </div>
-    );
+    )
   }
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2.5">
@@ -503,25 +510,25 @@ function HeadingIdentity({
       </span>
       {appId != null && <AppLabel appId={appId} />}
     </div>
-  );
+  )
 }
 
 export default function Account() {
-  const { address } = useParams({ strict: false });
-  const { activeAddress, activeWalletAccounts } = useWallet();
-  const navigate = useNavigate();
-  const { sdk } = useGGovSDK();
-  const isOwnAccount = !!address && !!activeAddress && address === activeAddress;
-  const hasMultipleAccounts = (activeWalletAccounts ?? []).length > 1;
-  const { data: ownerName } = useAddressName(address ?? "");
+  const { address } = useParams({ strict: false })
+  const { activeAddress, activeWalletAccounts } = useWallet()
+  const navigate = useNavigate()
+  const { sdk } = useGGovSDK()
+  const isOwnAccount = !!address && !!activeAddress && address === activeAddress
+  const hasMultipleAccounts = (activeWalletAccounts ?? []).length > 1
+  const { data: ownerName } = useAddressName(address ?? '')
 
   // Offer to jump to the now-active account's page when the user switches wallet
   // accounts while viewing what was their own account page.
-  const [showSwitchBanner, setShowSwitchBanner] = useState(false);
-  const prevActiveAddress = useRef(activeAddress);
+  const [showSwitchBanner, setShowSwitchBanner] = useState(false)
+  const prevActiveAddress = useRef(activeAddress)
   useEffect(() => {
-    const previous = prevActiveAddress.current;
-    prevActiveAddress.current = activeAddress;
+    const previous = prevActiveAddress.current
+    prevActiveAddress.current = activeAddress
     if (
       hasMultipleAccounts &&
       previous &&
@@ -530,29 +537,29 @@ export default function Account() {
       address === previous &&
       address !== activeAddress
     ) {
-      setShowSwitchBanner(true);
+      setShowSwitchBanner(true)
     }
-  }, [activeAddress, address, hasMultipleAccounts]);
+  }, [activeAddress, address, hasMultipleAccounts])
   // Once the viewed page matches the active account again the prompt is moot.
   useEffect(() => {
-    if (address === activeAddress) setShowSwitchBanner(false);
-  }, [address, activeAddress]);
+    if (address === activeAddress) setShowSwitchBanner(false)
+  }, [address, activeAddress])
 
-  const { data: committees = [], isLoading: loadingCommittees } = useCommitteeVotingPowers(address);
-  const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address);
-  const { data: delegation, isLoading: loadingDelegation } = useDelegation(address);
-  const { data: delegators = [], isLoading: loadingDelegators } = useDelegatedToMe(address);
-  const { data: appEscrowId } = useAppEscrow(address);
-  const delegateMutation = useDelegateMutation();
-  const undelegateMutation = useUndelegateMutation();
-  const redelegateMutation = useRedelegateMutation();
+  const { data: committees = [], isLoading: loadingCommittees } = useCommitteeVotingPowers(address)
+  const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address)
+  const { data: delegation, isLoading: loadingDelegation } = useDelegation(address)
+  const { data: delegators = [], isLoading: loadingDelegators } = useDelegatedToMe(address)
+  const { data: appEscrowId } = useAppEscrow(address)
+  const delegateMutation = useDelegateMutation()
+  const undelegateMutation = useUndelegateMutation()
+  const redelegateMutation = useRedelegateMutation()
 
   // The editable delegation card is only useful to accounts that actually hold voting power in some
   // committee (delegating zero power is pointless) or that have received delegations. Other accounts'
   // delegation is shown read-only as account status.
-  const canSelfDelegate = committees.length > 0 || delegators.length > 0;
-  const showDelegationCard = isOwnAccount ? canSelfDelegate : true;
-  const switchName = useAddressName(activeAddress ?? "").data;
+  const canSelfDelegate = committees.length > 0 || delegators.length > 0
+  const showDelegationCard = isOwnAccount ? canSelfDelegate : true
+  const switchName = useAddressName(activeAddress ?? '').data
 
   if (!address) {
     return (
@@ -560,7 +567,7 @@ export default function Account() {
         <h1 className="font-display text-3xl font-bold">Account</h1>
         <p className="text-muted-foreground">No account address provided.</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -573,7 +580,7 @@ export default function Account() {
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold">You switched wallet accounts</div>
             <div className="mt-0.5 text-[13px] text-muted-foreground">
-              You're now connected as{" "}
+              You're now connected as{' '}
               <strong className="text-foreground">{switchName ?? ellipseAddress(activeAddress, 6)}</strong>. Go to its
               account page?
             </div>
@@ -582,8 +589,8 @@ export default function Account() {
             <Button
               size="sm"
               onClick={() => {
-                setShowSwitchBanner(false);
-                navigate({ to: "/account/$address", params: { address: activeAddress } });
+                setShowSwitchBanner(false)
+                navigate({ to: '/account/$address', params: { address: activeAddress } })
               }}
             >
               Switch to my account
@@ -596,7 +603,7 @@ export default function Account() {
       )}
 
       <h1 className="font-display text-3xl font-bold leading-none">
-        {appEscrowId != null ? "Application Account" : "Account"}
+        {appEscrowId != null ? 'Application Account' : 'Account'}
       </h1>
       <HeadingIdentity address={address} isOwnAccount={isOwnAccount} appId={appEscrowId} />
 
@@ -619,11 +626,11 @@ export default function Account() {
 
           <Surface className="p-5">
             <div className="flex items-center justify-between gap-2.5">
-              <Eyebrow>{isOwnAccount ? "Delegated to you" : "Delegators"}</Eyebrow>
+              <Eyebrow>{isOwnAccount ? 'Delegated to you' : 'Delegators'}</Eyebrow>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {delegators.length === 0
-                  ? "No delegators"
-                  : `${delegators.length} account${delegators.length === 1 ? "" : "s"}`}
+                  ? 'No delegators'
+                  : `${delegators.length} account${delegators.length === 1 ? '' : 's'}`}
               </span>
             </div>
             {isOwnAccount && delegators.length > 0 && (
@@ -679,7 +686,8 @@ export default function Account() {
                 {committees.map((c) => (
                   <Link
                     key={c.idBase64Url}
-                    to="/committees/$committeeId" params={{ committeeId: c.idBase64Url }}
+                    to="/committees/$committeeId"
+                    params={{ committeeId: c.idBase64Url }}
                     className="grid grid-cols-[1fr_auto] items-center gap-2.5 border-b border-border px-5 py-3 transition-colors hover:bg-muted/40"
                   >
                     <span className="truncate font-mono text-[13px] font-medium text-primary dark:text-algo-teal">
@@ -716,7 +724,8 @@ export default function Account() {
                 <div className="border-b border-border p-4">
                   <div className="flex items-start justify-between gap-2.5">
                     <Link
-                      to="/vote/period/$periodId" params={{ periodId: String(periodId) }}
+                      to="/vote/period/$periodId"
+                      params={{ periodId: String(periodId) }}
                       className="font-display text-[15px] font-bold leading-tight hover:text-primary dark:hover:text-algo-teal"
                     >
                       {body?.title ?? `Period #${periodId}`}
@@ -731,27 +740,29 @@ export default function Account() {
                 </div>
                 <div className="px-4 pb-3.5 pt-1">
                   {record.topicVotes.map((topicVoteCounts, ti) => {
-                    const options = period.topics[ti]?.[0] ?? [];
-                    const total = topicVoteCounts.reduce((a, b) => a + b, 0);
+                    const options = period.topics[ti]?.[0] ?? []
+                    const total = topicVoteCounts.reduce((a, b) => a + b, 0)
                     const nonZero = topicVoteCounts
                       .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, votes: v }))
-                      .filter((entry) => entry.votes > 0);
-                    if (nonZero.length === 0) return null;
-                    const single = nonZero.length === 1;
-                    const pct = total > 0 ? ((nonZero[0].votes / total) * 100).toFixed(1) : "0.0";
+                      .filter((entry) => entry.votes > 0)
+                    if (nonZero.length === 0) return null
+                    const single = nonZero.length === 1
+                    const pct = total > 0 ? ((nonZero[0].votes / total) * 100).toFixed(1) : '0.0'
                     return (
                       <div key={ti} className="border-b border-border py-2.5 last:border-0">
                         <div className="mb-1 text-[11px] text-muted-foreground">
                           {topicBodies[ti]?.title ?? `Topic ${ti + 1}`}
                         </div>
                         <div className="flex items-center justify-between gap-2.5">
-                          <span className="text-[13.5px] font-semibold">{nonZero.map((e) => e.label).join(", ")}</span>
+                          <span className="text-[13.5px] font-semibold">{nonZero.map((e) => e.label).join(', ')}</span>
                           <span className="shrink-0 text-[12.5px] tabular-nums text-muted-foreground">
-                            {single ? `${nonZero[0].votes.toLocaleString()} · ${pct}%` : `${total.toLocaleString()} votes`}
+                            {single
+                              ? `${nonZero[0].votes.toLocaleString()} · ${pct}%`
+                              : `${total.toLocaleString()} votes`}
                           </span>
                         </div>
                       </div>
-                    );
+                    )
                   })}
                 </div>
               </Surface>
@@ -760,5 +771,5 @@ export default function Account() {
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -62,14 +62,16 @@ export function roundsToDays(rounds: number): number {
 }
 
 export function formatTimestampUTC(unixSeconds: number): string {
-  return new Date(unixSeconds * 1000).toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }) + ' UTC'
+  return (
+    new Date(unixSeconds * 1000).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    }) + ' UTC'
+  )
 }
 
 export function toDatetimeLocalUTC(unixSeconds: number): string {

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 interface BlockGridProps {
   /** Number of "on" cells (blocks produced, scaled to the grid). */
@@ -21,16 +21,13 @@ export function BlockGrid({ filled, total = 48, columns = 16, cell = 9, classNam
   return (
     <div
       aria-hidden
-      className={cn("grid", className)}
+      className={cn('grid', className)}
       style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)`, gap: 3 }}
     >
       {Array.from({ length: total }, (_, i) => (
         <span
           key={i}
-          className={cn(
-            "rounded-[2px]",
-            i < lit ? "bg-algo-blue dark:bg-algo-teal" : "bg-muted dark:bg-white/10",
-          )}
+          className={cn('rounded-[2px]', i < lit ? 'bg-algo-blue dark:bg-algo-teal' : 'bg-muted dark:bg-white/10')}
           style={{ width: cell, height: cell }}
         />
       ))}

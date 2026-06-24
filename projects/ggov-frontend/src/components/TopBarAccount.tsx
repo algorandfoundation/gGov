@@ -14,7 +14,7 @@ import WalletPicker from '@/components/WalletPicker'
  * `fullWidth` centers the control within its container (used in the mobile drawer
  * footer); `small` collapses the dropdown trigger to just the avatar.
  */
-export default function TopBarAccount({ fullWidth = false, small = false }: { fullWidth?: boolean, small?: boolean }) {
+export default function TopBarAccount({ fullWidth = false, small = false }: { fullWidth?: boolean; small?: boolean }) {
   const { activeAddress, activeWallet } = useWallet()
   const [open, setOpen] = useState(false)
 
@@ -31,7 +31,9 @@ export default function TopBarAccount({ fullWidth = false, small = false }: { fu
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>Connect wallet</Button>
+      <Button size="sm" onClick={() => setOpen(true)}>
+        Connect wallet
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent onClose={() => setOpen(false)} className="max-w-md">
           <DialogHeader>

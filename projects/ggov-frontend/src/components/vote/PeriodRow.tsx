@@ -11,7 +11,10 @@ import { cn } from '@/lib/utils'
  *  derivable on-chain yet (TODO(FLAG): tone closed periods by result). */
 const STATUS_BADGE: Record<PeriodStatus, { label: string; className: string }> = {
   active: { label: 'Active', className: 'border-transparent bg-algo-teal text-[#001324]' },
-  upcoming: { label: 'Upcoming', className: 'border-transparent bg-primary/10 text-primary dark:bg-algo-blue dark:text-white' },
+  upcoming: {
+    label: 'Upcoming',
+    className: 'border-transparent bg-primary/10 text-primary dark:bg-algo-blue dark:text-white',
+  },
   ended: { label: 'Closed', className: 'border-transparent bg-muted text-muted-foreground' },
 }
 
@@ -39,7 +42,8 @@ export default function PeriodRow({ periodId, period }: Props) {
 
   return (
     <Link
-      to="/vote/period/$periodId" params={{ periodId: String(periodId) }}
+      to="/vote/period/$periodId"
+      params={{ periodId: String(periodId) }}
       className="block rounded-md border border-border bg-card transition-colors hover:border-foreground/30"
     >
       {/* Desktop grid row */}
@@ -51,7 +55,9 @@ export default function PeriodRow({ periodId, period }: Props) {
         </div>
         <span className="text-[13px]">{formatDateRange(period.votingStart, period.votingEnd)}</span>
         <span className="text-[13px]">{topicCount}</span>
-        <span className="justify-self-end"><PeriodStatusTag status={status} /></span>
+        <span className="justify-self-end">
+          <PeriodStatusTag status={status} />
+        </span>
       </div>
 
       {/* Mobile stacked card */}
@@ -61,13 +67,19 @@ export default function PeriodRow({ periodId, period }: Props) {
             <PeriodStatusTag status={status} />
             <span>Period {periodId}</span>
           </div>
-          <span className="text-xs text-muted-foreground">{topicCount} topic{topicCount !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-muted-foreground">
+            {topicCount} topic{topicCount !== 1 ? 's' : ''}
+          </span>
         </div>
         <h4 className="mt-2.5 text-base leading-[1.15]">{body?.title ?? `Period ${periodId}`}</h4>
         {body?.body && (
-          <ClampedMarkdown fadeFrom="from-card" className="mt-1.5 text-[13px] text-muted-foreground">{body.body}</ClampedMarkdown>
+          <ClampedMarkdown fadeFrom="from-card" className="mt-1.5 text-[13px] text-muted-foreground">
+            {body.body}
+          </ClampedMarkdown>
         )}
-        <div className="mt-2.5 text-xs text-muted-foreground">{formatDateRange(period.votingStart, period.votingEnd)}</div>
+        <div className="mt-2.5 text-xs text-muted-foreground">
+          {formatDateRange(period.votingStart, period.votingEnd)}
+        </div>
       </div>
     </Link>
   )

@@ -1,5 +1,5 @@
-import { Eyebrow } from "@/components/ui/eyebrow"
-import { cn } from "@/lib/utils"
+import { Eyebrow } from '@/components/ui/eyebrow'
+import { cn } from '@/lib/utils'
 
 interface StatProps {
   /** Uppercase label above the value. */
@@ -18,12 +18,9 @@ interface StatProps {
  */
 export function Stat({ eyebrow, value, caption, solidColor, size = 40, className }: StatProps) {
   return (
-    <div className={cn("flex flex-col gap-1", className)}>
+    <div className={cn('flex flex-col gap-1', className)}>
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-      <div
-        className="font-display font-bold leading-none tabular-nums"
-        style={{ fontSize: size, color: solidColor }}
-      >
+      <div className="font-display font-bold leading-none tabular-nums" style={{ fontSize: size, color: solidColor }}>
         {value}
       </div>
       {caption && <p className="text-sm leading-snug text-muted-foreground">{caption}</p>}

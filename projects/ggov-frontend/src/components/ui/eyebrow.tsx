@@ -1,5 +1,5 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 /**
  * Small uppercase, tracked label that sits above a heading (design-system
@@ -9,7 +9,7 @@ export function Eyebrow({ className, ...props }: React.HTMLAttributes<HTMLParagr
   return (
     <p
       className={cn(
-        "text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground dark:text-algo-teal",
+        'text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground dark:text-algo-teal',
         className,
       )}
       {...props}

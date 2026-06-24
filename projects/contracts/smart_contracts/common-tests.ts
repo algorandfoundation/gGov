@@ -2,11 +2,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Account, Address } from 'algosdk'
-import {
-  calculateCommitteeId,
-  GGovRegistrySDK,
-  XGovCommitteeFile,
-} from 'ggov-sdk'
+import { calculateCommitteeId, GGovRegistrySDK, XGovCommitteeFile } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
 import { DelegatorFactory } from './artifacts/delegator/DelegatorClient'
@@ -56,7 +52,11 @@ export const createSDK = (localnet: AlgorandFixture, registryAppId: bigint, acco
     writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
   })
 
-export const generateAccountWithSDK = async (localnet: AlgorandFixture, registryAppId: bigint, initialFunds = (1).algos()) => {
+export const generateAccountWithSDK = async (
+  localnet: AlgorandFixture,
+  registryAppId: bigint,
+  initialFunds = (1).algos(),
+) => {
   const account = await localnet.context.generateAccount({ initialFunds })
   return { account, sdk: createSDK(localnet, registryAppId, account) }
 }
@@ -114,7 +114,11 @@ export async function configureProposal(args: {
   await builder.send()
 }
 
-export const deployXGovMocksAndRegistry = async (localnet: AlgorandFixture, adminAccount: Address, numXGovs: number) => {
+export const deployXGovMocksAndRegistry = async (
+  localnet: AlgorandFixture,
+  adminAccount: Address,
+  numXGovs: number,
+) => {
   const factory = localnet.algorand.client.getTypedAppFactory(XGovRegistryMockFactory, {
     defaultSender: adminAccount,
   })

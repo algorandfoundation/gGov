@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react"
-import { Link2 } from "lucide-react"
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 
 /**
  * Branded single-field prompt — the on-system replacement for `window.prompt` (used
@@ -23,9 +23,9 @@ export function PromptDialog({
   description,
   label,
   placeholder,
-  initialValue = "",
+  initialValue = '',
   icon,
-  confirmLabel = "Save",
+  confirmLabel = 'Save',
   onSubmit,
 }: {
   open: boolean

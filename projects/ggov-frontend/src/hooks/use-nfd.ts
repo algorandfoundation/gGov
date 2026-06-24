@@ -28,11 +28,7 @@ function ipfsToHttp(url: string | undefined): string | null {
 const network = getAlgodConfigFromViteEnvironment().network
 /** NFD only exists on mainnet and testnet; localnet (and anything else) has no resolver. */
 const nfdBaseUrl =
-  network === 'mainnet'
-    ? 'https://api.nf.domains'
-    : network === 'testnet'
-      ? 'https://api.testnet.nf.domains'
-      : null
+  network === 'mainnet' ? 'https://api.nf.domains' : network === 'testnet' ? 'https://api.testnet.nf.domains' : null
 
 const nfdEnabled = nfdBaseUrl !== null
 

@@ -1,13 +1,13 @@
-import { AccountAvatar } from "@/components/AccountAvatar";
-import AccountVoteRecord, { type AccountVoteRecordProps } from "@/components/AccountVoteRecord";
+import { AccountAvatar } from '@/components/AccountAvatar'
+import AccountVoteRecord, { type AccountVoteRecordProps } from '@/components/AccountVoteRecord'
 
 interface VotingRecordSectionProps {
   /** The connected wallet, shown on the summary banner. */
-  activeAddress: string;
+  activeAddress: string
   /** One per account the wallet can act for that cast a vote (own + delegated). */
-  records: AccountVoteRecordProps[];
+  records: AccountVoteRecordProps[]
   /** Number of topics in the period (the "across M topics" figure). */
-  topicCount: number;
+  topicCount: number
 }
 
 /**
@@ -17,21 +17,21 @@ interface VotingRecordSectionProps {
  * wallet is connected and at least one of those accounts voted.
  */
 export default function VotingRecordSection({ activeAddress, records, topicCount }: VotingRecordSectionProps) {
-  const n = records.length;
-  const recordTotal = records.reduce((sum, r) => sum + r.total, 0);
-  const delegatedVoted = records.filter((r) => r.role !== "self").length;
-  const ownVoted = records.some((r) => r.role === "self");
+  const n = records.length
+  const recordTotal = records.reduce((sum, r) => sum + r.total, 0)
+  const delegatedVoted = records.filter((r) => r.role !== 'self').length
+  const ownVoted = records.some((r) => r.role === 'self')
 
-  const topicsLabel = `${topicCount} topic${topicCount === 1 ? "" : "s"}`;
+  const topicsLabel = `${topicCount} topic${topicCount === 1 ? '' : 's'}`
   // `recordTotal` is the combined voting power exercised — not a count of ballots
   // summed across topics (each topic re-spends the same power), so frame it as a weight.
-  const weightLabel = n === 1 ? "a weight of" : "a combined weight of";
-  const title = n === 1 ? "You voted in this period" : `You voted with ${n} accounts in this period`;
+  const weightLabel = n === 1 ? 'a weight of' : 'a combined weight of'
+  const title = n === 1 ? 'You voted in this period' : `You voted with ${n} accounts in this period`
   const detail = ownVoted
     ? delegatedVoted > 0
       ? `Your account plus ${delegatedVoted} delegated to you voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`
       : `Your account voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`
-    : `${delegatedVoted} account${delegatedVoted === 1 ? "" : "s"} delegated to you voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`;
+    : `${delegatedVoted} account${delegatedVoted === 1 ? '' : 's'} delegated to you voted with ${weightLabel} ${recordTotal.toLocaleString()} across ${topicsLabel}`
 
   return (
     <div className="space-y-6">
@@ -47,7 +47,7 @@ export default function VotingRecordSection({ activeAddress, records, topicCount
         <div className="mb-1 flex items-baseline justify-between gap-3">
           <h2 className="text-xl font-semibold">Your voting record</h2>
           <span className="shrink-0 text-[12px] text-muted-foreground">
-            {n} account{n === 1 ? "" : "s"} · <span className="tabular-nums">{recordTotal.toLocaleString()}</span> votes
+            {n} account{n === 1 ? '' : 's'} · <span className="tabular-nums">{recordTotal.toLocaleString()}</span> votes
           </span>
         </div>
         <p className="mb-4 text-[13px] text-muted-foreground">
@@ -60,5 +60,5 @@ export default function VotingRecordSection({ activeAddress, records, topicCount
         </div>
       </div>
     </div>
-  );
+  )
 }

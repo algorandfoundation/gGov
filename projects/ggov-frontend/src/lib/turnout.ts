@@ -12,7 +12,11 @@ export function periodTurnoutPct(period: GGovPeriod, committeeTotalVotes?: numbe
   if (!committeeTotalVotes || committeeTotalVotes <= 0) return null
   if (period.topics.length === 0) return null
   const cast = period.topics.reduce(
-    (max, [, votes]) => Math.max(max, votes.reduce((a, b) => a + b, 0)),
+    (max, [, votes]) =>
+      Math.max(
+        max,
+        votes.reduce((a, b) => a + b, 0),
+      ),
     0,
   )
   return Math.min(100, Math.round((cast / committeeTotalVotes) * 100))

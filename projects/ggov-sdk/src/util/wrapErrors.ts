@@ -1,35 +1,35 @@
-import { ErrorTransformer } from "@algorandfoundation/algokit-utils/types/composer";
-import { ErrorMessages } from "../generated/errors";
+import { ErrorTransformer } from '@algorandfoundation/algokit-utils/types/composer'
+import { ErrorMessages } from '../generated/errors'
 
 /**
  * Map of error codes to human-readable error messages
  */
-export const errorMap = ErrorMessages;
+export const errorMap = ErrorMessages
 
 export const errorTransformer: ErrorTransformer = async (ogError) => {
-  const [errCode] = /ERR:[^" ]+/.exec(ogError.message) ?? [];
+  const [errCode] = /ERR:[^" ]+/.exec(ogError.message) ?? []
   if (errCode) {
-    const humanMessage = errorMap[errCode] ?? "Unknown error";
-    const message = `${errCode.replace("ERR:", "Error ")}: ${humanMessage}`
+    const humanMessage = errorMap[errCode] ?? 'Unknown error'
+    const message = `${errCode.replace('ERR:', 'Error ')}: ${humanMessage}`
 
-    ogError.stack = `${message}\n    ${ogError.message}\n${ogError.stack}`;
-    ogError.message = message;
-    (ogError as any).code = errCode;
-    (ogError as any).description = humanMessage;
-    return ogError;
+    ogError.stack = `${message}\n    ${ogError.message}\n${ogError.stack}`
+    ogError.message = message
+    ;(ogError as any).code = errCode
+    ;(ogError as any).description = humanMessage
+    return ogError
   }
-  return ogError;
-};
+  return ogError
+}
 
 export async function wrapErrorsInternal<T>(promiseOrGenerator: Promise<T> | (() => Promise<T>)): Promise<T> {
   try {
-    if (typeof promiseOrGenerator === "function") {
-      return await promiseOrGenerator();
+    if (typeof promiseOrGenerator === 'function') {
+      return await promiseOrGenerator()
     } else {
-      return await promiseOrGenerator;
+      return await promiseOrGenerator
     }
   } catch (e) {
-    throw await errorTransformer(e as Error);
+    throw await errorTransformer(e as Error)
   }
 }
 
@@ -38,12 +38,12 @@ export async function wrapErrorsInternal<T>(promiseOrGenerator: Promise<T> | (()
  */
 export function wrapErrors() {
   return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
-    const originalMethod = descriptor.value;
+    const originalMethod = descriptor.value
 
     descriptor.value = async function (...args: any[]) {
-      return wrapErrorsInternal(() => originalMethod.apply(this, args));
-    };
+      return wrapErrorsInternal(() => originalMethod.apply(this, args))
+    }
 
-    return descriptor;
-  };
+    return descriptor
+  }
 }
