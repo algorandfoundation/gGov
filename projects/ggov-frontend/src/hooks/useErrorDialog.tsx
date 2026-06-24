@@ -15,22 +15,25 @@ import { getErrorMessage, isUserRejectionError } from '@/lib/errors'
 import { subscribeSurfacedError } from '@/lib/errorBus'
 
 interface ErrorDialogContextValue {
-  showError: (err: unknown) => void
+  showError: (err: unknown, options?: { transaction?: boolean }) => void
   clearError: () => void
 }
 
 const ErrorDialogContext = createContext<ErrorDialogContextValue | null>(null)
 
 export function ErrorDialogProvider({ children }: { children: ReactNode }) {
-  const [error, setError] = useState<Error | null>(null)
+  const [error, setError] = useState<{ error: Error; transaction: boolean } | null>(null)
 
-  const showError = useCallback((err: unknown) => {
+  const showError = useCallback((err: unknown, options?: { transaction?: boolean }) => {
     // User cancelled the signing prompt — not a failure worth a modal.
     if (isUserRejectionError(err)) {
       toast('Signing cancelled')
       return
     }
-    setError(err instanceof Error ? err : new Error(getErrorMessage(err)))
+    setError({
+      error: err instanceof Error ? err : new Error(getErrorMessage(err)),
+      transaction: options?.transaction ?? false,
+    })
   }, [])
 
   const clearError = useCallback(() => setError(null), [])
@@ -53,15 +56,17 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
               <DialogHeader className="min-w-0 flex-1 text-left sm:text-left">
                 <DialogTitle>Something went wrong</DialogTitle>
                 <DialogDescription>
-                  Your transaction couldn't be completed. The technical detail below can be copied for support.
+                  {error.transaction
+                    ? "Your transaction couldn't be completed. The technical detail below can be copied for support."
+                    : 'An unexpected error occurred. The technical detail below can be copied for support.'}
                 </DialogDescription>
               </DialogHeader>
             </div>
             <div className="max-w-full overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 font-mono text-xs text-muted-foreground">
-              {error.message}
+              {error.error.message}
             </div>
             <DialogFooter>
-              <CopyButton value={error.message} size="default">
+              <CopyButton value={error.error.message} size="default">
                 Copy error
               </CopyButton>
               <Button onClick={clearError}>Close</Button>
