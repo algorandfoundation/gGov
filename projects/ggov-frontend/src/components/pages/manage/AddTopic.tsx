@@ -100,7 +100,9 @@ export default function AddTopic() {
 
             <div className="space-y-3">
               <Label>Vote options</Label>
-              {isElection ? (
+              {periodBody === undefined ? (
+                <p className="text-xs text-muted-foreground">Loading period type…</p>
+              ) : isElection ? (
                 // Election candidate ballot: fixed Support / Against / Abstain, no editing.
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
