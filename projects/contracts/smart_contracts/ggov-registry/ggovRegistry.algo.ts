@@ -473,8 +473,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * Admin only. `startOffset === 0` deletes the existing box and creates a fresh one at
    * the chunk length; subsequent chunks resize/replace.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes, last: boolean): void {
+  public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes): void {
     this.ensureCallerIsAdmin()
     const boxKey = Bytes`Pap`
     const writeEnd: uint64 = startOffset + data.length
