@@ -197,7 +197,7 @@ export default function VotePeriodDetail() {
   // Skips delegators with 0 voting power, which AccountSelector hides.
   const firstSelectableDelegator = delegators.find((addr) => {
     const eligibility = delegatorEligibility[addr]
-    return eligibility !== undefined && eligibility.votingPower > 0n
+    return eligibility?.canVote === true && eligibility.votingPower > 0n
   })
   useEffect(() => {
     if (
