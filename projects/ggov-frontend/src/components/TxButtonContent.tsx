@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { Check, Loader2 } from 'lucide-react'

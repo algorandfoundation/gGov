@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { AccountAvatar } from '@/components/AccountAvatar'
 import { useAddressName } from '@/hooks/use-nfd'
 import { ellipseAddress } from '@/utils/ellipseAddress'

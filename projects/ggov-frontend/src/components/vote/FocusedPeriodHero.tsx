@@ -80,10 +80,10 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   // Dial + schedule line vary by phase. Active shows a countdown to close (the
   // arc is the share of the voting window still remaining, so it depletes as the
   // deadline nears); upcoming counts down to open; ended shows final turnout.
-  let dialCenter = '—'
-  let dialLabel = ''
-  let dialPct = 0
-  let scheduleLine = ''
+  let dialCenter: string
+  let dialLabel: string
+  let dialPct: number
+  let scheduleLine: string
   if (status === 'active') {
     const daysLeft = Math.max(0, daysUntil(period.votingEnd))
     dialCenter = `${daysLeft}d`

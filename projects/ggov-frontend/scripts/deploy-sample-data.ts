@@ -88,7 +88,7 @@ async function getKmdAccounts(kmd: any, walletHandle: string): Promise<string[]>
 }
 
 /** Generate a new account in the KMD default wallet and return its address. */
-async function generateKmdAccount(kmd: any, walletHandle: string): Promise<string> {
+async function _generateKmdAccount(kmd: any, walletHandle: string): Promise<string> {
   const { address } = await kmd.generateKey(walletHandle)
   return address as string
 }

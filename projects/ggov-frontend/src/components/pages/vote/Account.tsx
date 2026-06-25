@@ -590,7 +590,7 @@ export default function Account() {
               size="sm"
               onClick={() => {
                 setShowSwitchBanner(false)
-                navigate({ to: '/account/$address', params: { address: activeAddress } })
+                void navigate({ to: '/account/$address', params: { address: activeAddress } })
               }}
             >
               Switch to my account
