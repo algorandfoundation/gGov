@@ -1,5 +1,5 @@
 import { TestExecutionContext } from '@algorandfoundation/algorand-typescript-testing'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import { BaseContract } from './base.algo'
 import { expectArc65Error } from './common-tests'
 import { errUnauthorized } from './errors.algo'

@@ -14,8 +14,7 @@ export const errorTransformer: ErrorTransformer = async (ogError) => {
 
     ogError.stack = `${message}\n    ${ogError.message}\n${ogError.stack}`
     ogError.message = message
-    ;(ogError as any).code = errCode
-    ;(ogError as any).description = humanMessage
+    Object.assign(ogError, { code: errCode, description: humanMessage })
     return ogError
   }
   return ogError
@@ -37,10 +36,10 @@ export async function wrapErrorsInternal<T>(promiseOrGenerator: Promise<T> | (()
  * Decorator that wraps the return value of an async method with error transformation.
  */
 export function wrapErrors() {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = descriptor.value
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       return wrapErrorsInternal(() => originalMethod.apply(this, args))
     }
 

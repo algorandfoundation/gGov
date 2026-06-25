@@ -762,14 +762,14 @@ syncProposalMetadata_after_while@4:
     cover 2
     bury 8
     // smart_contracts/delegator/delegator.algo.ts:203
-    // const [voteOpenTs, voteOpenTsExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVoteOpenTsKey)
+    // const [voteOpenTs, _voteOpenTsExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVoteOpenTsKey)
     dup
     pushbytes "vote_open_ts"
     app_global_get_ex
     pop
     bury 6
     // smart_contracts/delegator/delegator.algo.ts:204
-    // const [votingDuration, votingDurationExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVotingDurationKey)
+    // const [votingDuration, _votingDurationExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVotingDurationKey)
     pushbytes "voting_duration"
     app_global_get_ex
     pop
@@ -2217,7 +2217,7 @@ addAccountAlgoHours_after_if_else@15:
 
 addAccountAlgoHours_for_header@2:
     // smart_contracts/delegator/delegator.algo.ts:362
-    // for (let { account, hours } of clone(accountAlgohourInputs)) {
+    // for (const { account, hours } of clone(accountAlgohourInputs)) {
     dig 3
     dig 1
     <
@@ -2392,7 +2392,7 @@ removeAccountAlgoHours_after_if_else@20:
 
 removeAccountAlgoHours_for_header@2:
     // smart_contracts/delegator/delegator.algo.ts:387
-    // for (let { account, hours } of clone(accountAlgohourInputs)) {
+    // for (const { account, hours } of clone(accountAlgohourInputs)) {
     dig 3
     dig 1
     <
@@ -3207,7 +3207,7 @@ getOrCreateAccountId:
     proto 1 1
     intc_0 // 0
     // smart_contracts/base/account-id.algo.ts:58
-    // let accountId = this.getAccountIdIfExists(account)
+    // const accountId = this.getAccountIdIfExists(account)
     frame_dig -1
     callsub getAccountIdIfExists
     dup

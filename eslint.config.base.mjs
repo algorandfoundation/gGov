@@ -6,6 +6,7 @@ import prettier from 'eslint-config-prettier'
 export const baseConfig = tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.recommended,
+  { ignores: ['dist/**'] },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {

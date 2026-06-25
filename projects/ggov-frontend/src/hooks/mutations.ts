@@ -35,8 +35,8 @@ export function useVoteMutation() {
         topicVotes: args.topicVotes,
       }),
     onSuccess: (data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.voteRecord(vars.periodId, vars.voterAccount) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.voteRecord(vars.periodId, vars.voterAccount) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       txnSuccessToast('Vote submitted', data)
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -51,7 +51,7 @@ export function useDelegateMutation() {
   return useMutation({
     mutationFn: (delegatee: string) => sdk!.setVotingAccount({ votingAddress: delegatee }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
+      void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation set', data)
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -66,7 +66,7 @@ export function useUndelegateMutation() {
   return useMutation({
     mutationFn: () => sdk!.setVotingAccount({}),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
+      void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation removed', data)
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -88,7 +88,7 @@ export function useRedelegateMutation() {
     mutationFn: (args: { account: string; votingAddress: string }) =>
       sdk!.setVotingAccount({ account: args.account, votingAddress: args.votingAddress }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         predicate: (q) => ['delegation', 'delegatedToMe', 'allDelegations'].includes(q.queryKey[0] as string),
       })
       txnSuccessToast('Delegation redirected', data)
@@ -142,7 +142,7 @@ export function useAddPeriodMutation() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.periods })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast('Period created')
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -163,7 +163,7 @@ export function useEditPeriodMutation() {
         votingEnd: args.votingEnd,
       }),
     onSuccess: (data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       txnSuccessToast('Period updated', data)
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -182,7 +182,7 @@ export function useUploadPeriodBodyMutation() {
         body: args.body,
       }),
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.periodBody(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.periodBody(vars.periodId) })
       txnSuccessToast('Period body saved')
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -223,8 +223,8 @@ export function useAddTopicMutation() {
       }
     },
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
       txnSuccessToast('Topic added')
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -244,7 +244,7 @@ export function useEditTopicMutation() {
         options: args.options,
       }),
     onSuccess: (data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       txnSuccessToast('Topic updated', data)
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -264,7 +264,7 @@ export function useUploadTopicBodyMutation() {
         body: args.body,
       }),
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
       txnSuccessToast('Topic body saved')
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -283,9 +283,9 @@ export function useRemoveTopicMutation() {
         topicIndex: BigInt(args.topicIndex),
       }),
     onSuccess: (data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.periods })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.topicBodies(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast('Topic removed', data)
     },
     onError: (err) => showError(err, { transaction: true }),
@@ -304,8 +304,8 @@ export function useSetReadyMutation() {
         ready: args.ready,
       }),
     onSuccess: (data, vars) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.periods })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast(vars.ready ? 'Period marked ready' : 'Period marked draft', data)
     },
     onError: (err) => showError(err, { transaction: true }),

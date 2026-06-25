@@ -55,7 +55,7 @@ export abstract class AccountIdContract extends BaseContract {
    * @returns account ID
    */
   protected getOrCreateAccountId(account: Account): Uint32 {
-    let accountId = this.getAccountIdIfExists(account)
+    const accountId = this.getAccountIdIfExists(account)
     if (accountId.asUint64() === 0) {
       return this.createAccountId(account)
     } else {

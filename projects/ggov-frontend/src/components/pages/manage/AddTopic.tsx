@@ -33,7 +33,7 @@ export default function AddTopic() {
       body: body.trim(),
     })
 
-    navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
+    void navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
   }
 
   if (!sdk) {

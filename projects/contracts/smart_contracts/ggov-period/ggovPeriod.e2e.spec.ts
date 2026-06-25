@@ -1,6 +1,6 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { createHash } from 'node:crypto'
-import { ABIType, Address, encodeAddress, getApplicationAddress } from 'algosdk'
+import { ABIType, ABIValue, Address, encodeAddress, getApplicationAddress } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistrySDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
 import { XGovCommitteeFile } from 'ggov-sdk'
@@ -26,6 +26,9 @@ import {
 import { transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 import { configureTestLogging } from '../test-utils'
+
+type ConfirmationLike = { logs?: Uint8Array[]; confirmedRound?: number | bigint }
+type SendResultLike = { confirmations?: ConfirmationLike[]; confirmation?: ConfirmationLike }
 
 async function deployRegistryAndSDK(
   localnet: ReturnType<typeof algorandFixture>,
@@ -221,7 +224,7 @@ describe('GGovPeriod contract', () => {
     })
 
     test('Non-operator cannot add a period', async () => {
-      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      const { sdk, committeeId } = await deployWithCommittee(localnet)
       const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       await sdk.registry.setOperator({ account: operator.toString() })
 
@@ -1687,23 +1690,23 @@ describe('GGovPeriod contract', () => {
           .digest(),
       ).slice(0, 4)
 
-    const collectLogs = (result: any): Uint8Array[] => {
+    const collectLogs = (result: SendResultLike): Uint8Array[] => {
       const confs = result.confirmations ?? (result.confirmation ? [result.confirmation] : [])
-      return confs.flatMap((c: any) => (c.logs ?? []) as Uint8Array[])
+      return confs.flatMap((c) => (c.logs ?? []) as Uint8Array[])
     }
 
     /** Find the single ARC-28 event of `name` in a send result and return its decoded args. */
-    const decodeEvent = (result: any, name: string, argTypes: string[]): any[] => {
+    const decodeEvent = (result: SendResultLike, name: string, argTypes: string[]): ABIValue[] => {
       const selector = eventSelector(name, argTypes)
       const tuple = ABIType.from(`(${argTypes.join(',')})`)
       for (const logBytes of collectLogs(result)) {
         if (logBytes.length >= 4 && selector.every((b, i) => logBytes[i] === b)) {
-          return tuple.decode(logBytes.slice(4)) as any[]
+          return tuple.decode(logBytes.slice(4)) as ABIValue[]
         }
       }
       throw new Error(`ARC-28 event ${name} not found in transaction logs`)
     }
-    const addr = (v: any): string => (typeof v === 'string' ? v : encodeAddress(v as Uint8Array))
+    const addr = (v: ABIValue): string => (typeof v === 'string' ? v : encodeAddress(v as Uint8Array))
 
     const VOTE_CAST = ['address', 'address', 'bool', 'uint64', 'uint32[][]']
     const DELEGATION = ['address', 'address', 'address']
@@ -1798,9 +1801,9 @@ describe('GGovPeriod contract', () => {
     // initialised to 0 at creation and stay 0 until the first vote writes them (round is never 0).
 
     /** Confirmed round of a send result's transaction group (every txn in the group shares it). */
-    const confirmedRound = (result: any): bigint => {
+    const confirmedRound = (result: SendResultLike): bigint => {
       const confs = result.confirmations ?? (result.confirmation ? [result.confirmation] : [])
-      return BigInt(confs[confs.length - 1].confirmedRound)
+      return BigInt(confs[confs.length - 1].confirmedRound!)
     }
 
     test('both rounds are 0 before any vote', async () => {

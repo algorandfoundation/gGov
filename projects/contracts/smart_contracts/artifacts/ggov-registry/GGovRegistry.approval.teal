@@ -39,7 +39,7 @@ main_after_if_else@2:
     assert // OnCompletion must be NoOp
     txn ApplicationID
     assert
-    pushbytess 0xd50bc43d 0xf30cf84d 0xd32179d2 0xe3fbc0de 0x89b1e876 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x386ebbd0 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0xca284903 0x6f31967a 0xc60713f2 0xa220b9f9 0x4118ecbf // method "registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void", method "unregisterCommittee(byte[32])void", method "ingestXGovs(byte[32],(address,uint32)[])void", method "uningestXGovs(byte[32],address[])void", method "setXGovRegistryApp(uint64)void", method "setAdmin(address)void", method "withdrawALGO(address,uint64)void", method "verifyAdmin(address)bool", method "setOperator(address)void", method "verifyOperator(address)bool", method "set_voting_account(address,address)void", method "mirrorXGovDelegation(address)void", method "getDelegation(address)(address,bool)", method "getDelegate(address)address", method "logDelegators(address)void", method "logDelegations(address[])void", method "uploadPeriodApprovalPartial(uint64,byte[],bool)void", method "createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)", method "setLastPeriodId(uint64)void", method "updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void", method "removePeriodSummary(uint32)void", method "getPeriodApp(uint64)uint64", method "getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)", method "logPeriodSummaries(uint64[])void", method "getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)", method "logCommitteeMetadata(byte[32][])void", method "logCommitteePages(byte[32],bool,uint64,uint64)void", method "getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)", method "getXGovVotingPower(byte[32],address)uint32", method "tryGetXGovVotingPower(byte[32],address)uint32", method "getAccount(address)(uint32,(uint16,uint16)[])", method "logAccounts(address[])void", method "increaseBudget(uint64)void"
+    pushbytess 0xd50bc43d 0xf30cf84d 0xd32179d2 0xe3fbc0de 0x89b1e876 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x179c9135 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0xca284903 0x6f31967a 0xc60713f2 0xa220b9f9 0x4118ecbf // method "registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void", method "unregisterCommittee(byte[32])void", method "ingestXGovs(byte[32],(address,uint32)[])void", method "uningestXGovs(byte[32],address[])void", method "setXGovRegistryApp(uint64)void", method "setAdmin(address)void", method "withdrawALGO(address,uint64)void", method "verifyAdmin(address)bool", method "setOperator(address)void", method "verifyOperator(address)bool", method "set_voting_account(address,address)void", method "mirrorXGovDelegation(address)void", method "getDelegation(address)(address,bool)", method "getDelegate(address)address", method "logDelegators(address)void", method "logDelegations(address[])void", method "uploadPeriodApprovalPartial(uint64,byte[])void", method "createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)", method "setLastPeriodId(uint64)void", method "updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void", method "removePeriodSummary(uint32)void", method "getPeriodApp(uint64)uint64", method "getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)", method "logPeriodSummaries(uint64[])void", method "getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)", method "logCommitteeMetadata(byte[32][])void", method "logCommitteePages(byte[32],bool,uint64,uint64)void", method "getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)", method "getXGovVotingPower(byte[32],address)uint32", method "tryGetXGovVotingPower(byte[32],address)uint32", method "getAccount(address)(uint32,(uint16,uint16)[])", method "logAccounts(address[])void", method "increaseBudget(uint64)void"
     txna ApplicationArgs 0
     match registerCommittee unregisterCommittee ingestXGovs uningestXGovs setXGovRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod setLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getXGovVotingPower tryGetXGovVotingPower getAccount logAccounts increaseBudget
 
@@ -3023,7 +3023,7 @@ logDelegations_after_for@8:
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.uploadPeriodApprovalPartial[routing]() -> void:
 uploadPeriodApprovalPartial:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:476
-    // public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes, last: boolean): void {
+    // public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes): void {
     txna ApplicationArgs 1
     dup
     len
@@ -3045,11 +3045,6 @@ uploadPeriodApprovalPartial:
     extract 2 0
     dup
     cover 2
-    txna ApplicationArgs 3
-    len
-    intc_1 // 1
-    ==
-    assert // invalid number of bytes for arc4.bool
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:477
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
@@ -3082,7 +3077,7 @@ uploadPeriodApprovalPartial_after_if_else@6:
     dig 3
     box_replace
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:476
-    // public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes, last: boolean): void {
+    // public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes): void {
     intc_1 // 1
     return
 

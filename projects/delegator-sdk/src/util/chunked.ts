@@ -8,7 +8,7 @@ import { chunk } from './chunk.js'
  * @returns Method decorator
  */
 export function chunked(chunkSize: number, chunkArgIndex = 0) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  return function (_target: object, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = descriptor.value
 
     descriptor.value = async function (...args: any[]) {
@@ -18,7 +18,8 @@ export function chunked(chunkSize: number, chunkArgIndex = 0) {
         return originalMethod.apply(this, args)
       }
       // read concurrency from 'this' if available
-      const concurrency = this && typeof (this as any).concurrency === 'number' ? (this as any).concurrency : 2
+      const self = this as { concurrency?: number }
+      const concurrency = self && typeof self.concurrency === 'number' ? self.concurrency : 2
 
       // Chunk the appIds array
       const chunks = chunk(args[chunkArgIndex], chunkSize)

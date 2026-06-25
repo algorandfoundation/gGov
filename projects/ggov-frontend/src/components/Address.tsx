@@ -56,8 +56,10 @@ export default function Address({
   )
 
   const copyAddress = () => {
-    navigator.clipboard.writeText(address)
-    toast.success('Address copied')
+    navigator.clipboard.writeText(address).then(
+      () => toast.success('Address copied'),
+      () => toast.error('Failed to copy address'),
+    )
   }
 
   return (

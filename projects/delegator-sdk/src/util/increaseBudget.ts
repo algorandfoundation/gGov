@@ -32,12 +32,12 @@ export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>
   // increase first txn's fee so we do not fail because of fees
   // get atc & modify the first txn fee (need to clone to make txns mutable)
   const atc = (await (await builder.composer()).build()).atc.clone()
-  // @ts-ignore private and readonly
+  // @ts-expect-error private and readonly
   atc.transactions[0].txn.fee = 543_210n
 
   // we also need to replace signers with empty signers for simulation
   // otherwise end users would be prompted to sign for this
-  // @ts-ignore private and readonly
+  // @ts-expect-error private and readonly
   atc.transactions = atc.transactions.map((t) => {
     t.signer = makeEmptyTransactionSigner()
     return t

@@ -386,17 +386,15 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   makeUploadPeriodApprovalPartialTxns({
     startOffset,
     data,
-    last,
     note,
     builder,
   }: {
     startOffset: bigint | number
     data: Uint8Array
-    last: boolean
   } & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
     return builder.uploadPeriodApprovalPartial({
-      args: { startOffset, data, last },
+      args: { startOffset, data },
       note,
     })
   }
@@ -423,13 +421,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     for (const group of groups) {
       let builder: GGovRegistryComposer<any> = this.writeClient!.newGroup()
       for (const { index, data: chunkData } of group) {
-        const isLast = index === chunks.length - 1
         // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
         // eslint-disable-next-line @typescript-eslint/await-thenable
         builder = await this.makeUploadPeriodApprovalPartialTxns({
           startOffset: index * BODY_CHUNK_BYTES,
           data: new Uint8Array(chunkData),
-          last: isLast,
           note,
           builder,
         })

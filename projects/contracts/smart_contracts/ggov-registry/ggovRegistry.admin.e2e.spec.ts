@@ -260,7 +260,7 @@ describe('GGovRegistry admin', () => {
 
     test('non-admin cannot uploadPeriodApprovalPartial', async () => {
       await expect(
-        nonAdminSDK.uploadPeriodApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]), last: false }),
+        nonAdminSDK.uploadPeriodApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]) }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 

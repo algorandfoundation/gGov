@@ -44,7 +44,7 @@ export default function AddPeriod() {
       electSeats: isElection ? electSeatsNum : undefined,
     })
 
-    navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
+    void navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
   }
 
   if (!sdk) {
