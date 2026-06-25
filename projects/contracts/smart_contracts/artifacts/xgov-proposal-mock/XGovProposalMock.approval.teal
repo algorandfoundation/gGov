@@ -129,7 +129,7 @@ getVoterBox_ternary_false@3:
 // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts::XGovProposalMock.vote[routing]() -> void:
 vote:
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:41
-    // public vote(voter: Account, approvals: uint64, rejections: uint64): string {
+    // public vote(_voter: Account, _approvals: uint64, _rejections: uint64): string {
     txna ApplicationArgs 1
     len
     intc_3 // 32

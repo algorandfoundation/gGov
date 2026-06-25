@@ -200,8 +200,8 @@ export class Delegator extends AccountIdContract {
 
     // get status and vote end ts
     const [status, statusExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalStatusKey)
-    const [voteOpenTs, voteOpenTsExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVoteOpenTsKey)
-    const [votingDuration, votingDurationExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVotingDurationKey)
+    const [voteOpenTs, _voteOpenTsExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVoteOpenTsKey)
+    const [votingDuration, _votingDurationExists] = op.AppGlobal.getExUint64(proposalId, xGovProposalVotingDurationKey)
     ensure(statusExists, errXGovProposalStatusMissing)
     // ensure(voteOpenTsExists, errXGovProposalVoteOpenTsMissing)
     // ensure(votingDurationExists, errXGovProposalVotingDurationMissing)
@@ -327,8 +327,8 @@ export class Delegator extends AccountIdContract {
       const extAccountsPendingVote = clone(proposal.extAccountsPendingVotes[i])
       ensureExtra(extAccountId === extAccountsPendingVote.accountId, errAccountIdMismatch, op.itob(i))
 
-      let approvals: uint64 = 0
-      let rejections: uint64 = 0
+      let approvals: uint64
+      let rejections: uint64
       if (isBoycott) {
         approvals = extAccountsPendingVote.votes.asUint64()
         rejections = extAccountsPendingVote.votes.asUint64()
@@ -359,7 +359,7 @@ export class Delegator extends AccountIdContract {
     this.ensureCallerIsAdmin()
     ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
 
-    for (let { account, hours } of clone(accountAlgohourInputs)) {
+    for (const { account, hours } of clone(accountAlgohourInputs)) {
       const accountId = this.getOrCreateAccountId(account)
       const key: AlgohourAccountKey = [periodStart, accountId]
       const box = this.algohourAccounts(key)
@@ -384,7 +384,7 @@ export class Delegator extends AccountIdContract {
     this.ensureCallerIsAdmin()
     ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
 
-    for (let { account, hours } of clone(accountAlgohourInputs)) {
+    for (const { account, hours } of clone(accountAlgohourInputs)) {
       const accountId = this.mustGetAccountId(account)
       const key: AlgohourAccountKey = [periodStart, accountId]
       const box = this.algohourAccounts(key)

@@ -19,11 +19,11 @@ describe.skip('Delegator complex e2e tests', () => {
     let adminAccount: Address & TransactionSignerAccount & Account
     let committee: XGovCommitteeFile
     let delegatorAdminSDK: XGovDelegatorSDK
-    let delegatorUserSDK: XGovDelegatorSDK | undefined
+    let _delegatorUserSDK: XGovDelegatorSDK | undefined
     let ggovRegistrySDK: GGovRegistrySDK
     let proposalAppClient: XGovProposalMockClient
-    let registryAppClient: Awaited<ReturnType<typeof deployDelegatorFull>>['registryAppClient']
-    let xGovs: (Address & Account & TransactionSignerAccount)[]
+    let _registryAppClient: Awaited<ReturnType<typeof deployDelegatorFull>>['registryAppClient']
+    let _xGovs: (Address & Account & TransactionSignerAccount)[]
 
     beforeEach(async () => {
       await localnet.newScope()
@@ -32,11 +32,11 @@ describe.skip('Delegator complex e2e tests', () => {
       ;({
         committee,
         delegatorAdminSDK,
-        delegatorUserSDK,
+        delegatorUserSDK: _delegatorUserSDK,
         ggovRegistrySDK,
         proposalAppClient,
-        registryAppClient,
-        xGovs,
+        registryAppClient: _registryAppClient,
+        xGovs: _xGovs,
       } = await deployDelegatorFull(localnet, adminAccount, 3, 6))
     })
 
