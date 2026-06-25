@@ -243,16 +243,16 @@ export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 ]
 
 /**
- * Election ballot: one topic PER candidate, each a Yes/No/Abstain vote.
- * The results page derives a net score (Yes − No) per candidate via
+ * Election ballot: one topic PER candidate, each a Support/Against/Abstain vote.
+ * The results page derives a net score (Support − Against) per candidate via
  * `tallyBallot` and ranks them; `electSeats` is the seat cutoff. Carries tallies so
  * the (live or final) ranked results render. Candidate name = the topic-body title.
  */
-const candidate = (name: string, yes: number, no: number, abstain: number): TopicConfig => ({
+const candidate = (name: string, support: number, against: number, abstain: number): TopicConfig => ({
   title: name,
   body: 'Candidate for a governance council seat.',
-  options: ['Yes', 'No', 'Abstain'],
-  tallies: [yes, no, abstain],
+  options: ['Support', 'Against', 'Abstain'],
+  tallies: [support, against, abstain],
 })
 
 export const ELECTION_TOPICS: TopicConfig[] = [
@@ -406,7 +406,7 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
     phase: p,
     title: election ? 'Period 7 · Council election' : 'Period 7 · Reward policy',
     body: election
-      ? 'Elect the next governance council — vote Yes/No/Abstain on each candidate; the top 3 are seated.'
+      ? 'Elect the next governance council — vote Support/Against/Abstain on each candidate; the top 3 are seated.'
       : 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
     electSeats: election ? 3 : undefined,
     topics: election ? ELECTION_TOPICS : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,

@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 export interface ElectionCandidate {
   /** Candidate handle — the topic title. */
   name: string
-  yes: number
-  no: number
+  support: number
+  against: number
   abstain: number
 }
 
@@ -19,13 +19,13 @@ interface ElectionResultsProps {
 }
 
 /**
- * Election results: candidates ranked by net score (Yes − No; Abstain has
+ * Election results: candidates ranked by net score (Support − Against; Abstain has
  * no effect), with the top `threshold` marked "Leading" and a cutoff divider drawn
  * after rank N. Diverging score bars are centered on a zero axis (positive right,
  * negative left). Provisional language only — ranking, never seating verdicts.
  */
 export default function ElectionResults({ candidates, threshold, live }: ElectionResultsProps) {
-  const scored = candidates.map((c) => ({ ...c, score: c.yes - c.no })).sort((a, b) => b.score - a.score)
+  const scored = candidates.map((c) => ({ ...c, score: c.support - c.against })).sort((a, b) => b.score - a.score)
   const maxAbs = Math.max(1, ...scored.map((c) => Math.abs(c.score)))
   const seatsLabel = `${threshold} seat${threshold === 1 ? '' : 's'}`
 
@@ -49,7 +49,7 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
       <div className="mt-7 hidden grid-cols-[30px_1fr_minmax(160px,220px)_84px] items-end gap-3.5 border-b border-border px-[18px] pb-2.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground sm:grid">
         <span>#</span>
         <span>Candidate</span>
-        <span>Net score (Yes − No)</span>
+        <span>Net score (Support − Against)</span>
         <span className="text-right">Score</span>
       </div>
 
@@ -89,7 +89,8 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
                       )}
                     </div>
                     <div className="text-[12px] tabular-nums text-muted-foreground">
-                      Yes {c.yes.toLocaleString()} · No {c.no.toLocaleString()} · Abstain {c.abstain.toLocaleString()}
+                      Support {c.support.toLocaleString()} · Against {c.against.toLocaleString()} · Abstain{' '}
+                      {c.abstain.toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -138,7 +139,7 @@ export default function ElectionResults({ candidates, threshold, live }: Electio
       </div>
 
       <p className="mt-3 text-[12px] text-muted-foreground">
-        Score = total Yes votes minus total No votes. Abstain votes don't change a candidate's score.{' '}
+        Score = total Support votes minus total Against votes. Abstain votes don't change a candidate's score.{' '}
         {live ? 'Live tallies — recorded on-chain; ranking may change.' : 'Final tallies recorded on-chain.'}
       </p>
     </div>

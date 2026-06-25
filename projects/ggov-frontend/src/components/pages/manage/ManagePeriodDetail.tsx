@@ -152,6 +152,9 @@ export default function ManagePeriodDetail() {
 
   const status = periodStatus(period.votingStart, period.votingEnd)
   const canEdit = status === 'upcoming' && !ready && !!sdk
+  // Election topic options are fixed (Support / Against / Abstain), so the per-topic
+  // options editor is suppressed for elections even while the period is otherwise editable.
+  const isElection = periodBody?.electSeats !== undefined
   const hasVotes = period.topics.some(([, tallies]) => tallies.some((t) => t > 0))
   const readyWarnings: string[] = []
   if (!periodBody) readyWarnings.push('period body is missing')
@@ -352,10 +355,12 @@ export default function ManagePeriodDetail() {
       <Separator />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Topics ({period.topics.length})</h2>
+        <h2 className="text-xl font-semibold">
+          {isElection ? 'Candidates' : 'Topics'} ({period.topics.length})
+        </h2>
         <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
           <Button variant="outline" size="sm">
-            Add topic
+            {isElection ? 'Add candidate' : 'Add topic'}
           </Button>
         </Link>
       </div>
@@ -388,9 +393,11 @@ export default function ManagePeriodDetail() {
                       )}
                       {canEdit && (
                         <>
-                          <Button variant="ghost" size="sm" onClick={() => setEditingTopic(topicIdx)}>
-                            Edit options
-                          </Button>
+                          {!isElection && (
+                            <Button variant="ghost" size="sm" onClick={() => setEditingTopic(topicIdx)}>
+                              Edit options
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

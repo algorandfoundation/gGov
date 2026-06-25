@@ -36,7 +36,7 @@ function ScoringCard({ threshold }: { threshold: number }) {
             +1
           </span>
           <span className="text-[13.5px] text-muted-foreground">
-            Each <strong className="text-foreground">Yes</strong> vote adds to the score
+            Each <strong className="text-foreground">Support</strong> vote adds to the score
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -47,7 +47,7 @@ function ScoringCard({ threshold }: { threshold: number }) {
             −1
           </span>
           <span className="text-[13.5px] text-muted-foreground">
-            Each <strong className="text-foreground">No</strong> vote subtracts from it
+            Each <strong className="text-foreground">Against</strong> vote subtracts from it
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -144,8 +144,10 @@ export default function VotePeriodResults() {
 
   const candidates: ElectionCandidate[] = isElection
     ? period.topics.map(([options, tallies], i) => {
+        // tallyBallot classifies free-form labels into yes/no/abstain sentiment;
+        // for an election those map to Support / Against / Abstain.
         const { yes, no, abstain } = tallyBallot(options, tallies)
-        return { name: topicBodies[i]?.title ?? `Candidate ${i + 1}`, yes, no, abstain }
+        return { name: topicBodies[i]?.title ?? `Candidate ${i + 1}`, support: yes, against: no, abstain }
       })
     : []
 
