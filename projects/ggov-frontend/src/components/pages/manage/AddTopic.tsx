@@ -35,6 +35,10 @@ export default function AddTopic() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // `periodBody` is `undefined` until the query resolves; submitting in that window would
+    // treat an election as a standard period (`isElection` false) and let arbitrary options
+    // through. Wait until it resolves (to the body or `null`) before allowing submission.
+    if (periodBody === undefined) return
     const filtered = isElection ? ELECTION_OPTIONS : options.filter((o) => o.trim())
     if (filtered.length < 2 || !title.trim() || !body.trim()) return
 
@@ -160,7 +164,7 @@ export default function AddTopic() {
 
             <TxButton
               type="submit"
-              disabled={!isElection && options.filter((o) => o.trim()).length < 2}
+              disabled={periodBody === undefined || (!isElection && options.filter((o) => o.trim()).length < 2)}
               pending={addTopicMutation.isPending}
               success={addTopicMutation.isSuccess}
               idleLabel={isElection ? 'Add candidate' : 'Add topic'}

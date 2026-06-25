@@ -261,9 +261,10 @@ async function main() {
       const topicIndex = (await sdk.addTopic({
         periodId,
         // Election candidates are fixed Support / Against / Abstain ballots (mirrors the
-        // Manage UI); standard-vote topics default to Yes / No / Abstain.
+        // Manage UI), so the election ballot always wins over any per-topic override;
+        // standard-vote topics use their `options` or default to Yes / No / Abstain.
         options:
-          t.options ?? (opts.electSeats !== undefined ? ['Support', 'Against', 'Abstain'] : ['Yes', 'No', 'Abstain']),
+          opts.electSeats !== undefined ? ['Support', 'Against', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
         note: randomNote(),
       })) as bigint
       await sdk.uploadTopicBody({ periodId, topicIndex, body: { title: t.title, body: t.body } })

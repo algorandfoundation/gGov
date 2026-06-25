@@ -393,7 +393,9 @@ export default function ManagePeriodDetail() {
                       )}
                       {canEdit && (
                         <>
-                          {!isElection && (
+                          {/* `periodBody` is `undefined` while loading; gate on it so the editor
+                              isn't briefly exposed for election candidates before `isElection` resolves. */}
+                          {periodBody !== undefined && !isElection && (
                             <Button variant="ghost" size="sm" onClick={() => setEditingTopic(topicIdx)}>
                               Edit options
                             </Button>
