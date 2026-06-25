@@ -15,7 +15,7 @@
  *   3. addPeriod (creates a child GGovPeriod app via inner txn)
  *   4. uploadPeriodBody — title + description, plus `electSeats` (the seat count) for a
  *      council election; the presence of `electSeats` is what marks the period as an election
- *   5. addTopic (+ uploadTopicBody) — one Yes/No/Abstain ballot per candidate for an election
+ *   5. addTopic (+ uploadTopicBody) — one Support/Against/Abstain ballot per candidate for an election
  *      (the candidate handle is the topic title), otherwise a single topic
  *   6. getPeriod (reads from the per-period app)
  *   7. getPeriodSummary (reads from the registry)
@@ -73,7 +73,7 @@ void (async () => {
     body: {
       title: isElection ? 'gGov Council — Term 2 election' : 'Protocol parameter review',
       body: isElection
-        ? `Elect ${electSeats} council member${electSeats === 1 ? '' : 's'}. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top ${electSeats} lead for the available seats.`
+        ? `Elect ${electSeats} council member${electSeats === 1 ? '' : 's'}. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top ${electSeats} lead for the available seats.`
         : 'A standard governance vote on the proposed change.',
       ...(isElection ? { electSeats } : {}),
     },
@@ -84,13 +84,13 @@ void (async () => {
       : 'Period body uploaded (standard vote)',
   )
 
-  // 5. addTopic. For an election, one Yes/No/Abstain ballot per candidate — one more than
-  // the seat count, so at least one candidate sits below the cutoff — with the candidate
+  // 5. addTopic. For an election, one Support/Against/Abstain ballot per candidate — one more
+  // than the seat count, so at least one candidate sits below the cutoff — with the candidate
   // handle as the topic title. Otherwise, a single topic.
   if (isElection) {
     const candidateCount = electSeats + 1
     for (let i = 0; i < candidateCount; i++) {
-      const topicIndex = await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
+      const topicIndex = await sdk.addTopic({ periodId, options: ['Support', 'Against', 'Abstain'] })
       await sdk.uploadTopicBody({
         periodId,
         topicIndex,

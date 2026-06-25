@@ -160,6 +160,10 @@ export default function AddPeriod() {
                   {!electSeatsValid && (
                     <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
                   )}
+                  <p className="text-xs text-muted-foreground">
+                    Each candidate you add will be a fixed Support / Against / Abstain ballot, ranked by net score
+                    (Support − Against).
+                  </p>
                 </div>
               )}
             </div>

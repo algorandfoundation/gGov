@@ -260,7 +260,11 @@ async function main() {
     for (const t of opts.topics) {
       const topicIndex = (await sdk.addTopic({
         periodId,
-        options: t.options ?? ['Yes', 'No', 'Abstain'],
+        // Election candidates are fixed Support / Against / Abstain ballots (mirrors the
+        // Manage UI), so the election ballot always wins over any per-topic override;
+        // standard-vote topics use their `options` or default to Yes / No / Abstain.
+        options:
+          opts.electSeats !== undefined ? ['Support', 'Against', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
         note: randomNote(),
       })) as bigint
       await sdk.uploadTopicBody({ periodId, topicIndex, body: { title: t.title, body: t.body } })
@@ -282,7 +286,8 @@ async function main() {
     })
   }
 
-  // One-hot ballot row: full voting power on the chosen option. Y→0, N→1, A→2.
+  // One-hot ballot row: full voting power on the chosen option. The Y/N/A shorthand selects
+  // option index 0/1/2 — for these elections that's Support/Against/Abstain (Y→Support, N→Against).
   const oneHot = (choice: string, power: number): number[] => {
     const idx = choice === 'Y' ? 0 : choice === 'N' ? 1 : 2
     return [0, 1, 2].map((i) => (i === idx ? power : 0))
@@ -306,7 +311,7 @@ async function main() {
   await delegate(C, A) // C delegates to A but votes directly → locked ("Voted directly")
 
   // Council candidates (5), shared by the past and active elections. Each is a
-  // Yes/No/Abstain ballot; candidates rank by net score (Yes − No) for the seats.
+  // Support/Against/Abstain ballot; candidates rank by net score (Support − Against) for the seats.
   const candidateTopics = [
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
     { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
@@ -325,7 +330,7 @@ async function main() {
   const endedVotingEnd = endedStart + 90n // short window: cast within it, then it lapses
   const endedId = await createPeriod({
     title: 'gGov Council — Term 1 election',
-    body: 'Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 took the available seats.',
+    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
     electSeats: 3,
     topics: candidateTopics,
     votingStart: endedStart - 3600n,
@@ -359,7 +364,7 @@ async function main() {
   console.log('\nCreating ACTIVE council election (id 2; 3 seats, 5 candidates)...')
   const activeId = await createPeriod({
     title: 'gGov Council — Term 2 election',
-    body: 'Elect 3 council members. Each candidate below is a Yes/No/Abstain ballot; candidates are ranked by net score (Yes − No) and the top 3 lead for the available seats.',
+    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 lead for the available seats.',
     electSeats: 3,
     topics: candidateTopics,
     votingStart: now - 3600n,
