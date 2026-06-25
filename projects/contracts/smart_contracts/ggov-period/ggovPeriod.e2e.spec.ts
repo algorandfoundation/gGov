@@ -27,6 +27,9 @@ import { transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 import { configureTestLogging } from '../test-utils'
 
+type ConfirmationLike = { logs?: Uint8Array[]; confirmedRound?: number | bigint }
+type SendResultLike = { confirmations?: ConfirmationLike[]; confirmation?: ConfirmationLike }
+
 async function deployRegistryAndSDK(
   localnet: ReturnType<typeof algorandFixture>,
   admin: Address,
@@ -1687,9 +1690,6 @@ describe('GGovPeriod contract', () => {
           .digest(),
       ).slice(0, 4)
 
-    type ConfirmationLike = { logs?: Uint8Array[]; confirmedRound?: number | bigint }
-    type SendResultLike = { confirmations?: ConfirmationLike[]; confirmation?: ConfirmationLike }
-
     const collectLogs = (result: SendResultLike): Uint8Array[] => {
       const confs = result.confirmations ?? (result.confirmation ? [result.confirmation] : [])
       return confs.flatMap((c) => (c.logs ?? []) as Uint8Array[])
@@ -1803,7 +1803,7 @@ describe('GGovPeriod contract', () => {
     /** Confirmed round of a send result's transaction group (every txn in the group shares it). */
     const confirmedRound = (result: SendResultLike): bigint => {
       const confs = result.confirmations ?? (result.confirmation ? [result.confirmation] : [])
-      return BigInt(confs[confs.length - 1].confirmedRound)
+      return BigInt(confs[confs.length - 1].confirmedRound!)
     }
 
     test('both rounds are 0 before any vote', async () => {
