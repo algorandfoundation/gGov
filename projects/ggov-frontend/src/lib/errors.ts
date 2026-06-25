@@ -15,6 +15,7 @@ const USER_REJECTION_PATTERNS = [
   /user\s+(closed|denied|declined)/i,
   /denied\s+by\s+the\s+user/i,
   /modal\s+closed/i, // WalletConnect dismissals
+  /connect\s+modal\s+is\s+closed/i, // Defly/Pera: "Connect modal is closed by user"
 ]
 
 /**

@@ -38,7 +38,7 @@ export default function TopBarAccount({ fullWidth = false, small = false }: { fu
             <DialogTitle>Connect wallet</DialogTitle>
             <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
           </DialogHeader>
-          <WalletPicker onConnected={() => setOpen(false)} />
+          <WalletPicker onClose={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>

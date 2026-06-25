@@ -26,9 +26,9 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<{ error: Error; transaction: boolean } | null>(null)
 
   const showError = useCallback((err: unknown, options?: { transaction?: boolean }) => {
-    // User cancelled the signing prompt — not a failure worth a modal.
+    // User dismissed a wallet prompt (signing or connect) — not a failure worth a modal.
     if (isUserRejectionError(err)) {
-      toast('Signing cancelled')
+      toast('Cancelled')
       return
     }
     setError({

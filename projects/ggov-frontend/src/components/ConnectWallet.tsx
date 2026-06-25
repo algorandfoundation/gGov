@@ -34,7 +34,7 @@ export default function ConnectWallet() {
             <DialogTitle>Connect wallet</DialogTitle>
             <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
           </DialogHeader>
-          <WalletPicker onConnected={() => setOpen(false)} />
+          <WalletPicker onClose={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>
