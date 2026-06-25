@@ -193,14 +193,22 @@ export default function VotePeriodDetail() {
   const voteMutation = useVoteMutation()
 
   // If the connected wallet has no voting power of its own, fall back to the first
-  // delegator so we never leave the (now hidden) "Yourself" option selected.
+  // selectable delegator so we never leave the (now hidden) "Yourself" option selected.
+  // Skips delegators with 0 voting power, which AccountSelector hides.
+  const firstSelectableDelegator = delegators.find((addr) => {
+    const eligibility = delegatorEligibility[addr]
+    return eligibility?.canVote === true && eligibility.votingPower > 0n
+  })
   useEffect(() => {
-    if (selfCanVoteResult && !selfCanVote && selectedVoter === activeAddress && delegators.length > 0) {
-      setSelectedVoter(delegators[0])
+    if (
+      selfCanVoteResult &&
+      !selfCanVote &&
+      selectedVoter === activeAddress &&
+      firstSelectableDelegator !== undefined
+    ) {
+      setSelectedVoter(firstSelectableDelegator)
     }
-    // `delegators` is rebuilt every render; depend on its first element (a stable
-    // primitive) so this fallback doesn't re-run on every render.
-  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, delegators[0]])
+  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, firstSelectableDelegator])
 
   const votingForSelf = selectedVoter === activeAddress
 
