@@ -3,11 +3,11 @@
  * @returns Method decorator
  */
 export function requireWriter() {
-  return function (_target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  return function (_target: object, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = descriptor.value
 
-    descriptor.value = function (...args: any[]) {
-      if (!this || (this as any).writerAccount === undefined) {
+    descriptor.value = function (...args: unknown[]) {
+      if (!this || (this as { writerAccount?: unknown }).writerAccount === undefined) {
         throw new Error(`Method "${propertyKey}" requires a writerAccount to be set on the instance`)
       }
 
