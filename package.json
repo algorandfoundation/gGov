@@ -18,6 +18,10 @@
     "typescript-eslint": "^8.61.0"
   },
   "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
     "*": "prettier --write --ignore-unknown"
   }
 }

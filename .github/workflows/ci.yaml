@@ -99,8 +99,8 @@ jobs:
       - name: Format check
         run: algokit project run format-check
 
-      # - name: Lint
-      #   run: algokit project run lint
+      - name: Lint
+        run: algokit project run lint
 
       - name: Build smart contracts
         run: algokit project run build --project-name 'contracts'
