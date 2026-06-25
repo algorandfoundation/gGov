@@ -683,7 +683,7 @@ export default function VotePeriodDetail() {
             <DialogTitle>Connect wallet</DialogTitle>
             <DialogDescription>Choose a wallet to connect to gGov.</DialogDescription>
           </DialogHeader>
-          <WalletPicker onConnected={() => setConnectOpen(false)} />
+          <WalletPicker onClose={() => setConnectOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>

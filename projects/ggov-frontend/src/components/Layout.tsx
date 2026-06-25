@@ -122,9 +122,9 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="gap-2 pb-6">
-        <ThemeToggle showLabel />
         <RefreshButton showLabel />
-        <TopBarAccount fullWidth small />
+        <ThemeToggle showLabel />
+        <TopBarAccount fullWidth />
       </SidebarFooter>
     </Sidebar>
   )

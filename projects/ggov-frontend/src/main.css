@@ -292,3 +292,23 @@
     text-wrap: balance;
   }
 }
+
+/* ── Wallet connector modals (Defly / Pera) ──────────────────────────────────
+ * Defly and Pera append their connect/redirect/sign modals straight to <body>,
+ * outside the React tree. While a modal Radix layer is open (the mobile sidebar
+ * Sheet, or the connect-wallet Dialog) Radix sets `pointer-events: none` on
+ * <body>; because `pointer-events` is inherited, these body-level modals pick it
+ * up and — though painted on top (z-index 999999) — become non-interactive, so
+ * clicks fall through to the layer beneath. That reads as a z-index/stacking bug
+ * but is purely inherited pointer-events. Force them back to interactive so they
+ * work no matter how many app overlays are open underneath. */
+#defly-wallet-connect-modal-wrapper,
+#defly-wallet-redirect-modal-wrapper,
+#defly-wallet-sign-txn-modal-wrapper,
+#defly-wallet-sign-txn-toast-wrapper,
+#pera-wallet-connect-modal-wrapper,
+#pera-wallet-redirect-modal-wrapper,
+#pera-wallet-sign-txn-modal-wrapper,
+#pera-wallet-sign-txn-toast-wrapper {
+  pointer-events: auto !important;
+}
