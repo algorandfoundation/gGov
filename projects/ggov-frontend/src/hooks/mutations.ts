@@ -4,6 +4,7 @@ import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useErrorDialog } from '@/hooks/useErrorDialog'
 import { queryKeys } from '@/hooks/queries'
 import { signingProgress } from '@/lib/signingProgress'
+import { GGovSDK } from 'ggov-sdk'
 import type { BodyJson, PeriodBodyJson } from 'ggov-sdk'
 
 function txnSuccessToast(message: string, data?: unknown) {
@@ -196,25 +197,22 @@ export function useAddTopicMutation() {
 
   return useMutation({
     mutationFn: async (args: { periodId: number; options: string[]; title?: string; body?: string }) => {
-      // A body is only uploaded (a second signed group) when a title is provided.
-      const willUploadBody = !!args.title?.trim()
-      const progress = signingProgress(willUploadBody ? 2 : 1)
+      const title = args.title?.trim()
+      // No body → a single plain addTopic. With a body → addTopicWithBody combines the topic and its
+      // body into one signed group when it fits; a body too large to ride along falls back to two
+      // signatures (addTopic, then the body upload), hence the group-count-driven progress indicator.
+      if (!title) {
+        return (await sdk!.addTopic({ periodId: BigInt(args.periodId), options: args.options })) as bigint
+      }
+      const body: BodyJson = { title, body: args.body?.trim() ?? '' }
+      const progress = signingProgress(GGovSDK.addTopicWithBodyGroupCount(body))
       try {
-        progress.step('Adding topic')
-        const topicIndex = (await sdk!.addTopic({
+        const topicIndex = await sdk!.addTopicWithBody({
           periodId: BigInt(args.periodId),
           options: args.options,
-        })) as bigint
-
-        if (willUploadBody) {
-          progress.step('Uploading topic body')
-          await sdk!.uploadTopicBody({
-            periodId: BigInt(args.periodId),
-            topicIndex,
-            body: { title: args.title!.trim(), body: args.body?.trim() ?? '' },
-          })
-        }
-
+          body,
+          onSigningGroup: (i) => progress.step(i === 0 ? 'Adding topic' : 'Uploading topic body'),
+        })
         progress.done()
         return topicIndex
       } catch (e) {

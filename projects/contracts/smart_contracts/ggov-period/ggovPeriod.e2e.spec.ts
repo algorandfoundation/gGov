@@ -613,6 +613,179 @@ describe('GGovPeriod contract', () => {
     })
   })
 
+  // ── addTopicWithBody (combined add + body upload) ─────────────────
+
+  describe('addTopicWithBody', () => {
+    test('Adds a topic and uploads its body in a single signed group', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+
+      const body = { title: 'Topic title', body: 'Topic **body** in markdown.' }
+      // A normal-sized body needs exactly one signature.
+      expect(GGovSDK.addTopicWithBodyGroupCount(body)).toBe(1)
+
+      const signed: number[] = []
+      const idx = await sdk.addTopicWithBody({
+        periodId,
+        options: ['Yes', 'No', 'Abstain'],
+        body,
+        onSigningGroup: (i) => signed.push(i),
+      })
+      expect(idx).toBe(0n)
+      expect(signed).toEqual([0]) // one group signed
+
+      // Topic + registry summary reflect the add.
+      const summary = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(summary.return!.numTopics).toBe(1)
+      const period = await sdk.getPeriod(periodId)
+      expect(period.topics).toHaveLength(1)
+      expect(period.topics[0][0]).toEqual(['Yes', 'No', 'Abstain'])
+
+      // Body round-trips from the topic's body box.
+      expect(await sdk.getTopicBody(periodId, idx)).toEqual(body)
+    })
+
+    test('Predicts the topic index from the current topic count', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+
+      // A pre-existing (body-less) topic shifts the next index to 1.
+      await sdk.addTopic({ periodId, options: ['A', 'B'] })
+
+      const body = { title: 'Second', body: 'Second topic body.' }
+      const idx = await sdk.addTopicWithBody({ periodId, options: ['Yes', 'No'], body })
+      expect(idx).toBe(1n)
+
+      // The body lands on topic 1; topic 0 (which never got a body) has none.
+      expect(await sdk.getTopicBody(periodId, 1n)).toEqual(body)
+      expect(await sdk.getTopicBody(periodId, 0n)).toBeNull()
+      expect((await sdk.getPeriod(periodId)).topics).toHaveLength(2)
+    })
+
+    test('Rides the maximal single-group body (14 chunks) along with addTopic in one signature', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+
+      // Over-fund the period app for the ~28 KB body box's min-balance (addTopic sends no MBR top-up).
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(periodAppId), (16).algos())
+
+      // ~27.7 KB serializes to exactly 14 × 2000-byte chunks — the most that still rides along with
+      // addTopic in ONE group (ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS = MAX_GROUP_SIZE - 2): addTopic + 14
+      // partials + a reserved budget slot = 16 txns. Just over this tips into the two-signature path
+      // (see the next test), so this exercises the boundary that constant is built around.
+      const maxBody = { title: 'Max single-group body', body: 'x'.repeat(27_700) }
+      expect(GGovSDK.addTopicWithBodyGroupCount(maxBody)).toBe(1)
+
+      const signed: number[] = []
+      const idx = await sdk.addTopicWithBody({
+        periodId,
+        options: ['Yes', 'No'],
+        body: maxBody,
+        onSigningGroup: (i) => signed.push(i),
+      })
+      expect(idx).toBe(0n)
+      expect(signed).toEqual([0]) // still a single signed group at the boundary
+
+      // The full body round-trips intact from the topic's body box.
+      expect(await sdk.getTopicBody(periodId, idx)).toEqual(maxBody)
+    })
+
+    test('Falls back to two signatures for a body too large to ride with addTopic, intact', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+
+      // Over-fund the period app for the ~28 KB body box's min-balance (addTopic sends no MBR top-up).
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(periodAppId), (16).algos())
+
+      // >14 chunks (>28 KB) can't ride along with addTopic in one group — that single group can't
+      // carry enough box references for the box's I/O budget — so it splits into addTopic + a full
+      // uploadTopicBody group: two signatures.
+      const big = { title: 'Big topic', body: 'x'.repeat(28_100) }
+      expect(GGovSDK.addTopicWithBodyGroupCount(big)).toBe(2)
+
+      const signed: number[] = []
+      const idx = await sdk.addTopicWithBody({
+        periodId,
+        options: ['Yes', 'No'],
+        body: big,
+        onSigningGroup: (i) => signed.push(i),
+      })
+      expect(idx).toBe(0n)
+      expect(signed).toEqual([0, 1]) // addTopic group, then the body-upload group
+
+      // The full body round-trips intact (uploaded in its own full-size group).
+      expect(await sdk.getTopicBody(periodId, idx)).toEqual(big)
+    })
+
+    test('Uploads the maximum-allowed body (32000 bytes) via the two-signature fallback', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+
+      // Over-fund the period app for the 32 KB body box's min-balance (addTopic sends no MBR top-up).
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(periodAppId), (16).algos())
+
+      // 31_970 + JSON wrapper = exactly 32_000 serialized bytes = MAX_BODY_BYTES = 16 chunks: the
+      // largest body the SDK accepts. Too big for the 14-chunk ride-along, so it takes the
+      // two-signature fallback (addTopic, then ONE full 16-chunk uploadTopicBody group) — groupCount 2.
+      const maxBody = { title: 'Max body', body: 'x'.repeat(31_970) }
+      expect(GGovSDK.addTopicWithBodyGroupCount(maxBody)).toBe(2)
+
+      const signed: number[] = []
+      const idx = await sdk.addTopicWithBody({
+        periodId,
+        options: ['Yes', 'No'],
+        body: maxBody,
+        onSigningGroup: (i) => signed.push(i),
+      })
+      expect(idx).toBe(0n)
+      expect(signed).toEqual([0, 1]) // addTopic, then the single full uploadTopicBody group
+
+      // The full 32 KB body round-trips intact.
+      expect(await sdk.getTopicBody(periodId, idx)).toEqual(maxBody)
+    })
+
+    test('Rejects a body larger than MAX_BODY_BYTES before sending anything', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
+
+      // One byte over the 32_000-byte cap (32_003 serialized) — would need a second, under-provisioned
+      // upload group, so the SDK refuses up front rather than failing mid-upload on the AVM I/O budget.
+      const tooBig = { title: 'Over limit', body: 'x'.repeat(31_971) }
+
+      // The static signature-count helper validates the same way, so callers (e.g. the UI) see it early.
+      expect(() => GGovSDK.addTopicWithBodyGroupCount(tooBig)).toThrow(/maximum is 32000/)
+
+      // The upload methods reject too, and nothing is created: the topic count stays 0.
+      await expect(sdk.addTopicWithBody({ periodId, options: ['Yes', 'No'], body: tooBig })).rejects.toThrow(
+        /maximum is 32000/,
+      )
+      await expect(sdk.uploadPeriodBody({ periodId, body: tooBig })).rejects.toThrow(/maximum is 32000/)
+      const summary = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
+      expect(summary.return!.numTopics).toBe(0)
+    })
+  })
+
   // ── editTopic ────────────────────────────────────────────────────
 
   describe('editTopic', () => {

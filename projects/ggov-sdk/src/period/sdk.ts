@@ -18,10 +18,26 @@ import { asciiBoxName, topicBodyBoxName } from '../util/boxNames'
 import { chunk } from '../util/chunk'
 import { requireWriter } from '../util/requiresSender'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES } from '../constants'
+import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, MAX_BODY_BYTES } from '../constants'
 
 /** Max box references per transaction (AVM limit) — caps how many topic bodies one deleteTopicBodies call may delete. */
 const MAX_BOX_REFS_PER_TXN = 8
+
+/**
+ * Max body chunks that ride along with addTopic in {@link GGovSDK.addTopicWithBody}'s single-group
+ * (one-signature) path. The group leads with the addTopic call (1 txn) and reserves 1 slot for a
+ * possible automatic budget-increase txn (addTopic's opcode cost grows with the existing topic
+ * count), leaving `MAX_GROUP_SIZE - 2` slots for partial body uploads — a body up to
+ * `(MAX_GROUP_SIZE - 2) * BODY_CHUNK_BYTES` bytes (~28 KB), which covers any realistic topic body.
+ *
+ * Bodies beyond this can't be added + uploaded in one group: each box reference grants only ~2 KB of
+ * box read/write budget, so building a larger body box needs more box references — i.e. more app
+ * calls — than fit once addTopic and a budget slot are accounted for. (Spilling the extra chunks
+ * into a small follow-up group does NOT work: that group would operate on an already-large box and
+ * hit the same budget wall with too few txns to cover it.) Such bodies fall back to a two-signature
+ * path: addTopic, then a full uploadTopicBody group that carries enough app calls for the budget.
+ */
+const ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS = MAX_GROUP_SIZE - 2
 
 export class GGovSDK extends GGovReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -260,20 +276,16 @@ export class GGovSDK extends GGovReaderSDK {
   }): Promise<void> {
     const client = await this.getPeriodWriteClient(periodId)
     const data = serializeAndValidateBody(body)
-    const chunks = chunk(Array.from(data), BODY_CHUNK_BYTES)
-    const groups = chunk(
-      chunks.map((c, i) => ({ index: i, data: c })),
-      MAX_GROUP_SIZE,
-    )
+    const groups = chunk(toBodyChunks(data), MAX_GROUP_SIZE)
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup()
-      for (const { index, data: chunkData } of group) {
+      for (const { startOffset, data: chunkData } of group) {
         // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
         // eslint-disable-next-line @typescript-eslint/await-thenable
         builder = await this.makeUploadPeriodBodyPartialTxns({
           periodId,
-          startOffset: index * BODY_CHUNK_BYTES,
-          data: new Uint8Array(chunkData),
+          startOffset,
+          data: chunkData,
           note,
           client,
           builder,
@@ -299,21 +311,17 @@ export class GGovSDK extends GGovReaderSDK {
   }): Promise<void> {
     const client = await this.getPeriodWriteClient(periodId)
     const data = serializeAndValidateBody(body)
-    const chunks = chunk(Array.from(data), BODY_CHUNK_BYTES)
-    const groups = chunk(
-      chunks.map((c, i) => ({ index: i, data: c })),
-      MAX_GROUP_SIZE,
-    )
+    const groups = chunk(toBodyChunks(data), MAX_GROUP_SIZE)
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup()
-      for (const { index, data: chunkData } of group) {
+      for (const { startOffset, data: chunkData } of group) {
         // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
         // eslint-disable-next-line @typescript-eslint/await-thenable
         builder = await this.makeUploadTopicBodyPartialTxns({
           periodId,
           topicIndex,
-          startOffset: index * BODY_CHUNK_BYTES,
-          data: new Uint8Array(chunkData),
+          startOffset,
+          data: chunkData,
           note,
           client,
           builder,
@@ -321,6 +329,125 @@ export class GGovSDK extends GGovReaderSDK {
       }
       await builder.send()
     }
+  }
+
+  // ── Period: addTopicWithBody (addTopic + body upload, 1 signature) ──
+
+  /**
+   * Build one group that adds a topic AND writes (part of) its body: the addTopic call followed by
+   * up to {@link ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS} `uploadTopicBodyPartial` calls. Routed through
+   * {@link makePeriodTxnExecutor} so opcode budget is auto-increased if addTopic needs it (it
+   * reserves a group slot for the prepended budget txn — see ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS).
+   * `topicIndex` is the index addTopic will assign (the current topic count); the body chunks write
+   * to that topic's box in the same atomic group.
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeAddTopicWithBodyTxns({
+    periodId: _periodId,
+    options,
+    topicIndex,
+    chunks,
+    note,
+    client,
+    builder,
+  }: {
+    periodId: bigint | number
+    options: string[]
+    topicIndex: bigint | number
+    chunks: { startOffset: number; data: Uint8Array }[]
+    client: GGovPeriodClient
+  } & PeriodMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
+    builder = builder.addTopic({ args: { options }, note, extraFee: (2000).microAlgo() })
+    for (const { startOffset, data } of chunks) {
+      // each uploadTopicBodyPartial: 1 inner verifyOperator
+      builder = builder.uploadTopicBodyPartial({
+        args: { topicIndex, startOffset, data },
+        note,
+        extraFee: (1000).microAlgo(),
+      })
+    }
+    return builder
+  }
+
+  private addTopicWithBodyFirstGroup = this.makePeriodTxnExecutor({ maker: this.makeAddTopicWithBodyTxns })
+
+  /**
+   * Number of signed transaction groups {@link addTopicWithBody} will produce for `body`: 1 when the
+   * body fits alongside addTopic in a single group (up to `ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS *
+   * BODY_CHUNK_BYTES` bytes), otherwise 2 — addTopic, then a single full {@link uploadTopicBody}
+   * group. (Bodies are capped at {@link MAX_BODY_BYTES} = one group's worth of chunks, so the upload
+   * never needs more than one group and the count is always 1 or 2.) Lets a caller (e.g. a UI
+   * signing-progress indicator) know up front how many wallet signatures to expect. Throws if `body`
+   * is invalid or larger than {@link MAX_BODY_BYTES} (same validation as the upload).
+   */
+  static addTopicWithBodyGroupCount(body: BodyJson | string | Uint8Array): number {
+    const numChunks = Math.max(1, Math.ceil(serializeAndValidateBody(body).length / BODY_CHUNK_BYTES))
+    if (numChunks <= ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS) return 1
+    return 1 + Math.ceil(numChunks / MAX_GROUP_SIZE)
+  }
+
+  /**
+   * Add a topic AND upload its body, combining what used to be two separate signatures (addTopic,
+   * then uploadTopicBody) into a single signed group whenever the body fits.
+   *
+   * The on-chain topic index addTopic assigns is the current topic count, which the registry
+   * summary mirrors on every add/remove — so the SDK reads it up front and packs addTopic + the
+   * body's `uploadTopicBodyPartial` chunks into one atomic group. The index is *predicted* from that
+   * read, not read back from addTopic: if a concurrent addTopic landed between the summary read and
+   * this group executing, addTopic would assign `topicIndex + 1` while the body chunks still target
+   * the predicted `topicIndex` — the body would land on the wrong topic. This is acceptable because
+   * adding topics is operator-only and the frontend never issues addTopic calls in parallel, so
+   * topic-adds are serialized and the prediction always matches. (The two-signature fallback below
+   * has no such window — it writes the body to the index addTopic actually returns.)
+   *
+   * Bodies up to {@link ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS} chunks (~28 KB) ride along with addTopic in
+   * that single group — one signature, the common case. Larger bodies cannot (a single group can't
+   * supply enough box-reference I/O budget to build the box — see ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS),
+   * so they fall back to two signatures: addTopic, then a full {@link uploadTopicBody} group. Use
+   * {@link addTopicWithBodyGroupCount} to learn the count up front. `onSigningGroup(i)` fires
+   * immediately before each group `i` (0-based) is sent. Returns the new topic index.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async addTopicWithBody({
+    periodId,
+    options,
+    body,
+    note,
+    onSigningGroup,
+  }: {
+    periodId: bigint | number
+    options: string[]
+    body: BodyJson | string | Uint8Array
+    note?: string | Uint8Array
+    onSigningGroup?: (groupIndex: number) => void
+  }): Promise<bigint> {
+    const data = serializeAndValidateBody(body)
+    const numChunks = Math.max(1, Math.ceil(data.length / BODY_CHUNK_BYTES))
+
+    if (numChunks > ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS) {
+      // Too large to ride along with addTopic: a single combined group can't carry enough app calls
+      // to cover the body box's I/O budget. Two signatures — addTopic, then a full uploadTopicBody
+      // group (enough app calls for the budget; it also returns the authoritative on-chain index).
+      onSigningGroup?.(0)
+      const topicIndex = await this.addTopic({ periodId, options, note })
+      onSigningGroup?.(1)
+      await this.uploadTopicBody({ periodId, topicIndex, body: data, note })
+      return topicIndex
+    }
+
+    // Fits: addTopic + every body chunk in one atomic group → a single signature. The index addTopic
+    // assigns is the current topic count (the registry summary mirrors it on every addTopic/
+    // removeTopic), so this single read gives the right index for the body box.
+    const [summary] = await this.registry.getPeriodSummaries([BigInt(periodId)])
+    const topicIndex = BigInt(summary?.numTopics ?? 0)
+    const chunks = toBodyChunks(data)
+    onSigningGroup?.(0)
+    await this.addTopicWithBodyFirstGroup({ periodId, options, topicIndex, chunks, note })
+    return topicIndex
   }
 
   // ── Period: removeTopic ──────────────────────────────────────────
@@ -545,24 +672,42 @@ export class GGovSDK extends GGovReaderSDK {
   withdrawPeriodALGO = this.makePeriodTxnExecutor({ maker: this.makeWithdrawPeriodALGOTxns })
 }
 
+/** Split a serialized body into ordered { startOffset, data } upload chunks of {@link BODY_CHUNK_BYTES} each. */
+function toBodyChunks(data: Uint8Array): { startOffset: number; data: Uint8Array }[] {
+  return chunk(Array.from(data), BODY_CHUNK_BYTES).map((c, i) => ({
+    startOffset: i * BODY_CHUNK_BYTES,
+    data: new Uint8Array(c),
+  }))
+}
+
 function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {
+  let data: Uint8Array
   if (typeof body === 'object' && !(body instanceof Uint8Array)) {
     if (!validateBodyJson(body)) {
       throw new Error(
         "Body must have 'title' (string) and 'body' (string) fields, and 'electSeats' (if present) must be a positive integer",
       )
     }
-    return new TextEncoder().encode(JSON.stringify(body))
+    data = new TextEncoder().encode(JSON.stringify(body))
+  } else {
+    const text = typeof body === 'string' ? body : new TextDecoder().decode(body)
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      throw new Error("Body must be valid JSON with 'title' (string) and 'body' (string) fields")
+    }
+    if (!validateBodyJson(parsed)) {
+      throw new Error("Body must have 'title' (string) and 'body' (string) fields")
+    }
+    data = typeof body === 'string' ? new TextEncoder().encode(body) : body
   }
-  const text = typeof body === 'string' ? body : new TextDecoder().decode(body)
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(text)
-  } catch {
-    throw new Error("Body must be valid JSON with 'title' (string) and 'body' (string) fields")
+  // A body box must fit in a single upload group; larger bodies can't be uploaded (the trailing
+  // group would exceed the AVM box-I/O reference budget). See MAX_BODY_BYTES.
+  if (data.length > MAX_BODY_BYTES) {
+    throw new Error(
+      `Body is ${data.length} bytes; the maximum is ${MAX_BODY_BYTES} (it must fit in a single ${MAX_GROUP_SIZE}-transaction upload group)`,
+    )
   }
-  if (!validateBodyJson(parsed)) {
-    throw new Error("Body must have 'title' (string) and 'body' (string) fields")
-  }
-  return typeof body === 'string' ? new TextEncoder().encode(body) : body
+  return data
 }
