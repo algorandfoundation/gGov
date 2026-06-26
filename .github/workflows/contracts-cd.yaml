@@ -1,32 +1,49 @@
-name: Release contracts
+name: Deploy contracts (testnet)
 
+# Deploys smart contracts to testnet via `algokit project deploy testnet`.
+# Manual only — run from the Actions tab once the `contract-testnet` environment
+# is configured (deployment branches: main; secrets below).
+#
+# Required secrets (`contract-testnet` environment):
+#   DEPLOYER_MNEMONIC   - account that becomes the creator/operator of the contracts
+#   DISPENSER_MNEMONIC  - funds the deployer if its balance is low
 on:
-  workflow_call:
   workflow_dispatch:
+
+# Never interrupt an in-flight contract deploy.
+concurrency:
+  group: contracts-cd
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   deploy-testnet:
-    runs-on: 'ubuntu-latest'
-
+    runs-on: ubuntu-latest
     environment: contract-testnet
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Install pnpm
         # No `version` here — it's read from the root package.json `packageManager`
         # field. Pinning both collides (ERR_PNPM_BAD_PM_VERSION).
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: '22.x'
+          node-version: '22.19.x'
           cache: 'pnpm'
           cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.12'
 
@@ -36,11 +53,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Configure git
-        shell: bash
+      - name: Build contracts
+        run: algokit project run build --project-name 'contracts'
+
+      - name: Check artifacts are up to date
         run: |
-          # set git user and email as test invoke git
-          git config --global user.email "actions@github.com" && git config --global user.name "github-actions"
+          if [ -n "$(git status --porcelain projects/contracts/smart_contracts/artifacts)" ]; then
+            echo "Artifacts are out of date — run 'algokit project run build --project-name contracts' and commit the results."
+            git status --short projects/contracts/smart_contracts/artifacts
+            exit 1
+          fi
 
       - name: Build SDK
         run: algokit project run build --project-name 'ggov-sdk'

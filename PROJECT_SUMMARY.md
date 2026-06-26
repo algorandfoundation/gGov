@@ -132,6 +132,31 @@ React 19 + Vite + TailwindCSS + DaisyUI. Current frontend for gGov.
 
 Full workspace build: `algokit project run build` (respects `.algokit.toml` build order)
 
+## CI/CD
+
+GitHub Actions workflows live in [`.github/workflows`](./.github/workflows).
+
+### CI
+
+Runs on PRs to `main` and `develop`. Contracts and SDKs are treated as one unit — a change in either triggers the test matrix.
+
+```
+audit   ─┐
+         ├─► validate (format → lint → build contracts → artifact check → build SDKs → typecheck → build frontend)
+changes -┤
+         └─► test (matrix) — only when contracts or SDKs changed
+```
+
+### CD
+
+| Workflow       | Deploys             | When                                               |
+| -------------- | ------------------- | -------------------------------------------------- |
+| `contracts-cd` | contracts (testnet) | Manual (`workflow_dispatch`)                       |
+| `frontend-cd`  | frontend (testnet)  | Auto on push to main (frontend/sdk paths) + manual |
+| `storybook-cd` | storybook           | Auto on push to main (frontend/sdk paths) + manual |
+
+All actions are pinned to commit SHAs. Secrets are scoped to the step that needs them.
+
 ## Key Patterns
 
 - **Registry-as-factory**: One durable `GGovRegistry` app; each voting period is a separate `GGovPeriod` app spawned via inner-txn. Registry is the trust root for committees, operator identity, and delegations.

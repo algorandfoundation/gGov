@@ -25,25 +25,31 @@ concurrency:
   group: frontend-cd
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   deploy-testnet:
     runs-on: 'ubuntu-latest'
     environment: frontend-testnet
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      ALGOD_TOKEN: ${{ secrets.ALGOD_TOKEN }}
+      # non-secret boolean only; the actual token stays step-level
+      HAS_ALGOD_TOKEN: ${{ secrets.ALGOD_TOKEN != '' }}
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Install pnpm
         # No `version` here — it's read from the root package.json `packageManager`
         # field. Pinning both collides (ERR_PNPM_BAD_PM_VERSION).
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22.19.x'
           cache: 'pnpm'
@@ -63,6 +69,9 @@ jobs:
       # with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID.
       - name: Build & deploy Worker (testnet)
         working-directory: projects/ggov-frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm deploy:testnet
 
       # Upload the privileged Algod token as a Worker secret (server-only; never in
@@ -70,6 +79,10 @@ jobs:
       # Runs after deploy so the Worker exists; secrets persist across deploys, so this
       # just keeps it in sync. Skipped when the secret is unset.
       - name: Set ALGOD_TOKEN Worker secret
-        if: ${{ env.ALGOD_TOKEN != '' }}
+        if: ${{ env.HAS_ALGOD_TOKEN == 'true' }}
         working-directory: projects/ggov-frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALGOD_TOKEN: ${{ secrets.ALGOD_TOKEN }}
         run: printf '%s' "$ALGOD_TOKEN" | pnpm wrangler secret put ALGOD_TOKEN --env testnet

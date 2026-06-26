@@ -14,7 +14,7 @@ export interface KmdConfig {
 }
 
 // AlgoKit LocalNet defaults, applied when the corresponding VITE_* vars are
-// unset (a fresh checkout / worktree with no `.env`). `npm run dev` then targets
+// unset (a fresh checkout / worktree with no `.env`). `pnpm run dev` then targets
 // LocalNet (algod :4001, kmd :4002) out of the box instead of throwing. Override
 // per-network with the VITE_ALGOD_* / VITE_KMD_* vars (see .env.example) or by
 // building with `--mode testnet|mainnet`.
