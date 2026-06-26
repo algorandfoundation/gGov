@@ -38,7 +38,7 @@ jobs:
       - name: Use Node.js 22.x
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: '22.x'
+          node-version: '22.19.x'
           cache: 'pnpm'
           cache-dependency-path: '**/pnpm-lock.yaml'
 
@@ -52,6 +52,17 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build contracts
+        run: algokit project run build --project-name 'contracts'
+
+      - name: Check artifacts are up to date
+        run: |
+          if [ -n "$(git status --porcelain projects/contracts/smart_contracts/artifacts)" ]; then
+            echo "Artifacts are out of date — run 'algokit project run build --project-name contracts' and commit the results."
+            git status --short projects/contracts/smart_contracts/artifacts
+            exit 1
+          fi
 
       - name: Build SDK
         run: algokit project run build --project-name 'ggov-sdk'
