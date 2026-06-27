@@ -4,7 +4,7 @@ General governance voting for Algorand, built around xGov committees and gGov vo
 
 gGov is two cooperating smart contracts:
 
-- **[`GGovRegistry`](#ggovregistry)** — a durable factory and trust root. It holds committees (xGov members + voting power), an `admin` and an `operator`, gGov delegations, and a `periodId → GGovPeriodSummary` index. It spawns one `GGovPeriod` app per voting period via inner transaction.
+- **[`GGovRegistry`](#ggovregistry)** — a durable factory and trust root. It holds committees (gov members + voting power), an `admin` and an `operator`, gGov delegations, and a `periodId → GGovPeriodSummary` index. It spawns one `GGovPeriod` app per voting period via inner transaction.
 - **[`GGovPeriod`](#ggovperiod)** — one app per voting period. It holds that period's topics, vote tallies, vote records, and period/topic body JSON. It inner-calls the registry for operator/admin checks, delegation resolution, voting power, and to mirror its summary back to the registry.
 
 ```
@@ -20,7 +20,7 @@ gGov is two cooperating smart contracts:
 
   each GGovPeriod app owns its topics · tallies · vote records, and inner-calls
   the registry for verifyOperator / verifyAdmin / getDelegate /
-  getXGovVotingPower / updatePeriodSummary
+  getGovVotingPower / updatePeriodSummary
 ```
 
 > **Note on naming**: the "Committee Oracle" referenced in earlier docs is now folded into the **`GGovRegistry`** contract (see [historical note](#xgov-committee-oracle-historical-name)). The original [`Delegator`](#delegator-experiment) contract that gave this repo its `xgov-delegator` name is an earlier experiment and is documented last.
@@ -29,7 +29,7 @@ gGov is two cooperating smart contracts:
 
 # GGovRegistry
 
-The durable, never-redeployed root of the gGov system. It stores committees and their xGov voting power, identity (`admin`/`operator`), gGov delegations, and a per-period summary index. New voting periods are spawned as independent `GGovPeriod` apps via inner transaction from `createPeriod`.
+The durable, never-redeployed root of the gGov system. It stores committees and their gov voting power, identity (`admin`/`operator`), gGov delegations, and a per-period summary index. New voting periods are spawned as independent `GGovPeriod` apps via inner transaction from `createPeriod`.
 
 ## Design Rationale
 
@@ -80,12 +80,12 @@ value: CommitteeMetadata struct
 - `numericId`: uint16 - committee numeric ID (drives the superbox prefix)
 - `periodStart`: uint32
 - `periodEnd`: uint32 (exclusive)
-- `totalMembers`: uint32 - total xGovs in the committee
+- `totalMembers`: uint32 - total govs in the committee
 - `totalVotes`: uint32 - total votes across the committee
 - `xGovRegistryId`: uint64
 - `ingestedVotes`: uint32 - running tally of ingested voting power, for verification
 
-### Committee > xGov voting power
+### Committee > Gov voting power
 
 Uses [Superbox](https://github.com/tasosbit/puya-ts-superbox)
 
@@ -150,8 +150,8 @@ increment lastCommitteeId
 ```
 
 - `unregisterCommittee(committeeId)` - Delete committee. Must have no ingested votes
-- `ingestXGovs(committeeId, xGovs: [account, votes][])` - Ingest xGovs into a committee superbox (ascending account-ID order, dedup-enforced; zero-vote xGovs rejected; verifies total votes on completion)
-- `uningestXGovs(committeeId, xGovs: Account[])` - Remove the last N xGovs from a committee superbox (strictly descending offset order)
+- `ingestGovs(committeeId, govs: [account, votes][])` - Ingest govs into a committee superbox (ascending account-ID order, dedup-enforced; zero-vote govs rejected; verifies total votes on completion)
+- `uningestGovs(committeeId, govs: Account[])` - Remove the last N govs from a committee superbox (strictly descending offset order)
 - `setXGovRegistryApp(appId: Application)` - Set the xGov Registry Application ID
 - `setAdmin(newAdmin: Account)` - Transfer admin (zero address rejected)
 - `setOperator(account: Account)` - Set the operator account
@@ -194,8 +194,8 @@ store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false
 - `logCommitteeMetadata(committeeIds[])` - Log committee metadata for multiple committees
 - `logCommitteePages(committeeId, logMetadata, startDataPage, dataPageLength)` - Fetch a committee in "one shot" / parallel queries; logs metadata, superbox meta, and data pages
 - `getCommitteeSuperboxMeta(committeeId)` -> SuperboxMeta
-- `getXGovVotingPower(committeeId, account)` -> uint32 - xGov voting power; throws if account/committee unknown or not a member
-- `tryGetXGovVotingPower(committeeId, account)` -> uint32 - Non-throwing variant (returns 0 instead of throwing); used by `GGovPeriod.canVote`
+- `getGovVotingPower(committeeId, account)` -> uint32 - gov voting power; throws if account/committee unknown or not a member
+- `tryGetGovVotingPower(committeeId, account)` -> uint32 - Non-throwing variant (returns 0 instead of throwing); used by `GGovPeriod.canVote`
 - `getAccount(account)` -> GGovAccount - Account record (accountId 0 if unknown)
 - `logAccounts(accounts[])` - Log multiple accounts' records for quick fetching with simulate
 
@@ -280,7 +280,7 @@ ensure ready
 ensure votingStart <= now < votingEnd
 if sender !== voterAccount:
   inner-call registry.getDelegate(voterAccount), ensure it === sender   // delegated vote
-inner-call registry.getXGovVotingPower(committeeId, voterAccount)        // voting power
+inner-call registry.getGovVotingPower(committeeId, voterAccount)        // voting power
 ensure topicVotes shape matches topics; each topic's votes sum to votingPower
 if a record already exists:
   reject if a delegatee tries to override a direct vote
@@ -445,7 +445,7 @@ value: DelegatorVote struct
 
 # xgov-committee-oracle (historical name)
 
-The committee oracle has been folded into [`GGovRegistry`](#ggovregistry). Its committee storage, account-ID system, and xGov voting-power superbox live there now, alongside the operator, delegations, and period factory. This section is kept as a historical reference to the standalone oracle design.
+The committee oracle has been folded into [`GGovRegistry`](#ggovregistry). Its committee storage, account-ID system, and gov voting-power superbox live there now, alongside the operator, delegations, and period factory. This section is kept as a historical reference to the standalone oracle design.
 
 ## Global State
 
@@ -475,7 +475,7 @@ Value: CommitteeMetadata struct
 - `ingestedVotes`: uint32 - keep track of ingested voting power for verification
 - `superboxPrefix`: string
 
-### Committee > xGov voting power
+### Committee > gov voting power
 
 Uses [Superbox](https://github.com/tasosbit/puya-ts-superbox)
 
@@ -506,7 +506,7 @@ delete committee box
 delete superbox
 ```
 
-- `ingestXGovs(committeeId, xGovs: [account, votes][])` - Ingest xGovs into a committee
+- `ingestGovs(committeeId, govs: [account, votes][])` - Ingest xGovs into a committee
 
 ```
 // get committee record for metadata
@@ -516,12 +516,12 @@ ingested_accounts = count from superbox
 // get last ingested ID to ensure ascending ID order, deduplication enforcement
 last_ingested_id = ingested_accounts > 0 ? [ingested_accounts - 1].id : 0
 // ensure we are not going over by # of accounts
-ensure(ingested_accounts + xGovs.length <= committee.total_members)
+ensure(ingested_accounts + govs.length <= committee.total_members)
 // buffer to write to superbox once
 write_chunk: bytes of shape [id, votes][]
-// iterate xGovs
-foreach xGov in xGovs:
-  // reject zero-vote xGovs (no voting power)
+// iterate govs
+foreach gov in govs:
+  // reject zero-vote govs (no voting power)
   assert votes > 0
   // get or create account id
   account_id = getOrCreateAccountId(account)
@@ -537,11 +537,11 @@ foreach xGov in xGovs:
 // write to superbox once
 sbAppend(superbox_name, write_chunk)
 // if finished, ensure total votes match
-if ingested_accounts + xGovs.length === committee.total_members
+if ingested_accounts + govs.length === committee.total_members
   ensure committee.ingested_votes === committee.total_votes
 ```
 
-- `uningestXGovs(committeeId, numXGovs)` - Delete last N xGovs from committee superbox
+- `uningestGovs(committeeId, numGovs)` - Delete last N govs from committee superbox
 - `setXGovRegistryApp(appId: Application)` - Set the xGov Registry Application ID
 
 ### Read Methods
@@ -552,13 +552,13 @@ if ingested_accounts + xGovs.length === committee.total_members
 - `logCommitteeMetadata(committeeIds[])` - Log committee metadata for multiple committees
 - `logCommitteePages(committeeId, logMetadata, startDataPage, dataPageLength)` - Facilitates fetching committee in "one shot" / parallel queries. Logs metadata, superbox meta, and data pages
 - `getCommitteeSuperboxMeta(committeeId)` -> SuperboxMeta - Get committee superbox metadata
-- `getXGovVotingPower(committeeId, account, accountOffsetHint)` -> uint32 - Get xGov voting power with required account offset hint (for opcode savings)
+- `getGovVotingPower(committeeId, account, accountOffsetHint)` -> uint32 - Get gov voting power with required account offset hint (for opcode savings)
 
 ```
 ensure committee exists
 account_id = getAccountIdIfExists(account)
 ensure account_id !== 0
-xGov = get superbox xGov at offset account_offset_hint
-ensure xGov.account_id === account_id
-return xGov.votes
+gov = get superbox gov at offset account_offset_hint
+ensure gov.account_id === account_id
+return gov.votes
 ```

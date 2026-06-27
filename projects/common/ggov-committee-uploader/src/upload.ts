@@ -19,7 +19,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
-import { type CommitteeFile } from './xgov'
+import { type CommitteeFile } from './ggov'
 
 // Loaded via require(): algokit-utils is dual-package and the ggov-sdk dist
 // uses ESM syntax without "type": "module", so neither resolves cleanly as a

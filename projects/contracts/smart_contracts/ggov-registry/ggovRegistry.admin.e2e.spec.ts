@@ -1,6 +1,6 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovRegistrySDK, increaseBudgetBaseCost, increaseBudgetIncrementCost, XGovCommitteeFile } from 'ggov-sdk'
+import { GGovRegistrySDK, GGovCommitteeFile, increaseBudgetBaseCost, increaseBudgetIncrementCost } from 'ggov-sdk'
 import { errUnauthorized } from '../base/errors.algo'
 import { createSDK, deployRegistry, generateAccountWithSDK, transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -196,7 +196,7 @@ describe('GGovRegistry admin', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('non-admin cannot ingestXGovs', async () => {
+    test('non-admin cannot ingestGovs', async () => {
       const committeeId = new Uint8Array(32)
       await sdk.registerCommittee({
         committeeId,
@@ -207,31 +207,31 @@ describe('GGovRegistry admin', () => {
         xGovRegistryId: 0n,
       })
       await expect(
-        nonAdminSDK.ingestXGovs({
+        nonAdminSDK.ingestGovs({
           committeeId,
-          xGovs: [{ account: nonAdmin.toString(), votes: 10 }],
+          govs: [{ account: nonAdmin.toString(), votes: 10 }],
         }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('non-admin cannot uningestXGovs', async () => {
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const committeeFile: XGovCommitteeFile = {
+    test('non-admin cannot uningestGovs', async () => {
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       }
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
-      await expect(nonAdminSDK.uningestXGovs({ committeeId, xGovs: [xGovAccount.toString()] })).rejects.toThrow(
+      await expect(nonAdminSDK.uningestGovs({ committeeId, govs: [govAccount.toString()] })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
 
     test('non-admin cannot mirrorXGovDelegation', async () => {
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await expect(nonAdminSDK.mirrorXGovDelegation({ account: xGovAccount.toString() })).rejects.toThrow(
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(nonAdminSDK.mirrorXGovDelegation({ account: govAccount.toString() })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })

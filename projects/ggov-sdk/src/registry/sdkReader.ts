@@ -16,9 +16,9 @@ import {
   CommitteeId,
   AccountWithVotes,
   ReaderConstructorArgs,
-  STORED_XGOV_BYTE_LENGTH,
-  StoredXGov,
-  XGovCommitteeFile,
+  STORED_GOV_BYTE_LENGTH,
+  StoredGov,
+  GGovCommitteeFile,
 } from './types'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
@@ -62,15 +62,15 @@ export class GGovRegistryReaderSDK {
   }
 
   /**
-   * Get committee the reasonable way, fetching metadata, then superbox metadata, then xgovs sequentially
+   * Get committee the reasonable way, fetching metadata, then superbox metadata, then govs sequentially
    * @param committeeId
    * @returns
    */
   @wrapErrors()
-  async getCommittee(committeeId: CommitteeId): Promise<XGovCommitteeFile | null> {
+  async getCommittee(committeeId: CommitteeId): Promise<GGovCommitteeFile | null> {
     const committeeMetadata = await this.getCommitteeMetadata(committeeId, true)
     if (!committeeMetadata) return null
-    const xGovs = await this.getCommitteeXGovs(committeeId)
+    const govs = await this.getCommitteeGovs(committeeId)
     const params = await this.algorand.getSuggestedParams()
     const networkGenesisHash = Buffer.from(params.genesisHash!).toString('base64')
     // TODO validate committee ID
@@ -81,7 +81,7 @@ export class GGovRegistryReaderSDK {
       registryId: Number(committeeMetadata.xGovRegistryId),
       totalMembers: committeeMetadata.totalMembers,
       totalVotes: committeeMetadata.totalVotes,
-      xGovs: xGovs.map(({ account, votes }) => ({ address: account.toString(), votes })),
+      govs: govs.map(({ account, votes }) => ({ address: account.toString(), votes })),
     }
   }
 
@@ -94,13 +94,13 @@ export class GGovRegistryReaderSDK {
   async fastGetCommittee(
     committeeId: CommitteeId,
     { includeBoxOrder }: { includeBoxOrder?: boolean } = {},
-  ): Promise<(XGovCommitteeFile & { xGovBoxOrder?: string[] }) | null> {
+  ): Promise<(GGovCommitteeFile & { govBoxOrder?: string[] }) | null> {
     const firstPartialCommitteeDataPromise = this.fastGetPartialCommitteeData(committeeId, 0)
     const accountIdMapPromise = this.getAccountIdMap()
 
-    const { committeeMetadata, storedXGovs, lastDataPage, totalDataPages } = await firstPartialCommitteeDataPromise
+    const { committeeMetadata, storedGovs, lastDataPage, totalDataPages } = await firstPartialCommitteeDataPromise
     // fetch rest if needed
-    // 6 + 15 * 7 = 111 data boxes on first fastGet call, 2048 sized boxes, 227328 bytes total, 8 bytes per xgov: 28416 xgovs needed to require a second fastGet page
+    // 6 + 15 * 7 = 111 data boxes on first fastGet call, 2048 sized boxes, 227328 bytes total, 8 bytes per gov: 28416 govs needed to require a second fastGet page
     const nextDataPage = lastDataPage + 1
     if (nextDataPage < totalDataPages) {
       const partialFetchDataSize = PARTIAL_COMMITTEE_SIMULATE_CALLS * PARTIAL_COMMITTEE_SECOND_DATA_PAGE_LENGTH
@@ -109,16 +109,14 @@ export class GGovRegistryReaderSDK {
       await pMap(
         arr,
         (pageStart) =>
-          this.fastGetPartialCommitteeData(committeeId, pageStart).then((data) =>
-            storedXGovs.push(...data.storedXGovs),
-          ),
+          this.fastGetPartialCommitteeData(committeeId, pageStart).then((data) => storedGovs.push(...data.storedGovs)),
         { concurrency: this.concurrency },
       )
     }
 
     const accountIdMap = await accountIdMapPromise
-    const boxOrderedXGovs = this.convertStoredXGovsToXGovs(storedXGovs, accountIdMap)
-    const xGovs = [...boxOrderedXGovs].sort(this.sortXGovs)
+    const boxOrderedGovs = this.convertStoredGovsToGovs(storedGovs, accountIdMap)
+    const govs = [...boxOrderedGovs].sort(this.sortGovs)
 
     const params = await this.algorand.getSuggestedParams()
     const networkGenesisHash = Buffer.from(params.genesisHash!).toString('base64')
@@ -131,10 +129,10 @@ export class GGovRegistryReaderSDK {
       registryId: Number(committeeMetadata.xGovRegistryId),
       totalMembers: committeeMetadata.totalMembers,
       totalVotes: committeeMetadata.totalVotes,
-      xGovs: xGovs
+      govs: govs
         .map(({ account, votes }) => ({ address: account.toString(), votes }))
         .sort((a, b) => (a.address < b.address ? -1 : 1)),
-      ...(includeBoxOrder ? { xGovBoxOrder: boxOrderedXGovs.map(({ account }) => account.toString()) } : {}),
+      ...(includeBoxOrder ? { govBoxOrder: boxOrderedGovs.map(({ account }) => account.toString()) } : {}),
     }
   }
 
@@ -143,20 +141,20 @@ export class GGovRegistryReaderSDK {
     startDataPage: 0,
   ): Promise<{
     committeeMetadata: CommitteeMetadata
-    storedXGovs: StoredXGov[]
+    storedGovs: StoredGov[]
     lastDataPage: number
     totalDataPages: number
   }>
   async fastGetPartialCommitteeData(
     committeeId: CommitteeId,
     startDataPage: number,
-  ): Promise<{ storedXGovs: StoredXGov[]; lastDataPage: number }>
+  ): Promise<{ storedGovs: StoredGov[]; lastDataPage: number }>
   async fastGetPartialCommitteeData(
     committeeId: CommitteeId,
     startDataPage: number,
   ): Promise<{
     committeeMetadata?: CommitteeMetadata
-    storedXGovs: StoredXGov[]
+    storedGovs: StoredGov[]
     lastDataPage: number
     totalDataPages?: number
   }> {
@@ -183,7 +181,7 @@ export class GGovRegistryReaderSDK {
     const logs = confirmations.flatMap(({ logs }) => logs)
     let committeeMetadata: CommitteeMetadata | undefined
     let superboxMeta: SuperboxMeta | undefined
-    let storedXGovs: StoredXGov[] = []
+    let storedGovs: StoredGov[] = []
 
     let ptr = 0
     if (returnMetadata) {
@@ -201,30 +199,30 @@ export class GGovRegistryReaderSDK {
     for (let i = ptr; i < logs.length; i++) {
       const logValue = new Uint8Array(logs[i]!)
       if (logValue.length > 0) {
-        const pageXGovs = this.convertSuperboxToStoredXGovs(logValue)
-        storedXGovs = storedXGovs.concat(pageXGovs)
+        const pageGovs = this.convertSuperboxToStoredGovs(logValue)
+        storedGovs = storedGovs.concat(pageGovs)
       } else {
         break // reached end of data pages
       }
     }
     return {
       committeeMetadata,
-      storedXGovs,
+      storedGovs,
       lastDataPage: startDataPage - 1,
       totalDataPages: superboxMeta ? superboxMeta.boxByteLengths.length : undefined,
     }
   }
 
-  async getCommitteeXGovs(committeeId: CommitteeId): Promise<AccountWithVotes[]> {
-    const [storedXGovs, accountMap] = await Promise.all([
+  async getCommitteeGovs(committeeId: CommitteeId): Promise<AccountWithVotes[]> {
+    const [storedGovs, accountMap] = await Promise.all([
       this.getCommitteeSuperboxData(committeeId),
       this.getAccountIdMap(),
     ])
-    return this.convertStoredXGovsToXGovs(storedXGovs, accountMap).sort(this.sortXGovs)
+    return this.convertStoredGovsToGovs(storedGovs, accountMap).sort(this.sortGovs)
   }
 
-  protected convertStoredXGovsToXGovs(storedXGovs: StoredXGov[], accountMap: Map<string, number>): AccountWithVotes[] {
-    return storedXGovs.map(([id, votes]) => {
+  protected convertStoredGovsToGovs(storedGovs: StoredGov[], accountMap: Map<string, number>): AccountWithVotes[] {
+    return storedGovs.map(([id, votes]) => {
       const accountRaw = Array.from(accountMap.entries()).find(([, accountId]) => accountId === id)
       const account = accountRaw ? accountRaw[0] : ALGORAND_ZERO_ADDRESS_STRING
       return {
@@ -235,7 +233,7 @@ export class GGovRegistryReaderSDK {
     })
   }
 
-  protected sortXGovs(a: AccountWithVotes, b: AccountWithVotes): number {
+  protected sortGovs(a: AccountWithVotes, b: AccountWithVotes): number {
     return a.account < b.account ? -1 : 1
   }
 
@@ -294,26 +292,26 @@ export class GGovRegistryReaderSDK {
   }
 
   /**
-   * Batch-read an account's xGov voting power across many committees in a single (chunked) simulate group.
+   * Batch-read an account's gov voting power across many committees in a single (chunked) simulate group.
    * The result is index-aligned with `committeeIds`. There is no batch ABI method, so each committee is one
    * readonly call grouped into the simulate (chunked to stay under the 16-txn group limit).
    *
-   * Uses the non-throwing `tryGetXGovVotingPower` (returns 0 for committees the account is not a member of) —
-   * the throwing `getXGovVotingPower` would fail the entire simulate group on the first non-member committee.
+   * Uses the non-throwing `tryGetGovVotingPower` (returns 0 for committees the account is not a member of) —
+   * the throwing `getGovVotingPower` would fail the entire simulate group on the first non-member committee.
    */
-  async getXGovVotingPowers(committeeIds: CommitteeId[], account: string): Promise<number[]> {
-    return this._getXGovVotingPowersChunked(
+  async getGovVotingPowers(committeeIds: CommitteeId[], account: string): Promise<number[]> {
+    return this._getGovVotingPowersChunked(
       committeeIds.map((id) => committeeIdToRaw(id)),
       account,
     )
   }
 
   @chunked(16)
-  private async _getXGovVotingPowersChunked(committeeIds: Uint8Array[], account: string): Promise<number[]> {
+  private async _getGovVotingPowersChunked(committeeIds: Uint8Array[], account: string): Promise<number[]> {
     if (committeeIds.length === 0) return []
     let builder: GGovRegistryComposer<any> = this.readClient.newGroup()
     for (const committeeId of committeeIds) {
-      builder = builder.tryGetXGovVotingPower({ args: { committeeId, account } })
+      builder = builder.tryGetGovVotingPower({ args: { committeeId, account } })
     }
     const { returns } = await builder.simulate(SIMULATE_PARAMS)
     return (returns ?? []).map((power: unknown) => Number(power ?? 0))
@@ -326,7 +324,7 @@ export class GGovRegistryReaderSDK {
     return superboxMeta!
   }
 
-  async getCommitteeSuperboxData(committeeId: CommitteeId): Promise<StoredXGov[]> {
+  async getCommitteeSuperboxData(committeeId: CommitteeId): Promise<StoredGov[]> {
     const [meta, commmitteeMetadata] = await Promise.all([
       this.getCommitteeSuperboxMeta(committeeId),
       this.getCommitteeMetadata(committeeId),
@@ -335,7 +333,7 @@ export class GGovRegistryReaderSDK {
     const pages = Array.from({ length: numPages }, (_, i) => i)
     const pageData = await pMap(
       pages,
-      (page) => this.getSuperboxAsStoredXGovs(this.getCommitteeSuperboxPageKey(commmitteeMetadata!, page)),
+      (page) => this.getSuperboxAsStoredGovs(this.getCommitteeSuperboxPageKey(commmitteeMetadata!, page)),
       {
         concurrency: this.concurrency,
       },
@@ -352,28 +350,28 @@ export class GGovRegistryReaderSDK {
     return `${this.getCommitteeSuperboxPrefix(committeeMetadata)}_${page}`
   }
 
-  async getCommitteeSuperboxDataLast(committeeId: CommitteeId): Promise<{ last?: StoredXGov; total: number }> {
+  async getCommitteeSuperboxDataLast(committeeId: CommitteeId): Promise<{ last?: StoredGov; total: number }> {
     const [meta, commmitteeMetadata] = await Promise.all([
       this.getCommitteeSuperboxMeta(committeeId),
       this.getCommitteeMetadata(committeeId),
     ])
-    const numXGovs = Math.ceil(Number(meta.totalByteLength) / Number(meta.valueSize))
-    if (numXGovs === 0) {
+    const numGovs = Math.ceil(Number(meta.totalByteLength) / Number(meta.valueSize))
+    if (numGovs === 0) {
       return { total: 0 }
     }
     const numPages = Math.ceil(Number(meta.totalByteLength) / Number(meta.maxBoxSize))
     const superboxKey = this.getCommitteeSuperboxPageKey(commmitteeMetadata!, numPages - 1)
-    const lastPage = await this.getSuperboxAsStoredXGovs(superboxKey)
-    return { last: lastPage[lastPage.length - 1], total: numXGovs }
+    const lastPage = await this.getSuperboxAsStoredGovs(superboxKey)
+    return { last: lastPage[lastPage.length - 1], total: numGovs }
   }
 
-  protected async getSuperboxAsStoredXGovs(superboxKey: string): Promise<StoredXGov[]> {
-    return this.convertSuperboxToStoredXGovs(await this.algorand.app.getBoxValue(this.appId, superboxKey))
+  protected async getSuperboxAsStoredGovs(superboxKey: string): Promise<StoredGov[]> {
+    return this.convertSuperboxToStoredGovs(await this.algorand.app.getBoxValue(this.appId, superboxKey))
   }
 
-  protected convertSuperboxToStoredXGovs(arr: Uint8Array): StoredXGov[] {
-    const chunks = chunk(Array.from(arr), STORED_XGOV_BYTE_LENGTH) // each StoredXGov is (uint32, uint32)
-    return chunks.map((c) => getABIDecodedValue(new Uint8Array(c), '(uint32,uint32)', {}) as StoredXGov)
+  protected convertSuperboxToStoredGovs(arr: Uint8Array): StoredGov[] {
+    const chunks = chunk(Array.from(arr), STORED_GOV_BYTE_LENGTH) // each StoredGov is (uint32, uint32)
+    return chunks.map((c) => getABIDecodedValue(new Uint8Array(c), '(uint32,uint32)', {}) as StoredGov)
   }
 
   async getAccounts(): Promise<string[]> {

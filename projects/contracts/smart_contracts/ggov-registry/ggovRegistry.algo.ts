@@ -34,7 +34,7 @@ import {
   errGGovPeriodNotExists,
   errGGovSelfDelegate,
   errIngestedVotesNotZero,
-  errNumXGovsExceeded,
+  errNumGovsExceeded,
   errOutOfOrder,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
@@ -44,7 +44,7 @@ import {
   errTotalVotesExceeded,
   errTotalVotesMismatch,
   errTotalVotesZero,
-  errTotalXGovsExceeded,
+  errTotalGovsExceeded,
   errUnauthorized,
   errZeroVotes,
 } from '../base/errors.algo'
@@ -66,9 +66,9 @@ import { XGovRegistryMock } from '../xgov-registry-mock/xGovRegistryMock.algo'
 import { GGovRegistryAccountContract } from './ggovRegistryAccount.algo'
 
 /**
- * Count total xGovs stored in committee superbox
+ * Count total govs stored in committee superbox
  */
-function getCommitteeSBXGovs(sbMeta: Box<SuperboxMeta>): uint64 {
+function getCommitteeSBGovs(sbMeta: Box<SuperboxMeta>): uint64 {
   return sbMeta.value.totalByteLength.asUint64() / ACCOUNT_ID_WITH_VOTES_STORED_SIZE
 }
 
@@ -116,7 +116,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * @param committeeId Committee ID
    * @param periodStart Period start
    * @param periodEnd Period end
-   * @param totalMembers Total xGovs
+   * @param totalMembers Total govs
    * @param totalVotes Total votes in committee
    */
   public registerCommittee(
@@ -150,7 +150,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Delete committee. Must not have any xGovs
+   * Delete committee. Must not have any govs
    * @param committeeId committee ID
    */
   public unregisterCommittee(committeeId: CommitteeId): void {
@@ -164,47 +164,47 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Ingest xGovs into a committee
+   * Ingest govs into a committee
    * @param committeeId committee ID
-   * @param xGovs xGovs to ingest, strictly ascending order by account ID
+   * @param govs govs to ingest, strictly ascending order by account ID
    */
-  public ingestXGovs(committeeId: CommitteeId, xGovs: AccountWithVotes[]): void {
+  public ingestGovs(committeeId: CommitteeId, govs: AccountWithVotes[]): void {
     this.ensureCallerIsAdmin()
 
     const committee = this.mustGetCommitteeMetadata(committeeId)
     const superboxName = this.getMetadataSBPrefix(committee)
     const sbMeta = sbMetaBox(superboxName)
     // figure out ingested accounts from superbox size
-    const ingestedAccounts: uint64 = getCommitteeSBXGovs(sbMeta)
-    // not exceeding total xGovs
-    ensure(ingestedAccounts + xGovs.length <= committee.totalMembers.asUint64(), errTotalXGovsExceeded)
+    const ingestedAccounts: uint64 = getCommitteeSBGovs(sbMeta)
+    // not exceeding total govs
+    ensure(ingestedAccounts + govs.length <= committee.totalMembers.asUint64(), errTotalGovsExceeded)
 
     let lastAccountId = u32(0)
     if (ingestedAccounts > 0) {
-      const lastXGov = this.getStoredXGovAt(superboxName, ingestedAccounts - 1)
-      lastAccountId = lastXGov.accountId
+      const lastGov = this.getStoredGovAt(superboxName, ingestedAccounts - 1)
+      lastAccountId = lastGov.accountId
     }
 
     let ingestedAccountCtr = ingestedAccounts
     let ingestedVotes = committee.ingestedVotes.asUint64()
     let writeBuffer = Bytes``
-    for (const xGov of clone(xGovs)) {
-      // reject zero-vote xGovs; they carry no voting power and would skew totals/member counts
-      ensure(xGov.votes.asUint64() > 0, errZeroVotes)
-      const gGovAccount = this.getOrCreateAccount(xGov.account)
+    for (const gov of clone(govs)) {
+      // reject zero-vote govs; they carry no voting power and would skew totals/member counts
+      ensure(gov.votes.asUint64() > 0, errZeroVotes)
+      const gGovAccount = this.getOrCreateAccount(gov.account)
       const accountId = gGovAccount.accountId
-      // ensure xGovs are added in ascending order
+      // ensure govs are added in ascending order
       ensure(accountId.asUint64() > lastAccountId.asUint64(), errOutOfOrder)
       // store variant removes account
-      const xGovStored: AccountIdWithVotes = {
+      const govStored: AccountIdWithVotes = {
         accountId: accountId,
-        votes: xGov.votes,
+        votes: gov.votes,
       }
       // append to write buffer, write to superbox once
-      writeBuffer = writeBuffer.concat(encodeArc4(xGovStored))
-      this.addCommitteeAccountOffsetHint(committee.numericId, xGov.account, gGovAccount, u16(ingestedAccountCtr++))
+      writeBuffer = writeBuffer.concat(encodeArc4(govStored))
+      this.addCommitteeAccountOffsetHint(committee.numericId, gov.account, gGovAccount, u16(ingestedAccountCtr++))
       lastAccountId = accountId
-      ingestedVotes += xGov.votes.asUint64()
+      ingestedVotes += gov.votes.asUint64()
     }
 
     // ensure we did not exceed total votes
@@ -214,35 +214,35 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
     committee.ingestedVotes = u32(ingestedVotes)
     // if we are finished, ensure total votes match
-    if (ingestedAccounts + xGovs.length === committee.totalMembers.asUint64()) {
+    if (ingestedAccounts + govs.length === committee.totalMembers.asUint64()) {
       ensure(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
     }
     this.committees(committeeId).value = clone(committee)
   }
 
   /**
-   * Uningest last N xGovs from committee
+   * Uningest last N govs from committee
    * @param committeeId committee ID
-   * @param xGovs xGovs to uningest, strictly descending order by account ID
+   * @param govs govs to uningest, strictly descending order by account ID
    */
-  public uningestXGovs(committeeId: CommitteeId, xGovs: Account[]): void {
+  public uningestGovs(committeeId: CommitteeId, govs: Account[]): void {
     this.ensureCallerIsAdmin()
     const committee = this.mustGetCommitteeMetadata(committeeId)
     const superboxName = this.getMetadataSBPrefix(committee)
     const sbMeta = sbMetaBox(superboxName)
-    const totalXGovs = getCommitteeSBXGovs(sbMeta)
-    ensure(xGovs.length <= totalXGovs, errNumXGovsExceeded)
+    const totalGovs = getCommitteeSBGovs(sbMeta)
+    ensure(govs.length <= totalGovs, errNumGovsExceeded)
     let ingestedVotes = committee.ingestedVotes.asUint64()
-    let expectedXGovOffset = totalXGovs
-    for (const account of clone(xGovs)) {
-      expectedXGovOffset--
+    let expectedGovOffset = totalGovs
+    for (const account of clone(govs)) {
+      expectedGovOffset--
       const gGovAccount = this.mustGetAccount(account)
       const offset = this.getCommitteeAccountOffsetHint(committee.numericId, gGovAccount)
-      ensureExtra(expectedXGovOffset === offset, errOutOfOrder, account.bytes)
-      const xGovStored = this.getStoredXGovAt(superboxName, offset)
+      ensureExtra(expectedGovOffset === offset, errOutOfOrder, account.bytes)
+      const govStored = this.getStoredGovAt(superboxName, offset)
       this.removeCommitteeAccountOffsetHint(committee.numericId, account, gGovAccount)
       sbDeleteIndex(superboxName, offset)
-      ingestedVotes -= xGovStored.votes.asUint64()
+      ingestedVotes -= govStored.votes.asUint64()
     }
     committee.ingestedVotes = u32(ingestedVotes)
     this.committees(committeeId).value = clone(committee)
@@ -749,31 +749,31 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Get xGov voting power
+   * Get gov voting power
    * @param committeeId Committee ID
-   * @param account xGov account
-   * @returns xGov voting power
+   * @param account gov account
+   * @returns gov voting power
    */
   @abimethod({ readonly: true })
-  public getXGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
+  public getGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
     const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
 
     const gGovAccount = this.getAccountIfExists(account)
     ensure(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
 
     const accountOffset = this.getCommitteeAccountOffsetHint(committeeMetadata.numericId, gGovAccount)
-    const xGov = this.getStoredXGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
-    ensureExtra(xGov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
+    const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
+    ensureExtra(gov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
 
-    return xGov.votes
+    return gov.votes
   }
 
   /**
-   * Non-throwing variant of `getXGovVotingPower`. Returns 0 if account/committee unknown
+   * Non-throwing variant of `getGovVotingPower`. Returns 0 if account/committee unknown
    * or the account is not a member of the committee. Used by ggov-period's `canVote`.
    */
   @abimethod({ readonly: true })
-  public tryGetXGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
+  public tryGetGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
     const committeeBox = this.committees(committeeId)
     if (!committeeBox.exists) return u32(0)
     const committeeMetadata = clone(committeeBox.value)
@@ -791,9 +791,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     }
     if (!found) return u32(0)
 
-    const xGov = this.getStoredXGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
-    if (xGov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
-    return xGov.votes
+    const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
+    if (gov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
+    return gov.votes
   }
 
   /**
@@ -825,13 +825,13 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Get xgov stored at index in committee superbox
+   * Get gov stored at index in committee superbox
    * @param superboxName committee superbox name
    * @param index offset
-   * @returns xGov account ID and votes stored at index
+   * @returns gov account ID and votes stored at index
    */
-  private getStoredXGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
-    const xGovData = sbGetData(superboxName, index)
-    return decodeArc4<AccountIdWithVotes>(xGovData)
+  private getStoredGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
+    const govData = sbGetData(superboxName, index)
+    return decodeArc4<AccountIdWithVotes>(govData)
   }
 }

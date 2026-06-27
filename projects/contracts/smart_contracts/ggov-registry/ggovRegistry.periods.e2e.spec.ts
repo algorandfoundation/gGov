@@ -1,6 +1,6 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovPeriodFactory, GGovRegistryFactory, XGovCommitteeFile } from 'ggov-sdk'
+import { GGovPeriodFactory, GGovRegistryFactory, GGovCommitteeFile } from 'ggov-sdk'
 import {
   errCommitteeIncomplete,
   errCommitteeNotExists,
@@ -119,13 +119,13 @@ describe('GGovRegistry periods', () => {
       })
       await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
       const sdk = createSDK(localnet, bareClient.appId, testAccount)
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const committeeId = await sdk.uploadCommitteeFile({
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       })
       await sdk.setOperator({ account: testAccount.toString() })
       const now = BigInt(Math.floor(Date.now() / 1000))
@@ -180,13 +180,13 @@ describe('GGovRegistry periods', () => {
       await sdk.uploadPeriodApprovalProgram({ bytecode: compiled.approvalProgram })
 
       // Verify the box was assembled correctly: createPeriod (addPeriod) must succeed
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const committeeFile: XGovCommitteeFile = {
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       }
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
       await sdk.setOperator({ account: testAccount.toString() })

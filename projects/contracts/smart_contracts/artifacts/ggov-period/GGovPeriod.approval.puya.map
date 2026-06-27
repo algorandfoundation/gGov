@@ -22801,9 +22801,9 @@
       ]
     },
     "2360": {
-      "op": "pushbytes 0xca284903 // method \"getXGovVotingPower(byte[32],address)uint32\"",
+      "op": "pushbytes 0x43b85a6c // method \"getGovVotingPower(byte[32],address)uint32\"",
       "defined_out": [
-        "Method(getXGovVotingPower(byte[32],address)uint32)",
+        "Method(getGovVotingPower(byte[32],address)uint32)",
         "maybe_value%4#0",
         "maybe_value%5#0"
       ],
@@ -22835,7 +22835,7 @@
         "index%0#0",
         "maybe_value%4#0",
         "maybe_value%5#0",
-        "Method(getXGovVotingPower(byte[32],address)uint32)"
+        "Method(getGovVotingPower(byte[32],address)uint32)"
       ]
     },
     "2366": {
@@ -40809,9 +40809,9 @@
       ]
     },
     "3241": {
-      "op": "pushbytes 0x6f31967a // method \"tryGetXGovVotingPower(byte[32],address)uint32\"",
+      "op": "pushbytes 0x488d2290 // method \"tryGetGovVotingPower(byte[32],address)uint32\"",
       "defined_out": [
-        "Method(tryGetXGovVotingPower(byte[32],address)uint32)",
+        "Method(tryGetGovVotingPower(byte[32],address)uint32)",
         "maybe_value%4#0",
         "maybe_value%5#0"
       ],
@@ -40823,7 +40823,7 @@
         "senderAccount#0",
         "maybe_value%4#0",
         "maybe_value%5#0",
-        "Method(tryGetXGovVotingPower(byte[32],address)uint32)"
+        "Method(tryGetGovVotingPower(byte[32],address)uint32)"
       ]
     },
     "3247": {

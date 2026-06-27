@@ -2,7 +2,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { Account, Address } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { calculateCommitteeId, XGovCommitteeFile, GGovRegistrySDK } from 'ggov-sdk'
+import { calculateCommitteeId, GGovCommitteeFile, GGovRegistrySDK } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import { XGovProposalMockClient } from '../artifacts/xgov-proposal-mock/XGovProposalMockClient'
 import { errCommitteeNotExists, errState } from '../base/errors.algo'
@@ -17,7 +17,7 @@ describe.skip('Delegator complex e2e tests', () => {
 
   describe('Scenario 1', () => {
     let adminAccount: Address & TransactionSignerAccount & Account
-    let committee: XGovCommitteeFile
+    let committee: GGovCommitteeFile
     let delegatorAdminSDK: XGovDelegatorSDK
     let _delegatorUserSDK: XGovDelegatorSDK | undefined
     let ggovRegistrySDK: GGovRegistrySDK
@@ -36,14 +36,14 @@ describe.skip('Delegator complex e2e tests', () => {
         ggovRegistrySDK,
         proposalAppClient,
         registryAppClient: _registryAppClient,
-        xGovs: _xGovs,
+        govs: _xGovs,
       } = await deployDelegatorFull(localnet, adminAccount, 3, 6))
     })
 
     async function syncCommitteeMetadata() {
       const committeeId = calculateCommitteeId(JSON.stringify(committee))
       const committeeWithOffsets = await ggovRegistrySDK.fastGetCommittee(committeeId, { includeBoxOrder: true })
-      const delegatedAccounts = committeeWithOffsets!.xGovBoxOrder!
+      const delegatedAccounts = committeeWithOffsets!.govBoxOrder!
       await delegatorAdminSDK.syncCommitteeMetadata({ committeeId, delegatedAccounts })
       console.log('Synced committee metadata')
     }

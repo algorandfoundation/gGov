@@ -342,13 +342,13 @@ async function main() {
     )
 
     // ── Committee file (1 vote of power each) ───────────────────────────────
-    console.log('\nUploading committee (synthetic voters as xGovs, 1 vote each)...')
+    console.log('\nUploading committee (synthetic voters as govs, 1 vote each)...')
     const committeeFile = {
       ...committeeTemplate,
       totalMembers: voters.length,
       totalVotes: voters.length,
       registryId: 0,
-      xGovs: voters.map((address) => ({ address, votes: 1 })),
+      govs: voters.map((address) => ({ address, votes: 1 })),
     }
     const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile)
     const committeeHex = Buffer.from(committeeId as Uint8Array).toString('hex')

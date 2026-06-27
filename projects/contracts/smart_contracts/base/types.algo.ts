@@ -39,7 +39,7 @@ export function getEmptyCommitteeMetadata(): CommitteeMetadata {
 }
 
 /**
- * Input representation of a committee xGov
+ * Input representation of a committee member (gov)
  */
 export type AccountWithVotes = {
   account: Account
@@ -47,7 +47,7 @@ export type AccountWithVotes = {
 }
 
 /**
- * Stored representation of a committee xGov
+ * Stored representation of a committee member (gov)
  */
 export type AccountIdWithVotes = {
   accountId: Uint32

@@ -143,7 +143,7 @@ export class Delegator extends AccountIdContract {
     let extDelegatedVotes: uint64 = 0
     for (const account of delegatedAccounts) {
       const localAccountId = this.getOrCreateAccountId(account)
-      const remoteVotes = oracleApp.call.getXGovVotingPower({
+      const remoteVotes = oracleApp.call.getGovVotingPower({
         appId: this.committeeOracleApp.value,
         args: [committeeId, account],
       }).returnValue

@@ -32,7 +32,7 @@ export const queryKeys = {
   myVotes: (account: string) => ['myVotes', account] as const,
   committeeVotingPowers: (account: string) => ['committeeVotingPowers', account] as const,
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
-  xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
+  govVotingPower: (committeeId: string, account: string) => ['govVotingPower', committeeId, account] as const,
   producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
   blockHeader: (round: number) => ['blockHeader', round] as const,
 }
@@ -379,7 +379,7 @@ export async function fetchCommittee(readerSDK: GGovReaderSDK, idBase64Url: stri
 }
 
 export function fetchCommitteeMembers(readerSDK: GGovReaderSDK, idBase64Url: string): Promise<AccountWithVotes[]> {
-  return readerSDK.registry.getCommitteeXGovs(fromBase64Url(idBase64Url))
+  return readerSDK.registry.getCommitteeGovs(fromBase64Url(idBase64Url))
 }
 
 export function useCommittees() {
@@ -420,21 +420,21 @@ export function useCommittee(idBase64Url: string | undefined) {
 }
 
 /**
- * Window-independent xGov voting power for several accounts in one committee,
+ * Window-independent gov voting power for several accounts in one committee,
  * read from the registry (unlike {@link useCanVoteMany}, which returns 0 outside
  * the voting window). One readonly call per account, cached per (committee, account).
  * Value per account: the power, or `undefined` while loading.
  */
-export function useXGovVotingPowers(
+export function useGovVotingPowers(
   committeeIdBase64Url: string | undefined,
   accounts: string[],
 ): Record<string, number | undefined> {
   const { readerSDK } = useGGovSDK()
   const results = useQueries({
     queries: accounts.map((account) => ({
-      queryKey: queryKeys.xgovVotingPower(committeeIdBase64Url ?? '', account),
+      queryKey: queryKeys.govVotingPower(committeeIdBase64Url ?? '', account),
       queryFn: async () => {
-        const [power] = await readerSDK.registry.getXGovVotingPowers([fromBase64Url(committeeIdBase64Url!)], account)
+        const [power] = await readerSDK.registry.getGovVotingPowers([fromBase64Url(committeeIdBase64Url!)], account)
         return power ?? 0
       },
       enabled: !!committeeIdBase64Url,
@@ -504,7 +504,7 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
       // Two batched simulate groups instead of 2 serial on-chain reads per committee.
       const [metas, powers] = await Promise.all([
         readerSDK.registry.getCommitteesMetadata(ids),
-        readerSDK.registry.getXGovVotingPowers(ids, account!),
+        readerSDK.registry.getGovVotingPowers(ids, account!),
       ])
       const results: CommitteeVotingPower[] = []
       for (let i = 0; i < ids.length; i++) {
@@ -563,7 +563,7 @@ export function useProducerRank(committeeIdBase64Url: string | undefined, accoun
   return useQuery({
     queryKey: queryKeys.producerRank(committeeIdBase64Url ?? '', account ?? ''),
     queryFn: async (): Promise<ProducerRank | null> => {
-      const members = await readerSDK.registry.getCommitteeXGovs(fromBase64Url(committeeIdBase64Url!))
+      const members = await readerSDK.registry.getCommitteeGovs(fromBase64Url(committeeIdBase64Url!))
       return rankProducer(members, account!)
     },
     enabled: !!committeeIdBase64Url && !!account,

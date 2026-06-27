@@ -2076,7 +2076,7 @@ vote_after_if_else@47:
 
 vote_after_if_else@12:
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:349-352
-    // const votingPower = compileArc4(GGovRegistryContract).call.getXGovVotingPower({
+    // const votingPower = compileArc4(GGovRegistryContract).call.getGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
     // }).returnValue
@@ -2102,11 +2102,11 @@ vote_after_if_else@12:
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:349-352
-    // const votingPower = compileArc4(GGovRegistryContract).call.getXGovVotingPower({
+    // const votingPower = compileArc4(GGovRegistryContract).call.getGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
     // }).returnValue
-    pushbytes 0xca284903 // method "getXGovVotingPower(byte[32],address)uint32"
+    pushbytes 0x43b85a6c // method "getGovVotingPower(byte[32],address)uint32"
     itxn_field ApplicationArgs
     itxn_field ApplicationArgs
     dig 7
@@ -2897,7 +2897,7 @@ canVote_after_if_else@13:
 
 canVote_after_if_else@17:
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:436-439
-    // const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({
+    // const power = compileArc4(GGovRegistryContract).call.tryGetGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
     // }).returnValue
@@ -2923,11 +2923,11 @@ canVote_after_if_else@17:
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:436-439
-    // const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({
+    // const power = compileArc4(GGovRegistryContract).call.tryGetGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
     // }).returnValue
-    pushbytes 0x6f31967a // method "tryGetXGovVotingPower(byte[32],address)uint32"
+    pushbytes 0x488d2290 // method "tryGetGovVotingPower(byte[32],address)uint32"
     itxn_field ApplicationArgs
     itxn_field ApplicationArgs
     dig 2

@@ -25,14 +25,14 @@ export type ReaderConstructorArgs = {
   debug?: boolean
 } & ConstructorArgsOptions
 
-export interface XGovCommitteeFile {
+export interface GGovCommitteeFile {
   networkGenesisHash: string
   periodEnd: number
   periodStart: number
   registryId: number
   totalMembers: number
   totalVotes: number
-  xGovs: Array<{
+  govs: Array<{
     address: string
     votes: number
   }>
@@ -45,8 +45,8 @@ export type AccountWithVotes = {
 
 type ID = number
 type Votes = number
-export type StoredXGov = [ID, Votes]
-export const STORED_XGOV_BYTE_LENGTH = 8 // 4 bytes for ID + 4 bytes for Votes
+export type StoredGov = [ID, Votes]
+export const STORED_GOV_BYTE_LENGTH = 8 // 4 bytes for ID + 4 bytes for Votes
 
 export interface CommonMethodBuilderArgs {
   builder?: GGovRegistryComposer<any>

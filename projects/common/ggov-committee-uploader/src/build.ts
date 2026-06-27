@@ -30,7 +30,7 @@ import {
   fetchCommitteeIndex,
   type IndexCommittee,
   type XGovSourceOptions,
-} from './xgov'
+} from './ggov'
 
 // The ggov-sdk dist is ESM-syntax but ships without "type": "module", so it
 // must be loaded via require() rather than a static import.
