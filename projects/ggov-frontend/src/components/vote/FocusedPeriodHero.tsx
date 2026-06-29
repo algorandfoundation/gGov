@@ -3,7 +3,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { Button } from '@/components/ui/button'
 import { PeriodStatusTag } from '@/components/vote/PeriodRow'
-import { usePeriodBody, useCommittee, useXGovVotingPowers, useProducerRank, toBase64Url } from '@/hooks/queries'
+import { usePeriodBody, useCommittee, useGovVotingPowers, useProducerRank, toBase64Url } from '@/hooks/queries'
 import { periodTurnoutPct } from '@/lib/turnout'
 import { daysUntil, formatMonthDayYear, type PeriodStatus } from '@/utils/time'
 import { toPlainText } from '@/utils/format'
@@ -69,7 +69,7 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   const { data: body } = usePeriodBody(periodId)
   const committeeId = toBase64Url(period.committeeId)
   const { data: committee } = useCommittee(committeeId)
-  const powers = useXGovVotingPowers(committeeId, activeAddress ? [activeAddress] : [])
+  const powers = useGovVotingPowers(committeeId, activeAddress ? [activeAddress] : [])
   const power = activeAddress ? powers[activeAddress] : undefined
   const { data: rank } = useProducerRank(committeeId, activeAddress)
 

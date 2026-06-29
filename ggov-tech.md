@@ -22,7 +22,7 @@ Cross-contract flow:
 ```
 operator → registry.createPeriod() → itxn creates GGovPeriod app, inner-pays MBR, inner-calls period.init()
 operator → period.editPeriod/addTopic() → inner-calls registry.updatePeriodSummary() to keep summary in sync
-voter   → period.vote()              → inner-calls registry.getDelegate() + registry.getXGovVotingPower()
+voter   → period.vote()              → inner-calls registry.getDelegate() + registry.getGovVotingPower()
 ```
 
 The registry's `updatePeriodSummary` enforces `Global.callerApplicationId === storedAppId` for the given periodId, so only the registered period app can mutate its summary.
@@ -102,7 +102,7 @@ TopicBig {
 - `a<address>` — `GGovAccount` (the gGov-side accountId + committee offsets)
 - `p<periodId(uint32)>` — `GGovPeriodSummary { appId, votingStart, votingEnd, numTopics }`
 - `d<address>` — delegatee address (delegations)
-- `S<numericId>...` — Superbox storage for committee xGovs
+- `S<numericId>...` — Superbox storage for committee govs
 
 ## Period global state (per app)
 

@@ -2,7 +2,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Account, Address } from 'algosdk'
-import { calculateCommitteeId, GGovRegistrySDK, XGovCommitteeFile } from 'ggov-sdk'
+import { calculateCommitteeId, GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
 import { DelegatorFactory } from './artifacts/delegator/DelegatorClient'
@@ -66,27 +66,27 @@ async function createCommittee(
   registryAppId: bigint,
   totalMembers: number,
   votesPerMember: number,
-): Promise<{ committee: XGovCommitteeFile; xGovs: (Address & Account & TransactionSignerAccount)[] }> {
-  const xGovs = await Promise.all(
+): Promise<{ committee: GGovCommitteeFile; govs: (Address & Account & TransactionSignerAccount)[] }> {
+  const govs = await Promise.all(
     Array.from({ length: totalMembers }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
   )
-  const committee: XGovCommitteeFile = {
+  const committee: GGovCommitteeFile = {
     ...committeeTemplate,
     totalMembers,
     totalVotes: totalMembers * votesPerMember,
     registryId: Number(registryAppId),
-    xGovs: xGovs.map((a) => ({
+    govs: govs.map((a) => ({
       address: a.toString(),
       votes: votesPerMember,
     })),
   }
 
-  return { committee, xGovs }
+  return { committee, govs }
 }
 
 export async function configureProposal(args: {
   proposalAppClient: XGovProposalMockClient
-  committee?: XGovCommitteeFile
+  committee?: GGovCommitteeFile
   status?: number
   voteOpenTs?: number
   votingDuration?: number
@@ -114,11 +114,7 @@ export async function configureProposal(args: {
   await builder.send()
 }
 
-export const deployXGovMocksAndRegistry = async (
-  localnet: AlgorandFixture,
-  adminAccount: Address,
-  numXGovs: number,
-) => {
+export const deployXGovMocksAndRegistry = async (localnet: AlgorandFixture, adminAccount: Address, numGovs: number) => {
   const factory = localnet.algorand.client.getTypedAppFactory(XGovRegistryMockFactory, {
     defaultSender: adminAccount,
   })
@@ -140,7 +136,7 @@ export const deployXGovMocksAndRegistry = async (
     defaultSender: adminAccount,
   })
 
-  const { committee, xGovs } = await createCommittee(localnet, registryAppClient.appId, numXGovs, 1)
+  const { committee, govs } = await createCommittee(localnet, registryAppClient.appId, numGovs, 1)
   const proposalConfigPromise = configureProposal({
     proposalAppClient,
     committee,
@@ -154,20 +150,20 @@ export const deployXGovMocksAndRegistry = async (
   await ggovRegistrySDK.setXGovRegistryApp({ appId: registryAppClient.appId })
   await proposalConfigPromise
 
-  return { registryAppClient, proposalAppClient, ggovRegistrySDK, committee, xGovs }
+  return { registryAppClient, proposalAppClient, ggovRegistrySDK, committee, govs }
 }
 
-export const deployRegistryWithCommittee = async (localnet: AlgorandFixture, numXGovs = 3, votesPerMember = 10) => {
+export const deployRegistryWithCommittee = async (localnet: AlgorandFixture, numGovs = 3, votesPerMember = 10) => {
   const { testAccount } = localnet.context
-  const xGovAccounts = await Promise.all(
-    Array.from({ length: numXGovs }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
+  const govAccounts = await Promise.all(
+    Array.from({ length: numGovs }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
   )
-  const committeeFile: XGovCommitteeFile = {
+  const committeeFile: GGovCommitteeFile = {
     ...committeeTemplate,
-    totalMembers: numXGovs,
-    totalVotes: numXGovs * votesPerMember,
+    totalMembers: numGovs,
+    totalVotes: numGovs * votesPerMember,
     registryId: 0,
-    xGovs: xGovAccounts.map((a) => ({
+    govs: govAccounts.map((a) => ({
       address: a.toString(),
       votes: votesPerMember,
     })),
@@ -175,36 +171,36 @@ export const deployRegistryWithCommittee = async (localnet: AlgorandFixture, num
   const { sdk } = await deployRegistry(localnet, testAccount)
   const committeeId = await sdk.uploadCommitteeFile(committeeFile)
   // get sorted order by account ID (ingestion order)
-  const accountIdMap = await sdk.getAccountIdMap(xGovAccounts.map((a) => a.toString()))
+  const accountIdMap = await sdk.getAccountIdMap(govAccounts.map((a) => a.toString()))
   const sorted = Array.from(accountIdMap.entries())
     .map(([address, id]) => ({ address, id }))
     .sort((a, b) => a.id - b.id)
-  return { sdk, committeeId, committeeFile, xGovAccounts, sorted }
+  return { sdk, committeeId, committeeFile, govAccounts, sorted }
 }
 
 export const deployRegistryWithTwoCommittees = async (localnet: AlgorandFixture, votesPerMember = 10) => {
   const { testAccount } = localnet.context
   // 3 accounts: A, B, C. Committee 1 has A+B, committee 2 has B+C. B is shared.
-  const xGovAccounts = await Promise.all(
+  const govAccounts = await Promise.all(
     Array.from({ length: 3 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
   )
-  const [accountA, accountB, accountC] = xGovAccounts
+  const [accountA, accountB, accountC] = govAccounts
 
-  const committee1File: XGovCommitteeFile = {
+  const committee1File: GGovCommitteeFile = {
     ...committeeTemplate,
     totalMembers: 2,
     totalVotes: 2 * votesPerMember,
     registryId: 0,
-    xGovs: [accountA, accountB].map((a) => ({ address: a.toString(), votes: votesPerMember })),
+    govs: [accountA, accountB].map((a) => ({ address: a.toString(), votes: votesPerMember })),
   }
-  const committee2File: XGovCommitteeFile = {
+  const committee2File: GGovCommitteeFile = {
     ...committeeTemplate,
     periodStart: committeeTemplate.periodStart + 3_000_000,
     periodEnd: committeeTemplate.periodEnd + 3_000_000,
     totalMembers: 2,
     totalVotes: 2 * votesPerMember,
     registryId: 0,
-    xGovs: [accountB, accountC].map((a) => ({ address: a.toString(), votes: votesPerMember })),
+    govs: [accountB, accountC].map((a) => ({ address: a.toString(), votes: votesPerMember })),
   }
 
   const { sdk } = await deployRegistry(localnet, testAccount)
@@ -217,15 +213,15 @@ export const deployRegistryWithTwoCommittees = async (localnet: AlgorandFixture,
 export const deployDelegatorFull = async (
   localnet: AlgorandFixture,
   adminAccount: Address,
-  numXGovs: number,
+  numGovs: number,
   numSugDelegators: number,
 ) => {
-  const { proposalAppClient, registryAppClient, ggovRegistrySDK, committee, xGovs } = await deployXGovMocksAndRegistry(
+  const { proposalAppClient, registryAppClient, ggovRegistrySDK, committee, govs } = await deployXGovMocksAndRegistry(
     localnet,
     adminAccount,
-    numXGovs,
+    numGovs,
   )
-  const { adminSDK, userSDK } = await deployDelegatorSimple(localnet, adminAccount, xGovs[0])
+  const { adminSDK, userSDK } = await deployDelegatorSimple(localnet, adminAccount, govs[0])
 
   await adminSDK.setCommitteeOracleApp({ appId: ggovRegistrySDK.appId })
 
@@ -265,7 +261,7 @@ export const deployDelegatorFull = async (
     registryAppClient,
     proposalAppClient,
     committee,
-    xGovs,
+    govs,
     subDelegators,
   }
 }

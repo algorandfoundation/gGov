@@ -522,7 +522,7 @@ export class GGovSDK extends GGovReaderSDK {
     const opts: any = {
       args: { voterAccount, topicVotes },
       note,
-      // 1 inner getDelegate (when delegated) + 1 inner getXGovVotingPower
+      // 1 inner getDelegate (when delegated) + 1 inner getGovVotingPower
       extraFee: (1000).microAlgo(),
     }
     // The sender is always this SDK's writerAccount. Self-vote: writerAccount === voterAccount.

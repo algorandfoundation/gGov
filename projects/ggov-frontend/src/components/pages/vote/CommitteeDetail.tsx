@@ -64,7 +64,7 @@ async function downloadCommittee(
     filename = `${committee.periodStart}-${committee.periodEnd}-${committee.idBase64Url}.csv`
   } else {
     // Read the committee straight from chain and serialise it as the canonical
-    // ARC-86 committee file: minified, fields in canonical order, xGovs sorted by
+    // ARC-86 committee file: minified, fields in canonical order, govs sorted by
     // address. This is byte-identical to the published committee files, so the
     // file's hash reproduces the committee id.
     const file = await readerSDK.registry.fastGetCommittee(committee.id)

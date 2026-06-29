@@ -7,13 +7,13 @@ import {
   AccountWithVotes,
   SenderWithSigner,
   CommitteeId,
-  XGovCommitteeFile,
+  GGovCommitteeFile,
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
 } from './types'
 import { requireWriter } from '../util/requiresSender'
 import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId'
-import { xGovToTuple } from './xGov'
+import { govToTuple } from './gov'
 import { GGovRegistryReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
@@ -47,7 +47,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  async uploadCommitteeFile(committeeFile: XGovCommitteeFile): Promise<Uint8Array> {
+  async uploadCommitteeFile(committeeFile: GGovCommitteeFile): Promise<Uint8Array> {
     const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
     const committeeMetadata = await this.getCommitteeMetadata(committeeId)
     if (!committeeMetadata) {
@@ -56,8 +56,8 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       const { txIds } = await this.registerCommittee({ committeeId, xGovRegistryId, ...rest })
       if (this.debug) console.log('Committee registered ', ...txIds)
     }
-    const accounts = committeeFile.xGovs.map(({ address }) => address)
-    const [accountIds, lastIngestedXGov] = await Promise.all([
+    const accounts = committeeFile.govs.map(({ address }) => address)
+    const [accountIds, lastIngestedGov] = await Promise.all([
       this.getAccountIdMap(accounts),
       this.getCommitteeSuperboxDataLast(committeeId),
     ])
@@ -67,28 +67,26 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       .map(([address, id]) => ({ address, id }))
       .sort(({ id: a }, { id: b }) => (a === 0 && b !== 0 ? 1 : a !== 0 && b === 0 ? -1 : a - b))
 
-    if (this.debug) console.log({ acctLen: accountsInOrder.length, lastIngestedXGov })
-    if (lastIngestedXGov.total) {
-      const expectedLastId = accountsInOrder[lastIngestedXGov.total - 1].id
-      if (lastIngestedXGov.last && lastIngestedXGov.last[0] !== expectedLastId) {
-        throw new Error(
-          `Last ingested xGov ID ${lastIngestedXGov.last[0]} does not match expected ID ${expectedLastId}`,
-        )
-        // TODO get xGovs, compare with accountsInOrder, uningest as necessary, resume ingestion
+    if (this.debug) console.log({ acctLen: accountsInOrder.length, lastIngestedGov })
+    if (lastIngestedGov.total) {
+      const expectedLastId = accountsInOrder[lastIngestedGov.total - 1].id
+      if (lastIngestedGov.last && lastIngestedGov.last[0] !== expectedLastId) {
+        throw new Error(`Last ingested gov ID ${lastIngestedGov.last[0]} does not match expected ID ${expectedLastId}`)
+        // TODO get govs, compare with accountsInOrder, uningest as necessary, resume ingestion
       }
     }
-    const accountsToIngest = accountsInOrder.slice(lastIngestedXGov.total ? lastIngestedXGov.total : 0)
+    const accountsToIngest = accountsInOrder.slice(lastIngestedGov.total ? lastIngestedGov.total : 0)
     const chunks = chunk(accountsToIngest, 120)
-    if (this.debug) console.log(`Ingesting ${accountsToIngest.length} xGovs in ${chunks.length} chunks...`)
+    if (this.debug) console.log(`Ingesting ${accountsToIngest.length} govs in ${chunks.length} chunks...`)
     for (const accountsChunk of chunks) {
-      const xGovs = accountsChunk.map(({ id, address }) => ({
+      const govs = accountsChunk.map(({ id, address }) => ({
         accountId: id,
         account: address,
-        votes: committeeFile.xGovs.find((x) => x.address === address)!.votes,
+        votes: committeeFile.govs.find((x) => x.address === address)!.votes,
       }))
-      const { txIds } = await this.ingestXGovs({ committeeId, xGovs })
+      const { txIds } = await this.ingestGovs({ committeeId, govs })
       const accountsLog = accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' ')
-      if (this.debug) console.log('xGov ingested ', accountsLog, txIds[txIds.length - 1])
+      if (this.debug) console.log('gov ingested ', accountsLog, txIds[txIds.length - 1])
     }
     return committeeId
   }
@@ -145,29 +143,29 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  makeIngestXGovsTxns({
+  makeIngestGovsTxns({
     committeeId,
-    xGovs,
+    govs,
     builder,
-  }: { committeeId: string | Uint8Array; xGovs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
+  }: { committeeId: string | Uint8Array; govs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
     const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
     builder = builder ?? this.writeClient!.newGroup()
-    const xGovChunks = chunk(xGovs, 8)
-    if (xGovChunks.length > 15) {
-      throw new Error(`Too many xGovs to ingest in one transaction group: ${xGovs.length} (max 120)`)
+    const govChunks = chunk(govs, 8)
+    if (govChunks.length > 15) {
+      throw new Error(`Too many govs to ingest in one transaction group: ${govs.length} (max 120)`)
     }
-    for (const xGovs of xGovChunks)
-      builder = builder.ingestXGovs({
-        args: { committeeId: committeeRaw, xGovs: xGovs.map(xGovToTuple) },
+    for (const govs of govChunks)
+      builder = builder.ingestGovs({
+        args: { committeeId: committeeRaw, govs: govs.map(govToTuple) },
         sender,
         signer,
       })
     return builder
   }
 
-  ingestXGovs = this.makeTxnExecutor({
-    maker: this.makeIngestXGovsTxns,
+  ingestGovs = this.makeTxnExecutor({
+    maker: this.makeIngestGovsTxns,
   })
 
   @requireWriter()
@@ -266,36 +264,36 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriter()
   @wrapErrors()
-  makeUningestXGovsTxns({
+  makeUningestGovsTxns({
     committeeId,
-    xGovs,
+    govs,
     builder,
-  }: Omit<GGovRegistryContractArgs['uningestXGovs(byte[32],address[])void'], 'committeeId'> & {
+  }: Omit<GGovRegistryContractArgs['uningestGovs(byte[32],address[])void'], 'committeeId'> & {
     committeeId: string | Uint8Array
   } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
     const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
     builder = builder ?? this.writeClient!.newGroup()
-    return builder.uningestXGovs({
-      args: { committeeId: committeeRaw, xGovs },
+    return builder.uningestGovs({
+      args: { committeeId: committeeRaw, govs },
       sender,
       signer,
     })
   }
 
-  uningestXGovs = this.makeTxnExecutor({
-    maker: this.makeUningestXGovsTxns,
+  uningestGovs = this.makeTxnExecutor({
+    maker: this.makeUningestGovsTxns,
   })
 
   /**
-   * Uningest xGovs from a committee in reverse ingestion order.
+   * Uningest govs from a committee in reverse ingestion order.
    * Looks up each account's committee offset, sorts descending, and sends sequentially.
    * @param committeeId Committee ID
    * @param accounts Accounts to uningest (in any order - will be sorted internally)
    */
   @requireWriter()
   @wrapErrors()
-  async uningestCommitteeXGovs({
+  async uningestCommitteeGovs({
     committeeId,
     accounts,
   }: {
@@ -326,7 +324,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     // send sequentially in chunks - strict reverse order required
     const chunks = chunk(sorted, 8)
     for (const accountsChunk of chunks) {
-      await this.uningestXGovs({ committeeId, xGovs: accountsChunk.map(({ address }) => address) })
+      await this.uningestGovs({ committeeId, govs: accountsChunk.map(({ address }) => address) })
       if (this.debug)
         console.log('Uningest chunk:', accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' '))
     }

@@ -346,7 +346,7 @@ export class GGovPeriodContract extends BaseContract {
     }
 
     // Voting power (inner-call registry — throws errAccountNotExists if voter unknown)
-    const votingPower = compileArc4(GGovRegistryContract).call.getXGovVotingPower({
+    const votingPower = compileArc4(GGovRegistryContract).call.getGovVotingPower({
       appId: Application(this.registryApp.value),
       args: [this.committeeId.value, voterAccount],
     }).returnValue
@@ -433,7 +433,7 @@ export class GGovPeriodContract extends BaseContract {
       if (recordBox.exists && !recordBox.value.isDelegated) return [false, 0]
     }
 
-    const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({
+    const power = compileArc4(GGovRegistryContract).call.tryGetGovVotingPower({
       appId: Application(this.registryApp.value),
       args: [this.committeeId.value, voterAccount],
     }).returnValue

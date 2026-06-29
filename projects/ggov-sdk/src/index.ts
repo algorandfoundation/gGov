@@ -14,12 +14,12 @@ export {
   executeTxns,
   getIncreaseBudgetBuilder,
   SIMULATE_PARAMS,
-  STORED_XGOV_BYTE_LENGTH,
+  STORED_GOV_BYTE_LENGTH,
 } from './registry'
 export {
   type CommitteeMetadata,
   type AccountWithVotes,
-  type XGovCommitteeFile,
-  type StoredXGov,
+  type GGovCommitteeFile,
+  type StoredGov,
   type GGovAccount,
 } from './registry'

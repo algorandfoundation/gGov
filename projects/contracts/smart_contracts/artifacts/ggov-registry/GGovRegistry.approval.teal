@@ -39,9 +39,9 @@ main_after_if_else@2:
     assert // OnCompletion must be NoOp
     txn ApplicationID
     assert
-    pushbytess 0xd50bc43d 0xf30cf84d 0xd32179d2 0xe3fbc0de 0x89b1e876 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x179c9135 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0xca284903 0x6f31967a 0xc60713f2 0xa220b9f9 0x4118ecbf // method "registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void", method "unregisterCommittee(byte[32])void", method "ingestXGovs(byte[32],(address,uint32)[])void", method "uningestXGovs(byte[32],address[])void", method "setXGovRegistryApp(uint64)void", method "setAdmin(address)void", method "withdrawALGO(address,uint64)void", method "verifyAdmin(address)bool", method "setOperator(address)void", method "verifyOperator(address)bool", method "set_voting_account(address,address)void", method "mirrorXGovDelegation(address)void", method "getDelegation(address)(address,bool)", method "getDelegate(address)address", method "logDelegators(address)void", method "logDelegations(address[])void", method "uploadPeriodApprovalPartial(uint64,byte[])void", method "createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)", method "setLastPeriodId(uint64)void", method "updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void", method "removePeriodSummary(uint32)void", method "getPeriodApp(uint64)uint64", method "getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)", method "logPeriodSummaries(uint64[])void", method "getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)", method "logCommitteeMetadata(byte[32][])void", method "logCommitteePages(byte[32],bool,uint64,uint64)void", method "getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)", method "getXGovVotingPower(byte[32],address)uint32", method "tryGetXGovVotingPower(byte[32],address)uint32", method "getAccount(address)(uint32,(uint16,uint16)[])", method "logAccounts(address[])void", method "increaseBudget(uint64)void"
+    pushbytess 0xd50bc43d 0xf30cf84d 0x4604c77d 0x9d94f5dc 0x89b1e876 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x179c9135 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0x43b85a6c 0x488d2290 0xc60713f2 0xa220b9f9 0x4118ecbf // method "registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void", method "unregisterCommittee(byte[32])void", method "ingestGovs(byte[32],(address,uint32)[])void", method "uningestGovs(byte[32],address[])void", method "setXGovRegistryApp(uint64)void", method "setAdmin(address)void", method "withdrawALGO(address,uint64)void", method "verifyAdmin(address)bool", method "setOperator(address)void", method "verifyOperator(address)bool", method "set_voting_account(address,address)void", method "mirrorXGovDelegation(address)void", method "getDelegation(address)(address,bool)", method "getDelegate(address)address", method "logDelegators(address)void", method "logDelegations(address[])void", method "uploadPeriodApprovalPartial(uint64,byte[])void", method "createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)", method "setLastPeriodId(uint64)void", method "updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void", method "removePeriodSummary(uint32)void", method "getPeriodApp(uint64)uint64", method "getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)", method "logPeriodSummaries(uint64[])void", method "getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)", method "logCommitteeMetadata(byte[32][])void", method "logCommitteePages(byte[32],bool,uint64,uint64)void", method "getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)", method "getGovVotingPower(byte[32],address)uint32", method "tryGetGovVotingPower(byte[32],address)uint32", method "getAccount(address)(uint32,(uint16,uint16)[])", method "logAccounts(address[])void", method "increaseBudget(uint64)void"
     txna ApplicationArgs 0
-    match registerCommittee unregisterCommittee ingestXGovs uningestXGovs setXGovRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod setLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getXGovVotingPower tryGetXGovVotingPower getAccount logAccounts increaseBudget
+    match registerCommittee unregisterCommittee ingestGovs uningestGovs setXGovRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod setLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getGovVotingPower tryGetGovVotingPower getAccount logAccounts increaseBudget
 
 main_after_if_else@47:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:77-78
@@ -861,14 +861,14 @@ unregisterCommittee_after_if_else@7:
     return
 
 
-// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.ingestXGovs[routing]() -> void:
-ingestXGovs:
+// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.ingestGovs[routing]() -> void:
+ingestGovs:
     intc_0 // 0
     dupn 13
     bytec_0 // ""
     dupn 19
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:171
-    // public ingestXGovs(committeeId: CommitteeId, xGovs: AccountWithVotes[]): void {
+    // public ingestGovs(committeeId: CommitteeId, govs: AccountWithVotes[]): void {
     txna ApplicationArgs 1
     dupn 2
     len
@@ -931,7 +931,7 @@ ingestXGovs:
     dup
     cover 3
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:180
-    // ensure(ingestedAccounts + xGovs.length <= committee.totalMembers.asUint64(), errTotalXGovsExceeded)
+    // ensure(ingestedAccounts + govs.length <= committee.totalMembers.asUint64(), errTotalGovsExceeded)
     uncover 2
     +
     dup
@@ -941,9 +941,9 @@ ingestXGovs:
     <=
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz ingestXGovs_after_if_else@72
+    bnz ingestGovs_after_if_else@72
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:180
-    // ensure(ingestedAccounts + xGovs.length <= committee.totalMembers.asUint64(), errTotalXGovsExceeded)
+    // ensure(ingestedAccounts + govs.length <= committee.totalMembers.asUint64(), errTotalGovsExceeded)
     pushbytes "ERR:TX_XC"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
@@ -952,7 +952,7 @@ ingestXGovs:
     // err()
     err
 
-ingestXGovs_after_if_else@72:
+ingestGovs_after_if_else@72:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:182
     // let lastAccountId = u32(0)
     intc_0 // 0
@@ -961,21 +961,21 @@ ingestXGovs_after_if_else@72:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:183
     // if (ingestedAccounts > 0) {
     dig 1
-    bz ingestXGovs_after_if_else@3
+    bz ingestGovs_after_if_else@3
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:184
-    // const lastXGov = this.getStoredXGovAt(superboxName, ingestedAccounts - 1)
+    // const lastGov = this.getStoredGovAt(superboxName, ingestedAccounts - 1)
     dig 1
     intc_1 // 1
     -
     dig 4
     swap
-    callsub getStoredXGovAt
+    callsub getStoredGovAt
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:185
-    // lastAccountId = lastXGov.accountId
+    // lastAccountId = lastGov.accountId
     extract 0 4
     bury 33
 
-ingestXGovs_after_if_else@3:
+ingestGovs_after_if_else@3:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:189
     // let ingestedVotes = committee.ingestedVotes.asUint64()
     dig 5
@@ -991,15 +991,15 @@ ingestXGovs_after_if_else@3:
     dig 1
     bury 20
 
-ingestXGovs_for_header@4:
+ingestGovs_for_header@4:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:191
-    // for (const xGov of clone(xGovs)) {
+    // for (const gov of clone(govs)) {
     dig 16
     dig 7
     <
-    bz ingestXGovs_after_for@7
+    bz ingestGovs_after_for@7
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:193
-    // ensure(xGov.votes.asUint64() > 0, errZeroVotes)
+    // ensure(gov.votes.asUint64() > 0, errZeroVotes)
     dig 7
     extract 2 0
     dig 17
@@ -1018,9 +1018,9 @@ ingestXGovs_for_header@4:
     bury 15
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz ingestXGovs_after_if_else@66
+    bnz ingestGovs_after_if_else@66
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:193
-    // ensure(xGov.votes.asUint64() > 0, errZeroVotes)
+    // ensure(gov.votes.asUint64() > 0, errZeroVotes)
     pushbytes "ERR:V_Z"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
@@ -1029,9 +1029,9 @@ ingestXGovs_for_header@4:
     // err()
     err
 
-ingestXGovs_after_if_else@66:
+ingestGovs_after_if_else@66:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:194
-    // const gGovAccount = this.getOrCreateAccount(xGov.account)
+    // const gGovAccount = this.getOrCreateAccount(gov.account)
     dig 40
     extract 0 32
     dup
@@ -1045,7 +1045,7 @@ ingestXGovs_after_if_else@66:
     // if (gGovAccount.accountId.asUint64() === 0) {
     intc_0 // 0
     extract_uint32
-    bnz ingestXGovs_after_inlined_smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getOrCreateAccount@35
+    bnz ingestGovs_after_inlined_smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getOrCreateAccount@35
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:17
     // accounts = BoxMap<Account, GGovAccount>({ keyPrefix: 'a' })
     bytec 8 // "a"
@@ -1059,7 +1059,7 @@ ingestXGovs_after_if_else@66:
     bury 1
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bz ingestXGovs_after_if_else@62
+    bz ingestGovs_after_if_else@62
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:27
     // ensure(!box.exists, errAccountExists)
     pushbytes "ERR:A_EX"
@@ -1070,7 +1070,7 @@ ingestXGovs_after_if_else@66:
     // err()
     err
 
-ingestXGovs_after_if_else@62:
+ingestGovs_after_if_else@62:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:28
     // this.lastAccountId.value++
     intc_0 // 0
@@ -1107,7 +1107,7 @@ ingestXGovs_after_if_else@62:
     box_put
     bury 34
 
-ingestXGovs_after_inlined_smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getOrCreateAccount@35:
+ingestGovs_after_inlined_smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getOrCreateAccount@35:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:195
     // const accountId = gGovAccount.accountId
     dig 33
@@ -1123,7 +1123,7 @@ ingestXGovs_after_inlined_smart_contracts/ggov-registry/ggovRegistryAccount.algo
     >
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz ingestXGovs_after_if_else@58
+    bnz ingestGovs_after_if_else@58
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:197
     // ensure(accountId.asUint64() > lastAccountId.asUint64(), errOutOfOrder)
     bytec 25 // "ERR:OOO"
@@ -1134,23 +1134,23 @@ ingestXGovs_after_inlined_smart_contracts/ggov-registry/ggovRegistryAccount.algo
     // err()
     err
 
-ingestXGovs_after_if_else@58:
+ingestGovs_after_if_else@58:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:199-202
-    // const xGovStored: AccountIdWithVotes = {
+    // const govStored: AccountIdWithVotes = {
     //   accountId: accountId,
-    //   votes: xGov.votes,
+    //   votes: gov.votes,
     // }
     dig 41
     dig 40
     concat
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:204
-    // writeBuffer = writeBuffer.concat(encodeArc4(xGovStored))
+    // writeBuffer = writeBuffer.concat(encodeArc4(govStored))
     dig 30
     swap
     concat
     bury 30
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:205
-    // this.addCommitteeAccountOffsetHint(committee.numericId, xGov.account, gGovAccount, u16(ingestedAccountCtr++))
+    // this.addCommitteeAccountOffsetHint(committee.numericId, gov.account, gGovAccount, u16(ingestedAccountCtr++))
     dig 5
     extract 0 2
     bury 37
@@ -1183,13 +1183,13 @@ ingestXGovs_after_if_else@58:
     intc_0 // 0
     bury 16
 
-ingestXGovs_for_header@37:
+ingestGovs_for_header@37:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:93
     // for (const [cNumId, _] of clone(gGovAccount.committeeOffsets)) {
     dig 15
     dig 29
     <
-    bz ingestXGovs_after_for@39
+    bz ingestGovs_after_for@39
     dig 38
     extract 2 0
     dig 16
@@ -1205,7 +1205,7 @@ ingestXGovs_for_header@37:
     !=
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz ingestXGovs_after_if_else@54
+    bnz ingestGovs_after_if_else@54
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:94
     // ensure(cNumId.asUint64() !== committeeNumId.asUint64(), errAccountOffsetExists)
     pushbytes "ERR:AO_EX"
@@ -1216,14 +1216,14 @@ ingestXGovs_for_header@37:
     // err()
     err
 
-ingestXGovs_after_if_else@54:
+ingestGovs_after_if_else@54:
     dig 15
     intc_1 // 1
     +
     bury 16
-    b ingestXGovs_for_header@37
+    b ingestGovs_for_header@37
 
-ingestXGovs_after_for@39:
+ingestGovs_after_for@39:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:96
     // gGovAccount.committeeOffsets.push([committeeNumId, offset])
     dig 36
@@ -1257,7 +1257,7 @@ ingestXGovs_after_for@39:
     swap
     box_put
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:207
-    // ingestedVotes += xGov.votes.asUint64()
+    // ingestedVotes += gov.votes.asUint64()
     dig 17
     dig 14
     +
@@ -1270,9 +1270,9 @@ ingestXGovs_after_for@39:
     bury 20
     dig 41
     bury 33
-    b ingestXGovs_for_header@4
+    b ingestGovs_for_header@4
 
-ingestXGovs_after_for@7:
+ingestGovs_after_for@7:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:211
     // ensure(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
     dig 5
@@ -1282,7 +1282,7 @@ ingestXGovs_after_for@7:
     >=
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz ingestXGovs_after_if_else@50
+    bnz ingestGovs_after_if_else@50
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:211
     // ensure(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
     pushbytes "ERR:TV_XC"
@@ -1293,7 +1293,7 @@ ingestXGovs_after_for@7:
     // err()
     err
 
-ingestXGovs_after_if_else@50:
+ingestGovs_after_if_else@50:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:33
     // const meta = sbMetaBoxValue(name)
     dig 3
@@ -1336,17 +1336,17 @@ ingestXGovs_after_if_else@50:
     extract_uint16 // on error: invalid array length header
     dup
     bury 29
-    bnz ingestXGovs_ternary_false@12
+    bnz ingestGovs_ternary_false@12
     intc_0 // 0
     bury 22
 
-ingestXGovs_ternary_merge@13:
+ingestGovs_ternary_merge@13:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:42
     // let dataWritten: uint64 = 0
     intc_0 // 0
     bury 21
 
-ingestXGovs_while_top@14:
+ingestGovs_while_top@14:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:44
     // while (dataWritten < data.length) {
     dig 20
@@ -1368,7 +1368,7 @@ ingestXGovs_while_top@14:
     //   dataWritten += chunkWritten
     //   currentBoxNum++
     // }
-    bz ingestXGovs_after_while@30
+    bz ingestGovs_after_while@30
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/utils.algo.ts:25
     // return Bytes(name).concat(Bytes('_')).concat(Bytes(itoa(num)))
     dig 3
@@ -1415,7 +1415,7 @@ ingestXGovs_while_top@14:
     // if (box.exists) {
     box_len
     bury 1
-    bz ingestXGovs_else_body@23
+    bz ingestGovs_else_body@23
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:79
     // let capacity: uint64 = maxBoxSize - box.length
     dig 34
@@ -1430,11 +1430,11 @@ ingestXGovs_while_top@14:
     // if (capacity < valueSize) return 0
     dig 10
     <
-    bz ingestXGovs_after_if_else@18
+    bz ingestGovs_after_if_else@18
     intc_0 // 0
     bury 23
 
-ingestXGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26:
+ingestGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:48
     // if (meta.boxByteLengths.length === currentBoxNum) {
     dig 31
@@ -1460,7 +1460,7 @@ ingestXGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.
     bury 30
     dig 24
     ==
-    bz ingestXGovs_else_body@28
+    bz ingestGovs_else_body@28
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:50
     // meta.boxByteLengths.push(au16(chunkWritten))
     dig 24
@@ -1509,7 +1509,7 @@ ingestXGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.
     replace2 26
     bury 32
 
-ingestXGovs_after_if_else@29:
+ingestGovs_after_if_else@29:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:56
     // dataWritten += chunkWritten
     dig 20
@@ -1522,9 +1522,9 @@ ingestXGovs_after_if_else@29:
     intc_1 // 1
     +
     bury 22
-    b ingestXGovs_while_top@14
+    b ingestGovs_while_top@14
 
-ingestXGovs_else_body@28:
+ingestGovs_else_body@28:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:53
     // meta.boxByteLengths[currentBoxNum] = au16(meta.boxByteLengths[currentBoxNum].asUint64() + chunkWritten)
     swap
@@ -1578,9 +1578,9 @@ ingestXGovs_else_body@28:
     extract 6 2
     replace2 26
     bury 32
-    b ingestXGovs_after_if_else@29
+    b ingestGovs_after_if_else@29
 
-ingestXGovs_after_if_else@18:
+ingestGovs_after_if_else@18:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:83
     // if (capacity % valueSize !== 0) {
     dig 23
@@ -1588,7 +1588,7 @@ ingestXGovs_after_if_else@18:
     %
     dup
     bury 13
-    bz ingestXGovs_after_if_else@20
+    bz ingestGovs_after_if_else@20
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:84
     // capacity -= capacity % valueSize
     dig 23
@@ -1596,7 +1596,7 @@ ingestXGovs_after_if_else@18:
     -
     bury 24
 
-ingestXGovs_after_if_else@20:
+ingestGovs_after_if_else@20:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:86
     // if (data.length > capacity) {
     dig 35
@@ -1604,7 +1604,7 @@ ingestXGovs_after_if_else@20:
     dup
     dig 25
     >
-    bz ingestXGovs_else_body@22
+    bz ingestGovs_else_body@22
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:88
     // const originalBoxLength = box.length
     dig 35
@@ -1648,9 +1648,9 @@ ingestXGovs_after_if_else@20:
     bury 23
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:46
     // const chunkWritten = appendBox(dataBox, data.slice(dataWritten, dataWritten + maxBoxSize), maxBoxSize, valueSize)
-    b ingestXGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26
+    b ingestGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26
 
-ingestXGovs_else_body@22:
+ingestGovs_else_body@22:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:94
     // const originalBoxLength = box.length
     dig 35
@@ -1672,9 +1672,9 @@ ingestXGovs_else_body@22:
     bury 23
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:46
     // const chunkWritten = appendBox(dataBox, data.slice(dataWritten, dataWritten + maxBoxSize), maxBoxSize, valueSize)
-    b ingestXGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26
+    b ingestGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26
 
-ingestXGovs_else_body@23:
+ingestGovs_else_body@23:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:103
     // if (capacity % valueSize !== 0) {
     dig 14
@@ -1682,10 +1682,10 @@ ingestXGovs_else_body@23:
     %
     dup
     bury 14
-    bnz ingestXGovs_if_body@24
+    bnz ingestGovs_if_body@24
     dig 14
 
-ingestXGovs_after_if_else@25:
+ingestGovs_after_if_else@25:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:106
     // const dataToWrite = data.slice(0, capacity)
     dig 36
@@ -1721,17 +1721,17 @@ ingestXGovs_after_if_else@25:
     bury 23
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:46
     // const chunkWritten = appendBox(dataBox, data.slice(dataWritten, dataWritten + maxBoxSize), maxBoxSize, valueSize)
-    b ingestXGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26
+    b ingestGovs_after_inlined_@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts::appendBox@26
 
-ingestXGovs_if_body@24:
+ingestGovs_if_body@24:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:104
     // capacity -= capacity % valueSize
     dig 14
     dig 13
     -
-    b ingestXGovs_after_if_else@25
+    b ingestGovs_after_if_else@25
 
-ingestXGovs_after_while@30:
+ingestGovs_after_while@30:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:59
     // meta.totalByteLength = au64(meta.totalByteLength.asUint64() + dataWritten)
     dig 31
@@ -1769,12 +1769,12 @@ ingestXGovs_after_while@30:
     dup
     bury 7
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:217
-    // if (ingestedAccounts + xGovs.length === committee.totalMembers.asUint64()) {
+    // if (ingestedAccounts + govs.length === committee.totalMembers.asUint64()) {
     pushint 10 // 10
     extract_uint32
     dig 1
     ==
-    bz ingestXGovs_after_if_else@9
+    bz ingestGovs_after_if_else@9
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:218
     // ensure(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
     dig 5
@@ -1785,7 +1785,7 @@ ingestXGovs_after_while@30:
     ==
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz ingestXGovs_after_if_else@9
+    bnz ingestGovs_after_if_else@9
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:218
     // ensure(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
     pushbytes "ERR:TV_MM"
@@ -1796,7 +1796,7 @@ ingestXGovs_after_while@30:
     // err()
     err
 
-ingestXGovs_after_if_else@9:
+ingestGovs_after_if_else@9:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:82
     // committees = BoxMap<CommitteeId, CommitteeMetadata>({ keyPrefix: 'c' })
     bytec_2 // "c"
@@ -1807,28 +1807,28 @@ ingestXGovs_after_if_else@9:
     dig 6
     box_put
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:171
-    // public ingestXGovs(committeeId: CommitteeId, xGovs: AccountWithVotes[]): void {
+    // public ingestGovs(committeeId: CommitteeId, govs: AccountWithVotes[]): void {
     intc_1 // 1
     return
 
-ingestXGovs_ternary_false@12:
+ingestGovs_ternary_false@12:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:40
     // let currentBoxNum: uint64 = meta.boxByteLengths.length === 0 ? 0 : meta.boxByteLengths.length - 1
     dig 27
     intc_1 // 1
     -
     bury 22
-    b ingestXGovs_ternary_merge@13
+    b ingestGovs_ternary_merge@13
 
 
-// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.uningestXGovs[routing]() -> void:
-uningestXGovs:
+// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.uningestGovs[routing]() -> void:
+uningestGovs:
     intc_0 // 0
     dupn 7
     bytec_0 // ""
     dupn 9
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:228
-    // public uningestXGovs(committeeId: CommitteeId, xGovs: Account[]): void {
+    // public uningestGovs(committeeId: CommitteeId, govs: Account[]): void {
     txna ApplicationArgs 1
     dupn 2
     len
@@ -1890,13 +1890,13 @@ uningestXGovs:
     dup
     cover 2
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:234
-    // ensure(xGovs.length <= totalXGovs, errNumXGovsExceeded)
+    // ensure(govs.length <= totalGovs, errNumGovsExceeded)
     <=
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz uningestXGovs_after_if_else@40
+    bnz uningestGovs_after_if_else@40
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:234
-    // ensure(xGovs.length <= totalXGovs, errNumXGovsExceeded)
+    // ensure(govs.length <= totalGovs, errNumGovsExceeded)
     pushbytes "ERR:NX_XC"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
@@ -1905,7 +1905,7 @@ uningestXGovs:
     // err()
     err
 
-uningestXGovs_after_if_else@40:
+uningestGovs_after_if_else@40:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:235
     // let ingestedVotes = committee.ingestedVotes.asUint64()
     dig 4
@@ -1917,13 +1917,13 @@ uningestXGovs_after_if_else@40:
     dup
     bury 16
 
-uningestXGovs_for_header@2:
+uningestGovs_for_header@2:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:237
-    // for (const account of clone(xGovs)) {
+    // for (const account of clone(govs)) {
     dig 11
     dig 6
     <
-    bz uningestXGovs_after_for@5
+    bz uningestGovs_after_for@5
     dig 6
     extract 2 0
     dig 12
@@ -1932,9 +1932,9 @@ uningestXGovs_for_header@2:
     intc_2 // 32
     extract3 // on error: index access is out of bounds
     dup
-    bury 21
+    bury 20
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:238
-    // expectedXGovOffset--
+    // expectedGovOffset--
     dig 16
     intc_1 // 1
     -
@@ -1952,7 +1952,7 @@ uningestXGovs_for_header@2:
     bury 1
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz uningestXGovs_after_if_else@30
+    bnz uningestGovs_after_if_else@30
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:58
     // ensure(accountBox.exists, errAccountNotExists)
     bytec 17 // "ERR:A_NX"
@@ -1963,7 +1963,7 @@ uningestXGovs_for_header@2:
     // err()
     err
 
-uningestXGovs_after_if_else@30:
+uningestGovs_after_if_else@30:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:59
     // return accountBox.value
     dig 25
@@ -1979,18 +1979,18 @@ uningestXGovs_after_if_else@30:
     dup
     bury 12
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:241
-    // ensureExtra(expectedXGovOffset === offset, errOutOfOrder, account.bytes)
+    // ensureExtra(expectedGovOffset === offset, errOutOfOrder, account.bytes)
     dig 16
     ==
     // smart_contracts/base/utils.algo.ts:40
     // if (!cond) {
-    bnz uningestXGovs_after_if_else@34
+    bnz uningestGovs_after_if_else@34
     // smart_contracts/base/utils.algo.ts:41
     // log(extra)
-    dig 19
+    dig 18
     log
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:241
-    // ensureExtra(expectedXGovOffset === offset, errOutOfOrder, account.bytes)
+    // ensureExtra(expectedGovOffset === offset, errOutOfOrder, account.bytes)
     bytec 25 // "ERR:OOO"
     // smart_contracts/base/utils.algo.ts:42
     // log(code)
@@ -1999,13 +1999,13 @@ uningestXGovs_after_if_else@30:
     // err()
     err
 
-uningestXGovs_after_if_else@34:
+uningestGovs_after_if_else@34:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:242
-    // const xGovStored = this.getStoredXGovAt(superboxName, offset)
+    // const govStored = this.getStoredGovAt(superboxName, offset)
     dig 2
     dig 11
-    callsub getStoredXGovAt
-    bury 19
+    callsub getStoredGovAt
+    bury 21
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:101
     // let found = false
     intc_0 // 0
@@ -2013,13 +2013,13 @@ uningestXGovs_after_if_else@34:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:102
     // const nextOffsets: [Uint16, Uint16][] = []
     bytec 19 // 0x0000
-    bury 21
+    bury 20
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     intc_0 // 0
     bury 14
 
-uningestXGovs_while_top@9:
+uningestGovs_while_top@9:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     dig 21
@@ -2035,7 +2035,7 @@ uningestXGovs_while_top@9:
     extract_uint16 // on error: invalid array length header
     dig 14
     >
-    bz uningestXGovs_after_while@14
+    bz uningestGovs_after_while@14
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103-104
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     //   const [cNumId, existingOffset] = gGovAccount.committeeOffsets[i]
@@ -2058,28 +2058,28 @@ uningestXGovs_while_top@9:
     extract_uint16
     dig 4
     ==
-    bz uningestXGovs_else_body@12
+    bz uningestGovs_else_body@12
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:106
     // found = true
     intc_1 // 1
     bury 15
 
-uningestXGovs_after_if_else@13:
+uningestGovs_after_if_else@13:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:103
     // for (let i: uint64 = 0; i < gGovAccount.committeeOffsets.length; i++) {
     dig 13
     intc_1 // 1
     +
     bury 14
-    b uningestXGovs_while_top@9
+    b uningestGovs_while_top@9
 
-uningestXGovs_else_body@12:
+uningestGovs_else_body@12:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:108
     // nextOffsets.push([cNumId, existingOffset])
     dig 23
     dig 23
     concat
-    dig 21
+    dig 20
     dup
     uncover 2
     concat // on error: max array length exceeded
@@ -2091,14 +2091,14 @@ uningestXGovs_else_body@12:
     itob
     extract 6 2
     replace2 0
-    bury 21
-    b uningestXGovs_after_if_else@13
+    bury 20
+    b uningestGovs_after_if_else@13
 
-uningestXGovs_after_while@14:
+uningestGovs_after_while@14:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     dig 14
-    bnz uningestXGovs_after_if_else@22
+    bnz uningestGovs_after_if_else@22
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:111
     // ensure(found, errAccountOffsetNotExists)
     bytec 26 // "ERR:AO_NX"
@@ -2109,7 +2109,7 @@ uningestXGovs_after_while@14:
     // err()
     err
 
-uningestXGovs_after_if_else@22:
+uningestGovs_after_if_else@22:
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:113
     // accountId: gGovAccount.accountId,
     dig 21
@@ -2121,7 +2121,7 @@ uningestXGovs_after_if_else@22:
     // }
     pushbytes 0x0006
     concat
-    dig 21
+    dig 20
     concat
     dig 26
     dup
@@ -2188,7 +2188,7 @@ uningestXGovs_after_if_else@22:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:148
     // if (prevBoxByteLength === valueSize) {
     ==
-    bz uningestXGovs_else_body@18
+    bz uningestGovs_else_body@18
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:150
     // dataBox.delete()
     swap
@@ -2211,7 +2211,7 @@ uningestXGovs_after_if_else@22:
     uncover 2
     box_replace
 
-uningestXGovs_after_if_else@19:
+uningestGovs_after_if_else@19:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:163
     // meta.value.totalByteLength = au64(meta.value.totalByteLength.asUint64() - valueSize)
     dig 1
@@ -2231,8 +2231,8 @@ uningestXGovs_after_if_else@19:
     swap
     box_replace
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:245
-    // ingestedVotes -= xGovStored.votes.asUint64()
-    dig 18
+    // ingestedVotes -= govStored.votes.asUint64()
+    dig 20
     pushint 4 // 4
     extract_uint32
     dig 13
@@ -2243,9 +2243,9 @@ uningestXGovs_after_if_else@19:
     intc_1 // 1
     +
     bury 12
-    b uningestXGovs_for_header@2
+    b uningestGovs_for_header@2
 
-uningestXGovs_else_body@18:
+uningestGovs_else_body@18:
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:155
     // dataBox.splice(byteOffset, valueSize, Bytes``)
     swap
@@ -2279,9 +2279,9 @@ uningestXGovs_else_body@18:
     dig 19
     uncover 2
     box_replace
-    b uningestXGovs_after_if_else@19
+    b uningestGovs_after_if_else@19
 
-uningestXGovs_after_for@5:
+uningestGovs_after_for@5:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:247
     // committee.ingestedVotes = u32(ingestedVotes)
     dig 12
@@ -2299,7 +2299,7 @@ uningestXGovs_after_for@5:
     swap
     box_put
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:228
-    // public uningestXGovs(committeeId: CommitteeId, xGovs: Account[]): void {
+    // public uningestGovs(committeeId: CommitteeId, govs: Account[]): void {
     intc_1 // 1
     return
 
@@ -4370,8 +4370,8 @@ getCommitteeSuperboxMeta:
     return
 
 
-// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getXGovVotingPower[routing]() -> void:
-getXGovVotingPower:
+// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getGovVotingPower[routing]() -> void:
+getGovVotingPower:
     intc_0 // 0
     dup
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:757
@@ -4403,7 +4403,7 @@ getXGovVotingPower:
     extract_uint32
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
-    bnz getXGovVotingPower_after_if_else@3
+    bnz getGovVotingPower_after_if_else@3
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:762
     // ensure(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
     bytec 17 // "ERR:A_NX"
@@ -4414,7 +4414,7 @@ getXGovVotingPower:
     // err()
     err
 
-getXGovVotingPower_after_if_else@3:
+getGovVotingPower_after_if_else@3:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:764
     // const accountOffset = this.getCommitteeAccountOffsetHint(committeeMetadata.numericId, gGovAccount)
     dig 1
@@ -4432,13 +4432,13 @@ getXGovVotingPower_after_if_else@3:
     swap
     concat
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:765
-    // const xGov = this.getStoredXGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
+    // const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
     uncover 2
-    callsub getStoredXGovAt
+    callsub getStoredGovAt
     dup
     bury 5
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:766
-    // ensureExtra(xGov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
+    // ensureExtra(gov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
     extract 0 4
     swap
     extract 0 4
@@ -4447,13 +4447,13 @@ getXGovVotingPower_after_if_else@3:
     ==
     // smart_contracts/base/utils.algo.ts:40
     // if (!cond) {
-    bnz getXGovVotingPower_after_if_else@7
+    bnz getGovVotingPower_after_if_else@7
     // smart_contracts/base/utils.algo.ts:41
     // log(extra)
     dig 3
     log
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:766
-    // ensureExtra(xGov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
+    // ensureExtra(gov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
     pushbytes "ERR:AO_MM"
     // smart_contracts/base/utils.algo.ts:42
     // log(code)
@@ -4462,9 +4462,9 @@ getXGovVotingPower_after_if_else@3:
     // err()
     err
 
-getXGovVotingPower_after_if_else@7:
+getGovVotingPower_after_if_else@7:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:768
-    // return xGov.votes
+    // return gov.votes
     dig 2
     extract 4 4
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:757
@@ -4477,8 +4477,8 @@ getXGovVotingPower_after_if_else@7:
     return
 
 
-// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetXGovVotingPower[routing]() -> void:
-tryGetXGovVotingPower:
+// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower[routing]() -> void:
+tryGetGovVotingPower:
     intc_0 // 0
     dupn 4
     bytec_0 // ""
@@ -4508,11 +4508,11 @@ tryGetXGovVotingPower:
     // if (!committeeBox.exists) return u32(0)
     box_len
     bury 1
-    bnz tryGetXGovVotingPower_after_if_else@3
+    bnz tryGetGovVotingPower_after_if_else@3
     intc_0 // 0
     callsub u32
 
-tryGetXGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetXGovVotingPower@16:
+tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:775
     // @abimethod({ readonly: true })
     bytec_1 // 0x151f7c75
@@ -4522,7 +4522,7 @@ tryGetXGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.a
     intc_1 // 1
     return
 
-tryGetXGovVotingPower_after_if_else@3:
+tryGetGovVotingPower_after_if_else@3:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:779
     // const committeeMetadata = clone(committeeBox.value)
     dup
@@ -4542,14 +4542,14 @@ tryGetXGovVotingPower_after_if_else@3:
     extract_uint32
     dup
     bury 4
-    bnz tryGetXGovVotingPower_after_if_else@5
+    bnz tryGetGovVotingPower_after_if_else@5
     intc_0 // 0
     callsub u32
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:775
     // @abimethod({ readonly: true })
-    b tryGetXGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetXGovVotingPower@16
+    b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
-tryGetXGovVotingPower_after_if_else@5:
+tryGetGovVotingPower_after_if_else@5:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:784
     // let foundOffset: uint64 = 0
     intc_0 // 0
@@ -4575,13 +4575,13 @@ tryGetXGovVotingPower_after_if_else@5:
     intc_0 // 0
     bury 4
 
-tryGetXGovVotingPower_for_header@6:
+tryGetGovVotingPower_for_header@6:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:786
     // for (const [cNumId, off] of clone(gGovAccount.committeeOffsets)) {
     dig 3
     dig 7
     <
-    bz tryGetXGovVotingPower_after_for@11
+    bz tryGetGovVotingPower_after_for@11
     dig 10
     extract 2 0
     dig 4
@@ -4599,7 +4599,7 @@ tryGetXGovVotingPower_for_header@6:
     intc_0 // 0
     extract_uint16
     ==
-    bz tryGetXGovVotingPower_after_if_else@9
+    bz tryGetGovVotingPower_after_if_else@9
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:788
     // foundOffset = off.asUint64()
     dig 11
@@ -4615,25 +4615,25 @@ tryGetXGovVotingPower_for_header@6:
     intc_1 // 1
     bury 6
 
-tryGetXGovVotingPower_after_if_else@9:
+tryGetGovVotingPower_after_if_else@9:
     dig 3
     intc_1 // 1
     +
     bury 4
-    b tryGetXGovVotingPower_for_header@6
+    b tryGetGovVotingPower_for_header@6
 
-tryGetXGovVotingPower_after_for@11:
+tryGetGovVotingPower_after_for@11:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:792
     // if (!found) return u32(0)
     dig 5
-    bnz tryGetXGovVotingPower_after_if_else@13
+    bnz tryGetGovVotingPower_after_if_else@13
     intc_0 // 0
     callsub u32
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:775
     // @abimethod({ readonly: true })
-    b tryGetXGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetXGovVotingPower@16
+    b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
-tryGetXGovVotingPower_after_if_else@13:
+tryGetGovVotingPower_after_if_else@13:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:824
     // return 'S' + metadata.numericId.asUint64().toString()
     dig 9
@@ -4644,32 +4644,32 @@ tryGetXGovVotingPower_after_if_else@13:
     swap
     concat
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:794
-    // const xGov = this.getStoredXGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
+    // const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
     dig 5
-    callsub getStoredXGovAt
+    callsub getStoredGovAt
     dup
     bury 9
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:795
-    // if (xGov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
+    // if (gov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
     intc_0 // 0
     extract_uint32
     dig 3
     !=
-    bz tryGetXGovVotingPower_after_if_else@15
+    bz tryGetGovVotingPower_after_if_else@15
     intc_0 // 0
     callsub u32
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:775
     // @abimethod({ readonly: true })
-    b tryGetXGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetXGovVotingPower@16
+    b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
-tryGetXGovVotingPower_after_if_else@15:
+tryGetGovVotingPower_after_if_else@15:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:796
-    // return xGov.votes
+    // return gov.votes
     dig 7
     extract 4 4
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:775
     // @abimethod({ readonly: true })
-    b tryGetXGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetXGovVotingPower@16
+    b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
 
 // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getAccount[routing]() -> void:
@@ -5209,10 +5209,10 @@ mustGetCommitteeMetadata_after_if_else@3:
     retsub
 
 
-// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getStoredXGovAt(superboxName: bytes, index: uint64) -> bytes:
-getStoredXGovAt:
+// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getStoredGovAt(superboxName: bytes, index: uint64) -> bytes:
+getStoredGovAt:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:833
-    // private getStoredXGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
+    // private getStoredGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
     proto 2 1
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:247
     // const [boxNum, byteOffset] = sbGetLocation(name, valueIndex)
@@ -5271,7 +5271,7 @@ getStoredXGovAt:
     select
     substring3
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:835
-    // return decodeArc4<AccountIdWithVotes>(xGovData)
+    // return decodeArc4<AccountIdWithVotes>(govData)
     retsub
 
 

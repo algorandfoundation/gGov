@@ -320,7 +320,7 @@ syncCommitteeMetadata_for_header@3:
     callsub getOrCreateAccountId
     bury 11
     // smart_contracts/delegator/delegator.algo.ts:146-149
-    // const remoteVotes = oracleApp.call.getXGovVotingPower({
+    // const remoteVotes = oracleApp.call.getGovVotingPower({
     //   appId: this.committeeOracleApp.value,
     //   args: [committeeId, account],
     // }).returnValue
@@ -336,11 +336,11 @@ syncCommitteeMetadata_for_header@3:
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/delegator/delegator.algo.ts:146-149
-    // const remoteVotes = oracleApp.call.getXGovVotingPower({
+    // const remoteVotes = oracleApp.call.getGovVotingPower({
     //   appId: this.committeeOracleApp.value,
     //   args: [committeeId, account],
     // }).returnValue
-    pushbytes 0xca284903 // method "getXGovVotingPower(byte[32],address)uint32"
+    pushbytes 0x43b85a6c // method "getGovVotingPower(byte[32],address)uint32"
     itxn_field ApplicationArgs
     dig 5
     itxn_field ApplicationArgs

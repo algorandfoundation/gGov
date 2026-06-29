@@ -26,25 +26,25 @@ void (async () => {
   // console.log(JSON.stringify(comm));
   if (comm) {
     for (const [key, value] of Object.entries(file)) {
-      if (key === 'xGovs') continue
+      if (key === 'govs') continue
       if (value !== comm[key as keyof typeof comm]) {
         console.error(`Mismatch on ${key}: expected ${value}, got ${comm[key as keyof typeof comm]}`)
       }
     }
-    const max = Math.max(file.xGovs.length, comm.xGovs.length)
+    const max = Math.max(file.govs.length, comm.govs.length)
     for (let i = 0; i < max; i++) {
-      const expected = file.xGovs[i]
-      const got = comm.xGovs[i]
+      const expected = file.govs[i]
+      const got = comm.govs[i]
       if (!expected) {
-        console.error(`Extra xGov in stored committee: ${JSON.stringify(got)}`)
+        console.error(`Extra gov in stored committee: ${JSON.stringify(got)}`)
         continue
       }
       if (!got) {
-        console.error(`Missing xGov in stored committee: ${JSON.stringify(expected)}`)
+        console.error(`Missing gov in stored committee: ${JSON.stringify(expected)}`)
         continue
       }
       if (expected.address !== got.address || expected.votes !== got.votes) {
-        console.error(`Mismatch on xGov index ${i}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(got)}`)
+        console.error(`Mismatch on gov index ${i}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(got)}`)
       }
     }
     console.log('Files match')

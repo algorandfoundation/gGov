@@ -14,7 +14,7 @@ import {
   useCanVoteMany,
   useVoteRecordMany,
   useCommittee,
-  useXGovVotingPowers,
+  useGovVotingPowers,
 } from '@/hooks/queries'
 import { useVoteMutation } from '@/hooks/mutations'
 import { Check } from 'lucide-react'
@@ -172,7 +172,7 @@ export default function VotePeriodDetail() {
   // Window-independent voting power per account (the registry doesn't gate on the
   // voting window, unlike canVote), so the sidebar shows real standing in
   // upcoming/ended periods too.
-  const xgovPowers = useXGovVotingPowers(committeeIdB64, voterAccounts)
+  const govPowers = useGovVotingPowers(committeeIdB64, voterAccounts)
   // Vote records for every account the wallet can act for. `isDelegated` tells us
   // when a delegator voted directly (a state the delegatee cannot override), and
   // the records drive the ended-period multi-account voting-record section.
@@ -334,25 +334,25 @@ export default function VotePeriodDetail() {
   let collectiveEligible = 0
   let collectiveVoted = 0
   for (const addr of voterAccounts) {
-    const vp = xgovPowers[addr] ?? 0
+    const vp = govPowers[addr] ?? 0
     if (vp > 0) {
       collectiveVotingPower += BigInt(vp)
       collectiveEligible++
       if (voteStatuses[addr]) collectiveVoted++
     }
   }
-  // `xgovPowers` is `undefined` per account until its query settles. Treating that
+  // `govPowers` is `undefined` per account until its query settles. Treating that
   // as 0 would briefly render the card's "Not eligible to vote" state before the
   // powers load, so hold the card back until every voter account has resolved.
-  const collectiveStatusReady = voterAccounts.every((addr) => xgovPowers[addr] !== undefined)
+  const collectiveStatusReady = voterAccounts.every((addr) => govPowers[addr] !== undefined)
 
   // Per-wallet eligibility for the non-active expandable list. Outside the voting
   // window eligibility is registry voting power (canVote is false for everyone),
   // and an account is "delegated" when it isn't one of the wallet's own accounts.
   const walletEligibilityItems = voterAccounts.map((addr) => ({
     address: addr,
-    votingPower: xgovPowers[addr] ?? 0,
-    eligible: (xgovPowers[addr] ?? 0) > 0,
+    votingPower: govPowers[addr] ?? 0,
+    eligible: (govPowers[addr] ?? 0) > 0,
     voted: !!voteStatuses[addr],
     delegated: !walletAddresses.includes(addr),
   }))
@@ -360,7 +360,7 @@ export default function VotePeriodDetail() {
   // Eligibility wording: during the active window canVote is authoritative (it
   // also reflects delegation/override rules); outside it canVote returns false
   // for everyone, so fall back to registry voting power.
-  const selectedVoterPower = selectedVoter ? (xgovPowers[selectedVoter] ?? 0) : 0
+  const selectedVoterPower = selectedVoter ? (govPowers[selectedVoter] ?? 0) : 0
   const eligibleToVote = isActive ? !!canVoteResult?.canVote : selectedVoterPower > 0
   const eligibility = canVoteResult ? eligibilityCopy(status, eligibleToVote) : null
 
@@ -423,7 +423,7 @@ export default function VotePeriodDetail() {
     })
     .map((addr) => ({
       address: addr,
-      votingPower: xgovPowers[addr] ?? 0,
+      votingPower: govPowers[addr] ?? 0,
       delegated: !walletAddresses.includes(addr),
     }))
   const showPendingBanner = isActive && !!voteRecord && !!selectedVoter && pendingAccounts.length > 0

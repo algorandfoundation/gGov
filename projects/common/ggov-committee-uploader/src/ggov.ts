@@ -12,7 +12,7 @@
  *     mainnet gGov registry deployment).
  *
  * `totalMembers` / `totalVotes` are recomputed from the candidate members so
- * they always describe the `xGovs` array we actually upload.
+ * they always describe the `govs` array we actually upload.
  */
 
 /** Mainnet xGov committee host + network path segment. */
@@ -22,7 +22,7 @@ export const DEFAULT_NETWORK_PATH = 'mainnet-v1.0-wGHE2Pwdvd7S12BL5FaOP20EGYesN7
 /** Placeholder xGov registry id for the (not-yet-deployed) gGov mainnet registry. */
 export const DEFAULT_REGISTRY_ID = 1
 
-/** Canonical committee file shape — mirrors `XGovCommitteeFile` in ggov-sdk. */
+/** Canonical committee file shape — mirrors `GGovCommitteeFile` in ggov-sdk. */
 export interface CommitteeFile {
   networkGenesisHash: string
   periodEnd: number
@@ -30,7 +30,7 @@ export interface CommitteeFile {
   registryId: number
   totalMembers: number
   totalVotes: number
-  xGovs: Array<{ address: string; votes: number }>
+  govs: Array<{ address: string; votes: number }>
 }
 
 /** A single committee listed in `/committee/index.json`. */
@@ -105,20 +105,20 @@ export function buildGGovCommitteeFile(
   candidates: Record<string, number>,
   registryId: number = DEFAULT_REGISTRY_ID,
 ): CommitteeFile {
-  const xGovs = Object.entries(candidates)
+  const govs = Object.entries(candidates)
     .map(([address, votes]) => ({ address, votes }))
     .sort((a, b) => (a.address < b.address ? -1 : a.address > b.address ? 1 : 0))
 
-  const totalVotes = xGovs.reduce((sum, { votes }) => sum + votes, 0)
+  const totalVotes = govs.reduce((sum, { votes }) => sum + votes, 0)
 
   return {
     networkGenesisHash: metadata.networkGenesisHash,
     periodEnd: metadata.periodEnd,
     periodStart: metadata.periodStart,
     registryId,
-    totalMembers: xGovs.length,
+    totalMembers: govs.length,
     totalVotes,
-    xGovs,
+    govs,
   }
 }
 

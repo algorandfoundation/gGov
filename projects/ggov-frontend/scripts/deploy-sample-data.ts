@@ -29,6 +29,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
+import type { GGovCommitteeFile } from 'ggov-sdk'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
@@ -38,16 +39,6 @@ const __dirname = path.dirname(__filename)
 const { AlgorandClient } = require('@algorandfoundation/algokit-utils')
 const { GGovSDK, GGovRegistrySDK } = require('../../ggov-sdk/dist/index.js')
 const algosdk = require('algosdk')
-
-interface XGovCommitteeFile {
-  networkGenesisHash: string
-  periodEnd: number
-  periodStart: number
-  registryId: number
-  totalMembers: number
-  totalVotes: number
-  xGovs: Array<{ address: string; votes: number }>
-}
 
 const KMD_TOKEN = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 
@@ -193,14 +184,14 @@ async function main() {
     console.log(`  Member${i + 1}: ${addr.slice(0, 12)}... (${memberVotes[i]} votes)${role}`)
   }
 
-  const committeeFile: XGovCommitteeFile = {
+  const committeeFile: GGovCommitteeFile = {
     networkGenesisHash: 'wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=',
     periodStart: 50000000,
     periodEnd: 53000000,
     registryId: 0,
     totalMembers: memberAddresses.length,
     totalVotes: memberVotes.reduce((a: number, b: number) => a + b, 0),
-    xGovs: memberAddresses.map((addr: string, i: number) => ({
+    govs: memberAddresses.map((addr: string, i: number) => ({
       address: addr,
       votes: memberVotes[i],
     })),
