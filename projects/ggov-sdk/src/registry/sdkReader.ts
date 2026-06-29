@@ -222,15 +222,15 @@ export class GGovRegistryReaderSDK {
   }
 
   protected convertStoredGovsToGovs(storedGovs: StoredGov[], accountMap: Map<string, number>): AccountWithVotes[] {
-    return storedGovs.map(([id, votes]) => {
-      const accountRaw = Array.from(accountMap.entries()).find(([, accountId]) => accountId === id)
-      const account = accountRaw ? accountRaw[0] : ALGORAND_ZERO_ADDRESS_STRING
-      return {
-        accountId: id,
-        account,
-        votes,
-      }
-    })
+    const idToAddress = new Map<number, string>()
+    for (const [address, accountId] of accountMap) {
+      idToAddress.set(accountId, address)
+    }
+    return storedGovs.map(([id, votes]) => ({
+      accountId: id,
+      account: idToAddress.get(id) ?? ALGORAND_ZERO_ADDRESS_STRING,
+      votes,
+    }))
   }
 
   protected sortGovs(a: AccountWithVotes, b: AccountWithVotes): number {
