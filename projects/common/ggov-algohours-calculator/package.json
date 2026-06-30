@@ -1,0 +1,21 @@
+{
+  "name": "ggov-algohours-calculator",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Compute per-account algohours for ALGO liquid-stakers and Reti pools participants",
+  "scripts": {
+    "snapshot": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/snapshot.ts",
+    "algohours": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/algohours.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "algosdk": "^3.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  }
+}

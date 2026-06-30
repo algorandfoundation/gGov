@@ -50,7 +50,7 @@ importers:
         specifier: ^8.61.0
         version: 8.61.1(eslint@10.5.0(jiti@2.7.0))(typescript@5.9.3)
 
-  projects/common/algohours-calculator:
+  projects/common/ggov-algohours-calculator:
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
