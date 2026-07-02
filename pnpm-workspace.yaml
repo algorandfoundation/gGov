@@ -1,5 +1,6 @@
 packages:
   - 'projects/*'
+  - 'projects/common/*'
 
 # https://pnpm.io/supply-chain-security
 minimumReleaseAge: 10080 # 1 week
