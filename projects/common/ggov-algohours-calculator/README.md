@@ -1,131 +1,101 @@
 # ggov-algohours-calculator
 
-Computes per-account algohours for **tALGO** and **stALGO** holders by scanning Algorand indexer transaction history.
+Computes per-account **algohours** — time-weighted ALGO-equivalent holdings — for **tALGO** and **stALGO** holders, by replaying ASA transfer history from the Algorand Indexer. Output is deterministic JSON: anyone with Indexer access can reproduce it.
+
+1 algohour = 1 ALGO staked for 1 hour
 
 ## Usage
 
+```bash
+pnpm install
+
+# 1. Reconstruct the initial balance snapshot into ./snapshots
+pnpm snapshot 60000000
+
+# 2. Compute algohours for a committee window into ./data
+pnpm algohours 60000000 63000000
+# ^ also writes boundary snapshots 61000000, 62000000, 63000000
+
+# Next committee window — its start snapshot was produced by step 2
+pnpm algohours 61000000 64000000
+```
+
+Committee windows slide 1M rounds at a time (60–63, 61–64, …), so each `algohours` run saves the 1M-boundary snapshots that later windows start from. Re-running a command is safe: existing snapshots are verified against the re-scan, never overwritten. A verification mismatch aborts the run before any output is written.
+
+Flags (`--save-transfers`, `--check`, `--inspect`, `--no-snapshot`) and output formats are documented in the header comments of the two entrypoints, [`src/snapshot.ts`](src/snapshot.ts) and [`src/algohours.ts`](src/algohours.ts).
+
 ### Environment
 
-Set `INDEXER_SERVER` (and optionally `INDEXER_TOKEN`) if not using the default public Algonode indexer (`https://mainnet-idx.4160.nodely.dev`).
+| Env              | Default                                      |
+| ---------------- | -------------------------------------------- |
+| `INDEXER_SERVER` | `https://mainnet-idx.4160.nodely.dev`        |
+| `INDEXER_TOKEN`  | Empty; set when the Indexer requires a token |
 
-### Snapshot: reconstruct balances at round
-
-```bash
-pnpm snapshot <round> [--save-transfers] [--check]
-# e.g.
-pnpm snapshot 60000000
-```
-
-Scans all tALGO and stALGO transfers from asset creation up to (not including) `<round>` and reconstructs every account's balance.
-
-> **Round semantics:** `snapshot <round>` scans transfers in `[creation, round)` interval — the snapshot captures state before round `<round>` transactions execute. This matches how committee windows are defined: `[periodStart, periodEnd)` is exclusive on the right, so the boundary round itself belongs to the next period.
-
-#### Flags
-
-- `--save-transfers` writes every scanned transfer to `snapshots/<round>.transfers.log` for debugging/inspection.
-- `--check` re-scans from genesis and diffs against the stored snapshot instead of writing a new one. Useful for verifying an existing snapshot is correct.
-
-#### Outputs
-
-- `snapshots/<round>.json` (except when using `--check`)
-- `snapshots/<round>.transfers.log` (optional)
-
-### Algohours: compute time-weighted voting power
+### Tests
 
 ```bash
-pnpm algohours <periodStart> <periodEnd> [--no-snapshot] [--save-transfers]
-# e.g.
-pnpm algohours 60000000 63000000
+pnpm test                # run all unit tests
 ```
 
-Requires `snapshots/<periodStart>.json` to exist. By default, the command saves or
-verifies every 1M-round boundary snapshot in `(periodStart, periodEnd]`.
+Tests run on made-up transfers and on the committed `snapshots/` and `data/` files — no Indexer needed. Some invariants:
 
-#### Flags
+- All algohours together equal total supply × time.
+- Every committed snapshot holds the exact same total supply.
 
-- `--no-snapshot` skips saving or verifying boundary snapshots.
+See [`test/`](test/).
 
-- `--save-transfers` writes every scanned transfer to `data/<periodStart>-<periodEnd>.transfers.log`.
+## Algohours file
 
-#### Output
-
-- `data/<periodStart>-<periodEnd>.json`
-- `data/<periodStart>-<periodEnd>.transfers.log` (optional)
-- `snapshots/<B>.json` for each 1M boundary in `(periodStart, periodEnd]` (unless using `--no-snapshot`)
-
-### Chaining windows
-
-Because committee periods are 3M windows sliding 1M at a time (60–63, 61–64, 62–65…),
-each intermediate round also needs a snapshot. The algohours command produces all of them:
-
-```bash
-pnpm snapshot 60000000
-pnpm algohours 60000000 63000000
-# ^ writes 61000000.json, 62000000.json, 63000000.json
-
-pnpm algohours 61000000 64000000
-# ^ 61000000.json already exists → verified; writes 62000000.json (exists → verified), 64000000.json
-```
-
-Re-running a command is safe: existing snapshots are verified, not overwritten.
-
-## Code structure
-
-| File                       | Read it for…                                                     |
-| -------------------------- | ---------------------------------------------------------------- |
-| `src/snapshot.ts`          | Mode 1 entrypoint — full scan from genesis to a target round     |
-| `src/algohours.ts`         | Mode 2 entrypoint — algohour computation over a window           |
-| `src/compute-algohours.ts` | Core algorithm — time-weighted balance accumulation              |
-| `src/indexer.ts`           | Algorand indexer client — windowed scan, ARC-28 rate fetch       |
-| `src/ledger.ts`            | Balance replay — applies transfers to a mutable balance map      |
-| `src/snapshot-file.ts`     | Snapshot serialization, storage, and comparison                  |
-| `src/snapshot-stats.ts`    | Snapshot supply and holder analysis                              |
-| `src/exclusions.ts`        | Which addresses are filtered from output (app escrows, LP pools) |
-| `src/types.ts`             | All domain types                                                 |
-| `src/config.ts`            | Indexer client setup and scan configuration                      |
-| `src/constants/tinyman.ts` | Tinyman mainnet asset and application constants                  |
-| `src/transfer-log.ts`      | Optional transfer-log writer                                     |
-| `src/json.ts`              | JSON serialization with bigint support                           |
-
-## Algohours output format
-
-`data/<start>-<end>.json`:
+`data/<periodStart>-<periodEnd>.json`:
 
 ```json
 {
+  "networkGenesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+  "protocol": "tinyman-consensus-staking",
   "periodStart": 60000000,
   "periodEnd": 63000000,
   "periodStartTime": 1730000000,
   "periodEndTime": 1738500000,
-  "rate": "1000500000000000",
-  "accounts": [{ "account": "ADDR...", "algoHours": "123456789" }]
+  "rate": "1.045000000000",
+  "totalAccounts": 3871,
+  "totalAlgoHours": "89424352909063151",
+  "accounts": [{ "account": "222LNF…", "algoHours": "123456789" }]
 }
 ```
 
-`algoHours` is in microALGO-hours (bigint as decimal string).
+`accounts` holds eligible holders only, sorted by address ascending (codepoint order, matching the committee-file convention). `algoHours` and `totalAlgoHours` are in microALGO-hours (bigints as decimal strings); `rate` is the fixed tALGO/ALGO rate for the window (12-decimal fixed-point string); times are Unix seconds.
 
-## Rate model
+## Code structure
 
-The effective ALGO value of each account is:
-
-```ts
-effectiveMicroAlgo = (talgo + stalgo) × tAlgoRate / 1_000_000_000_000
+```text
+src/
+├── snapshot.ts            Snapshot CLI — full scan from asset creation to a target round
+├── algohours.ts           Algohours CLI — window scan, rate fetch, algohour computation, create next snapshots
+├── compute.ts             Core algorithm — time-weighted balance accrual
+├── ledger.ts              Balances mutable state — applies transfers, opt-ins, close-outs
+├── indexer.ts             Indexer queries — windowed transfer scan, ARC-28 rate fetch
+├── exclusions.ts          Which addresses are filtered from algohour accrual
+├── config.ts              Indexer client setup and scan configuration
+├── types.ts               All domain types
+├── constants/
+│   └── tinyman.ts         Tinyman consensus-staking constants
+├── snapshot/
+│   ├── operations.ts      Snapshot creation, (de)serialization, persistence, comparison
+│   └── stats.ts           Snapshot supply and holder analysis
+└── utils/
+    ├── json.ts            bigint-safe JSON serialization
+    └── transfer-log.ts    Optional transfer log for inspecting scans
+test/                      Invariant unit tests (conservation, accrual, snapshots, data files)
+snapshots/                 Balance snapshots
+data/                      Algohour files
 ```
 
-`tAlgoRate` comes from the first `rate_update(uint64)` ARC-28 event emitted by the tALGO contract in `[periodStart, periodEnd)`. That rate is applied to the entire window.
+## Design notes
 
-**stALGO is treated 1:1 with tALGO** — this is correct by design. The stALGO staking contract always mints and redeems at strict parity (N tALGO in → N stALGO out, and back). Staking rewards are distributed in TINY tokens, not as additional tALGO, so the underlying tALGO position never changes in size. There is no stALGO/tALGO exchange rate.
-
-## Known limitations
-
-### Liquidity pool addresses are not yet excluded
-
-Known app escrows and reserve accounts are excluded. Tinyman LP pool escrows still need to be identified and added to `exclusions.ts` before the output is used for subdelegation allocation.
-
-### Intra-window rate drift is neglected
-
-`tAlgoRate` is fixed for the entire `[periodStart, periodEnd)` window. Any ALGO rewards that the consensus-staking accounts accrue during the window — causing the tALGO/ALGO rate to drift upward — are not reflected in that window's algohour computation.
-
-This is considered acceptable per window: the drift over a single 3M-round committee window is small relative to the amounts staked.
-
-Importantly, this approximation does **not** compound across periods. Because `tAlgoRate` is fetched independently for each window, a long-term staker's accumulated rate appreciation is captured between windows — only the marginal drift within the current window is neglected.
+- **Forward scan from asset creation.** Balances are rebuilt by replaying every ASA transfer from the assets' creation rounds — no dependency on present-day chain state. The Indexer's asset-transfer search captures every balance change (inner transactions included), and the replay order is deterministic (round, then position within the block), so identical inputs produce byte-identical committed JSON.
+- **Round semantics.** A snapshot at round `R` is the state after all transactions in rounds `< R` — i.e. just before round `R` executes. Windows are `[periodStart, periodEnd)`, so the end round belongs to the next window.
+- **How algohours accrue.** An account earns `balance × time`: whenever its balance changes, the seconds since its previous change are multiplied by the ALGO-equivalent balance it held during that elapsed time, and added to its running total. At the end of the window every account is settled up to `periodEnd`. All arithmetic is exact bigint; each account is rounded once, at the final conversion to microALGO-hours.
+- **Fixed rate: one per committee window.** `effectiveMicroAlgo = (talgo + stalgo) × tAlgoRate / RATE_SCALER`, where `tAlgoRate` is the first `rate_update(uint64)` ARC-28 event emitted by the tALGO app in `[periodStart, periodEnd)`. This is an approximation of reality — tALGO/ALGO drifts upward ~0.4%/month as staking rewards accrue, so the error is ~1.3% over a typical 3M-round window. Intentional: the rate is symmetrical across all holders and avoids continuous-rate complexity. The error does not compound (the rate is re-fetched each window). A two-rate interpolation could halve it if ever needed.
+- **stALGO counts 1:1 with tALGO**. Correct by design: the staking contract mints and redeems at strict parity, and rewards are paid in TINY tokens, so the underlying tALGO position never changes size. Re-stakers lose no credit.
+- **Exclusions at output time only.** Non-eligible addresses (e.g. app escrows) stay in the snapshot under `excluded` so total supply can always be verified against chain metadata; they are only omitted from algohour accrual. See `src/exclusions.ts`.
+- **Fail loud.** The replay throws if a balance would go negative or a close-out doesn't add up, and a snapshot run fails if an eligible address holds >15% of circulating supply — usually an escrow or LP pool missing from `src/exclusions.ts`.
