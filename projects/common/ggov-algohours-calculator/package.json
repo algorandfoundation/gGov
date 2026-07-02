@@ -7,6 +7,7 @@
   "scripts": {
     "snapshot": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/snapshot.ts",
     "algohours": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/algohours.ts",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -16,6 +17,7 @@
     "@types/node": "^25.0.10",
     "algosdk": "^3.5.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.9"
   }
 }
