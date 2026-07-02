@@ -132,7 +132,8 @@ const INDEXER_PAGE_SIZE = 1_000
  * Scan ASA transfers in `[startRound, endRound)` using fixed-size windows.
  * Pass each page results to `onBatch` to avoid storing all transfers in memory.
  *
- * Transfers are returned in round ascending order, so no sorting is needed.
+ * Replay depends on ascending (round, intra) order. The Indexer returns results
+ * that way by construction; the scan verifies it per transfer and throws if the order is ever altered.
  */
 export async function scanAssetTransfers(
   assetId: bigint,
@@ -143,6 +144,8 @@ export async function scanAssetTransfers(
 ): Promise<void> {
   const tag = label ?? `ASA ${assetId}`
   let windowStart = startRound
+  let lastRound = -1
+  let lastIntraOffset = -1
 
   while (windowStart < endRound) {
     const nextEnd = windowStart + SCAN_WINDOW
@@ -163,6 +166,15 @@ export async function scanAssetTransfers(
 
       const data = await withRetry(() => request.do())
       const transfers = getAssetTransfersFromTransactions(data.transactions ?? [], assetId)
+      for (const transfer of transfers) {
+        if (transfer.round < lastRound || (transfer.round === lastRound && transfer.intraOffset < lastIntraOffset)) {
+          throw new Error(
+            `Indexer returned transfers out of order: (${transfer.round}, ${transfer.intraOffset}) after (${lastRound}, ${lastIntraOffset})`,
+          )
+        }
+        lastRound = transfer.round
+        lastIntraOffset = transfer.intraOffset
+      }
       if (transfers.length > 0) {
         onBatch(transfers)
         transferCount += transfers.length
