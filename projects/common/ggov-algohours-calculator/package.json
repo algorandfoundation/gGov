@@ -13,11 +13,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "dependencies": {
+    "algosdk": "^3.5.2",
+    "tsx": "^4.21.0"
+  },
   "devDependencies": {
     "@types/node": "^25.0.10",
-    "algosdk": "^3.5.2",
-    "tsx": "^4.21.0",
-    "typescript": "^5.8.3",
     "vitest": "^4.1.9"
   }
 }

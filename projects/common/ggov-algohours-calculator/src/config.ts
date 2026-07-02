@@ -13,7 +13,7 @@ export function createIndexerClient(): Indexer {
   const token = process.env.INDEXER_TOKEN ?? ''
   const parsed = new URL(serverUrl)
   const port = parsed.port || ''
-  const base = `${parsed.protocol}//${parsed.hostname}`
-  const headers = token ? { 'X-Indexer-API-Token': token } : undefined
-  return new Indexer('', base, port, headers)
+  const pathname = parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')
+  const base = `${parsed.protocol}//${parsed.hostname}${pathname}`
+  return new Indexer(token ? { 'X-Indexer-API-Token': token } : {}, base, port)
 }
