@@ -12,6 +12,9 @@ export function createIndexerClient(): Indexer {
   const serverUrl = getIndexerUrl()
   const token = process.env.INDEXER_TOKEN ?? ''
   const parsed = new URL(serverUrl)
+  if (token && parsed.protocol !== 'https:') {
+    throw new Error(`INDEXER_TOKEN would be sent unencrypted to ${parsed.hostname} — use an https INDEXER_SERVER.`)
+  }
   const port = parsed.port || ''
   const pathname = parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')
   const base = `${parsed.protocol}//${parsed.hostname}${pathname}`

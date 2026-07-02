@@ -44,6 +44,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(__dirname, '..', 'data')
 // Snapshots are saved at multiples of this interval
 const SNAPSHOT_INTERVAL = 1_000_000n
+// Sanity cap: committee windows are ~3M rounds; anything bigger is almost surely a typo
+const MAX_WINDOW = 10n * SNAPSHOT_INTERVAL
 const RATE_DECIMAL_PLACES = RATE_SCALER.toString().length - 1
 
 // ---------------------------------------------------------------------------
@@ -100,6 +102,11 @@ async function main() {
 
   if (periodEnd <= periodStart) {
     throw new Error('periodEnd must be greater than periodStart')
+  }
+  if (periodEnd - periodStart > MAX_WINDOW) {
+    throw new Error(
+      `Window of ${periodEnd - periodStart} rounds exceeds the ${MAX_WINDOW} maximum — check the arguments.`,
+    )
   }
 
   const outPath = join(DATA_DIR, `${periodStart}-${periodEnd}.json`)
