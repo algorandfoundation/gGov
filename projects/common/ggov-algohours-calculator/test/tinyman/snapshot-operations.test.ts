@@ -2,9 +2,9 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { TALGO_APP_ADDRESS } from '../src/constants/tinyman'
-import { createSnapshot, diffSnapshotBalances, getAllSnapshotBalances } from '../src/snapshot/operations'
-import { ALICE, BOB, CAROL, balancesOf } from './helpers'
+import { TALGO_APP_ADDRESS } from '../../src/tinyman/constants'
+import { createSnapshot, diffSnapshot, getAllSnapshotBalances } from '../../src/tinyman/snapshot/operations'
+import { ALICE, BOB, CAROL, balancesOf } from '../helpers'
 
 describe('createSnapshot', () => {
   it('drops zero balances and splits eligible from excluded addresses', () => {
@@ -34,23 +34,23 @@ describe('getAllSnapshotBalances', () => {
   })
 })
 
-describe('diffSnapshotBalances', () => {
+describe('diffSnapshot', () => {
   const balances = balancesOf([ALICE, 10n, 20n], [BOB, 5n, 0n])
   const stored = createSnapshot(1n, 0, balances)
 
   it('reports one diff per mutated balance', () => {
     const mutated = balancesOf([ALICE, 11n, 19n], [BOB, 5n, 0n])
-    const diffs = diffSnapshotBalances(mutated, stored)
+    const diffs = diffSnapshot(mutated, stored)
     expect(diffs).toHaveLength(1)
     expect(diffs[0]).toContain(ALICE)
   })
 
   it('detects missing and extra addresses', () => {
-    expect(diffSnapshotBalances(balancesOf([ALICE, 10n, 20n]), stored)).toHaveLength(1)
-    expect(diffSnapshotBalances(balancesOf([ALICE, 10n, 20n], [BOB, 5n, 0n], [CAROL, 1n, 0n]), stored)).toHaveLength(1)
+    expect(diffSnapshot(balancesOf([ALICE, 10n, 20n]), stored)).toHaveLength(1)
+    expect(diffSnapshot(balancesOf([ALICE, 10n, 20n], [BOB, 5n, 0n], [CAROL, 1n, 0n]), stored)).toHaveLength(1)
   })
 
   it('is empty for a snapshot of the same balances', () => {
-    expect(diffSnapshotBalances(balances, stored)).toEqual([])
+    expect(diffSnapshot(balances, stored)).toEqual([])
   })
 })

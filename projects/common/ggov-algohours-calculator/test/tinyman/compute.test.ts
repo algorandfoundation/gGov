@@ -5,9 +5,9 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { computeAlgoHours, mergeAssetTransfers } from '../src/compute'
-import { RATE_SCALER } from '../src/constants/tinyman'
-import { ALICE, BOB, CAROL, ESCROW, balancesOf, makeTagged, makeTransfer } from './helpers'
+import { computeAlgoHours, mergeAssetTransfers } from '../../src/tinyman/compute'
+import { RATE_SCALER } from '../../src/tinyman/constants'
+import { ALICE, BOB, CAROL, ESCROW, balancesOf, makeTagged, makeTransfer } from '../helpers'
 
 const HOUR = 3600
 const DIVISOR = RATE_SCALER * 3600n

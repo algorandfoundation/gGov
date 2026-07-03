@@ -1,6 +1,6 @@
 /** Snapshot supply, holder statistics, and eligibility checks. */
 
-import { STALGO_APP_ADDRESS, TALGO_APP_ADDRESS } from '../constants/tinyman'
+import { STALGO_APP_ADDRESS, TALGO_APP_ADDRESS } from '../constants'
 import { totalSupply } from '../ledger'
 import { deserializeBalances } from './operations'
 import type { BalanceMap, SnapshotData } from '../types'

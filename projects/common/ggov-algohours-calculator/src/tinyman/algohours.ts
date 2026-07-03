@@ -4,15 +4,15 @@
  * Loads the balance snapshot at periodStart, scans all ASA transfers in
  * [periodStart, periodEnd), and writes each eligible account's algohours.
  *
- * Input:  snapshots/<periodStart>.json
- * Output: data/<periodStart>-<periodEnd>.json
+ * Input:  snapshots/tinyman/<periodStart>.json
+ * Output: data/tinyman/<periodStart>-<periodEnd>.json
  *   { networkGenesisHash, protocol, periodStart, periodEnd, periodStartTime, periodEndTime,
  *     rate, totalAccounts, totalAlgoHours, accounts: [{ account, algoHours }] }
  *
  * Usage:
- *   pnpm algohours <periodStart> <periodEnd>                    # compute algohours and save boundary snapshots
- *   pnpm algohours <periodStart> <periodEnd> --save-transfers   # also write data/<start>-<end>.transfers.log
- *   pnpm algohours <periodStart> <periodEnd> --no-snapshot      # skip boundary snapshots
+ *   pnpm algohours:tinyman <periodStart> <periodEnd>                    # compute algohours and create/verify upcoming snapshots
+ *   pnpm algohours:tinyman <periodStart> <periodEnd> --save-transfers   # also write data/<start>-<end>.transfers.log
+ *   pnpm algohours:tinyman <periodStart> <periodEnd> --no-snapshot      # skip creating/verifying snapshots
  *
  * Env:
  *   INDEXER_SERVER   indexer base URL (default: public Nodely mainnet indexer)
@@ -23,29 +23,22 @@ import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { PROTOCOL, RATE_SCALER, STALGO_ASA_ID, TALGO_ASA_ID } from './constants/tinyman'
+import { MAX_WINDOW } from '../config'
+import { PROTOCOL, RATE_SCALER, STALGO_ASA_ID, TALGO_ASA_ID } from './constants'
 import { isExcluded } from './exclusions'
-import { scanAssetTransfers, fetchBlockTimestamp, fetchGenesisHash, fetchTAlgoRateInRange } from './indexer'
+import { scanAssetTransfers, fetchBlockTimestamp, fetchGenesisHash } from '../indexer'
+import { fetchTAlgoRateInRange } from './indexer'
 import { applyTransfer } from './ledger'
 import { computeAlgoHours, mergeAssetTransfers } from './compute'
-import {
-  createSnapshot,
-  diffSnapshotBalances,
-  getSnapshotPath,
-  readSnapshot,
-  getAllSnapshotBalances,
-  writeSnapshot,
-} from './snapshot/operations'
-import { openTransferLog } from './utils/transfer-log'
-import { stringifyJson } from './utils/json'
-import type { AlgoHoursData, AssetTransfer, BalanceMap, SnapshotData } from './types'
+import * as snapshotStore from './snapshot/operations'
+import { checkOrCreateSnapshots } from '../snapshots'
+import { openTransferLog } from '../utils/transfer-log'
+import { stringifyJson } from '../utils/json'
+import type { AlgoHoursData, AssetTransfer } from '../types'
+import type { BalanceMap } from './types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DATA_DIR = join(__dirname, '..', 'data')
-// Snapshots are saved at multiples of this interval
-const SNAPSHOT_INTERVAL = 1_000_000n
-// Sanity cap: committee windows are ~3M rounds; anything bigger is almost surely a typo
-const MAX_WINDOW = 10n * SNAPSHOT_INTERVAL
+const DATA_DIR = join(__dirname, '../..', 'data', 'tinyman')
 const RATE_DECIMAL_PLACES = RATE_SCALER.toString().length - 1
 
 // ---------------------------------------------------------------------------
@@ -62,27 +55,6 @@ function formatRate(rate: bigint): string {
   return `${integer}.${fraction}`
 }
 
-/**
- * Verify computed balances against an existing snapshot, or build the snapshot
- * to persist later. Throws on mismatch so the caller can abort before writing
- * any output derived from a non-matching replay.
- */
-async function checkOrCreateSnapshot(round: bigint, balances: BalanceMap): Promise<SnapshotData | null> {
-  if (existsSync(getSnapshotPath(round))) {
-    const diffs = diffSnapshotBalances(balances, readSnapshot(round))
-    if (diffs.length > 0) {
-      throw new Error(
-        `Snapshot ${round}.json has ${diffs.length} mismatch(es):\n${diffs.join('\n')}\n` +
-          'Stored snapshot and this scan disagree — nothing was written; investigate before trusting either.',
-      )
-    }
-    console.log(`  ✓ ${round}: snapshot exists and matches`)
-    return null
-  }
-  const timestamp = await fetchBlockTimestamp(round)
-  return createSnapshot(round, timestamp, balances)
-}
-
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -94,7 +66,7 @@ async function main() {
   const positionalArgs = args.filter((arg) => !arg.startsWith('--'))
 
   if (positionalArgs.length !== 2 || positionalArgs.some((arg) => !/^\d+$/.test(arg))) {
-    throw new Error('Usage: pnpm algohours <periodStart> <periodEnd> [--no-snapshot] [--save-transfers]')
+    throw new Error('Usage: pnpm algohours:tinyman <periodStart> <periodEnd> [--no-snapshot] [--save-transfers]')
   }
 
   const periodStart = BigInt(positionalArgs[0])
@@ -118,8 +90,8 @@ async function main() {
 
   // Load inputs
   console.log(`Loading snapshot at round ${periodStart}…`)
-  const origin = readSnapshot(periodStart)
-  const balances = getAllSnapshotBalances(origin)
+  const origin = snapshotStore.readSnapshot(periodStart)
+  const balances = snapshotStore.getAllSnapshotBalances(origin)
   const startTimestamp = origin.timestamp
   console.log(`  ${balances.size} accounts loaded`)
   console.log(`  startTimestamp = ${startTimestamp} (${new Date(startTimestamp * 1000).toISOString()})`)
@@ -185,7 +157,7 @@ async function main() {
   console.log(`  stALGO transfers in window: ${stAlgoTransfers.length}`)
 
   // Preserve starting balances before computeAlgoHours mutates them
-  const boundaryBalances = saveSnapshots ? cloneBalances(balances) : undefined
+  const snapshotBalances = saveSnapshots ? cloneBalances(balances) : undefined
 
   // Compute output
   console.log('\nComputing time-weighted algohours…')
@@ -216,30 +188,21 @@ async function main() {
     accounts,
   }
 
-  // Check or build snapshots (multiples of SNAPSHOT_INTERVAL) in the window (periodStart, periodEnd].
-  // Verification runs before anything is persisted: a mismatch aborts the run with nothing written.
-  const pendingSnapshots: SnapshotData[] = []
-  if (saveSnapshots) {
-    console.log('\nChecking snapshots…')
-    if (periodStart % SNAPSHOT_INTERVAL !== 0n)
-      console.warn(`Warning: periodStart is not multiple of ${SNAPSHOT_INTERVAL}`)
-    const first = (periodStart / SNAPSHOT_INTERVAL + 1n) * SNAPSHOT_INTERVAL
-    let transferIdx = 0
+  // Check or build snapshots in the window (periodStart, periodEnd]
+  if (snapshotBalances) {
+    const pendingSnapshots = await checkOrCreateSnapshots(
+      snapshotStore,
+      snapshotBalances,
+      transfers,
+      (balances, transfer) => applyTransfer(balances, transfer, transfer.asset),
+      periodStart,
+      periodEnd,
+    )
 
-    for (let snapshotRound = first; snapshotRound <= periodEnd; snapshotRound += SNAPSHOT_INTERVAL) {
-      while (transferIdx < transfers.length && BigInt(transfers[transferIdx].round) < snapshotRound) {
-        const transfer = transfers[transferIdx]
-        applyTransfer(boundaryBalances!, transfer, transfer.asset)
-        transferIdx++
-      }
-      const snapshot = await checkOrCreateSnapshot(snapshotRound, boundaryBalances!)
-      if (snapshot) pendingSnapshots.push(snapshot)
+    // All snapshots verified — persist outputs
+    for (const snapshot of pendingSnapshots) {
+      console.log(`  Snapshot saved: ${snapshotStore.writeSnapshot(snapshot)}`)
     }
-  }
-
-  // All boundaries verified — persist outputs
-  for (const snapshot of pendingSnapshots) {
-    console.log(`  Snapshot saved: ${writeSnapshot(snapshot)}`)
   }
 
   mkdirSync(DATA_DIR, { recursive: true })

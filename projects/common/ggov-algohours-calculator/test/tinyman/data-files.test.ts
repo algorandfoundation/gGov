@@ -6,17 +6,20 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { PROTOCOL, RATE_SCALER } from '../src/constants/tinyman'
-import { isExcluded } from '../src/exclusions'
-import { totalSupply } from '../src/ledger'
-import { getAllSnapshotBalances, getSnapshotPath, readSnapshot } from '../src/snapshot/operations'
-import type { AlgoHoursData } from '../src/types'
+import { PROTOCOL, RATE_SCALER } from '../../src/tinyman/constants'
+import { isExcluded } from '../../src/tinyman/exclusions'
+import { totalSupply } from '../../src/tinyman/ledger'
+import { getAllSnapshotBalances, getSnapshotPath, readSnapshot } from '../../src/tinyman/snapshot/operations'
+import type { AlgoHoursData } from '../../src/types'
 
-const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data')
+// Tinyman files always carry the tALGO/ALGO rate
+type TinymanAlgoHoursData = AlgoHoursData & { rate: string }
+
+const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'tinyman')
 const files = existsSync(DATA_DIR) ? readdirSync(DATA_DIR).filter((name) => name.endsWith('.json')) : []
 const datasets = files.map((file) => ({
   file,
-  data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as AlgoHoursData,
+  data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as TinymanAlgoHoursData,
 }))
 
 function scaledRate(rate: string): bigint {

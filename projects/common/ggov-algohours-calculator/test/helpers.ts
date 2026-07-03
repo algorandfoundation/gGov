@@ -1,6 +1,7 @@
 /** Shared fixtures for the invariant unit tests. */
 
-import type { AssetTransfer, BalanceMap, TaggedTransfer } from '../src/types'
+import type { AssetTransfer } from '../src/types'
+import type { BalanceMap, TaggedTransfer } from '../src/tinyman/types'
 
 // ledger.ts and compute.ts never validate address format, so readable ids keep fixtures legible
 export const ALICE = 'ALICE'

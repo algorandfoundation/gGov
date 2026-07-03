@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { isExcluded } from '../src/exclusions'
-import { totalSupply } from '../src/ledger'
-import { getAllSnapshotBalances, readSnapshot } from '../src/snapshot/operations'
+import { isExcluded } from '../../src/tinyman/exclusions'
+import { totalSupply } from '../../src/tinyman/ledger'
+import { getAllSnapshotBalances, readSnapshot } from '../../src/tinyman/snapshot/operations'
 
-const SNAPSHOTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'snapshots')
+const SNAPSHOTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'snapshots', 'tinyman')
 const rounds = existsSync(SNAPSHOTS_DIR)
   ? readdirSync(SNAPSHOTS_DIR)
       .filter((name) => name.endsWith('.json'))
