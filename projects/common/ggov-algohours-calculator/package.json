@@ -7,6 +7,8 @@
   "scripts": {
     "snapshot:tinyman": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/tinyman/snapshot.ts",
     "algohours:tinyman": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/tinyman/algohours.ts",
+    "snapshot:reti": "tsx src/reti/snapshot.ts",
+    "algohours:reti": "tsx src/reti/algohours.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
