@@ -22,6 +22,8 @@ jobs:
     outputs:
       contracts: ${{ steps.detect.outputs.contracts }}
       puya_ts: ${{ steps.detect.outputs.puya_ts }}
+      committee_uploader: ${{ steps.detect.outputs.committee_uploader }}
+      algohours_calculator: ${{ steps.detect.outputs.algohours_calculator }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -37,6 +39,8 @@ jobs:
             {
               echo "contracts=true"
               echo "puya_ts=true"
+              echo "committee_uploader=true"
+              echo "algohours_calculator=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -50,12 +54,18 @@ jobs:
           {
             echo "contracts=false"
             echo "puya_ts=false"
+            echo "committee_uploader=false"
+            echo "algohours_calculator=false"
           } >> "$GITHUB_OUTPUT"
 
           grep -qE '^projects/(contracts|[^/]+-sdk)/|^pnpm-lock\.yaml|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml' \
             <<<"$changed" && echo "contracts=true" >> "$GITHUB_OUTPUT" || true
           grep -qE '^projects/contracts/smart_contracts/.*\.algo\.ts$' \
             <<<"$changed" && echo "puya_ts=true"   >> "$GITHUB_OUTPUT" || true
+          grep -qE '^projects/common/ggov-committee-uploader/|^projects/ggov-sdk/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
+            <<<"$changed" && echo "committee_uploader=true" >> "$GITHUB_OUTPUT" || true
+          grep -qE '^projects/common/ggov-algohours-calculator/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
+            <<<"$changed" && echo "algohours_calculator=true" >> "$GITHUB_OUTPUT" || true
 
   audit:
     runs-on: ubuntu-latest
@@ -92,6 +102,21 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Validate committee uploader
+        if: needs.changes.outputs.committee_uploader == 'true'
+        run: |
+          pnpm --filter ggov-committees format:check
+          pnpm --filter ggov-committees lint
+          pnpm --filter ggov-committees typecheck
+
+      - name: Validate algohours calculator
+        if: needs.changes.outputs.algohours_calculator == 'true'
+        run: |
+          pnpm --filter ggov-algohours-calculator format:check
+          pnpm --filter ggov-algohours-calculator lint
+          pnpm --filter ggov-algohours-calculator typecheck
+          pnpm --filter ggov-algohours-calculator test
 
       - name: Install algokit
         run: pipx install algokit
@@ -181,3 +206,31 @@ jobs:
         env:
           NOOP_TEST_LOGGER: true
         run: pnpm --filter smart_contracts exec vitest run --reporter=verbose ${{ matrix.args }}
+
+  algohours-live-verification:
+    name: algohours live verification
+    needs: changes
+    if: needs.changes.outputs.algohours_calculator == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.x
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        id: install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Verify tinyman balances against live chain state
+        run: pnpm --filter ggov-algohours-calculator verify:tinyman
+
+      - name: Verify reti balances against live chain state
+        if: always() && steps.install.outcome == 'success'
+        run: pnpm --filter ggov-algohours-calculator verify:reti

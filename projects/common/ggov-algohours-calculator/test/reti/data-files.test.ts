@@ -1,4 +1,4 @@
-/** Self-consistency and cross-file checks for the committed algohours artifacts in data/. */
+/** Self-consistency and cross-file checks for the committed algohours artifacts in data/reti/. */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -6,35 +6,29 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { PROTOCOL, RATE_SCALER } from '../src/constants/tinyman'
-import { isExcluded } from '../src/exclusions'
-import { totalSupply } from '../src/ledger'
-import { getAllSnapshotBalances, getSnapshotPath, readSnapshot } from '../src/snapshot/operations'
-import type { AlgoHoursData } from '../src/types'
+import { PROTOCOL } from '../../src/reti/constants'
+import { deserializePools, getSnapshotPath, readSnapshot } from '../../src/reti/snapshot/operations'
+import type { AlgoHoursData } from '../../src/types'
 
-const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data')
+const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'reti')
+const TINYMAN_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'tinyman')
 const files = existsSync(DATA_DIR) ? readdirSync(DATA_DIR).filter((name) => name.endsWith('.json')) : []
 const datasets = files.map((file) => ({
   file,
   data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as AlgoHoursData,
 }))
 
-function scaledRate(rate: string): bigint {
-  return BigInt(rate.replace('.', ''))
-}
-
-describe('data files', () => {
-  it.skipIf(files.length > 0)('no committed data files to validate', () => {})
-
+describe('reti data files', () => {
   for (const { file, data } of datasets) {
     describe(file, () => {
       const startSnapshotExists = existsSync(getSnapshotPath(data.periodStart))
       const endSnapshotExists = existsSync(getSnapshotPath(data.periodEnd))
+      const tinymanTwin = join(TINYMAN_DATA_DIR, file)
 
-      it('has consistent metadata', () => {
+      it('has consistent metadata and no rate', () => {
         expect(data.networkGenesisHash).toMatch(/^[A-Za-z0-9+/]{43}=$/)
         expect(data.protocol).toBe(PROTOCOL)
-        expect(data.rate).toMatch(/^\d+\.\d{12}$/)
+        expect('rate' in data).toBe(false)
         expect(data.periodStart).toBeLessThan(data.periodEnd)
         expect(data.periodStartTime).toBeLessThan(data.periodEndTime)
         expect(file).toBe(`${data.periodStart}-${data.periodEnd}.json`)
@@ -46,12 +40,21 @@ describe('data files', () => {
         expect(summed.toString()).toBe(data.totalAlgoHours)
       })
 
-      it('accounts are strictly ascending by codepoint with positive algohours, none excluded', () => {
+      it('accounts are strictly ascending by codepoint with positive algohours', () => {
         for (let i = 0; i < data.accounts.length; i++) {
           const { account, algoHours } = data.accounts[i]
           if (i > 0) expect(data.accounts[i - 1].account < account).toBe(true)
           expect(BigInt(algoHours)).toBeGreaterThan(0n)
-          expect(isExcluded(account)).toBe(false)
+        }
+      })
+
+      // One legitimate exception exists: a staker fully unstaking in the very same second as
+      // the window start earns zero and is rightly omitted. If this ever fails, check whether
+      // the missing staker is that case before assuming the data file is wrong.
+      it.skipIf(!startSnapshotExists)('every staker in the start snapshot appears in the accounts', () => {
+        const accounts = new Set(data.accounts.map(({ account }) => account))
+        for (const pool of deserializePools(readSnapshot(data.periodStart)).values()) {
+          for (const staker of pool.keys()) expect(accounts.has(staker), staker).toBe(true)
         }
       })
 
@@ -60,21 +63,11 @@ describe('data files', () => {
         expect(data.periodEndTime).toBe(readSnapshot(data.periodEnd).timestamp)
       })
 
-      it.skipIf(!startSnapshotExists)('totalAlgoHours never exceeds supply × rate × duration', () => {
-        const supply = totalSupply(getAllSnapshotBalances(readSnapshot(data.periodStart)))
-        const duration = BigInt(data.periodEndTime - data.periodStartTime)
-        const upperBound = ((supply.talgo + supply.stalgo) * scaledRate(data.rate) * duration) / (RATE_SCALER * 3600n)
-        expect(BigInt(data.totalAlgoHours)).toBeLessThanOrEqual(upperBound)
+      it.skipIf(!existsSync(tinymanTwin))('period timestamps match the tinyman file for the same window', () => {
+        const twin = JSON.parse(readFileSync(tinymanTwin, 'utf-8')) as AlgoHoursData
+        expect(data.periodStartTime).toBe(twin.periodStartTime)
+        expect(data.periodEndTime).toBe(twin.periodEndTime)
       })
     })
   }
-
-  describe.skipIf(datasets.length < 2)('across data files', () => {
-    it('rates strictly increase with periodStart (staking rewards only accrue)', () => {
-      const sorted = [...datasets].sort((a, b) => a.data.periodStart - b.data.periodStart)
-      for (let i = 1; i < sorted.length; i++) {
-        expect(scaledRate(sorted[i].data.rate)).toBeGreaterThan(scaledRate(sorted[i - 1].data.rate))
-      }
-    })
-  })
 })

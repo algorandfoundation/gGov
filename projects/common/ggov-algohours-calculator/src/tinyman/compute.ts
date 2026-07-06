@@ -1,8 +1,9 @@
 /** Time-weighted algohour calculation for tALGO and stALGO balances. */
 
-import { RATE_SCALER } from './constants/tinyman'
+import { RATE_SCALER } from './constants'
 import { applyTransfer } from './ledger'
-import type { AssetTransfer, BalanceMap, TaggedTransfer } from './types'
+import type { AssetTransfer } from '../types'
+import type { BalanceMap, TaggedTransfer } from './types'
 
 /**
  * Compute microALGO-hours over `[startTimestamp, endTimestamp)` using a fixed

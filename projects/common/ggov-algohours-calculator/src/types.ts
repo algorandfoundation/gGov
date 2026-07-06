@@ -22,34 +22,9 @@ export interface AssetTransfer {
   closeAmount?: bigint
 }
 
-/** Tagged tALGO and stALGO transfer. */
-export interface TaggedTransfer extends AssetTransfer {
-  asset: 'talgo' | 'stalgo'
-}
-
-/** Per-account balance of tracked assets. */
-export interface AccountBalance {
-  talgo: bigint
-  stalgo: bigint
-}
-
-/** Mutable ledger: address → current balance. */
-export type BalanceMap = Map<string, AccountBalance>
-
 // ---------------------------------------------------------------------------
 // JSON-serialisable output types (bigint stored as decimal string)
 // ---------------------------------------------------------------------------
-
-export interface SnapshotData {
-  /** Round at which balances were reconstructed, just before `round` transactions execute. */
-  round: number
-  /** Block timestamp at that round (unix seconds). */
-  timestamp: number
-  /** Per-address balances at this round, for algohour-eligible holders (users, not apps). */
-  balances: Record<string, { talgo: string; stalgo: string }>
-  /** Excluded addresses (app escrows/LPs, reserve) and their balances at this round. Useful for supply verification. */
-  excluded: Record<string, { talgo: string; stalgo: string }>
-}
 
 export interface AccountWithAlgoHours {
   account: string
@@ -65,12 +40,11 @@ export interface AlgoHoursData {
   periodEnd: number
   periodStartTime: number
   periodEndTime: number
-  /** tALGO/ALGO rate used for the entire window (fixed-point decimal string with 12 decimal places). */
-  rate: string
+  /** Liquid-token/ALGO rate used for the entire window (fixed-point decimal string with 12 decimal places). Absent for natively staked protocols. */
+  rate?: string
   /** Number of eligible accounts. */
   totalAccounts: number
   /** Sum of all accounts' algohours (microALGO × hours, bigint as decimal string). */
   totalAlgoHours: string
-  /** Eligible holders only, from `SnapshotData.balances`. */
   accounts: AccountWithAlgoHours[]
 }

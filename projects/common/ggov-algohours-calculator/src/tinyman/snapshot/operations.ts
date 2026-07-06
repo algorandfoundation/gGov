@@ -1,27 +1,19 @@
 /** Create, (de)serialize, persist, and compare balance snapshots. */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { isExcluded } from '../exclusions'
-import { stringifyJson } from '../utils/json'
+import { createSnapshotFiles } from '../../snapshots'
 import type { BalanceMap, SnapshotData } from '../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SNAPSHOTS_DIR = join(__dirname, '../..', 'snapshots')
+const SNAPSHOTS_DIR = join(__dirname, '../../..', 'snapshots', 'tinyman')
 
-export function getSnapshotPath(round: bigint | number): string {
-  return join(SNAPSHOTS_DIR, `${round}.json`)
-}
-
-export function readSnapshot(round: bigint | number): SnapshotData {
-  const path = getSnapshotPath(round)
-  if (!existsSync(path)) {
-    throw new Error(`Snapshot not found: ${path}\nRun: pnpm snapshot ${round}`)
-  }
-  return JSON.parse(readFileSync(path, 'utf-8')) as SnapshotData
-}
+export const { getSnapshotPath, readSnapshot, writeSnapshot, latestSnapshotRound } = createSnapshotFiles<SnapshotData>(
+  SNAPSHOTS_DIR,
+  'pnpm snapshot:tinyman',
+)
 
 export function deserializeBalances(section: SnapshotData['balances']): BalanceMap {
   return new Map(
@@ -52,27 +44,23 @@ export function createSnapshot(round: bigint, timestamp: number, balances: Balan
   return { round: Number(round), timestamp, balances: eligible, excluded }
 }
 
-export function writeSnapshot(snapshot: SnapshotData): string {
-  const path = getSnapshotPath(snapshot.round)
-  mkdirSync(SNAPSHOTS_DIR, { recursive: true })
-  writeFileSync(path, stringifyJson(snapshot))
-  return path
-}
-
-export function diffSnapshotBalances(computed: BalanceMap, stored: SnapshotData): string[] {
-  const expectedBalances = getAllSnapshotBalances(stored)
-  const addresses = [...new Set([...computed.keys(), ...expectedBalances.keys()])].sort()
+export function diffBalances(computed: BalanceMap, expected: BalanceMap): string[] {
+  const addresses = [...new Set([...computed.keys(), ...expected.keys()])].sort()
   const diffs: string[] = []
 
   for (const address of addresses) {
     const actual = computed.get(address) ?? { talgo: 0n, stalgo: 0n }
-    const expected = expectedBalances.get(address) ?? { talgo: 0n, stalgo: 0n }
+    const wanted = expected.get(address) ?? { talgo: 0n, stalgo: 0n }
     const parts: string[] = []
 
-    if (expected.talgo !== actual.talgo) parts.push(`talgo ${expected.talgo}→${actual.talgo}`)
-    if (expected.stalgo !== actual.stalgo) parts.push(`stalgo ${expected.stalgo}→${actual.stalgo}`)
+    if (wanted.talgo !== actual.talgo) parts.push(`talgo ${wanted.talgo}→${actual.talgo}`)
+    if (wanted.stalgo !== actual.stalgo) parts.push(`stalgo ${wanted.stalgo}→${actual.stalgo}`)
     if (parts.length > 0) diffs.push(`  [${diffs.length + 1}] ${address}  ${parts.join('  ')}`)
   }
 
   return diffs
+}
+
+export function diffSnapshot(computed: BalanceMap, stored: SnapshotData): string[] {
+  return diffBalances(computed, getAllSnapshotBalances(stored))
 }

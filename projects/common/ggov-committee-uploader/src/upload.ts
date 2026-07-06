@@ -32,7 +32,7 @@ import { type CommitteeFile } from './ggov'
 // everything resolve from the workspace node_modules the SDK itself uses.
 const sdkEntry = fileURLToPath(new URL('../../../ggov-sdk/dist/index.js', import.meta.url))
 const require = createRequire(sdkEntry)
-const { AlgorandClient } = require('@algorandfoundation/algokit-utils')
+const { AlgorandClient, microAlgos } = require('@algorandfoundation/algokit-utils')
 const { GGovRegistrySDK, GGovRegistryFactory } = require(sdkEntry)
 
 const COMMITTEES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'committees')
@@ -89,7 +89,7 @@ async function main() {
     const target = info.minBalance.microAlgo + microAlgosPerMember * BigInt(members)
     const shortfall = target - info.balance.microAlgo
     if (shortfall > 0n) {
-      await algorand.send.payment({ sender: deployer.addr, receiver: appAddress, amount: shortfall.microAlgo() })
+      await algorand.send.payment({ sender: deployer.addr, receiver: appAddress, amount: microAlgos(shortfall) })
       console.log(
         `  funded app +${(Number(shortfall) / 1e6).toFixed(3)} ALGO (target ${(Number(target) / 1e6).toFixed(2)})`,
       )

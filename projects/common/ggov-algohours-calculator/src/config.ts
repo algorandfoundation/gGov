@@ -4,6 +4,11 @@ import { Indexer } from 'algosdk'
 // 1M rounds ≈ 1 month.
 export const SCAN_WINDOW = 1_000_000n
 
+// Snapshots are saved at multiples of this interval
+export const SNAPSHOT_INTERVAL = 1_000_000n
+// Sanity cap on an algohours window: committee windows are ~3M rounds; anything bigger is almost surely a typo
+export const MAX_WINDOW = 10n * SNAPSHOT_INTERVAL
+
 function getIndexerUrl(): string {
   return (process.env.INDEXER_SERVER ?? 'https://mainnet-idx.4160.nodely.dev').replace(/\/$/, '')
 }

@@ -3,12 +3,11 @@
 import { type indexerModels } from 'algosdk'
 
 import { SCAN_WINDOW, createIndexerClient } from './config'
-import { TALGO_APP_ID, TALGO_RATE_UPDATE_SELECTOR } from './constants/tinyman'
 import type { AssetTransfer } from './types'
 
 // Process-wide client, configured from INDEXER_SERVER/INDEXER_TOKEN at module load.
 // To mix endpoints in one process, refactor the query functions to accept a client.
-const indexerClient = createIndexerClient()
+export const indexerClient = createIndexerClient()
 
 // ---------------------------------------------------------------------------
 // Retry wrapper
@@ -20,13 +19,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   for (let retry = 0; ; retry++) {
     try {
       return await fn()
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      if (!/429|500|502|503|504/.test(message) || retry >= MAX_RETRIES) throw error
+      // Retryable: rate limits, server errors, and network-level failures (queries are idempotent GETs)
+      if (
+        !/429|500|502|503|504|fetch failed|timeout|ECONNRESET|ETIMEDOUT|socket hang up/i.test(message) ||
+        retry >= MAX_RETRIES
+      )
+        throw error
       const delay = Math.min(2_000 * 2 ** retry, 30_000)
       console.log(`  [indexer] ${message.slice(0, 100)} — retry ${retry + 1}/${MAX_RETRIES} in ${delay}ms…`)
       await sleep(delay)
@@ -123,26 +127,59 @@ function getAssetTransfersFromTransactions(txns: indexerModels.Transaction[], as
 }
 
 // ---------------------------------------------------------------------------
-// Asset transfer scanning
+// ARC-28 event extraction
 // ---------------------------------------------------------------------------
 
-const INDEXER_PAGE_SIZE = 1_000
+/**
+ * Recursively decode ARC-28 logs emitted by `appId` from a transaction and its inner
+ * transactions. Log payload decoding stays with the caller; a decoder returns null for
+ * logs it does not recognize.
+ */
+export function getAppEventsFromTransaction<T>(
+  txn: indexerModels.Transaction,
+  appId: bigint,
+  decodeEventLog: (log: Uint8Array) => T | null,
+): T[] {
+  const results: T[] = []
+
+  if (txn.txType === 'appl' && txn.applicationTransaction?.applicationId === appId) {
+    for (const log of txn.logs ?? []) {
+      const event = decodeEventLog(log)
+      if (event !== null) results.push(event)
+    }
+  }
+
+  for (const inner of txn.innerTxns ?? []) {
+    for (const event of getAppEventsFromTransaction(inner, appId, decodeEventLog)) {
+      results.push(event)
+    }
+  }
+
+  return results
+}
+
+// ---------------------------------------------------------------------------
+// Transaction scanning
+// ---------------------------------------------------------------------------
+
+export const INDEXER_PAGE_SIZE = 1_000
 
 /**
- * Scan ASA transfers in `[startRound, endRound)` using fixed-size windows.
- * Pass each page results to `onBatch` to avoid storing all transfers in memory.
+ * Scan indexer transactions in `[startRound, endRound)` using fixed-size windows,
+ * decoding each page into records and passing them to `onBatch` to avoid storing
+ * everything in memory.
  *
  * Replay depends on ascending (round, intra) order. The Indexer returns results
- * that way by construction; the scan verifies it per transfer and throws if the order is ever altered.
+ * that way by construction; the scan verifies it per record and throws if the order is ever altered.
  */
-export async function scanAssetTransfers(
-  assetId: bigint,
+export async function scanTransactionRecords<T extends { round: number; intraOffset: number }>(
+  filter: { assetId?: bigint; applicationId?: bigint },
+  decodeTransactions: (txns: indexerModels.Transaction[]) => T[],
   startRound: bigint,
   endRound: bigint,
-  onBatch: (transfers: AssetTransfer[]) => void,
-  label?: string,
+  onBatch: (records: T[]) => void,
+  tag: string,
 ): Promise<void> {
-  const tag = label ?? `ASA ${assetId}`
   let windowStart = startRound
   let lastRound = -1
   let lastIntraOffset = -1
@@ -152,32 +189,33 @@ export async function scanAssetTransfers(
     const windowEnd = nextEnd > endRound ? endRound : nextEnd
 
     console.log(`  [${tag}] scanning rounds [${windowStart}, ${windowEnd - 1n}]…`)
-    let transferCount = 0
+    let recordCount = 0
     let nextToken: string | undefined
 
     do {
       let request = indexerClient
         .searchForTransactions()
-        .assetID(assetId)
         .minRound(windowStart)
         .maxRound(windowEnd - 1n)
         .limit(INDEXER_PAGE_SIZE)
+      if (filter.assetId !== undefined) request = request.assetID(filter.assetId)
+      if (filter.applicationId !== undefined) request = request.applicationID(filter.applicationId)
       if (nextToken) request = request.nextToken(nextToken)
 
       const data = await withRetry(() => request.do())
-      const transfers = getAssetTransfersFromTransactions(data.transactions ?? [], assetId)
-      for (const transfer of transfers) {
-        if (transfer.round < lastRound || (transfer.round === lastRound && transfer.intraOffset < lastIntraOffset)) {
+      const records = decodeTransactions(data.transactions ?? [])
+      for (const record of records) {
+        if (record.round < lastRound || (record.round === lastRound && record.intraOffset < lastIntraOffset)) {
           throw new Error(
-            `Indexer returned transfers out of order: (${transfer.round}, ${transfer.intraOffset}) after (${lastRound}, ${lastIntraOffset})`,
+            `Indexer returned transactions out of order: (${record.round}, ${record.intraOffset}) after (${lastRound}, ${lastIntraOffset})`,
           )
         }
-        lastRound = transfer.round
-        lastIntraOffset = transfer.intraOffset
+        lastRound = record.round
+        lastIntraOffset = record.intraOffset
       }
-      if (transfers.length > 0) {
-        onBatch(transfers)
-        transferCount += transfers.length
+      if (records.length > 0) {
+        onBatch(records)
+        recordCount += records.length
       }
 
       nextToken = data.nextToken
@@ -187,60 +225,25 @@ export async function scanAssetTransfers(
       }
     } while (nextToken)
 
-    console.log(`  [${tag}] ${transferCount} transfers found`)
+    console.log(`  [${tag}] ${recordCount} records found`)
     windowStart = windowEnd
   }
 }
 
-// ---------------------------------------------------------------------------
-// tALGO/ALGO rate lookup
-// ---------------------------------------------------------------------------
-
-function decodeTAlgoRateUpdateLog(log: Uint8Array): bigint | null {
-  if (log.length !== 12) return null
-  if (!log.slice(0, 4).every((b, i) => b === TALGO_RATE_UPDATE_SELECTOR[i])) return null
-  return Buffer.from(log.buffer, log.byteOffset, log.byteLength).readBigUInt64BE(4)
-}
-
-function findTAlgoRateInTransaction(txn: indexerModels.Transaction): bigint | null {
-  for (const log of txn.logs ?? []) {
-    const rate = decodeTAlgoRateUpdateLog(log)
-    if (rate !== null) return rate
-  }
-  for (const inner of txn.innerTxns ?? []) {
-    const rate = findTAlgoRateInTransaction(inner)
-    if (rate !== null) return rate
-  }
-  return null
-}
-
-/**
- * Get the tALGO/ALGO rate from the first `rate_update(uint64)` ARC-28
- * event found in `[startRound, endRound)`, scanning forward.
- * Checks both outer and inner transaction logs.
- */
-export async function fetchTAlgoRateInRange(startRound: bigint, endRound: bigint): Promise<bigint | null> {
-  let nextToken: string | undefined
-
-  do {
-    let request = indexerClient
-      .searchForTransactions()
-      .applicationID(TALGO_APP_ID)
-      .minRound(startRound)
-      .maxRound(endRound - 1n)
-      .limit(INDEXER_PAGE_SIZE)
-    if (nextToken) request = request.nextToken(nextToken)
-
-    const data = await withRetry(() => request.do())
-
-    for (const txn of data.transactions ?? []) {
-      const rate = findTAlgoRateInTransaction(txn)
-      if (rate !== null) return rate
-    }
-
-    nextToken = data.nextToken
-    if (nextToken && data.transactions?.length === 0) break
-  } while (nextToken)
-
-  return null
+/** Scan ASA transfers in `[startRound, endRound)`, including nested inner transactions. */
+export async function scanAssetTransfers(
+  assetId: bigint,
+  startRound: bigint,
+  endRound: bigint,
+  onBatch: (transfers: AssetTransfer[]) => void,
+  label?: string,
+): Promise<void> {
+  await scanTransactionRecords(
+    { assetId },
+    (txns) => getAssetTransfersFromTransactions(txns, assetId),
+    startRound,
+    endRound,
+    onBatch,
+    label ?? `ASA ${assetId}`,
+  )
 }
