@@ -20,8 +20,6 @@ const rounds = existsSync(SNAPSHOTS_DIR)
 const snapshots = rounds.map((round) => readSnapshot(round))
 
 describe('snapshot files', () => {
-  it.skipIf(rounds.length > 0)('no committed snapshots to validate', () => {})
-
   for (const snapshot of snapshots) {
     describe(`${snapshot.round}.json`, () => {
       it('addresses are strictly ascending with non-zero decimal balances', () => {

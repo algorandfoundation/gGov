@@ -211,7 +211,6 @@ jobs:
     name: algohours live verification
     needs: changes
     if: needs.changes.outputs.algohours_calculator == 'true'
-    environment: indexer-mainnet
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -230,14 +229,8 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Verify tinyman balances against live chain state
-        env:
-          INDEXER_SERVER: ${{ vars.INDEXER_SERVER }}
-          INDEXER_TOKEN: ${{ secrets.INDEXER_TOKEN }}
         run: pnpm --filter ggov-algohours-calculator verify:tinyman
 
       - name: Verify reti balances against live chain state
         if: always() && steps.install.outcome == 'success'
-        env:
-          INDEXER_SERVER: ${{ vars.INDEXER_SERVER }}
-          INDEXER_TOKEN: ${{ secrets.INDEXER_TOKEN }}
         run: pnpm --filter ggov-algohours-calculator verify:reti

@@ -18,8 +18,6 @@ const rounds = existsSync(SNAPSHOTS_DIR)
   : []
 
 describe('reti snapshot files', () => {
-  it.skipIf(rounds.length > 0)('no committed snapshots to validate', () => {})
-
   for (const round of rounds) {
     describe(`${round}.json`, () => {
       const snapshot = readSnapshot(round)

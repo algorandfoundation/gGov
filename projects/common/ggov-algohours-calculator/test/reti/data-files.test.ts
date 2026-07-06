@@ -19,8 +19,6 @@ const datasets = files.map((file) => ({
 }))
 
 describe('reti data files', () => {
-  it.skipIf(files.length > 0)('no committed data files to validate', () => {})
-
   for (const { file, data } of datasets) {
     describe(file, () => {
       const startSnapshotExists = existsSync(getSnapshotPath(data.periodStart))
