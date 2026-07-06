@@ -18,7 +18,7 @@ A gGov committee combines the two:
 
 | gGov committee field          | Source                                          |
 | ----------------------------- | ----------------------------------------------- |
-| `xGovs` (members)             | the xGov **candidate** committee map            |
+| `govs` (members)              | the xGov **candidate** committee map            |
 | `networkGenesisHash`          | the xGov committee file                         |
 | `periodStart` / `periodEnd`   | the xGov committee file                         |
 | `registryId`                  | **placeholder `1`** (mainnet gGov registry TBD) |

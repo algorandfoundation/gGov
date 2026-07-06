@@ -57,6 +57,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       if (this.debug) console.log('Committee registered ', ...txIds)
     }
     const accounts = committeeFile.govs.map(({ address }) => address)
+    const votesByAddress = new Map<string, number>()
+    for (const { address, votes } of committeeFile.govs) {
+      if (!votesByAddress.has(address)) votesByAddress.set(address, votes)
+    }
     const [accountIds, lastIngestedGov] = await Promise.all([
       this.getAccountIdMap(accounts),
       this.getCommitteeSuperboxDataLast(committeeId),
@@ -82,7 +86,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       const govs = accountsChunk.map(({ id, address }) => ({
         accountId: id,
         account: address,
-        votes: committeeFile.govs.find((x) => x.address === address)!.votes,
+        votes: votesByAddress.get(address)!,
       }))
       const { txIds } = await this.ingestGovs({ committeeId, govs })
       const accountsLog = accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' ')
