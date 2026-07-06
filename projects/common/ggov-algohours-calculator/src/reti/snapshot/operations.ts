@@ -9,10 +9,8 @@ import type { PoolLedger, RetiSnapshotData, StakerInfo } from '../types'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SNAPSHOTS_DIR = join(__dirname, '../../..', 'snapshots', 'reti')
 
-export const { getSnapshotPath, readSnapshot, writeSnapshot } = createSnapshotFiles<RetiSnapshotData>(
-  SNAPSHOTS_DIR,
-  'pnpm snapshot:reti',
-)
+export const { getSnapshotPath, readSnapshot, writeSnapshot, latestSnapshotRound } =
+  createSnapshotFiles<RetiSnapshotData>(SNAPSHOTS_DIR, 'pnpm snapshot:reti')
 
 export function deserializePools(snapshot: RetiSnapshotData): PoolLedger {
   return new Map(

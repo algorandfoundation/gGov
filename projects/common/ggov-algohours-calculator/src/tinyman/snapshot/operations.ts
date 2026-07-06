@@ -10,7 +10,7 @@ import type { BalanceMap, SnapshotData } from '../types'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SNAPSHOTS_DIR = join(__dirname, '../../..', 'snapshots', 'tinyman')
 
-export const { getSnapshotPath, readSnapshot, writeSnapshot } = createSnapshotFiles<SnapshotData>(
+export const { getSnapshotPath, readSnapshot, writeSnapshot, latestSnapshotRound } = createSnapshotFiles<SnapshotData>(
   SNAPSHOTS_DIR,
   'pnpm snapshot:tinyman',
 )
@@ -44,20 +44,23 @@ export function createSnapshot(round: bigint, timestamp: number, balances: Balan
   return { round: Number(round), timestamp, balances: eligible, excluded }
 }
 
-export function diffSnapshot(computed: BalanceMap, stored: SnapshotData): string[] {
-  const expectedBalances = getAllSnapshotBalances(stored)
-  const addresses = [...new Set([...computed.keys(), ...expectedBalances.keys()])].sort()
+export function diffBalances(computed: BalanceMap, expected: BalanceMap): string[] {
+  const addresses = [...new Set([...computed.keys(), ...expected.keys()])].sort()
   const diffs: string[] = []
 
   for (const address of addresses) {
     const actual = computed.get(address) ?? { talgo: 0n, stalgo: 0n }
-    const expected = expectedBalances.get(address) ?? { talgo: 0n, stalgo: 0n }
+    const wanted = expected.get(address) ?? { talgo: 0n, stalgo: 0n }
     const parts: string[] = []
 
-    if (expected.talgo !== actual.talgo) parts.push(`talgo ${expected.talgo}→${actual.talgo}`)
-    if (expected.stalgo !== actual.stalgo) parts.push(`stalgo ${expected.stalgo}→${actual.stalgo}`)
+    if (wanted.talgo !== actual.talgo) parts.push(`talgo ${wanted.talgo}→${actual.talgo}`)
+    if (wanted.stalgo !== actual.stalgo) parts.push(`stalgo ${wanted.stalgo}→${actual.stalgo}`)
     if (parts.length > 0) diffs.push(`  [${diffs.length + 1}] ${address}  ${parts.join('  ')}`)
   }
 
   return diffs
+}
+
+export function diffSnapshot(computed: BalanceMap, stored: SnapshotData): string[] {
+  return diffBalances(computed, getAllSnapshotBalances(stored))
 }

@@ -9,6 +9,8 @@
     "algohours:tinyman": "NODE_OPTIONS=--max-old-space-size=8192 tsx src/tinyman/algohours.ts",
     "snapshot:reti": "tsx src/reti/snapshot.ts",
     "algohours:reti": "tsx src/reti/algohours.ts",
+    "verify:tinyman": "tsx src/tinyman/verify.ts",
+    "verify:reti": "tsx src/reti/verify.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

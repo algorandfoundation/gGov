@@ -28,11 +28,11 @@ import { checkOrCreateSnapshots } from '../snapshots'
 import { stringifyJson } from '../utils/json'
 import { PROTOCOL } from './constants'
 import { computeRetiAlgoHours } from './compute'
-import { fetchEpochRoundLengths, scanRetiEvents } from './indexer'
+import { fetchRetiEvents } from './indexer'
 import { applyRetiEvent } from './ledger'
 import * as snapshotStore from './snapshot/operations'
 import type { AlgoHoursData } from '../types'
-import type { PoolLedger, RetiEvent } from './types'
+import type { PoolLedger } from './types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(__dirname, '../..', 'data', 'reti')
@@ -91,16 +91,12 @@ async function main() {
   console.log(`  Window duration: ${((endTimestamp - startTimestamp) / 3600 / 24).toFixed(2)} days`)
 
   // Scan events from periodStart to periodEnd and store them in memory
-  const events: RetiEvent[] = []
   console.log(`\nScanning reti events [${periodStart}, ${periodEnd})…`)
-  await scanRetiEvents(periodStart, periodEnd, (batch) => {
-    for (const event of batch) events.push(event)
-  })
-  console.log(`\n  reti events in window: ${events.length}`)
-
-  console.log('\nFetching validator epoch lengths…')
-  const epochRoundLengths = await fetchEpochRoundLengths(events.map((event) => event.validatorId))
-  console.log(`  ${epochRoundLengths.size} validators`)
+  const { events, epochRoundLengths } = await fetchRetiEvents(periodStart, periodEnd)
+  const poolCount = new Set(events.map((event) => event.poolAppId)).size
+  console.log(
+    `\n  reti events in window: ${events.length} from ${epochRoundLengths.size} validators and ${poolCount} pools`,
+  )
 
   // Preserve starting balances before computeRetiAlgoHours mutates them
   const snapshotPools = saveSnapshots ? clonePools(pools) : undefined

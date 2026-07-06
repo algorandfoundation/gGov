@@ -1,13 +1,13 @@
 /** Shared snapshot persistence and verify-first snapshot chaining. */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { SNAPSHOT_INTERVAL } from './config'
 import { fetchBlockTimestamp } from './indexer'
 import { stringifyJson } from './utils/json'
 
-/** File persistence for a snapshots directory: path, read (with a regenerate hint), write. */
+/** File persistence for a snapshots directory: path, read (with a regenerate hint), write, latest round. */
 export function createSnapshotFiles<Snapshot extends { round: number }>(snapshotsDir: string, regenerateCmd: string) {
   function getSnapshotPath(round: bigint | number): string {
     return join(snapshotsDir, `${round}.json`)
@@ -28,7 +28,17 @@ export function createSnapshotFiles<Snapshot extends { round: number }>(snapshot
     return path
   }
 
-  return { getSnapshotPath, readSnapshot, writeSnapshot }
+  function latestSnapshotRound(): bigint {
+    const rounds = existsSync(snapshotsDir)
+      ? readdirSync(snapshotsDir)
+          .filter((name) => /^\d+\.json$/.test(name))
+          .map((name) => BigInt(name.replace('.json', '')))
+      : []
+    if (rounds.length === 0) throw new Error(`No snapshot found in ${snapshotsDir}\nRun: ${regenerateCmd} <round>`)
+    return rounds.reduce((max, round) => (round > max ? round : max))
+  }
+
+  return { getSnapshotPath, readSnapshot, writeSnapshot, latestSnapshotRound }
 }
 
 /** Snapshot operations a pipeline provides for checking and creating snapshots. */

@@ -6,7 +6,7 @@ import { getRetiEventsFromTransactions } from './events'
 import type { RetiEvent } from './types'
 
 /** Scan ValidatorRegistry events in `[startRound, endRound)`, including inner-call logs. */
-export async function scanRetiEvents(
+async function scanRetiEvents(
   startRound: bigint,
   endRound: bigint,
   onBatch: (events: RetiEvent[]) => void,
@@ -19,6 +19,19 @@ export async function scanRetiEvents(
     onBatch,
     'reti',
   )
+}
+
+/** Get all events in `[startRound, endRound)` plus the epoch lengths their reward splits need. */
+export async function fetchRetiEvents(
+  startRound: bigint,
+  endRound: bigint,
+): Promise<{ events: RetiEvent[]; epochRoundLengths: Map<bigint, bigint> }> {
+  const events: RetiEvent[] = []
+  await scanRetiEvents(startRound, endRound, (batch) => {
+    for (const event of batch) events.push(event)
+  })
+  const epochRoundLengths = await fetchEpochRoundLengths(events.map((event) => event.validatorId))
+  return { events, epochRoundLengths }
 }
 
 // Byte offset of the uint32 epochRoundLength within the registry's 'v' box: the box holds
