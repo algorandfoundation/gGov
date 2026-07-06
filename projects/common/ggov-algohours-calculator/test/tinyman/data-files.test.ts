@@ -9,7 +9,12 @@ import { describe, it, expect } from 'vitest'
 import { PROTOCOL, RATE_SCALER } from '../../src/tinyman/constants'
 import { isExcluded } from '../../src/tinyman/exclusions'
 import { totalSupply } from '../../src/tinyman/ledger'
-import { getAllSnapshotBalances, getSnapshotPath, readSnapshot } from '../../src/tinyman/snapshot/operations'
+import {
+  deserializeBalances,
+  getAllSnapshotBalances,
+  getSnapshotPath,
+  readSnapshot,
+} from '../../src/tinyman/snapshot/operations'
 import type { AlgoHoursData } from '../../src/types'
 
 // Tinyman files always carry the tALGO/ALGO rate
@@ -62,6 +67,30 @@ describe('data files', () => {
         expect(data.periodStartTime).toBe(readSnapshot(data.periodStart).timestamp)
         expect(data.periodEndTime).toBe(readSnapshot(data.periodEnd).timestamp)
       })
+
+      // Local-only: the transfer log is a gitignored artifact of `algohours:tinyman
+      // --save-transfers`, so this check skips wherever the log is absent (e.g. CI)
+      const transfersLog = join(DATA_DIR, `${data.periodStart}-${data.periodEnd}.transfers.log`)
+      it.skipIf(!startSnapshotExists || !existsSync(transfersLog))(
+        'accounts untouched by transfers earn exactly balance × rate × duration',
+        () => {
+          // Independent per-account recomputation: an account absent from the window's transfer
+          // log held a constant balance, so its algohours are a single multiplication
+          const touched = new Set<string>()
+          for (const [address] of readFileSync(transfersLog, 'utf-8').matchAll(/[A-Z2-7]{58}/g)) touched.add(address)
+
+          const fileAlgoHours = new Map(data.accounts.map(({ account, algoHours }) => [account, BigInt(algoHours)]))
+          const duration = BigInt(data.periodEndTime - data.periodStartTime)
+          let untouched = 0
+          for (const [account, { talgo, stalgo }] of deserializeBalances(readSnapshot(data.periodStart).balances)) {
+            if (touched.has(account)) continue
+            untouched++
+            const expected = ((talgo + stalgo) * scaledRate(data.rate) * duration) / (RATE_SCALER * 3600n)
+            expect(fileAlgoHours.get(account) ?? 0n, account).toBe(expected)
+          }
+          expect(untouched).toBeGreaterThan(0)
+        },
+      )
 
       it.skipIf(!startSnapshotExists)('totalAlgoHours never exceeds supply × rate × duration', () => {
         const supply = totalSupply(getAllSnapshotBalances(readSnapshot(data.periodStart)))

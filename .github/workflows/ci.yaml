@@ -208,16 +208,12 @@ jobs:
         run: pnpm --filter smart_contracts exec vitest run --reporter=verbose ${{ matrix.args }}
 
   algohours-live-verification:
-    name: algohours live verification (${{ matrix.protocol }})
+    name: algohours live verification
     needs: changes
     if: needs.changes.outputs.algohours_calculator == 'true'
     environment: indexer-mainnet
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        protocol: [tinyman, reti]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
@@ -230,10 +226,18 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
+        id: install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Verify ${{ matrix.protocol }} balances against live chain state
+      - name: Verify tinyman balances against live chain state
         env:
           INDEXER_SERVER: ${{ vars.INDEXER_SERVER }}
           INDEXER_TOKEN: ${{ secrets.INDEXER_TOKEN }}
-        run: pnpm --filter ggov-algohours-calculator verify:${{ matrix.protocol }}
+        run: pnpm --filter ggov-algohours-calculator verify:tinyman
+
+      - name: Verify reti balances against live chain state
+        if: always() && steps.install.outcome == 'success'
+        env:
+          INDEXER_SERVER: ${{ vars.INDEXER_SERVER }}
+          INDEXER_TOKEN: ${{ secrets.INDEXER_TOKEN }}
+        run: pnpm --filter ggov-algohours-calculator verify:reti

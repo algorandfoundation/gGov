@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
 
 import { PROTOCOL } from '../../src/reti/constants'
-import { getSnapshotPath, readSnapshot } from '../../src/reti/snapshot/operations'
+import { deserializePools, getSnapshotPath, readSnapshot } from '../../src/reti/snapshot/operations'
 import type { AlgoHoursData } from '../../src/types'
 
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'reti')
@@ -47,6 +47,16 @@ describe('reti data files', () => {
           const { account, algoHours } = data.accounts[i]
           if (i > 0) expect(data.accounts[i - 1].account < account).toBe(true)
           expect(BigInt(algoHours)).toBeGreaterThan(0n)
+        }
+      })
+
+      // One legitimate exception exists: a staker fully unstaking in the very same second as
+      // the window start earns zero and is rightly omitted. If this ever fails, check whether
+      // the missing staker is that case before assuming the data file is wrong.
+      it.skipIf(!startSnapshotExists)('every staker in the start snapshot appears in the accounts', () => {
+        const accounts = new Set(data.accounts.map(({ account }) => account))
+        for (const pool of deserializePools(readSnapshot(data.periodStart)).values()) {
+          for (const staker of pool.keys()) expect(accounts.has(staker), staker).toBe(true)
         }
       })
 
