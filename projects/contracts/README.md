@@ -506,7 +506,7 @@ delete committee box
 delete superbox
 ```
 
-- `ingestGovs(committeeId, govs: [account, votes][])` - Ingest xGovs into a committee
+- `ingestGovs(committeeId, govs: [account, votes][])` - Ingest govs into a committee
 
 ```
 // get committee record for metadata
