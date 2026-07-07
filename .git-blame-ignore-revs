@@ -2,6 +2,12 @@
 # Add the full SHA of reformat/style commits so blame shows real authors.
 # Configure locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
 
+# refactor: algoquarters package renaming
+369bac8e9f0d186da436367941c565e7c40d1de4
+
+# refactor: hours -> quarters renaming
+e7df589ad90e00eee1b221a8c0213e1a2d58816a
+
 # refactor: rename stale xGov participant terminology to gov across gGov monorepo
 abb4daa459cb5c942641b4a081b12547826dff3b
 
