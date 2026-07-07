@@ -14,7 +14,7 @@ export const VALIDATOR = 7n
 export const EPOCH_LENGTH = 1_000n
 export const EPOCH_LENGTHS = new Map([[VALIDATOR, EPOCH_LENGTH]])
 
-const defaults = { round: 1, timestamp: 0, intraOffset: 0, validatorId: VALIDATOR, poolAppId: POOL_A }
+const defaults = { round: 1, intraOffset: 0, validatorId: VALIDATOR, poolAppId: POOL_A }
 
 export function makeStakeAdded(
   staker: string,

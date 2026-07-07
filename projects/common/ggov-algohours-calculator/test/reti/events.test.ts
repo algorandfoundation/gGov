@@ -42,7 +42,6 @@ function makeTxn(overrides: {
     logs: overrides.logs ?? [],
     innerTxns: overrides.inner ?? [],
     confirmedRound: 123n,
-    roundTime: 456,
     intraRoundOffset: 2,
   } as unknown as indexerModels.Transaction
 }
@@ -54,7 +53,6 @@ describe('getRetiEventsFromTransactions', () => {
       {
         type: 'stakeAdded',
         round: 123,
-        timestamp: 456,
         intraOffset: 2,
         validatorId: 7n,
         poolAppId: 101n,
@@ -80,7 +78,7 @@ describe('getRetiEventsFromTransactions', () => {
     const log = makeLog(STAKE_REMOVED_SELECTOR, 78, { staker: STAKER, tail: [2_000_000n, 0n, 0n] })
     const outer = makeTxn({ appId: 424242n, inner: [makeTxn({ logs: [log] })] })
     const [event] = getRetiEventsFromTransactions([outer])
-    expect(event).toMatchObject({ type: 'stakeRemoved', round: 123, timestamp: 456 })
+    expect(event).toMatchObject({ type: 'stakeRemoved', round: 123, intraOffset: 2 })
   })
 
   it('ignores logs from other apps even with a matching payload', () => {

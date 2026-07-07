@@ -1,97 +1,109 @@
 /**
- * Accrual invariants: totalization (Σ algohours == supply × rate × duration),
- * transfer/stake neutrality, window splitting, single rounding, replay ordering.
+ * Accrual invariants: totalization (Σ algoquarters == supply × rate × duration),
+ * transfer/stake neutrality, window splitting, single flooring, replay ordering.
  */
 
 import { describe, it, expect } from 'vitest'
 
 import { computeAlgoHours, mergeAssetTransfers } from '../../src/tinyman/compute'
 import { RATE_SCALER } from '../../src/tinyman/constants'
+import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
 import { ALICE, BOB, CAROL, ESCROW, balancesOf, makeTagged, makeTransfer } from '../helpers'
 
-const HOUR = 3600
-const DIVISOR = RATE_SCALER * 3600n
+// 1 ALGO held for QUARTER rounds = 1 AQ
+const QUARTER = 3_000_000
+const DIVISOR = RATE_SCALER * MICROALGO_ROUNDS_PER_AQ
 
 describe('computeAlgoHours', () => {
-  it('throws on non-monotonic timestamps', () => {
+  it('throws on non-monotonic rounds', () => {
     const balances = balancesOf([ALICE, 1_000_000n, 0n])
     const transfers = [
-      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1n, timestamp: 100 }),
-      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1n, timestamp: 50 }),
+      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1n, round: 100 }),
+      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1n, round: 50 }),
     ]
-    expect(() => computeAlgoHours(balances, transfers, 0, HOUR, RATE_SCALER)).toThrow(/Non-monotonic timestamp/)
+    expect(() => computeAlgoHours(balances, transfers, 0, QUARTER, RATE_SCALER)).toThrow(/Non-monotonic round/)
   })
 
   it('earns nothing for a zero-balance account', () => {
     const balances = balancesOf([ALICE, 1_000_000n, 0n], [BOB, 0n, 0n])
-    const result = computeAlgoHours(balances, [], 0, HOUR, RATE_SCALER)
+    const result = computeAlgoHours(balances, [], 0, QUARTER, RATE_SCALER)
     expect(result.get(BOB) ?? 0n).toBe(0n)
   })
 
-  it('earns exactly balance × rate × hours for a constant holder', () => {
-    // 1 ALGO held for 2 hours at 1:1 → 2 ALGO·h
-    const oneToOne = computeAlgoHours(balancesOf([ALICE, 1_000_000n, 0n]), [], 0, 2 * HOUR, RATE_SCALER)
-    expect(oneToOne.get(ALICE)).toBe(2_000_000n)
+  it('earns exactly balance × rate × quarters for a constant holder', () => {
+    // 1 ALGO held for 2 quarters at 1:1 → 2 AQ
+    const oneToOne = computeAlgoHours(balancesOf([ALICE, 1_000_000n, 0n]), [], 0, 2 * QUARTER, RATE_SCALER)
+    expect(oneToOne.get(ALICE)).toBe(2n)
 
-    // Same holding at rate 1.5 → 3 ALGO·h
-    const oneAndHalf = computeAlgoHours(balancesOf([ALICE, 1_000_000n, 0n]), [], 0, 2 * HOUR, (RATE_SCALER * 3n) / 2n)
-    expect(oneAndHalf.get(ALICE)).toBe(3_000_000n)
+    // Same holding at rate 1.5 → 3 AQ
+    const oneAndHalf = computeAlgoHours(
+      balancesOf([ALICE, 1_000_000n, 0n]),
+      [],
+      0,
+      2 * QUARTER,
+      (RATE_SCALER * 3n) / 2n,
+    )
+    expect(oneAndHalf.get(ALICE)).toBe(3n)
   })
 
-  it('rounds once per account: result is the floor of the exact piecewise sum', () => {
+  it('floors once per account: result is the floor of the exact piecewise sum', () => {
     const rate = 1_234_567_890_123n
-    const aliceStart = 999_983n
-    const transferOut = 100_000n
+    const aliceStart = 999_983_000_000n
+    const transferOut = 100_000_000_000n
     const balances = balancesOf([ALICE, aliceStart, 0n])
     const transfers = [
-      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: transferOut, timestamp: 1234 }),
-      makeTagged('talgo', { sender: BOB, receiver: ALICE, amount: 40_000n, timestamp: 4321 }),
+      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: transferOut, round: 1_234_000 }),
+      makeTagged('talgo', { sender: BOB, receiver: ALICE, amount: 40_000_000_000n, round: 4_321_000 }),
     ]
-    const result = computeAlgoHours(balances, transfers, 0, 5000, rate)
+    const result = computeAlgoHours(balances, transfers, 0, 5_000_000, rate)
 
     const aliceExact =
-      aliceStart * rate * 1234n +
-      (aliceStart - transferOut) * rate * (4321n - 1234n) +
-      939_983n * rate * (5000n - 4321n)
-    const bobExact = transferOut * rate * (4321n - 1234n) + 60_000n * rate * (5000n - 4321n)
+      aliceStart * rate * 1_234_000n +
+      (aliceStart - transferOut) * rate * (4_321_000n - 1_234_000n) +
+      939_983_000_000n * rate * (5_000_000n - 4_321_000n)
+    const bobExact = transferOut * rate * (4_321_000n - 1_234_000n) + 60_000_000_000n * rate * (5_000_000n - 4_321_000n)
     expect(result.get(ALICE)).toBe(aliceExact / DIVISOR)
     expect(result.get(BOB)).toBe(bobExact / DIVISOR)
   })
 
   it('totalization: the sum over ALL accounts equals supply × rate × duration, within per-account truncation', () => {
     const rate = 1_069_250_387_294n
-    const balances = balancesOf([ALICE, 7_777_777n, 123n], [BOB, 3_333_333n, 0n], [ESCROW, 0n, 999_999n])
-    const supply = 7_777_777n + 123n + 3_333_333n + 999_999n
-    const durationSeconds = 4 * HOUR + 137
+    const balances = balancesOf(
+      [ALICE, 7_777_777_000n, 123_000n],
+      [BOB, 3_333_333_000n, 0n],
+      [ESCROW, 0n, 999_999_000n],
+    )
+    const supply = 7_777_777_000n + 123_000n + 3_333_333_000n + 999_999_000n
+    const durationRounds = 4 * QUARTER + 137
     const transfers = [
-      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1_000_001n, timestamp: 991 }),
+      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1_000_001_000n, round: 991_000 }),
       // CAROL enters mid-window with no starting balance
-      makeTagged('stalgo', { sender: ESCROW, receiver: CAROL, amount: 500_000n, timestamp: 5003 }),
-      makeTagged('talgo', { sender: BOB, receiver: CAROL, amount: 4_000_000n, timestamp: 5003, intraOffset: 1 }),
-      makeTagged('talgo', { sender: CAROL, receiver: ALICE, amount: 999_999n, timestamp: 12345 }),
+      makeTagged('stalgo', { sender: ESCROW, receiver: CAROL, amount: 500_000_000n, round: 5_003_000 }),
+      makeTagged('talgo', { sender: BOB, receiver: CAROL, amount: 4_000_000_000n, round: 5_003_000, intraOffset: 1 }),
+      makeTagged('talgo', { sender: CAROL, receiver: ALICE, amount: 999_999_000n, round: 11_345_000 }),
     ]
 
-    const result = computeAlgoHours(balances, transfers, 0, durationSeconds, rate)
+    const result = computeAlgoHours(balances, transfers, 0, durationRounds, rate)
 
-    const summed = [...result.values()].reduce((sum, algoHours) => sum + algoHours, 0n)
-    const exactTotal = (supply * rate * BigInt(durationSeconds)) / DIVISOR
+    const summed = [...result.values()].reduce((sum, quarters) => sum + quarters, 0n)
+    const exactTotal = (supply * rate * BigInt(durationRounds)) / DIVISOR
     expect(summed).toBeLessThanOrEqual(exactTotal)
     expect(exactTotal - summed).toBeLessThan(BigInt(result.size))
   })
 
-  it('a transfer never changes the combined algohours of its two parties', () => {
+  it('a transfer preserves combined algoquarters when both sides floor to whole AQ', () => {
     const withoutTransfer = computeAlgoHours(
       balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n]),
       [],
       0,
-      4 * HOUR,
+      4 * QUARTER,
       RATE_SCALER,
     )
     const withTransfer = computeAlgoHours(
       balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n]),
-      [makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, timestamp: HOUR })],
+      [makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, round: QUARTER })],
       0,
-      4 * HOUR,
+      4 * QUARTER,
       RATE_SCALER,
     )
 
@@ -107,54 +119,54 @@ describe('computeAlgoHours', () => {
       receiver: BOB,
       amount: 1_000_000n,
       closeTo: CAROL,
-      timestamp: 2 * HOUR,
+      round: 2 * QUARTER,
     })
-    const result = computeAlgoHours(balances, [closeOut], 0, 4 * HOUR, RATE_SCALER)
+    const result = computeAlgoHours(balances, [closeOut], 0, 4 * QUARTER, RATE_SCALER)
 
-    expect(result.get(ALICE)).toBe(10_000_000n) // 5 ALGO × 2h
-    expect(result.get(BOB)).toBe(14_000_000n) // 3 ALGO × 2h + 4 ALGO × 2h
-    expect(result.get(CAROL)).toBe(8_000_000n) // 4 ALGO × 2h (the close-out remainder)
+    expect(result.get(ALICE)).toBe(10n) // 5 ALGO × 2 quarters
+    expect(result.get(BOB)).toBe(14n) // 3 ALGO × 2 quarters + 4 ALGO × 2 quarters
+    expect(result.get(CAROL)).toBe(8n) // 4 ALGO × 2 quarters (the close-out remainder)
   })
 
-  it('staking (talgo → stalgo at parity) does not change the account algohours', () => {
+  it('staking (talgo → stalgo at parity) does not change the account algoquarters', () => {
     const holding = computeAlgoHours(
       balancesOf([ALICE, 5_000_000n, 0n], [ESCROW, 0n, 5_000_000n]),
       [],
       0,
-      4 * HOUR,
+      4 * QUARTER,
       RATE_SCALER,
     )
     const staking = computeAlgoHours(
       balancesOf([ALICE, 5_000_000n, 0n], [ESCROW, 0n, 5_000_000n]),
       [
-        makeTagged('talgo', { sender: ALICE, receiver: ESCROW, amount: 5_000_000n, timestamp: 2 * HOUR }),
+        makeTagged('talgo', { sender: ALICE, receiver: ESCROW, amount: 5_000_000n, round: 2 * QUARTER }),
         makeTagged('stalgo', {
           sender: ESCROW,
           receiver: ALICE,
           amount: 5_000_000n,
-          timestamp: 2 * HOUR,
+          round: 2 * QUARTER,
           intraOffset: 1,
         }),
       ],
       0,
-      4 * HOUR,
+      4 * QUARTER,
       RATE_SCALER,
     )
 
     expect(staking.get(ALICE)).toBe(holding.get(ALICE))
-    expect(staking.get(ALICE)).toBe(20_000_000n)
+    expect(staking.get(ALICE)).toBe(20n)
   })
 
-  it('splitting a window at a boundary preserves every account total', () => {
+  it('splitting a window at a boundary preserves every account total when both windows floor cleanly', () => {
     const transfers = [
-      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, timestamp: HOUR }),
-      makeTagged('talgo', { sender: BOB, receiver: ALICE, amount: 500_000n, timestamp: 3 * HOUR }),
+      makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, round: QUARTER }),
+      makeTagged('talgo', { sender: BOB, receiver: ALICE, amount: 1_000_000n, round: 3 * QUARTER }),
     ]
     const full = computeAlgoHours(
       balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n]),
       transfers,
       0,
-      4 * HOUR,
+      4 * QUARTER,
       RATE_SCALER,
     )
 
@@ -162,16 +174,16 @@ describe('computeAlgoHours', () => {
     const balances = balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n])
     const firstHalf = computeAlgoHours(
       balances,
-      transfers.filter((t) => t.timestamp < 2 * HOUR),
+      transfers.filter((t) => t.round < 2 * QUARTER),
       0,
-      2 * HOUR,
+      2 * QUARTER,
       RATE_SCALER,
     )
     const secondHalf = computeAlgoHours(
       balances,
-      transfers.filter((t) => t.timestamp >= 2 * HOUR),
-      2 * HOUR,
-      4 * HOUR,
+      transfers.filter((t) => t.round >= 2 * QUARTER),
+      2 * QUARTER,
+      4 * QUARTER,
       RATE_SCALER,
     )
 

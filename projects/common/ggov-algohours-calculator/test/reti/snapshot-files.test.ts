@@ -50,13 +50,4 @@ describe('reti snapshot files', () => {
       })
     })
   }
-
-  describe.skipIf(rounds.length < 2)('across snapshots', () => {
-    it('timestamps strictly increase with round', () => {
-      const timestamps = rounds.map((round) => readSnapshot(round).timestamp)
-      for (let i = 1; i < timestamps.length; i++) {
-        expect(timestamps[i]).toBeGreaterThan(timestamps[i - 1])
-      }
-    })
-  })
 })

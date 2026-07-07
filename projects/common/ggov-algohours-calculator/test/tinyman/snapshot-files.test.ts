@@ -47,12 +47,5 @@ describe('snapshot files', () => {
       const supplies = snapshots.map((snapshot) => totalSupply(getAllSnapshotBalances(snapshot)))
       for (const supply of supplies.slice(1)) expect(supply).toEqual(supplies[0])
     })
-
-    it('timestamps strictly increase with round', () => {
-      for (let i = 1; i < snapshots.length; i++) {
-        expect(snapshots[i - 1].round).toBeLessThan(snapshots[i].round)
-        expect(snapshots[i - 1].timestamp).toBeLessThan(snapshots[i].timestamp)
-      }
-    })
   })
 })
