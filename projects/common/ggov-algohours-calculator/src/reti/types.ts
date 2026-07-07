@@ -2,8 +2,6 @@
 
 interface RetiEventBase {
   round: number
-  /** Block timestamp at that round (unix seconds). */
-  timestamp: number
   /** Position within the block — used as secondary sort key within the same round. */
   intraOffset: number
   /** Validator the pool belongs to — keys the epoch length used in reward splits. */
@@ -48,8 +46,6 @@ export type PoolLedger = Map<bigint, Map<string, StakerInfo>>
 export interface RetiSnapshotData {
   /** Round at which balances were reconstructed, just before `round` transactions execute. */
   round: number
-  /** Block timestamp at that round (unix seconds). */
-  timestamp: number
   /** Per-pool staker positions at this round. All stakers are algohour-eligible. */
   pools: Record<string, Record<string, { balance: string; entryRound: number }>>
 }

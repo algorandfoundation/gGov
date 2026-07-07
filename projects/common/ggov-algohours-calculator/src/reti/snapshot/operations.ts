@@ -26,7 +26,7 @@ export function deserializePools(snapshot: RetiSnapshotData): PoolLedger {
   )
 }
 
-export function createSnapshot(round: bigint, timestamp: number, pools: PoolLedger): RetiSnapshotData {
+export function createSnapshot(round: bigint, pools: PoolLedger): RetiSnapshotData {
   const serialized: RetiSnapshotData['pools'] = {}
 
   const sortedPools = [...pools].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -40,7 +40,7 @@ export function createSnapshot(round: bigint, timestamp: number, pools: PoolLedg
     if (Object.keys(pool).length > 0) serialized[poolAppId.toString()] = pool
   }
 
-  return { round: Number(round), timestamp, pools: serialized }
+  return { round: Number(round), pools: serialized }
 }
 
 export function diffSnapshot(computed: PoolLedger, stored: RetiSnapshotData): string[] {

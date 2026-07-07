@@ -6,12 +6,13 @@
  *
  * Input:  snapshots/reti/<periodStart>.json
  * Output: data/reti/<periodStart>-<periodEnd>.json
- *   { networkGenesisHash, protocol, periodStart, periodEnd, periodStartTime, periodEndTime,
- *     totalAccounts, totalAlgoHours, accounts: [{ account, algoHours }] }
+ *   { networkGenesisHash, protocol, periodStart, periodEnd,
+ *     totalAccounts, totalAlgoQuarters, accounts: [{ account, algoQuarters }] }
  *
  * Usage:
  *   pnpm algohours:reti <periodStart> <periodEnd>                  # compute algohours and create/verify upcoming snapshots
  *   pnpm algohours:reti <periodStart> <periodEnd> --no-snapshot    # skip creating/verifying snapshots
+ *   pnpm algohours:reti <periodStart> <periodEnd> --save-events    # also write data/<start>-<end>.events.log
  *
  * Env:
  *   INDEXER_SERVER   indexer base URL (default: public Nodely mainnet indexer)
@@ -23,22 +24,28 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { MAX_WINDOW } from '../config'
-import { fetchBlockTimestamp, fetchGenesisHash } from '../indexer'
+import { fetchGenesisHash } from '../indexer'
 import { checkOrCreateSnapshots } from '../snapshots'
 import { stringifyJson } from '../utils/json'
+import { assertAlgoQuartersFitUint32 } from '../utils/aq'
 import { PROTOCOL } from './constants'
 import { computeRetiAlgoHours } from './compute'
 import { fetchRetiEvents } from './indexer'
 import { applyRetiEvent } from './ledger'
 import * as snapshotStore from './snapshot/operations'
 import type { AlgoHoursData } from '../types'
-import type { PoolLedger } from './types'
+import type { PoolLedger, RetiEvent } from './types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(__dirname, '../..', 'data', 'reti')
 
 function clonePools(pools: PoolLedger): PoolLedger {
   return new Map([...pools].map(([poolAppId, stakers]) => [poolAppId, new Map(stakers)]))
+}
+
+/** One event as a compact JSON line (bigint as decimal string) for the events log. */
+function stringifyEventLine(event: RetiEvent): string {
+  return JSON.stringify(event, (_key, item: unknown) => (typeof item === 'bigint' ? item.toString() : item))
 }
 
 // ---------------------------------------------------------------------------
@@ -48,10 +55,11 @@ function clonePools(pools: PoolLedger): PoolLedger {
 async function main() {
   const args = process.argv.slice(2)
   const saveSnapshots = !args.includes('--no-snapshot')
+  const saveEvents = args.includes('--save-events')
   const positionalArgs = args.filter((arg) => !arg.startsWith('--'))
 
   if (positionalArgs.length !== 2 || positionalArgs.some((arg) => !/^\d+$/.test(arg))) {
-    throw new Error('Usage: pnpm algohours:reti <periodStart> <periodEnd> [--no-snapshot]')
+    throw new Error('Usage: pnpm algohours:reti <periodStart> <periodEnd> [--no-snapshot] [--save-events]')
   }
 
   const periodStart = BigInt(positionalArgs[0])
@@ -77,18 +85,11 @@ async function main() {
   console.log(`Loading snapshot at round ${periodStart}…`)
   const origin = snapshotStore.readSnapshot(periodStart)
   const pools = snapshotStore.deserializePools(origin)
-  const startTimestamp = origin.timestamp
   console.log(`  ${pools.size} pools loaded`)
-  console.log(`  startTimestamp = ${startTimestamp} (${new Date(startTimestamp * 1000).toISOString()})`)
 
   console.log('\nFetching network genesis hash…')
   const networkGenesisHash = await fetchGenesisHash()
   console.log(`  networkGenesisHash = ${networkGenesisHash}`)
-
-  console.log(`\nFetching block timestamp for round ${periodEnd}…`)
-  const endTimestamp = await fetchBlockTimestamp(periodEnd)
-  console.log(`  endTimestamp = ${endTimestamp} (${new Date(endTimestamp * 1000).toISOString()})`)
-  console.log(`  Window duration: ${((endTimestamp - startTimestamp) / 3600 / 24).toFixed(2)} days`)
 
   // Scan events from periodStart to periodEnd and store them in memory
   console.log(`\nScanning reti events [${periodStart}, ${periodEnd})…`)
@@ -98,40 +99,59 @@ async function main() {
     `\n  reti events in window: ${events.length} from ${epochRoundLengths.size} validators and ${poolCount} pools`,
   )
 
+  if (saveEvents) {
+    const eventsLogPath = join(DATA_DIR, `${periodStart}-${periodEnd}.events.log`)
+    mkdirSync(DATA_DIR, { recursive: true })
+    writeFileSync(eventsLogPath, events.map((event) => stringifyEventLine(event)).join('\n') + '\n')
+    console.log(`  Events logged to ${eventsLogPath}`)
+  }
+
   // Preserve starting balances before computeRetiAlgoHours mutates them
   const snapshotPools = saveSnapshots ? clonePools(pools) : undefined
 
   // Compute output
-  console.log('\nComputing time-weighted algohours…')
-  const algoHoursByStaker = computeRetiAlgoHours(pools, events, epochRoundLengths, startTimestamp, endTimestamp)
+  console.log('\nComputing round-weighted algoquarters…')
+  const algoQuartersByStaker = computeRetiAlgoHours(
+    pools,
+    events,
+    epochRoundLengths,
+    Number(periodStart),
+    Number(periodEnd),
+  )
 
-  // Every staker is eligible: pool escrows hold the ALGO but never appear as stakers,
-  // and validator commission is paid out directly, so no exclusion list is needed.
-  const accounts = [...algoHoursByStaker.entries()]
-    .filter(([, algoHours]) => algoHours > 0n)
-    .map(([account, algoHours]) => ({ account, algoHours: algoHours.toString() }))
+  // No exclusion list is needed: pool escrows hold the ALGO but never appear as stakers,
+  // and validator commission is paid out directly.
+  // The unit is the eligibility cutoff: stakers flooring below 1 AQ are omitted.
+  const eligible = [...algoQuartersByStaker.entries()]
+    .filter(([, aq]) => aq > 0n)
     // Codepoint order (not locale-dependent), matching the committee-file convention
-    .sort((a, b) => (a.account < b.account ? -1 : a.account > b.account ? 1 : 0))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  // An estimate of how many stakers were dropped below 1 AQ due to flooring, for reporting purposes.
+  // It is an estimate as there's an edge case for stakers that add and fully remove stake within the
+  // same round, so the entry is created in the pool ledger and its accrual is genuinely zero.
+  const dropped = [...algoQuartersByStaker.values()].filter((aq) => aq === 0n).length
 
-  const totalAlgoHours = accounts.reduce((sum, account) => sum + BigInt(account.algoHours), 0n)
-  console.log(`  Eligible accounts: ${accounts.length}`)
-  console.log(`  Total algohours: ${(totalAlgoHours / 1_000_000n).toLocaleString()} ALGO·h`)
+  const accounts = eligible.map(([account, aq]) => {
+    assertAlgoQuartersFitUint32(aq, account)
+    return { account, algoQuarters: aq.toString() }
+  })
+  const totalAlgoQuarters = eligible.reduce((sum, [, aq]) => sum + aq, 0n)
+  console.log(`  Eligible accounts: ${accounts.length}  (dropped below 1 AQ: ≤${dropped})`)
+  console.log(`  Total algoquarters: ${totalAlgoQuarters.toLocaleString()} AQ`)
 
   const output: AlgoHoursData = {
     networkGenesisHash,
     protocol: PROTOCOL,
     periodStart: Number(periodStart),
     periodEnd: Number(periodEnd),
-    periodStartTime: startTimestamp,
-    periodEndTime: endTimestamp,
     totalAccounts: accounts.length,
-    totalAlgoHours: totalAlgoHours.toString(),
+    totalAlgoQuarters: totalAlgoQuarters.toString(),
     accounts,
   }
 
   // Check or build snapshots in the window (periodStart, periodEnd]
   if (snapshotPools) {
-    const pendingSnapshots = await checkOrCreateSnapshots(
+    const pendingSnapshots = checkOrCreateSnapshots(
       snapshotStore,
       snapshotPools,
       events,

@@ -28,7 +28,7 @@ export function getAllSnapshotBalances(snapshot: SnapshotData): BalanceMap {
   return new Map([...deserializeBalances(snapshot.balances), ...deserializeBalances(snapshot.excluded)])
 }
 
-export function createSnapshot(round: bigint, timestamp: number, balances: BalanceMap): SnapshotData {
+export function createSnapshot(round: bigint, balances: BalanceMap): SnapshotData {
   const eligible: SnapshotData['balances'] = {}
   const excluded: SnapshotData['excluded'] = {}
 
@@ -41,7 +41,7 @@ export function createSnapshot(round: bigint, timestamp: number, balances: Balan
     else eligible[address] = serialized
   }
 
-  return { round: Number(round), timestamp, balances: eligible, excluded }
+  return { round: Number(round), balances: eligible, excluded }
 }
 
 export function diffBalances(computed: BalanceMap, expected: BalanceMap): string[] {

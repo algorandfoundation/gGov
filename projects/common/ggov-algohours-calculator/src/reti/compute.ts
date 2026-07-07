@@ -1,22 +1,23 @@
-/** Time-weighted algohour calculation for reti staked balances. */
+/** Round-weighted algoquarter calculation for reti staked balances. */
 
 import { applyRetiEvent } from './ledger'
+import { MICROALGO_ROUNDS_PER_AQ } from '../utils/aq'
 import type { PoolLedger, RetiEvent } from './types'
 
 /**
- * Compute microALGO-hours over `[startTimestamp, endTimestamp)`.
+ * Compute integer AQ over rounds `[startRound, endRound)`.
  * Staked ALGO is native, so no rate is involved. The supplied pools are
  * modified during event replay.
  *
  * Accrual runs on each staker's aggregate balance across pools, and is
- * rounded once per staker when converting microALGO-seconds to microALGO-hours.
+ * floored once per staker when converting microALGO-rounds to AQ.
  */
 export function computeRetiAlgoHours(
   pools: PoolLedger,
   events: RetiEvent[],
   epochRoundLengths: Map<bigint, bigint>,
-  startTimestamp: number,
-  endTimestamp: number,
+  startRound: number,
+  endRound: number,
 ): Map<string, bigint> {
   const totals = new Map<string, bigint>()
   for (const pool of pools.values()) {
@@ -25,33 +26,33 @@ export function computeRetiAlgoHours(
     }
   }
 
-  const microAlgoSeconds = new Map<string, bigint>()
-  const lastAccruedTimestamp = new Map<string, number>()
+  const microAlgoRounds = new Map<string, bigint>()
+  const lastAccruedRound = new Map<string, number>()
 
-  function accrueUntil(staker: string, timestamp: number): void {
-    const previousTimestamp = lastAccruedTimestamp.get(staker)
+  function accrueUntil(staker: string, round: number): void {
+    const previousRound = lastAccruedRound.get(staker)
     // First time this staker appears in the window; start tracking it here
-    if (previousTimestamp === undefined) {
-      lastAccruedTimestamp.set(staker, timestamp)
+    if (previousRound === undefined) {
+      lastAccruedRound.set(staker, round)
       return
     }
 
-    // No time has elapsed since the last accrual, nothing to do
-    const elapsedSeconds = timestamp - previousTimestamp
-    if (elapsedSeconds === 0) return
-    if (elapsedSeconds < 0) throw new Error('Non-monotonic timestamp')
+    // No rounds have elapsed since the last accrual, nothing to do
+    const elapsedRounds = round - previousRound
+    if (elapsedRounds === 0) return
+    if (elapsedRounds < 0) throw new Error('Non-monotonic round')
 
-    // Time has elapsed for the staker, accrue contribution
+    // Rounds have elapsed for the staker, accrue contribution
     const balance = totals.get(staker) ?? 0n
     if (balance > 0n) {
-      microAlgoSeconds.set(staker, (microAlgoSeconds.get(staker) ?? 0n) + balance * BigInt(elapsedSeconds))
+      microAlgoRounds.set(staker, (microAlgoRounds.get(staker) ?? 0n) + balance * BigInt(elapsedRounds))
     }
-    lastAccruedTimestamp.set(staker, timestamp)
+    lastAccruedRound.set(staker, round)
   }
 
   for (const [staker, balance] of totals) {
     if (balance > 0n) {
-      lastAccruedTimestamp.set(staker, startTimestamp)
+      lastAccruedRound.set(staker, startRound)
     }
   }
 
@@ -59,10 +60,10 @@ export function computeRetiAlgoHours(
     // Accrue everyone the event touches before mutating balances
     if (event.type === 'epochRewardUpdate') {
       for (const staker of pools.get(event.poolAppId)?.keys() ?? []) {
-        accrueUntil(staker, event.timestamp)
+        accrueUntil(staker, event.round)
       }
     } else {
-      accrueUntil(event.staker, event.timestamp)
+      accrueUntil(event.staker, event.round)
     }
 
     for (const { staker, delta } of applyRetiEvent(pools, event, epochRoundLengths)) {
@@ -70,10 +71,10 @@ export function computeRetiAlgoHours(
     }
   }
 
-  for (const staker of lastAccruedTimestamp.keys()) {
-    accrueUntil(staker, endTimestamp)
+  for (const staker of lastAccruedRound.keys()) {
+    accrueUntil(staker, endRound)
   }
 
-  // Convert seconds to hours
-  return new Map([...microAlgoSeconds].map(([staker, contribution]) => [staker, contribution / 3_600n]))
+  // Convert microALGO-rounds to AQ
+  return new Map([...microAlgoRounds].map(([staker, contribution]) => [staker, contribution / MICROALGO_ROUNDS_PER_AQ]))
 }

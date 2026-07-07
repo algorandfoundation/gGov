@@ -6,8 +6,8 @@
  *
  * Input:  snapshots/tinyman/<periodStart>.json
  * Output: data/tinyman/<periodStart>-<periodEnd>.json
- *   { networkGenesisHash, protocol, periodStart, periodEnd, periodStartTime, periodEndTime,
- *     rate, totalAccounts, totalAlgoHours, accounts: [{ account, algoHours }] }
+ *   { networkGenesisHash, protocol, periodStart, periodEnd,
+ *     rate, totalAccounts, totalAlgoQuarters, accounts: [{ account, algoQuarters }] }
  *
  * Usage:
  *   pnpm algohours:tinyman <periodStart> <periodEnd>                    # compute algohours and create/verify upcoming snapshots
@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url'
 import { MAX_WINDOW } from '../config'
 import { PROTOCOL, RATE_SCALER, STALGO_ASA_ID, TALGO_ASA_ID } from './constants'
 import { isExcluded } from './exclusions'
-import { scanAssetTransfers, fetchBlockTimestamp, fetchGenesisHash } from '../indexer'
+import { scanAssetTransfers, fetchGenesisHash } from '../indexer'
 import { fetchTAlgoRateInRange } from './indexer'
 import { applyTransfer } from './ledger'
 import { computeAlgoHours, mergeAssetTransfers } from './compute'
@@ -34,6 +34,7 @@ import * as snapshotStore from './snapshot/operations'
 import { checkOrCreateSnapshots } from '../snapshots'
 import { openTransferLog } from '../utils/transfer-log'
 import { stringifyJson } from '../utils/json'
+import { assertAlgoQuartersFitUint32 } from '../utils/aq'
 import type { AlgoHoursData, AssetTransfer } from '../types'
 import type { BalanceMap } from './types'
 
@@ -92,9 +93,7 @@ async function main() {
   console.log(`Loading snapshot at round ${periodStart}…`)
   const origin = snapshotStore.readSnapshot(periodStart)
   const balances = snapshotStore.getAllSnapshotBalances(origin)
-  const startTimestamp = origin.timestamp
   console.log(`  ${balances.size} accounts loaded`)
-  console.log(`  startTimestamp = ${startTimestamp} (${new Date(startTimestamp * 1000).toISOString()})`)
 
   console.log(`\nFetching tALGO/ALGO rate in window [${periodStart}, ${periodEnd})…`)
   const tAlgoRate = await fetchTAlgoRateInRange(periodStart, periodEnd)
@@ -104,11 +103,6 @@ async function main() {
   console.log('\nFetching network genesis hash…')
   const networkGenesisHash = await fetchGenesisHash()
   console.log(`  networkGenesisHash = ${networkGenesisHash}`)
-
-  console.log(`\nFetching block timestamp for round ${periodEnd}…`)
-  const endTimestamp = await fetchBlockTimestamp(periodEnd)
-  console.log(`  endTimestamp = ${endTimestamp} (${new Date(endTimestamp * 1000).toISOString()})`)
-  console.log(`  Window duration: ${((endTimestamp - startTimestamp) / 3600 / 24).toFixed(2)} days`)
 
   // Scan transfers from periodStart to periodEnd and store them in memory
   const tAlgoTransfers: AssetTransfer[] = []
@@ -160,37 +154,44 @@ async function main() {
   const snapshotBalances = saveSnapshots ? cloneBalances(balances) : undefined
 
   // Compute output
-  console.log('\nComputing time-weighted algohours…')
+  console.log('\nComputing round-weighted algoquarters…')
   const transfers = mergeAssetTransfers(tAlgoTransfers, stAlgoTransfers)
-  const algoHoursByAddress = computeAlgoHours(balances, transfers, startTimestamp, endTimestamp, tAlgoRate)
+  const algoQuartersByAddress = computeAlgoHours(balances, transfers, Number(periodStart), Number(periodEnd), tAlgoRate)
 
-  const accounts = [...algoHoursByAddress.entries()]
-    .filter(([address, algoHours]) => !isExcluded(address) && algoHours > 0n)
-    .map(([account, algoHours]) => ({ account, algoHours: algoHours.toString() }))
+  // The unit is the eligibility cutoff: accounts flooring below 1 AQ are omitted
+  const eligible = [...algoQuartersByAddress.entries()]
+    .filter(([address, aq]) => !isExcluded(address) && aq > 0n)
     // Codepoint order (not locale-dependent), matching the committee-file convention
-    .sort((a, b) => (a.account < b.account ? -1 : a.account > b.account ? 1 : 0))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  // An estimate of how many accounts were dropped below 1 AQ due to rounding, for reporting purposes
+  // It is estimate as there's an edge case for accounts that receive and fully forward within the window,
+  // so the entry is created in the balance map and its genuinely zero.
+  const dropped = [...algoQuartersByAddress.entries()].filter(
+    ([address, aq]) => !isExcluded(address) && aq === 0n,
+  ).length
 
-  const totalAlgoHours = accounts.reduce((sum, account) => sum + BigInt(account.algoHours), 0n)
-  const accountsAboveThreshold = accounts.filter((account) => BigInt(account.algoHours) > 1_000n).length
-  console.log(`  Eligible accounts: ${accounts.length}  (>0.001 ALGO·h: ${accountsAboveThreshold})`)
-  console.log(`  Total algohours: ${(totalAlgoHours / 1_000_000n).toLocaleString()} ALGO·h`)
+  const accounts = eligible.map(([account, aq]) => {
+    assertAlgoQuartersFitUint32(aq, account)
+    return { account, algoQuarters: aq.toString() }
+  })
+  const totalAlgoQuarters = eligible.reduce((sum, [, aq]) => sum + aq, 0n)
+  console.log(`  Eligible accounts: ${accounts.length}  (dropped below 1 AQ: ≤${dropped})`)
+  console.log(`  Total algoquarters: ${totalAlgoQuarters.toLocaleString()} AQ`)
 
   const output: AlgoHoursData = {
     networkGenesisHash,
     protocol: PROTOCOL,
     periodStart: Number(periodStart),
     periodEnd: Number(periodEnd),
-    periodStartTime: startTimestamp,
-    periodEndTime: endTimestamp,
     rate: formatRate(tAlgoRate),
     totalAccounts: accounts.length,
-    totalAlgoHours: totalAlgoHours.toString(),
+    totalAlgoQuarters: totalAlgoQuarters.toString(),
     accounts,
   }
 
   // Check or build snapshots in the window (periodStart, periodEnd]
   if (snapshotBalances) {
-    const pendingSnapshots = await checkOrCreateSnapshots(
+    const pendingSnapshots = checkOrCreateSnapshots(
       snapshotStore,
       snapshotBalances,
       transfers,

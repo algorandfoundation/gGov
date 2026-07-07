@@ -16,9 +16,9 @@ function readUint64(log: Uint8Array, offset: number): bigint {
 
 // Event payloads are fixed-size ABI tuples: selector(4) | validatorId u64 | poolNum u16 | poolAppId u64 | rest.
 // Fields are decoded by byte offset; poolNum is not needed for algohours.
-function decodeRetiEventLog(log: Uint8Array, round: number, timestamp: number, intraOffset: number): RetiEvent | null {
+function decodeRetiEventLog(log: Uint8Array, round: number, intraOffset: number): RetiEvent | null {
   if (log.length < 22) return null
-  const base = { round, timestamp, intraOffset, validatorId: readUint64(log, 4), poolAppId: readUint64(log, 14) }
+  const base = { round, intraOffset, validatorId: readUint64(log, 4), poolAppId: readUint64(log, 14) }
 
   if (log.length === 62 && hasSelector(log, STAKE_ADDED_SELECTOR)) {
     return { type: 'stakeAdded', ...base, staker: encodeAddress(log.slice(22, 54)), amount: readUint64(log, 54) }
@@ -40,10 +40,9 @@ export function getRetiEventsFromTransactions(txns: indexerModels.Transaction[])
   const all: RetiEvent[] = []
   for (const txn of txns) {
     const round = Number(txn.confirmedRound ?? 0)
-    const timestamp = txn.roundTime ?? 0
     const intraOffset = txn.intraRoundOffset ?? 0
     for (const event of getAppEventsFromTransaction(txn, RETI_APP_ID, (log) =>
-      decodeRetiEventLog(log, round, timestamp, intraOffset),
+      decodeRetiEventLog(log, round, intraOffset),
     )) {
       all.push(event)
     }

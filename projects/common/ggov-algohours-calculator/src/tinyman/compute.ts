@@ -1,74 +1,75 @@
-/** Time-weighted algohour calculation for tALGO and stALGO balances. */
+/** Round-weighted algoquarter calculation for tALGO and stALGO balances. */
 
 import { RATE_SCALER } from './constants'
 import { applyTransfer } from './ledger'
+import { MICROALGO_ROUNDS_PER_AQ } from '../utils/aq'
 import type { AssetTransfer } from '../types'
 import type { BalanceMap, TaggedTransfer } from './types'
 
 /**
- * Compute microALGO-hours over `[startTimestamp, endTimestamp)` using a fixed
+ * Compute integer AQ over rounds `[startRound, endRound)` using a fixed
  * tALGO/ALGO rate. The supplied balances are modified during transfer replay.
  *
- * Contributions retain their fixed-point precision and are rounded once per
- * account when converting accumulated microALGO-seconds to microALGO-hours.
+ * Contributions retain their fixed-point precision and are floored once per
+ * account when converting accumulated microALGO-rounds to AQ.
  */
 export function computeAlgoHours(
   balances: BalanceMap,
   transfers: TaggedTransfer[],
-  startTimestamp: number,
-  endTimestamp: number,
+  startRound: number,
+  endRound: number,
   tAlgoRate: bigint,
 ): Map<string, bigint> {
-  const scaledMicroAlgoSeconds = new Map<string, bigint>()
-  const lastAccruedTimestamp = new Map<string, number>()
+  const scaledMicroAlgoRounds = new Map<string, bigint>()
+  const lastAccruedRound = new Map<string, number>()
 
-  function accrueUntil(address: string, timestamp: number): void {
-    const previousTimestamp = lastAccruedTimestamp.get(address)
+  function accrueUntil(address: string, round: number): void {
+    const previousRound = lastAccruedRound.get(address)
     // First time this address appears in the window; start tracking it here
-    if (previousTimestamp === undefined) {
-      lastAccruedTimestamp.set(address, timestamp)
+    if (previousRound === undefined) {
+      lastAccruedRound.set(address, round)
       return
     }
 
-    // No time has elapsed since the last accrual, nothing to do
-    const elapsedSeconds = timestamp - previousTimestamp
-    if (elapsedSeconds === 0) return
-    if (elapsedSeconds < 0) throw new Error('Non-monotonic timestamp')
+    // No rounds have elapsed since the last accrual, nothing to do
+    const elapsedRounds = round - previousRound
+    if (elapsedRounds === 0) return
+    if (elapsedRounds < 0) throw new Error('Non-monotonic round')
 
-    // Time has elapsed for the holder, accrue contribution
+    // Rounds have elapsed for the holder, accrue contribution
     const balance = balances.get(address)
     if (balance) {
       const scaledMicroAlgo = (balance.talgo + balance.stalgo) * tAlgoRate
       if (scaledMicroAlgo > 0n) {
-        // Units: microALGO * seconds * RATE_SCALER
-        const contribution = scaledMicroAlgo * BigInt(elapsedSeconds)
-        scaledMicroAlgoSeconds.set(address, (scaledMicroAlgoSeconds.get(address) ?? 0n) + contribution)
+        // Units: microALGO * rounds * RATE_SCALER
+        const contribution = scaledMicroAlgo * BigInt(elapsedRounds)
+        scaledMicroAlgoRounds.set(address, (scaledMicroAlgoRounds.get(address) ?? 0n) + contribution)
       }
     }
-    lastAccruedTimestamp.set(address, timestamp)
+    lastAccruedRound.set(address, round)
   }
 
   for (const [address, balance] of balances) {
     if (balance.talgo > 0n || balance.stalgo > 0n) {
-      lastAccruedTimestamp.set(address, startTimestamp)
+      lastAccruedRound.set(address, startRound)
     }
   }
 
   for (const t of transfers) {
-    accrueUntil(t.sender, t.timestamp)
-    accrueUntil(t.receiver, t.timestamp)
-    if (t.closeTo) accrueUntil(t.closeTo, t.timestamp)
+    accrueUntil(t.sender, t.round)
+    accrueUntil(t.receiver, t.round)
+    if (t.closeTo) accrueUntil(t.closeTo, t.round)
 
     applyTransfer(balances, t, t.asset)
   }
 
-  for (const address of lastAccruedTimestamp.keys()) {
-    accrueUntil(address, endTimestamp)
+  for (const address of lastAccruedRound.keys()) {
+    accrueUntil(address, endRound)
   }
 
-  // Remove rate scaling and convert seconds to hours
-  const divisor = RATE_SCALER * 3_600n
-  return new Map([...scaledMicroAlgoSeconds].map(([address, contribution]) => [address, contribution / divisor]))
+  // Remove rate scaling and convert microALGO-rounds to AQ
+  const divisor = RATE_SCALER * MICROALGO_ROUNDS_PER_AQ
+  return new Map([...scaledMicroAlgoRounds].map(([address, contribution]) => [address, contribution / divisor]))
 }
 
 /** Merge and chronologically sort tALGO and stALGO transfers. */

@@ -5,7 +5,7 @@
  * producing balances just before round R transactions execute.
  *
  * Output: snapshots/tinyman/<round>.json
- *   { round, timestamp, balances: { addr: { talgo, stalgo } }, excluded: { addr: { talgo, stalgo } } }
+ *   { round, balances: { addr: { talgo, stalgo } }, excluded: { addr: { talgo, stalgo } } }
  *   `balances`  — algohour-eligible addresses
  *   `excluded`  — non-eligible addresses (kept for supply verification; see exclusions.ts)
  *
@@ -24,7 +24,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 import { STALGO_APP_ADDRESS, STALGO_ASA_ID, TALGO_APP_ADDRESS, TALGO_ASA_ID } from './constants'
-import { scanAssetTransfers, fetchAssetMetadata, fetchBlockTimestamp } from '../indexer'
+import { scanAssetTransfers, fetchAssetMetadata } from '../indexer'
 import { applyTransfer } from './ledger'
 import { createSnapshot, diffSnapshot, getSnapshotPath, readSnapshot, writeSnapshot } from './snapshot/operations'
 import { openTransferLog } from '../utils/transfer-log'
@@ -134,11 +134,7 @@ async function main() {
     }
   }
 
-  console.log(`\nFetching block timestamp for round ${targetRound}…`)
-  const timestamp = await fetchBlockTimestamp(targetRound)
-  console.log(`  timestamp = ${timestamp} (${new Date(timestamp * 1000).toISOString()})`)
-
-  const snapshot = createSnapshot(targetRound, timestamp, balances)
+  const snapshot = createSnapshot(targetRound, balances)
 
   logSnapshotStats(snapshot)
 

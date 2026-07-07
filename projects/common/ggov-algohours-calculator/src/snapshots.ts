@@ -4,7 +4,6 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from 'node:path'
 
 import { SNAPSHOT_INTERVAL } from './config'
-import { fetchBlockTimestamp } from './indexer'
 import { stringifyJson } from './utils/json'
 
 /** File persistence for a snapshots directory: path, read (with a regenerate hint), write, latest round. */
@@ -45,7 +44,7 @@ export function createSnapshotFiles<Snapshot extends { round: number }>(snapshot
 export interface SnapshotStore<State, Snapshot extends { round: number }> {
   getSnapshotPath(round: bigint | number): string
   readSnapshot(round: bigint | number): Snapshot
-  createSnapshot(round: bigint, timestamp: number, state: State): Snapshot
+  createSnapshot(round: bigint, state: State): Snapshot
   diffSnapshot(state: State, stored: Snapshot): string[]
 }
 
@@ -54,11 +53,11 @@ export interface SnapshotStore<State, Snapshot extends { round: number }> {
  * to persist later. Throws on mismatch so the caller can abort before writing
  * any output derived from a non-matching replay.
  */
-async function checkOrCreateSnapshot<State, Snapshot extends { round: number }>(
+function checkOrCreateSnapshot<State, Snapshot extends { round: number }>(
   store: SnapshotStore<State, Snapshot>,
   round: bigint,
   state: State,
-): Promise<Snapshot | null> {
+): Snapshot | null {
   if (existsSync(store.getSnapshotPath(round))) {
     const diffs = store.diffSnapshot(state, store.readSnapshot(round))
     if (diffs.length > 0) {
@@ -70,8 +69,7 @@ async function checkOrCreateSnapshot<State, Snapshot extends { round: number }>(
     console.log(`  ✓ ${round}: snapshot exists and matches`)
     return null
   }
-  const timestamp = await fetchBlockTimestamp(round)
-  return store.createSnapshot(round, timestamp, state)
+  return store.createSnapshot(round, state)
 }
 
 /**
@@ -80,14 +78,14 @@ async function checkOrCreateSnapshot<State, Snapshot extends { round: number }>(
  * Verification runs before anything is persisted: a mismatch throws with nothing written.
  * Returns the missing snapshots for the caller to persist once every round verified.
  */
-export async function checkOrCreateSnapshots<State, Snapshot extends { round: number }, Item extends { round: number }>(
+export function checkOrCreateSnapshots<State, Snapshot extends { round: number }, Item extends { round: number }>(
   store: SnapshotStore<State, Snapshot>,
   state: State,
   items: Item[],
   applyItem: (state: State, item: Item) => void,
   periodStart: bigint,
   periodEnd: bigint,
-): Promise<Snapshot[]> {
+): Snapshot[] {
   console.log('\nChecking snapshots…')
   if (periodStart % SNAPSHOT_INTERVAL !== 0n) {
     console.warn(`Warning: periodStart is not multiple of ${SNAPSHOT_INTERVAL}`)
@@ -102,7 +100,7 @@ export async function checkOrCreateSnapshots<State, Snapshot extends { round: nu
       applyItem(state, items[itemIdx])
       itemIdx++
     }
-    const snapshot = await checkOrCreateSnapshot(store, snapshotRound, state)
+    const snapshot = checkOrCreateSnapshot(store, snapshotRound, state)
     if (snapshot) pendingSnapshots.push(snapshot)
   }
 

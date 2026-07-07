@@ -5,7 +5,7 @@
  * (exclusive), producing balances just before round R transactions execute.
  *
  * Output: snapshots/reti/<round>.json
- *   { round, timestamp, pools: { poolAppId: { staker: { balance, entryRound } } } }
+ *   { round, pools: { poolAppId: { staker: { balance, entryRound } } } }
  *
  * Usage:
  *   pnpm snapshot:reti <round>            # scan from app creation and write snapshots/reti/<round>.json
@@ -19,7 +19,6 @@
 
 import { existsSync } from 'node:fs'
 
-import { fetchBlockTimestamp } from '../indexer'
 import { RETI_APP_CREATION_ROUND } from './constants'
 import { fetchRetiEvents } from './indexer'
 import { applyRetiEvent, totalStaked } from './ledger'
@@ -90,11 +89,7 @@ async function main() {
   const pools: PoolLedger = new Map()
   for (const event of events) applyRetiEvent(pools, event, epochRoundLengths)
 
-  console.log(`\nFetching block timestamp for round ${targetRound}…`)
-  const timestamp = await fetchBlockTimestamp(targetRound)
-  console.log(`  timestamp = ${timestamp} (${new Date(timestamp * 1000).toISOString()})`)
-
-  const snapshot = createSnapshot(targetRound, timestamp, pools)
+  const snapshot = createSnapshot(targetRound, pools)
 
   logStakeStats(pools, targetRound)
 

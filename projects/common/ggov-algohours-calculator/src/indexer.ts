@@ -62,12 +62,6 @@ export async function fetchAssetMetadata(assetId: bigint) {
   }
 }
 
-/** Get the Unix timestamp in seconds for the block at `round`. */
-export async function fetchBlockTimestamp(round: bigint): Promise<number> {
-  const data = await withRetry(() => indexerClient.lookupBlock(round).do())
-  return data.timestamp
-}
-
 // ---------------------------------------------------------------------------
 // Asset transfer extraction
 // ---------------------------------------------------------------------------
@@ -80,7 +74,6 @@ function getAssetTransfersFromTransaction(
   txn: indexerModels.Transaction,
   assetId: bigint,
   round: number,
-  timestamp: number,
   intraOffset: number,
 ): AssetTransfer[] {
   const results: AssetTransfer[] = []
@@ -90,7 +83,6 @@ function getAssetTransfersFromTransaction(
     if (x && x.assetId === assetId) {
       results.push({
         round,
-        timestamp,
         intraOffset,
         // x.sender is (asnd): the clawback source for clawback txns.
         // Falls back to txn.sender for regular transfers.
@@ -104,7 +96,7 @@ function getAssetTransfersFromTransaction(
   }
 
   for (const inner of txn.innerTxns ?? []) {
-    for (const transfer of getAssetTransfersFromTransaction(inner, assetId, round, timestamp, intraOffset)) {
+    for (const transfer of getAssetTransfersFromTransaction(inner, assetId, round, intraOffset)) {
       results.push(transfer)
     }
   }
@@ -117,9 +109,8 @@ function getAssetTransfersFromTransactions(txns: indexerModels.Transaction[], as
   const all: AssetTransfer[] = []
   for (const txn of txns) {
     const round = Number(txn.confirmedRound ?? 0)
-    const timestamp = txn.roundTime ?? 0
     const intraOffset = txn.intraRoundOffset ?? 0
-    for (const transfer of getAssetTransfersFromTransaction(txn, assetId, round, timestamp, intraOffset)) {
+    for (const transfer of getAssetTransfersFromTransaction(txn, assetId, round, intraOffset)) {
       all.push(transfer)
     }
   }

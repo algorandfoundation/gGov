@@ -20,8 +20,6 @@ export type BalanceMap = Map<string, AccountBalance>
 export interface SnapshotData {
   /** Round at which balances were reconstructed, just before `round` transactions execute. */
   round: number
-  /** Block timestamp at that round (unix seconds). */
-  timestamp: number
   /** Per-address balances at this round, for algohour-eligible holders (users, not apps). */
   balances: Record<string, { talgo: string; stalgo: string }>
   /** Excluded addresses (app escrows/LPs, reserve) and their balances at this round. Useful for supply verification. */
