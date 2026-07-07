@@ -1,6 +1,6 @@
 # Reti pipeline
 
-Algohours for stakers in [Réti open pooling](https://github.com/algorandfoundation/reti) pools. A validator can run many staking pools; stakes are plain ALGO, so no rate conversion is involved.
+AlgoQuarters for stakers in [Réti open pooling](https://github.com/algorandfoundation/reti) pools. A validator can run many staking pools; stakes are plain ALGO, so no rate conversion is involved.
 
 ## Files
 
@@ -9,18 +9,17 @@ Snapshot `snapshots/reti/<round>.json`:
 ```json
 {
   "round": 62000000,
-  "timestamp": 1781041146,
   "pools": { "2714622967": { "AAAA…": { "balance": "1244143182", "entryRound": 47906279 } } }
 }
 ```
 
-Algohours files follow the shared schema with `protocol: "reti"` and no `rate`. Per-account algohours are summed across all pools a staker is in.
+Algoquarters files follow the shared schema with `protocol: "reti"` and no `rate`. Per-account algoquarters are summed across all pools a staker is in.
 
 ## Code structure
 
 ```text
 snapshot.ts            Snapshot CLI — event replay from registry creation to a target round
-algohours.ts           Algohours CLI — window scan, algohour computation, next snapshots
+algoquarters.ts        Algoquarters CLI — window scan, algoquarter computation, next snapshots
 verify.ts              Live check — replay vs current stakers boxes and registry total
 compute.ts             Time-weighted stake accrual
 ledger.ts              Applies events to pool staker state; epoch reward split

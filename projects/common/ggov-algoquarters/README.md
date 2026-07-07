@@ -1,12 +1,12 @@
-# ggov-algohours-calculator
+# ggov-algoquarters
 
-Computes per-account **algohours** — time-weighted ALGO-equivalent staked holdings — by replaying on-chain history from the Indexer. Two pipelines: **tinyman** (tALGO/stALGO holders) and **reti** (Réti open pooling stakers). Output is deterministic JSON: anyone with Indexer access can reproduce it.
+Computes per-account **AlgoQuarters** — time-weighted ALGO-equivalent staked holdings — by replaying on-chain history from the Indexer. Two pipelines: **tinyman** (tALGO/stALGO holders) and **reti** (Réti open pooling stakers). Output is deterministic JSON: anyone with Indexer access can reproduce it.
 
-1 algohour = 1 ALGO staked for 1 hour
+1 algoquarter (AQ) = 1 ALGO staked for 3M rounds
 
 ## Usage
 
-Every command comes per protocol: `snapshot:<protocol>`, `algohours:<protocol>`, `verify:<protocol>`.
+Every command comes per protocol: `snapshot:<protocol>`, `algoquarters:<protocol>`, `verify:<protocol>`.
 
 ```bash
 pnpm install
@@ -14,15 +14,15 @@ pnpm install
 # 1. Reconstruct the initial balance snapshot into ./snapshots/tinyman
 pnpm snapshot:tinyman 60000000
 
-# 2. Compute algohours for a committee window into ./data/tinyman
-pnpm algohours:tinyman 60000000 63000000
+# 2. Compute algoquarters for a committee window into ./data/tinyman
+pnpm algoquarters:tinyman 60000000 63000000
 # ^ also writes boundary snapshots 61000000, 62000000, 63000000
 
 # Next committee window — its start snapshot was produced by step 2
-pnpm algohours:tinyman 61000000 64000000
+pnpm algoquarters:tinyman 61000000 64000000
 ```
 
-The reti pipeline works the same way with `snapshot:reti` / `algohours:reti`.
+The reti pipeline works the same way with `snapshot:reti` / `algoquarters:reti`.
 
 Re-running a command is safe: existing snapshots are verified against the re-scan, never overwritten, and a mismatch aborts the run before any output is written.
 
@@ -52,9 +52,9 @@ Each replays from the latest committed snapshot and diffs the result against the
 pnpm test
 ```
 
-Tests run on made-up history and on the committed `snapshots/` and `data/` files — no Indexer needed. Core invariant: all algohours together equal total stake × time. See [`test/`](test/).
+Tests run on made-up history and on the committed `snapshots/` and `data/` files — no Indexer needed. Core invariant: all algoquarters together equal the total stake summed over the window's rounds, within per-account flooring. See [`test/`](test/).
 
-## Algohours file
+## Algoquarters file
 
 `data/<protocol>/<periodStart>-<periodEnd>.json`:
 
@@ -64,15 +64,13 @@ Tests run on made-up history and on the committed `snapshots/` and `data/` files
   "protocol": "reti",
   "periodStart": 59000000,
   "periodEnd": 62000000,
-  "periodStartTime": 1772784827,
-  "periodEndTime": 1781041146,
-  "totalAccounts": 2957,
-  "totalAlgoHours": "1401889568707852051",
-  "accounts": [{ "account": "222F4J…", "algoHours": "90573560652480" }]
+  "totalAccounts": 2936,
+  "totalAlgoQuarters": "611283604",
+  "accounts": [{ "account": "222F4J…", "algoQuarters": "39492" }]
 }
 ```
 
-`accounts` holds eligible holders only, sorted by address ascending (codepoint order, matching the committee-file convention). `algoHours` and `totalAlgoHours` are in microALGO-hours (bigints as decimal strings); times are Unix seconds. Tinyman files also carry a `rate` field (see its [README](./src/tinyman/README.md)).
+`accounts` holds eligible holders only, sorted by address ascending (codepoint order, matching the committee-file convention). `algoQuarters` and `totalAlgoQuarters` are integer AQ. Tinyman files also carry a `rate` field (see its [README](./src/tinyman/README.md)).
 
 ## Code structure
 
@@ -87,14 +85,15 @@ src/
 └── reti/                  Reti pools pipeline — see src/reti/README.md
 test/{tinyman,reti}/       Unit tests
 snapshots/{tinyman,reti}/  Balance snapshots
-data/{tinyman,reti}/       Algohour files
+data/{tinyman,reti}/       Algoquarters files
 ```
 
 ## Design notes
 
 - **Forward replay from protocol creation.** Balances are rebuilt by replaying each protocol's full history (ASA transfers for tinyman, registry events for reti) from its creation round — no dependency on present-day chain state. Replay order is deterministic (round, then position within the block), so identical inputs produce byte-identical committed JSON.
 - **Round semantics.** A snapshot at round `R` is the state after all transactions in rounds `< R` — i.e. just before round `R` executes. Windows are `[periodStart, periodEnd)`, so the end round belongs to the next window.
-- **How algohours accrue.** An account earns `balance × time`: whenever its balance changes, the seconds since its previous change are multiplied by the ALGO-equivalent balance it held during that elapsed time, and added to its running total. At the end of the window every account is settled up to `periodEnd`. All arithmetic is exact bigint; each account is rounded once, at the final conversion to microALGO-hours.
+- **How algoquarters accrue.** An account earns `balance × rounds`: whenever its balance changes, the ALGO-equivalent balance it held since the previous change is multiplied by the rounds elapsed, and added to its running total. At the end of the window every account is settled up to `periodEnd`. All arithmetic is exact bigint microALGO·rounds; each account is floored once, at the final conversion to AQ.
+- **The unit is the eligibility cutoff.** Accounts flooring below 1 AQ are omitted from the output — no dust entries. Each value is asserted to fit the uint32 per-account slot of the on-chain storage schema.
 - **Fail loud.** The replay throws whenever the chain data and the rebuilt state stop adding up (a balance would go negative, a close-out or full unstake doesn't match).
 
 Protocol specifics: [`src/tinyman/README.md`](src/tinyman/README.md) · [`src/reti/README.md`](src/reti/README.md)
