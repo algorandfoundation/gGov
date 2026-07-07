@@ -1,8 +1,10 @@
 # ggov-algoquarters
 
-Computes per-account **AlgoQuarters** — time-weighted ALGO-equivalent staked holdings — by replaying on-chain history from the Indexer. Two pipelines: **tinyman** (tALGO/stALGO holders) and **reti** (Réti open pooling stakers). Output is deterministic JSON: anyone with Indexer access can reproduce it.
+Computes per-account **AlgoQuarters** from Indexer history: ALGO-equivalent stake, weighted by rounds held. Serves to quantify gGov voting power for ALGO stakers participating in consensus through liquid-staking or pooling protocols.
 
-1 algoquarter (AQ) = 1 ALGO staked for 3M rounds
+**1 algoquarter (AQ) = 1 ALGO staked for 3M rounds**
+
+Two pipelines: tinyman (tALGO/stALGO holders) and reti (Réti open pooling stakers). Output is deterministic JSON: anyone with Indexer access can reproduce it.
 
 ## Usage
 
@@ -11,18 +13,18 @@ Every command comes per protocol: `snapshot:<protocol>`, `algoquarters:<protocol
 ```bash
 pnpm install
 
-# 1. Reconstruct the initial balance snapshot into ./snapshots/tinyman
-pnpm snapshot:tinyman 60000000
+# 1. Reconstruct the initial balance snapshot into ./snapshots/reti
+pnpm snapshot:reti 60000000
 
-# 2. Compute algoquarters for a committee window into ./data/tinyman
-pnpm algoquarters:tinyman 60000000 63000000
+# 2. Compute algoquarters for a committee window into ./data/reti
+pnpm algoquarters:reti 60000000 63000000
 # ^ also writes boundary snapshots 61000000, 62000000, 63000000
 
 # Next committee window — its start snapshot was produced by step 2
-pnpm algoquarters:tinyman 61000000 64000000
+pnpm algoquarters:reti 61000000 64000000
 ```
 
-The reti pipeline works the same way with `snapshot:reti` / `algoquarters:reti`.
+The tinyman pipeline works the same way with `snapshot:tinyman` / `algoquarters:tinyman`.
 
 Re-running a command is safe: existing snapshots are verified against the re-scan, never overwritten, and a mismatch aborts the run before any output is written.
 
@@ -33,8 +35,8 @@ Flags (`--check`, `--inspect`, `--no-snapshot`, …) are documented in the heade
 The snapshots can be compared against live chain state:
 
 ```bash
-pnpm verify:tinyman
 pnpm verify:reti
+pnpm verify:tinyman
 ```
 
 Each replays from the latest committed snapshot and diffs the result against the chain, exiting non-zero on any difference.
