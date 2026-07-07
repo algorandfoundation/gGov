@@ -1,4 +1,4 @@
-/** Algorand Indexer queries used by the algohour pipeline. */
+/** Algorand Indexer queries used by the algoquarter pipeline. */
 
 import { type indexerModels } from 'algosdk'
 

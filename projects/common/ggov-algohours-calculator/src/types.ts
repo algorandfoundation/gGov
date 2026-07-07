@@ -1,5 +1,5 @@
 /**
- * Shared types for the algohour pipeline.
+ * Shared types for the algoquarter pipeline.
  */
 
 /** A single ASA transfer event extracted from the indexer (top-level or inner txn). */
@@ -24,13 +24,13 @@ export interface AssetTransfer {
 // JSON-serialisable output types (bigint stored as decimal string)
 // ---------------------------------------------------------------------------
 
-export interface AccountWithAlgoHours {
+export interface AccountWithAlgoQuarters {
   account: string
   /** AQ earned by the account (1 AQ = 1 ALGO staked for 3M rounds), floored integer as decimal string. */
   algoQuarters: string
 }
 
-export interface AlgoHoursData {
+export interface AlgoQuartersData {
   networkGenesisHash: string
   /** Protocol from which the algoquarters were calculated. */
   protocol: string
@@ -46,5 +46,5 @@ export interface AlgoHoursData {
    * Eligible accounts only. The unit is the eligibility cutoff: accounts
    * flooring below 1 AQ are omitted.
    */
-  accounts: AccountWithAlgoHours[]
+  accounts: AccountWithAlgoQuarters[]
 }

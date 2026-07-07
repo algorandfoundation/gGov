@@ -46,6 +46,6 @@ export type PoolLedger = Map<bigint, Map<string, StakerInfo>>
 export interface RetiSnapshotData {
   /** Round at which balances were reconstructed, just before `round` transactions execute. */
   round: number
-  /** Per-pool staker positions at this round. All stakers are algohour-eligible. */
+  /** Per-pool staker positions at this round. All stakers are algoquarter-eligible. */
   pools: Record<string, Record<string, { balance: string; entryRound: number }>>
 }

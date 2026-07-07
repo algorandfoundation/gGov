@@ -12,7 +12,7 @@ import type { PoolLedger, RetiEvent } from './types'
  * Accrual runs on each staker's aggregate balance across pools, and is
  * floored once per staker when converting microALGO-rounds to AQ.
  */
-export function computeRetiAlgoHours(
+export function computeRetiAlgoQuarters(
   pools: PoolLedger,
   events: RetiEvent[],
   epochRoundLengths: Map<bigint, bigint>,

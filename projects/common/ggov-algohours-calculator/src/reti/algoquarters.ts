@@ -2,7 +2,7 @@
  * Compute time-weighted reti staked holdings for a round window.
  *
  * Loads the pool snapshot at periodStart, scans all ValidatorRegistry events in
- * [periodStart, periodEnd), and writes each staker's algohours.
+ * [periodStart, periodEnd), and writes each staker's algoquarters.
  *
  * Input:  snapshots/reti/<periodStart>.json
  * Output: data/reti/<periodStart>-<periodEnd>.json
@@ -10,9 +10,9 @@
  *     totalAccounts, totalAlgoQuarters, accounts: [{ account, algoQuarters }] }
  *
  * Usage:
- *   pnpm algohours:reti <periodStart> <periodEnd>                  # compute algohours and create/verify upcoming snapshots
- *   pnpm algohours:reti <periodStart> <periodEnd> --no-snapshot    # skip creating/verifying snapshots
- *   pnpm algohours:reti <periodStart> <periodEnd> --save-events    # also write data/<start>-<end>.events.log
+ *   pnpm algoquarters:reti <periodStart> <periodEnd>                  # compute algoquarters and create/verify upcoming snapshots
+ *   pnpm algoquarters:reti <periodStart> <periodEnd> --no-snapshot    # skip creating/verifying snapshots
+ *   pnpm algoquarters:reti <periodStart> <periodEnd> --save-events    # also write data/<start>-<end>.events.log
  *
  * Env:
  *   INDEXER_SERVER   indexer base URL (default: public Nodely mainnet indexer)
@@ -29,11 +29,11 @@ import { checkOrCreateSnapshots } from '../snapshots'
 import { stringifyJson } from '../utils/json'
 import { assertAlgoQuartersFitUint32 } from '../utils/aq'
 import { PROTOCOL } from './constants'
-import { computeRetiAlgoHours } from './compute'
+import { computeRetiAlgoQuarters } from './compute'
 import { fetchRetiEvents } from './indexer'
 import { applyRetiEvent } from './ledger'
 import * as snapshotStore from './snapshot/operations'
-import type { AlgoHoursData } from '../types'
+import type { AlgoQuartersData } from '../types'
 import type { PoolLedger, RetiEvent } from './types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -59,7 +59,7 @@ async function main() {
   const positionalArgs = args.filter((arg) => !arg.startsWith('--'))
 
   if (positionalArgs.length !== 2 || positionalArgs.some((arg) => !/^\d+$/.test(arg))) {
-    throw new Error('Usage: pnpm algohours:reti <periodStart> <periodEnd> [--no-snapshot] [--save-events]')
+    throw new Error('Usage: pnpm algoquarters:reti <periodStart> <periodEnd> [--no-snapshot] [--save-events]')
   }
 
   const periodStart = BigInt(positionalArgs[0])
@@ -76,10 +76,10 @@ async function main() {
 
   const outPath = join(DATA_DIR, `${periodStart}-${periodEnd}.json`)
   if (existsSync(outPath)) {
-    throw new Error(`Algohours already computed for this period: ${outPath}\nTo regenerate: rm ${outPath}`)
+    throw new Error(`Algoquarters already computed for this period: ${outPath}\nTo regenerate: rm ${outPath}`)
   }
 
-  console.log(`\nComputing reti algohours for rounds [${periodStart}, ${periodEnd})\n`)
+  console.log(`\nComputing reti algoquarters for rounds [${periodStart}, ${periodEnd})\n`)
 
   // Load inputs
   console.log(`Loading snapshot at round ${periodStart}…`)
@@ -106,12 +106,12 @@ async function main() {
     console.log(`  Events logged to ${eventsLogPath}`)
   }
 
-  // Preserve starting balances before computeRetiAlgoHours mutates them
+  // Preserve starting balances before computeRetiAlgoQuarters mutates them
   const snapshotPools = saveSnapshots ? clonePools(pools) : undefined
 
   // Compute output
   console.log('\nComputing round-weighted algoquarters…')
-  const algoQuartersByStaker = computeRetiAlgoHours(
+  const algoQuartersByStaker = computeRetiAlgoQuarters(
     pools,
     events,
     epochRoundLengths,
@@ -139,7 +139,7 @@ async function main() {
   console.log(`  Eligible accounts: ${accounts.length}  (dropped below 1 AQ: ≤${dropped})`)
   console.log(`  Total algoquarters: ${totalAlgoQuarters.toLocaleString()} AQ`)
 
-  const output: AlgoHoursData = {
+  const output: AlgoQuartersData = {
     networkGenesisHash,
     protocol: PROTOCOL,
     periodStart: Number(periodStart),
@@ -168,7 +168,7 @@ async function main() {
 
   mkdirSync(DATA_DIR, { recursive: true })
   writeFileSync(outPath, stringifyJson(output))
-  console.log(`\nAlgohours written to ${outPath}`)
+  console.log(`\nAlgoquarters written to ${outPath}`)
 }
 
 main().catch((err) => {

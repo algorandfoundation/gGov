@@ -17,16 +17,16 @@ import {
   readSnapshot,
 } from '../../src/tinyman/snapshot/operations'
 import { expectAlgoQuarterTotals, expectSortedPositiveUint32AlgoQuarters } from '../helpers'
-import type { AlgoHoursData } from '../../src/types'
+import type { AlgoQuartersData } from '../../src/types'
 
 // Tinyman files always carry the tALGO/ALGO rate
-type TinymanAlgoHoursData = AlgoHoursData & { rate: string }
+type TinymanAlgoQuartersData = AlgoQuartersData & { rate: string }
 
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'tinyman')
 const files = existsSync(DATA_DIR) ? readdirSync(DATA_DIR).filter((name) => name.endsWith('.json')) : []
 const datasets = files.map((file) => ({
   file,
-  data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as TinymanAlgoHoursData,
+  data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as TinymanAlgoQuartersData,
 }))
 
 function scaledRate(rate: string): bigint {
@@ -54,7 +54,7 @@ describe('data files', () => {
         expectSortedPositiveUint32AlgoQuarters(data.accounts, { isExcluded })
       })
 
-      // Local-only: the transfer log is a gitignored artifact of `algohours:tinyman
+      // Local-only: the transfer log is a gitignored artifact of `algoquarters:tinyman
       // --save-transfers`, so this check skips wherever the log is absent (e.g. CI)
       const transfersLog = join(DATA_DIR, `${data.periodStart}-${data.periodEnd}.transfers.log`)
       it.skipIf(!startSnapshotExists || !existsSync(transfersLog))(

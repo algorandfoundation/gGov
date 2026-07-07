@@ -5,7 +5,7 @@
 
 import { createHash } from 'node:crypto'
 
-// Protocol identifier, goes on algohours output files
+// Protocol identifier, goes on algoquarters output files
 export const PROTOCOL = 'reti'
 
 // ValidatorRegistry app. Staked ALGO lives in per-pool StakingPool apps, but every balance change is logged on the

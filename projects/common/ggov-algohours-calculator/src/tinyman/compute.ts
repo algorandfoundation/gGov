@@ -13,7 +13,7 @@ import type { BalanceMap, TaggedTransfer } from './types'
  * Contributions retain their fixed-point precision and are floored once per
  * account when converting accumulated microALGO-rounds to AQ.
  */
-export function computeAlgoHours(
+export function computeAlgoQuarters(
   balances: BalanceMap,
   transfers: TaggedTransfer[],
   startRound: number,

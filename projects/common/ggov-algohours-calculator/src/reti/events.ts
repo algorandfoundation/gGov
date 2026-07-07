@@ -15,7 +15,7 @@ function readUint64(log: Uint8Array, offset: number): bigint {
 }
 
 // Event payloads are fixed-size ABI tuples: selector(4) | validatorId u64 | poolNum u16 | poolAppId u64 | rest.
-// Fields are decoded by byte offset; poolNum is not needed for algohours.
+// Fields are decoded by byte offset; poolNum is not needed for algoquarters.
 function decodeRetiEventLog(log: Uint8Array, round: number, intraOffset: number): RetiEvent | null {
   if (log.length < 22) return null
   const base = { round, intraOffset, validatorId: readUint64(log, 4), poolAppId: readUint64(log, 14) }

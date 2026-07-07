@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { computeRetiAlgoHours } from '../../src/reti/compute'
+import { computeRetiAlgoQuarters } from '../../src/reti/compute'
 import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
 import type { RetiEvent } from '../../src/reti/types'
 import { ALICE, BOB, CAROL } from '../helpers'
@@ -12,10 +12,10 @@ import { EPOCH_LENGTHS, POOL_A, POOL_B, makeEpochReward, makeStakeAdded, makeSta
 const QUARTER = 3_000_000
 
 function compute(pools: ReturnType<typeof poolsOf>, events: RetiEvent[], start: number, end: number) {
-  return computeRetiAlgoHours(pools, events, EPOCH_LENGTHS, start, end)
+  return computeRetiAlgoQuarters(pools, events, EPOCH_LENGTHS, start, end)
 }
 
-describe('computeRetiAlgoHours', () => {
+describe('computeRetiAlgoQuarters', () => {
   it('credits a constant staker exactly balance × quarters', () => {
     const pools = poolsOf([POOL_A, [[ALICE, 1_000_000n, 320]]])
     const algoQuarters = compute(pools, [], 0, 2 * QUARTER)

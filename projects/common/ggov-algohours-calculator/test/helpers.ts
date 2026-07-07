@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { expect } from 'vitest'
 
 import type { AssetTransfer } from '../src/types'
-import type { AccountWithAlgoHours, AlgoHoursData } from '../src/types'
+import type { AccountWithAlgoQuarters, AlgoQuartersData } from '../src/types'
 import type { BalanceMap, TaggedTransfer } from '../src/tinyman/types'
 
 // ledger.ts and compute.ts never validate address format, so readable ids keep fixtures legible
@@ -34,14 +34,14 @@ export function readJsonLines<T>(path: string): T[] {
   return text ? text.split('\n').map((line) => JSON.parse(line) as T) : []
 }
 
-export function expectAlgoQuarterTotals(data: AlgoHoursData): void {
+export function expectAlgoQuarterTotals(data: AlgoQuartersData): void {
   expect(data.totalAccounts).toBe(data.accounts.length)
   const summed = data.accounts.reduce((sum, account) => sum + BigInt(account.algoQuarters), 0n)
   expect(summed.toString()).toBe(data.totalAlgoQuarters)
 }
 
 export function expectSortedPositiveUint32AlgoQuarters(
-  accounts: AccountWithAlgoHours[],
+  accounts: AccountWithAlgoQuarters[],
   options: { isExcluded?: (account: string) => boolean } = {},
 ): void {
   for (let i = 0; i < accounts.length; i++) {

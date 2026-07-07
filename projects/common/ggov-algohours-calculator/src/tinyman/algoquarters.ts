@@ -2,7 +2,7 @@
  * Compute time-weighted tALGO/stALGO holdings for a round window.
  *
  * Loads the balance snapshot at periodStart, scans all ASA transfers in
- * [periodStart, periodEnd), and writes each eligible account's algohours.
+ * [periodStart, periodEnd), and writes each eligible account's algoquarters.
  *
  * Input:  snapshots/tinyman/<periodStart>.json
  * Output: data/tinyman/<periodStart>-<periodEnd>.json
@@ -10,9 +10,9 @@
  *     rate, totalAccounts, totalAlgoQuarters, accounts: [{ account, algoQuarters }] }
  *
  * Usage:
- *   pnpm algohours:tinyman <periodStart> <periodEnd>                    # compute algohours and create/verify upcoming snapshots
- *   pnpm algohours:tinyman <periodStart> <periodEnd> --save-transfers   # also write data/<start>-<end>.transfers.log
- *   pnpm algohours:tinyman <periodStart> <periodEnd> --no-snapshot      # skip creating/verifying snapshots
+ *   pnpm algoquarters:tinyman <periodStart> <periodEnd>                    # compute algoquarters and create/verify upcoming snapshots
+ *   pnpm algoquarters:tinyman <periodStart> <periodEnd> --save-transfers   # also write data/<start>-<end>.transfers.log
+ *   pnpm algoquarters:tinyman <periodStart> <periodEnd> --no-snapshot      # skip creating/verifying snapshots
  *
  * Env:
  *   INDEXER_SERVER   indexer base URL (default: public Nodely mainnet indexer)
@@ -29,13 +29,13 @@ import { isExcluded } from './exclusions'
 import { scanAssetTransfers, fetchGenesisHash } from '../indexer'
 import { fetchTAlgoRateInRange } from './indexer'
 import { applyTransfer } from './ledger'
-import { computeAlgoHours, mergeAssetTransfers } from './compute'
+import { computeAlgoQuarters, mergeAssetTransfers } from './compute'
 import * as snapshotStore from './snapshot/operations'
 import { checkOrCreateSnapshots } from '../snapshots'
 import { openTransferLog } from '../utils/transfer-log'
 import { stringifyJson } from '../utils/json'
 import { assertAlgoQuartersFitUint32 } from '../utils/aq'
-import type { AlgoHoursData, AssetTransfer } from '../types'
+import type { AlgoQuartersData, AssetTransfer } from '../types'
 import type { BalanceMap } from './types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -67,7 +67,7 @@ async function main() {
   const positionalArgs = args.filter((arg) => !arg.startsWith('--'))
 
   if (positionalArgs.length !== 2 || positionalArgs.some((arg) => !/^\d+$/.test(arg))) {
-    throw new Error('Usage: pnpm algohours:tinyman <periodStart> <periodEnd> [--no-snapshot] [--save-transfers]')
+    throw new Error('Usage: pnpm algoquarters:tinyman <periodStart> <periodEnd> [--no-snapshot] [--save-transfers]')
   }
 
   const periodStart = BigInt(positionalArgs[0])
@@ -84,10 +84,10 @@ async function main() {
 
   const outPath = join(DATA_DIR, `${periodStart}-${periodEnd}.json`)
   if (existsSync(outPath)) {
-    throw new Error(`Algohours already computed for this period: ${outPath}\nTo regenerate: rm ${outPath}`)
+    throw new Error(`Algoquarters already computed for this period: ${outPath}\nTo regenerate: rm ${outPath}`)
   }
 
-  console.log(`\nComputing algohours for rounds [${periodStart}, ${periodEnd})\n`)
+  console.log(`\nComputing algoquarters for rounds [${periodStart}, ${periodEnd})\n`)
 
   // Load inputs
   console.log(`Loading snapshot at round ${periodStart}…`)
@@ -150,13 +150,19 @@ async function main() {
   console.log(`\n  tALGO transfers in window: ${tAlgoTransfers.length}`)
   console.log(`  stALGO transfers in window: ${stAlgoTransfers.length}`)
 
-  // Preserve starting balances before computeAlgoHours mutates them
+  // Preserve starting balances before computeAlgoQuarters mutates them
   const snapshotBalances = saveSnapshots ? cloneBalances(balances) : undefined
 
   // Compute output
   console.log('\nComputing round-weighted algoquarters…')
   const transfers = mergeAssetTransfers(tAlgoTransfers, stAlgoTransfers)
-  const algoQuartersByAddress = computeAlgoHours(balances, transfers, Number(periodStart), Number(periodEnd), tAlgoRate)
+  const algoQuartersByAddress = computeAlgoQuarters(
+    balances,
+    transfers,
+    Number(periodStart),
+    Number(periodEnd),
+    tAlgoRate,
+  )
 
   // The unit is the eligibility cutoff: accounts flooring below 1 AQ are omitted
   const eligible = [...algoQuartersByAddress.entries()]
@@ -178,7 +184,7 @@ async function main() {
   console.log(`  Eligible accounts: ${accounts.length}  (dropped below 1 AQ: ≤${dropped})`)
   console.log(`  Total algoquarters: ${totalAlgoQuarters.toLocaleString()} AQ`)
 
-  const output: AlgoHoursData = {
+  const output: AlgoQuartersData = {
     networkGenesisHash,
     protocol: PROTOCOL,
     periodStart: Number(periodStart),
@@ -208,7 +214,7 @@ async function main() {
 
   mkdirSync(DATA_DIR, { recursive: true })
   writeFileSync(outPath, stringifyJson(output))
-  console.log(`\nAlgohours written to ${outPath}`)
+  console.log(`\nAlgoquarters written to ${outPath}`)
 }
 
 main().catch((err) => {

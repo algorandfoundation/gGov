@@ -6,7 +6,7 @@
  *
  * Output: snapshots/tinyman/<round>.json
  *   { round, balances: { addr: { talgo, stalgo } }, excluded: { addr: { talgo, stalgo } } }
- *   `balances`  — algohour-eligible addresses
+ *   `balances`  — algoquarter-eligible addresses
  *   `excluded`  — non-eligible addresses (kept for supply verification; see exclusions.ts)
  *
  * Usage:

@@ -11,21 +11,21 @@ import { getSnapshotPath, readSnapshot } from '../../src/reti/snapshot/operation
 import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
 import { expectAlgoQuarterTotals, expectSortedPositiveUint32AlgoQuarters, readJsonLines } from '../helpers'
 import type { RetiSnapshotData } from '../../src/reti/types'
-import type { AlgoHoursData } from '../../src/types'
+import type { AlgoQuartersData } from '../../src/types'
 
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'reti')
 const SNAPSHOTS_DIR = dirname(getSnapshotPath(0))
 const files = existsSync(DATA_DIR) ? readdirSync(DATA_DIR).filter((name) => name.endsWith('.json')) : []
 const datasets = files.map((file) => ({
   file,
-  data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as AlgoHoursData,
+  data: JSON.parse(readFileSync(join(DATA_DIR, file), 'utf-8')) as AlgoQuartersData,
 }))
 const snapshotRounds = (existsSync(SNAPSHOTS_DIR) ? readdirSync(SNAPSHOTS_DIR) : [])
   .map((name) => /^(\d+)\.json$/.exec(name)?.[1])
   .filter((round) => round !== undefined)
   .map(Number)
 
-// One line per event as written by `algohours:reti --save-events`
+// One line per event as written by `algoquarters:reti --save-events`
 type LoggedEvent =
   | { type: 'stakeAdded'; round: number; staker: string; amount: string }
   | { type: 'stakeRemoved'; round: number; staker: string; amount: string }
@@ -62,7 +62,7 @@ describe('reti data files', () => {
         expectSortedPositiveUint32AlgoQuarters(data.accounts)
       })
 
-      // Local-only: the events log is a gitignored artifact of `algohours:reti
+      // Local-only: the events log is a gitignored artifact of `algoquarters:reti
       // --save-events`, so this check skips wherever the log is absent (e.g. CI)
       const eventsLog = join(DATA_DIR, `${data.periodStart}-${data.periodEnd}.events.log`)
       it.skipIf(!existsSync(getSnapshotPath(data.periodStart)) || !existsSync(eventsLog))(

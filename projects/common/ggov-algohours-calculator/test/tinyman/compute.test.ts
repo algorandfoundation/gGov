@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { computeAlgoHours, mergeAssetTransfers } from '../../src/tinyman/compute'
+import { computeAlgoQuarters, mergeAssetTransfers } from '../../src/tinyman/compute'
 import { RATE_SCALER } from '../../src/tinyman/constants'
 import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
 import { ALICE, BOB, CAROL, ESCROW, balancesOf, makeTagged, makeTransfer } from '../helpers'
@@ -14,29 +14,29 @@ import { ALICE, BOB, CAROL, ESCROW, balancesOf, makeTagged, makeTransfer } from 
 const QUARTER = 3_000_000
 const DIVISOR = RATE_SCALER * MICROALGO_ROUNDS_PER_AQ
 
-describe('computeAlgoHours', () => {
+describe('computeAlgoQuarters', () => {
   it('throws on non-monotonic rounds', () => {
     const balances = balancesOf([ALICE, 1_000_000n, 0n])
     const transfers = [
       makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1n, round: 100 }),
       makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 1n, round: 50 }),
     ]
-    expect(() => computeAlgoHours(balances, transfers, 0, QUARTER, RATE_SCALER)).toThrow(/Non-monotonic round/)
+    expect(() => computeAlgoQuarters(balances, transfers, 0, QUARTER, RATE_SCALER)).toThrow(/Non-monotonic round/)
   })
 
   it('earns nothing for a zero-balance account', () => {
     const balances = balancesOf([ALICE, 1_000_000n, 0n], [BOB, 0n, 0n])
-    const result = computeAlgoHours(balances, [], 0, QUARTER, RATE_SCALER)
+    const result = computeAlgoQuarters(balances, [], 0, QUARTER, RATE_SCALER)
     expect(result.get(BOB) ?? 0n).toBe(0n)
   })
 
   it('earns exactly balance × rate × quarters for a constant holder', () => {
     // 1 ALGO held for 2 quarters at 1:1 → 2 AQ
-    const oneToOne = computeAlgoHours(balancesOf([ALICE, 1_000_000n, 0n]), [], 0, 2 * QUARTER, RATE_SCALER)
+    const oneToOne = computeAlgoQuarters(balancesOf([ALICE, 1_000_000n, 0n]), [], 0, 2 * QUARTER, RATE_SCALER)
     expect(oneToOne.get(ALICE)).toBe(2n)
 
     // Same holding at rate 1.5 → 3 AQ
-    const oneAndHalf = computeAlgoHours(
+    const oneAndHalf = computeAlgoQuarters(
       balancesOf([ALICE, 1_000_000n, 0n]),
       [],
       0,
@@ -55,7 +55,7 @@ describe('computeAlgoHours', () => {
       makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: transferOut, round: 1_234_000 }),
       makeTagged('talgo', { sender: BOB, receiver: ALICE, amount: 40_000_000_000n, round: 4_321_000 }),
     ]
-    const result = computeAlgoHours(balances, transfers, 0, 5_000_000, rate)
+    const result = computeAlgoQuarters(balances, transfers, 0, 5_000_000, rate)
 
     const aliceExact =
       aliceStart * rate * 1_234_000n +
@@ -83,7 +83,7 @@ describe('computeAlgoHours', () => {
       makeTagged('talgo', { sender: CAROL, receiver: ALICE, amount: 999_999_000n, round: 11_345_000 }),
     ]
 
-    const result = computeAlgoHours(balances, transfers, 0, durationRounds, rate)
+    const result = computeAlgoQuarters(balances, transfers, 0, durationRounds, rate)
 
     const summed = [...result.values()].reduce((sum, quarters) => sum + quarters, 0n)
     const exactTotal = (supply * rate * BigInt(durationRounds)) / DIVISOR
@@ -92,14 +92,14 @@ describe('computeAlgoHours', () => {
   })
 
   it('a transfer preserves combined algoquarters when both sides floor to whole AQ', () => {
-    const withoutTransfer = computeAlgoHours(
+    const withoutTransfer = computeAlgoQuarters(
       balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n]),
       [],
       0,
       4 * QUARTER,
       RATE_SCALER,
     )
-    const withTransfer = computeAlgoHours(
+    const withTransfer = computeAlgoQuarters(
       balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n]),
       [makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, round: QUARTER })],
       0,
@@ -121,7 +121,7 @@ describe('computeAlgoHours', () => {
       closeTo: CAROL,
       round: 2 * QUARTER,
     })
-    const result = computeAlgoHours(balances, [closeOut], 0, 4 * QUARTER, RATE_SCALER)
+    const result = computeAlgoQuarters(balances, [closeOut], 0, 4 * QUARTER, RATE_SCALER)
 
     expect(result.get(ALICE)).toBe(10n) // 5 ALGO × 2 quarters
     expect(result.get(BOB)).toBe(14n) // 3 ALGO × 2 quarters + 4 ALGO × 2 quarters
@@ -129,14 +129,14 @@ describe('computeAlgoHours', () => {
   })
 
   it('staking (talgo → stalgo at parity) does not change the account algoquarters', () => {
-    const holding = computeAlgoHours(
+    const holding = computeAlgoQuarters(
       balancesOf([ALICE, 5_000_000n, 0n], [ESCROW, 0n, 5_000_000n]),
       [],
       0,
       4 * QUARTER,
       RATE_SCALER,
     )
-    const staking = computeAlgoHours(
+    const staking = computeAlgoQuarters(
       balancesOf([ALICE, 5_000_000n, 0n], [ESCROW, 0n, 5_000_000n]),
       [
         makeTagged('talgo', { sender: ALICE, receiver: ESCROW, amount: 5_000_000n, round: 2 * QUARTER }),
@@ -162,7 +162,7 @@ describe('computeAlgoHours', () => {
       makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, round: QUARTER }),
       makeTagged('talgo', { sender: BOB, receiver: ALICE, amount: 1_000_000n, round: 3 * QUARTER }),
     ]
-    const full = computeAlgoHours(
+    const full = computeAlgoQuarters(
       balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n]),
       transfers,
       0,
@@ -170,16 +170,16 @@ describe('computeAlgoHours', () => {
       RATE_SCALER,
     )
 
-    // computeAlgoHours mutates the balances, so the first half leaves them ready for the second
+    // computeAlgoQuarters mutates the balances, so the first half leaves them ready for the second
     const balances = balancesOf([ALICE, 7_000_000n, 0n], [BOB, 3_000_000n, 0n])
-    const firstHalf = computeAlgoHours(
+    const firstHalf = computeAlgoQuarters(
       balances,
       transfers.filter((t) => t.round < 2 * QUARTER),
       0,
       2 * QUARTER,
       RATE_SCALER,
     )
-    const secondHalf = computeAlgoHours(
+    const secondHalf = computeAlgoQuarters(
       balances,
       transfers.filter((t) => t.round >= 2 * QUARTER),
       2 * QUARTER,

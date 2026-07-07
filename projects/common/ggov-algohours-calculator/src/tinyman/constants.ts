@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto'
 import { getApplicationAddress } from 'algosdk'
 
-// Protocol identifier, goes on algohours output files
+// Protocol identifier, goes on algoquarters output files
 export const PROTOCOL = 'tinyman-consensus-staking'
 
 // tALGO liquid staking token
