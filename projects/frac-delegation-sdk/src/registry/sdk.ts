@@ -2,7 +2,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address } from 'algosdk'
 import { FracDelegationRegistryClient, FracDelegationRegistryFactory } from '../generated/FracDelegationRegistryClient'
 import { ConstructorArgs, SenderWithSigner, CommonMethodBuilderArgs, FracDelegationRegistryContractArgs } from './types'
-import { requireWriter } from '../util/requiresSender'
+import { requireWriterWithClient } from '../util/requiresSender'
 import { FracDelegationRegistryReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
@@ -34,7 +34,7 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
 
   // ── Admin: roles + config ────────────────────────────────────────
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetAdminTxns({
     newAdmin,
@@ -49,7 +49,7 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     maker: this.makeSetAdminTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetDefaultOperatorTxns({
     newDefaultOperator,
@@ -64,7 +64,7 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     maker: this.makeSetDefaultOperatorTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetGGovRegistryAppTxns({
     appId,
@@ -79,7 +79,7 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     maker: this.makeSetGGovRegistryAppTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeWithdrawALGOTxns({
     receiver,
@@ -104,7 +104,7 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
    * closes the registry app account and sends its residual ALGO to the deleting sender, so
    * withdraw any meaningful balance first.
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()

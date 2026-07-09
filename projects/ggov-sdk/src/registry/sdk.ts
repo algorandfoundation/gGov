@@ -11,7 +11,7 @@ import {
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
 } from './types'
-import { requireWriter } from '../util/requiresSender'
+import { requireWriterWithClient } from '../util/requiresSender'
 import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId'
 import { govToTuple } from './gov'
 import { GGovRegistryReaderSDK } from './sdkReader'
@@ -45,7 +45,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     () => this.algorand.client.algod,
   )
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   async uploadCommitteeFile(committeeFile: GGovCommitteeFile): Promise<Uint8Array> {
     const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
@@ -95,7 +95,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     return committeeId
   }
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeRegisterCommitteeTxns({
     committeeId,
@@ -125,7 +125,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeRegisterCommitteeTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeUnregisterCommitteeTxns({
     committeeId,
@@ -145,7 +145,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeUnregisterCommitteeTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeIngestGovsTxns({
     committeeId,
@@ -172,7 +172,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeIngestGovsTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetXGovRegistryAppTxns({
     appId,
@@ -187,7 +187,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetXGovRegistryAppTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetOperatorTxns({
     account,
@@ -202,7 +202,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetOperatorTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetLastPeriodIdTxns({
     newLastPeriodId,
@@ -219,7 +219,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetLastPeriodIdTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetAdminTxns({ newAdmin, builder }: GGovRegistryContractArgs['setAdmin(address)void'] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
@@ -231,7 +231,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetAdminTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeWithdrawALGOTxns({
     receiver,
@@ -254,7 +254,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    * registry app account and sends its residual ALGO to the deleting sender, so withdraw any
    * meaningful balance first.
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
@@ -266,7 +266,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeDeleteApplicationTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeUningestGovsTxns({
     committeeId,
@@ -295,7 +295,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    * @param committeeId Committee ID
    * @param accounts Accounts to uningest (in any order - will be sorted internally)
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   async uningestCommitteeGovs({
     committeeId,
@@ -336,7 +336,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   // ── Delegation ───────────────────────────────────────────────────
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeMirrorXGovDelegationTxns({
     account,
@@ -358,7 +358,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    *
    * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetVotingAccountTxns({
     votingAddress,
@@ -383,7 +383,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   // ── Period bytecode upload (admin-only) ──────────────────────────
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeUploadPeriodApprovalPartialTxns({
     startOffset,
@@ -406,7 +406,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   })
 
   /** Upload the full GGovPeriod approval bytecode, chunked into groups of up to 16 txns. */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   async uploadPeriodApprovalProgram({
     bytecode,
@@ -438,7 +438,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   // ── addPeriod (paired payment + createPeriod) ────────────────────
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   async makeAddPeriodTxns({
     committeeId,
