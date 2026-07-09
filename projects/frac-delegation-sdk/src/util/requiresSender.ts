@@ -1,3 +1,4 @@
+/** Verbatim copy of ggov-sdk/src/util/requiresSender.ts */
 /**
  * Decorator that ensures the instance has a `writerAccount` property set before calling the method.
  * @returns Method decorator

@@ -1,6 +1,6 @@
+/** Verbatim copy of ggov-sdk/src/util/increaseBudget.ts */
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { modelsv2, TransactionSigner, Algodv2, makeEmptyTransactionSigner } from 'algosdk'
-import { DelegatorComposer } from '../generated/DelegatorClient'
 import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants'
 
 export const SIMULATE_PARAMS = {
@@ -17,9 +17,9 @@ const simulateRequest = new modelsv2.SimulateRequest({
 })
 
 /* Utility to increase the budget of a transaction group if needed.
- * Simulates and returns undefines if we are under budget, otherwise returns a new builder with an increaseBudget call prepended.
+ * Simulates and returns undefined if we are under budget, otherwise returns a new builder with an increaseBudget call prepended.
  */
-export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>(
+export async function getIncreaseBudgetBuilder<T extends { composer(): Promise<any>; increaseBudget(args: any): any }>(
   builder: T,
   newBuilderFactory: () => T,
   sender: string,
@@ -32,7 +32,6 @@ export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>
   // increase first txn's fee so we do not fail because of fees
   // get atc & modify the first txn fee (need to clone to make txns mutable)
   const atc = (await (await builder.composer()).build()).atc.clone()
-  // @ts-expect-error private and readonly
   atc.transactions[0].txn.fee = 543_210n
 
   // we also need to replace signers with empty signers for simulation
@@ -55,7 +54,7 @@ export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>
 
   // get existing budget: count app calls
   // NOTE only goes 1 level deep in itxns
-  const numAppCalls = txnResults.reduce((count: number, { txnResult }) => {
+  const numAppCalls = txnResults.reduce((count: number, { txnResult }: any) => {
     if (txnResult?.txn.txn.type !== 'appl') return count
     const innerTxns = txnResult.innerTxns ?? []
     return count + 1 + innerTxns.length

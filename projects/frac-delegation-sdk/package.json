@@ -1,0 +1,37 @@
+{
+  "name": "frac-delegation-sdk",
+  "version": "0.0.1",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/algorandfoundation/gGov.git"
+  },
+  "bugs": {
+    "url": "https://github.com/algorandfoundation/gGov/issues"
+  },
+  "homepage": "https://github.com/algorandfoundation/gGov/tree/main/projects/frac-delegation-sdk#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "cp ../contracts/smart_contracts/artifacts/frac-delegation/FracDelegationRegistryClient.ts src/generated/FracDelegationRegistryClient.ts && tsx ../common/sdks/generate-errors.ts .",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.0",
+    "algosdk": "^3.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "tsx": "^4.21.0"
+  }
+}

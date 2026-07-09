@@ -11,7 +11,7 @@ import {
   SendResult,
 } from './types'
 import { getIncreaseBudgetBuilder } from './util/increaseBudget'
-import { requireWriter } from './util/requiresSender'
+import { requireWriterWithClient } from './util/requiresSender'
 import { wrapErrors, wrapErrorsInternal } from './util/wrapErrors'
 import { accountWithAlgoHoursToTuple } from './util/types'
 import { committeeIdToRaw } from './util/comitteeId'
@@ -89,7 +89,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     return builder.send(sendParams)
   }
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetCommitteeOracleApp({
     appId,
@@ -104,7 +104,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeSetCommitteeOracleApp,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSyncCommitteeMetadata({
     committeeId,
@@ -127,7 +127,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeSyncCommitteeMetadata,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeAddAccountAlgoHours({
     periodStart,
@@ -147,7 +147,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeAddAccountAlgoHours,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeRemoveAccountAlgoHours({
     periodStart,
@@ -167,7 +167,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeRemoveAccountAlgoHours,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetVoteSubmitThreshold({
     threshold,
@@ -182,7 +182,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeSetVoteSubmitThreshold,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetAbsenteeMode({
     mode,
@@ -197,7 +197,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeSetAbsenteeMode,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSyncProposalMetadata({
     proposalId,
@@ -213,7 +213,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeSyncProposalMetadata,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeUpdateAlgoHourPeriodFinality({
     periodStart,
@@ -230,7 +230,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeUpdateAlgoHourPeriodFinality,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeVoteInternal({
     proposalId,
@@ -248,7 +248,7 @@ export class XGovDelegatorSDK extends XGovDelegatorReaderSDK {
     maker: this.makeVoteInternal,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeVoteExternal({
     proposalId,
