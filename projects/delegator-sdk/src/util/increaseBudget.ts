@@ -55,11 +55,11 @@ export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>
 
   // get existing budget: count app calls
   // NOTE only goes 1 level deep in itxns
-  const numAppCalls = txnResults.map(({ txnResult }) => {
-    if (txnResult?.txn.txn.type !== 'appl') return 0
+  const numAppCalls = txnResults.reduce((count: number, { txnResult }) => {
+    if (txnResult?.txn.txn.type !== 'appl') return count
     const innerTxns = txnResult.innerTxns ?? []
-    return 1 + innerTxns.length
-  }).length
+    return count + 1 + innerTxns.length
+  }, 0)
 
   let existingBudget = 700 * numAppCalls
 
