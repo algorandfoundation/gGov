@@ -1,0 +1,1814 @@
+{
+  "version": 3,
+  "sources": [
+    "../../base/base.algo.ts",
+    "../../base/utils.algo.ts",
+    "../../frac-delegation/fracDelegationInstance.algo.ts"
+  ],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AEyBE;AAAkD;;AAAlD;AAEA;AAAgD;;AAAhD;AALF;;AAAA;;;AAAA;;AAAA;AAAA;AAAA;;AAAA;AAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;;;AAAA;;;;;;;;;;;;;;AAAA;AAAA;;AAAA;;;;;;;;;;;;;;AAAA;AA2FG;;AAAA;AAEC;;;AAFD;AAAA;AANA;;AAAA;AAEC;;;AAFD;AAAA;AArFH;;AAAA;AAAA;AAAA;AAAA;AA0CW;;;AAFR;AAAA;AAAA;AAAA;AAAA;AAAA;;AAlBK;AAjBN;AAiBM;AAAA;AAAwB;;AAAxB;AAAJ;;;AACkD;AApBpD;AAoBoD;AAAA;AAAwB;;;;;;;;;;;;;;;;;AAAhD;AAAA;AAAA;;ADbxB;;;ACce;;ADbjB;AACA;;ACiCD;AAAA;AAAA;AAAA;AAAA;AAAA;AAlBQ;AAtBT;AAsBS;AAAA;AAoBA;;;AAMT;;;AAAA;AAAA;AAAA;AAAA;AAAA;AACE;;;AAjDF;AAkDE;AAAA;AAFF;AAAA;AAMA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAC8C;AAzD9C;AAyD8C;AAAA;AAAwB;;AAAhD;AAAA;;AAChB;;;AACK;;AAAe;;AAAf;ADpDP;;;ACoD6C;ADnD/C;AACA;ACTF;AA+DE;;AAAA;AAPF;AAAA;AAKI;;;;;;AAYJ;;;AAAA;;AAAA;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AACE;;;AACoB;;AAAb;ADpEL;;;ACoEsC;ADnExC;AACA;ACmEA;;;;;;;;AAAA;;;AAAA;;;AAAA;AAHF;AAAA;AF9EC;;;AAAA;AAGsB;AAAG;AAAA;;AAAA;AAAxB;;;AACE;AAIkB;;;;AANN;;;;AAAA;;;;AAEZ;;;;AAAA;;;AAAA;AADiC;AAAA;AAAA;AAAA;;;;;AAHpC;AAAA;AEYD;;;AACkD;AARlD;AAQkD;AAAA;AAAwB;;AAAhD;ADDtB;;;ACEa;;ADDf;AACA;ACCA;;AAAA;AAAA;AAmBO;;AAAe;;;AAAf;ADtBL;;;ACsByC;ADrB3C;AACA;",
+  "op_pc_offset": 0,
+  "pc_events": {
+    "1": {
+      "subroutine": "@algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram",
+      "params": {},
+      "block": "main",
+      "stack_in": [],
+      "op": "intcblock 1 0 32 8"
+    },
+    "7": {
+      "op": "bytecblock \"registryApp\" \"operator\" \"ERR:AUTH\" 0x151f7c75 \"ERR:AK_NX\" \"admin\" base64(C4EBQw==)"
+    },
+    "65": {
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "reinterpret_bool%0#0"
+      ],
+      "stack_out": [
+        "reinterpret_bool%0#0"
+      ]
+    },
+    "67": {
+      "op": "bnz main_after_if_else@2",
+      "stack_out": []
+    },
+    "70": {
+      "op": "bytec_0 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\""
+      ],
+      "stack_out": [
+        "\"registryApp\""
+      ]
+    },
+    "71": {
+      "op": "global CallerApplicationID",
+      "defined_out": [
+        "\"registryApp\"",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "\"registryApp\"",
+        "tmp%0#1"
+      ]
+    },
+    "73": {
+      "op": "app_global_put",
+      "stack_out": []
+    },
+    "74": {
+      "op": "bytec_1 // \"operator\"",
+      "defined_out": [
+        "\"operator\""
+      ],
+      "stack_out": [
+        "\"operator\""
+      ]
+    },
+    "75": {
+      "op": "global ZeroAddress",
+      "defined_out": [
+        "\"operator\"",
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "\"operator\"",
+        "tmp%1#1"
+      ]
+    },
+    "77": {
+      "op": "app_global_put",
+      "stack_out": []
+    },
+    "78": {
+      "block": "main_after_if_else@2",
+      "stack_in": [],
+      "op": "txn NumAppArgs",
+      "defined_out": [
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "tmp%0#1"
+      ]
+    },
+    "80": {
+      "op": "bz main_bare_routing@15",
+      "stack_out": []
+    },
+    "83": {
+      "op": "txn OnCompletion",
+      "defined_out": [
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "tmp%2#0"
+      ]
+    },
+    "85": {
+      "op": "!",
+      "defined_out": [
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "tmp%3#0"
+      ]
+    },
+    "86": {
+      "error": "OnCompletion must be NoOp",
+      "op": "assert // OnCompletion must be NoOp",
+      "stack_out": []
+    },
+    "87": {
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%4#0"
+      ],
+      "stack_out": [
+        "tmp%4#0"
+      ]
+    },
+    "89": {
+      "op": "assert",
+      "stack_out": []
+    },
+    "90": {
+      "op": "pushbytess 0xac8b24de 0xbe48a207 0x440d953b 0x8ede09b3 0x928ddc5e 0x4118ecbf // method \"getAdmin()address\", method \"getOperator()address\", method \"setOperator(address)void\", method \"setRegistryApp(uint64)void\", method \"withdrawALGO(address,uint64)void\", method \"increaseBudget(uint64)void\"",
+      "defined_out": [
+        "Method(getAdmin()address)",
+        "Method(getOperator()address)",
+        "Method(increaseBudget(uint64)void)",
+        "Method(setOperator(address)void)",
+        "Method(setRegistryApp(uint64)void)",
+        "Method(withdrawALGO(address,uint64)void)"
+      ],
+      "stack_out": [
+        "Method(getAdmin()address)",
+        "Method(getOperator()address)",
+        "Method(setOperator(address)void)",
+        "Method(setRegistryApp(uint64)void)",
+        "Method(withdrawALGO(address,uint64)void)",
+        "Method(increaseBudget(uint64)void)"
+      ]
+    },
+    "122": {
+      "op": "txna ApplicationArgs 0",
+      "defined_out": [
+        "Method(getAdmin()address)",
+        "Method(getOperator()address)",
+        "Method(increaseBudget(uint64)void)",
+        "Method(setOperator(address)void)",
+        "Method(setRegistryApp(uint64)void)",
+        "Method(withdrawALGO(address,uint64)void)",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "Method(getAdmin()address)",
+        "Method(getOperator()address)",
+        "Method(setOperator(address)void)",
+        "Method(setRegistryApp(uint64)void)",
+        "Method(withdrawALGO(address,uint64)void)",
+        "Method(increaseBudget(uint64)void)",
+        "tmp%6#0"
+      ]
+    },
+    "125": {
+      "op": "match getAdmin getOperator setOperator setRegistryApp withdrawALGO increaseBudget",
+      "stack_out": []
+    },
+    "139": {
+      "block": "main_after_if_else@20",
+      "stack_in": [],
+      "op": "err"
+    },
+    "140": {
+      "block": "main_bare_routing@15",
+      "stack_in": [],
+      "op": "txn OnCompletion",
+      "defined_out": [
+        "tmp%7#0"
+      ],
+      "stack_out": [
+        "tmp%7#0"
+      ]
+    },
+    "142": {
+      "op": "switch main___algots__.defaultCreate@16 main_after_if_else@20 main_after_if_else@20 main_after_if_else@20 main_updateApplication@17 main_deleteApplication@18",
+      "stack_out": []
+    },
+    "156": {
+      "op": "err"
+    },
+    "157": {
+      "block": "main_deleteApplication@18",
+      "stack_in": [],
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%12#0"
+      ],
+      "stack_out": [
+        "tmp%12#0"
+      ]
+    },
+    "159": {
+      "error": "can only call when not creating",
+      "op": "assert // can only call when not creating",
+      "stack_out": []
+    },
+    "160": {
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
+    },
+    "163": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "1"
+      ]
+    },
+    "164": {
+      "op": "return",
+      "stack_out": []
+    },
+    "165": {
+      "block": "main_updateApplication@17",
+      "stack_in": [],
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%10#0"
+      ],
+      "stack_out": [
+        "tmp%10#0"
+      ]
+    },
+    "167": {
+      "error": "can only call when not creating",
+      "op": "assert // can only call when not creating",
+      "stack_out": []
+    },
+    "168": {
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
+    },
+    "171": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "1"
+      ]
+    },
+    "172": {
+      "op": "return",
+      "stack_out": []
+    },
+    "173": {
+      "block": "main___algots__.defaultCreate@16",
+      "stack_in": [],
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%8#0"
+      ],
+      "stack_out": [
+        "tmp%8#0"
+      ]
+    },
+    "175": {
+      "op": "!",
+      "defined_out": [
+        "tmp%9#0"
+      ],
+      "stack_out": [
+        "tmp%9#0"
+      ]
+    },
+    "176": {
+      "error": "can only call when creating",
+      "op": "assert // can only call when creating",
+      "stack_out": []
+    },
+    "177": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "1"
+      ]
+    },
+    "178": {
+      "op": "return",
+      "stack_out": []
+    },
+    "179": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.getAdmin[routing]",
+      "params": {},
+      "block": "getAdmin",
+      "stack_in": [],
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveAdmin",
+      "op": "callsub resolveAdmin",
+      "defined_out": [
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "tmp%0#1"
+      ]
+    },
+    "182": {
+      "op": "bytec_3 // 0x151f7c75",
+      "defined_out": [
+        "0x151f7c75",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "tmp%0#1",
+        "0x151f7c75"
+      ]
+    },
+    "183": {
+      "op": "swap",
+      "stack_out": [
+        "0x151f7c75",
+        "tmp%0#1"
+      ]
+    },
+    "184": {
+      "op": "concat",
+      "defined_out": [
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "tmp%2#0"
+      ]
+    },
+    "185": {
+      "op": "log",
+      "stack_out": []
+    },
+    "186": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "1"
+      ]
+    },
+    "187": {
+      "op": "return",
+      "stack_out": []
+    },
+    "188": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.getOperator[routing]",
+      "params": {},
+      "block": "getOperator",
+      "stack_in": [],
+      "op": "intc_1 // 0",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "189": {
+      "op": "dup",
+      "defined_out": [
+        "0"
+      ],
+      "stack_out": [
+        "value#0",
+        "0"
+      ]
+    },
+    "190": {
+      "op": "bytec_1 // \"operator\"",
+      "defined_out": [
+        "\"operator\"",
+        "0"
+      ],
+      "stack_out": [
+        "value#0",
+        "0",
+        "\"operator\""
+      ]
+    },
+    "191": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "maybe_exists%0#0",
+        "maybe_value%0#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "maybe_value%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "192": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "value#0",
+        "maybe_value%0#0"
+      ]
+    },
+    "193": {
+      "op": "global ZeroAddress",
+      "defined_out": [
+        "maybe_value%0#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "value#0",
+        "maybe_value%0#0",
+        "tmp%0#1"
+      ]
+    },
+    "195": {
+      "op": "==",
+      "defined_out": [
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "value#0",
+        "tmp%1#1"
+      ]
+    },
+    "196": {
+      "op": "bz getOperator_after_if_else@3",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "199": {
+      "op": "intc_1 // 0",
+      "stack_out": [
+        "value#0",
+        "0"
+      ]
+    },
+    "200": {
+      "op": "bytec_0 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\"",
+        "0"
+      ],
+      "stack_out": [
+        "value#0",
+        "0",
+        "\"registryApp\""
+      ]
+    },
+    "201": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "maybe_exists%1#0",
+        "maybe_value%1#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "maybe_value%1#0",
+        "maybe_exists%1#0"
+      ]
+    },
+    "202": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "value#0",
+        "maybe_value%1#0"
+      ]
+    },
+    "203": {
+      "op": "pushbytes \"defaultOperator\"",
+      "defined_out": [
+        "\"defaultOperator\"",
+        "maybe_value%1#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "maybe_value%1#0",
+        "\"defaultOperator\""
+      ]
+    },
+    "220": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "exists#0",
+        "value#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "value#0",
+        "exists#0"
+      ]
+    },
+    "221": {
+      "op": "swap",
+      "stack_out": [
+        "value#0",
+        "exists#0",
+        "value#0"
+      ]
+    },
+    "222": {
+      "op": "bury 2",
+      "defined_out": [
+        "exists#0",
+        "value#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "exists#0"
+      ]
+    },
+    "224": {
+      "op": "bnz getOperator_after_if_else@7",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "227": {
+      "op": "bytec 4 // \"ERR:AK_NX\"",
+      "defined_out": [
+        "\"ERR:AK_NX\"",
+        "value#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "\"ERR:AK_NX\""
+      ]
+    },
+    "229": {
+      "op": "log",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "230": {
+      "op": "err"
+    },
+    "231": {
+      "block": "getOperator_after_if_else@7",
+      "stack_in": [
+        "value#0"
+      ],
+      "op": "dup",
+      "defined_out": [
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "value#0",
+        "tmp%0#1"
+      ]
+    },
+    "232": {
+      "block": "getOperator_after_inlined_smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveOperator@4",
+      "stack_in": [
+        "value#0",
+        "tmp%0#1"
+      ],
+      "op": "bytec_3 // 0x151f7c75",
+      "defined_out": [
+        "0x151f7c75"
+      ],
+      "stack_out": [
+        "value#0",
+        "tmp%0#1",
+        "0x151f7c75"
+      ]
+    },
+    "233": {
+      "op": "swap",
+      "defined_out": [
+        "0x151f7c75",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "value#0",
+        "0x151f7c75",
+        "tmp%0#1"
+      ]
+    },
+    "234": {
+      "op": "concat",
+      "defined_out": [
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "tmp%2#0"
+      ]
+    },
+    "235": {
+      "op": "log",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "236": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "value#0",
+        "1"
+      ]
+    },
+    "237": {
+      "op": "return",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "238": {
+      "block": "getOperator_after_if_else@3",
+      "stack_in": [
+        "value#0"
+      ],
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0"
+      ],
+      "stack_out": [
+        "value#0",
+        "0"
+      ]
+    },
+    "239": {
+      "op": "bytec_1 // \"operator\"",
+      "defined_out": [
+        "\"operator\"",
+        "0"
+      ],
+      "stack_out": [
+        "value#0",
+        "0",
+        "\"operator\""
+      ]
+    },
+    "240": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "maybe_exists%2#0",
+        "maybe_value%2#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "maybe_value%2#0",
+        "maybe_exists%2#0"
+      ]
+    },
+    "241": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "defined_out": [
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "value#0",
+        "tmp%0#1"
+      ]
+    },
+    "242": {
+      "op": "b getOperator_after_inlined_smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveOperator@4"
+    },
+    "245": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.setOperator[routing]",
+      "params": {},
+      "block": "setOperator",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "newOperator#0"
+      ],
+      "stack_out": [
+        "newOperator#0"
+      ]
+    },
+    "248": {
+      "op": "dup",
+      "defined_out": [
+        "newOperator#0",
+        "newOperator#0 (copy)"
+      ],
+      "stack_out": [
+        "newOperator#0",
+        "newOperator#0 (copy)"
+      ]
+    },
+    "249": {
+      "op": "len",
+      "defined_out": [
+        "len%0#0",
+        "newOperator#0"
+      ],
+      "stack_out": [
+        "newOperator#0",
+        "len%0#0"
+      ]
+    },
+    "250": {
+      "op": "intc_2 // 32",
+      "defined_out": [
+        "32",
+        "len%0#0",
+        "newOperator#0"
+      ],
+      "stack_out": [
+        "newOperator#0",
+        "len%0#0",
+        "32"
+      ]
+    },
+    "251": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "newOperator#0"
+      ],
+      "stack_out": [
+        "newOperator#0",
+        "eq%0#0"
+      ]
+    },
+    "252": {
+      "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
+      "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
+      "stack_out": [
+        "newOperator#0"
+      ]
+    },
+    "253": {
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
+    },
+    "256": {
+      "op": "bytec_1 // \"operator\"",
+      "defined_out": [
+        "\"operator\"",
+        "newOperator#0"
+      ],
+      "stack_out": [
+        "newOperator#0",
+        "\"operator\""
+      ]
+    },
+    "257": {
+      "op": "swap",
+      "stack_out": [
+        "\"operator\"",
+        "newOperator#0"
+      ]
+    },
+    "258": {
+      "op": "app_global_put",
+      "stack_out": []
+    },
+    "259": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "1"
+      ]
+    },
+    "260": {
+      "op": "return",
+      "stack_out": []
+    },
+    "261": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.setRegistryApp[routing]",
+      "params": {},
+      "block": "setRegistryApp",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "264": {
+      "op": "dup",
+      "defined_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ]
+    },
+    "265": {
+      "op": "len",
+      "defined_out": [
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0"
+      ]
+    },
+    "266": {
+      "op": "intc_3 // 8",
+      "defined_out": [
+        "8",
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0",
+        "8"
+      ]
+    },
+    "267": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "eq%0#0"
+      ]
+    },
+    "268": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "269": {
+      "op": "btoi",
+      "defined_out": [
+        "appId#0"
+      ],
+      "stack_out": [
+        "appId#0"
+      ]
+    },
+    "270": {
+      "op": "intc_1 // 0",
+      "stack_out": [
+        "appId#0",
+        "0"
+      ]
+    },
+    "271": {
+      "op": "bytec_0 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\"",
+        "0",
+        "appId#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "0",
+        "\"registryApp\""
+      ]
+    },
+    "272": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "appId#0",
+        "maybe_exists%0#0",
+        "maybe_value%0#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "maybe_value%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "273": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "appId#0",
+        "maybe_value%0#0"
+      ]
+    },
+    "274": {
+      "op": "bytec 5 // \"admin\"",
+      "defined_out": [
+        "\"admin\"",
+        "appId#0",
+        "maybe_value%0#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "maybe_value%0#0",
+        "\"admin\""
+      ]
+    },
+    "276": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "_#0",
+        "appId#0",
+        "exists#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "_#0",
+        "exists#0"
+      ]
+    },
+    "277": {
+      "op": "bury 1",
+      "stack_out": [
+        "appId#0",
+        "exists#0"
+      ]
+    },
+    "279": {
+      "op": "bnz setRegistryApp_else_body@3",
+      "stack_out": [
+        "appId#0"
+      ]
+    },
+    "282": {
+      "op": "txn Sender",
+      "defined_out": [
+        "appId#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "appId#0",
+        "tmp%0#1"
+      ]
+    },
+    "284": {
+      "op": "global CreatorAddress",
+      "defined_out": [
+        "appId#0",
+        "tmp%0#1",
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "appId#0",
+        "tmp%0#1",
+        "tmp%1#1"
+      ]
+    },
+    "286": {
+      "op": "==",
+      "defined_out": [
+        "appId#0",
+        "cond#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "cond#0"
+      ]
+    },
+    "287": {
+      "op": "bnz setRegistryApp_after_if_else@4",
+      "stack_out": [
+        "appId#0"
+      ]
+    },
+    "290": {
+      "op": "bytec_2 // \"ERR:AUTH\"",
+      "defined_out": [
+        "\"ERR:AUTH\"",
+        "appId#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "\"ERR:AUTH\""
+      ]
+    },
+    "291": {
+      "op": "log",
+      "stack_out": [
+        "appId#0"
+      ]
+    },
+    "292": {
+      "op": "err"
+    },
+    "293": {
+      "block": "setRegistryApp_after_if_else@4",
+      "stack_in": [
+        "appId#0"
+      ],
+      "op": "bytec_0 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\""
+      ],
+      "stack_out": [
+        "appId#0",
+        "\"registryApp\""
+      ]
+    },
+    "294": {
+      "op": "dig 1",
+      "defined_out": [
+        "\"registryApp\"",
+        "appId#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "\"registryApp\"",
+        "appId#0"
+      ]
+    },
+    "296": {
+      "op": "app_global_put",
+      "stack_out": [
+        "appId#0"
+      ]
+    },
+    "297": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "appId#0"
+      ],
+      "stack_out": [
+        "appId#0",
+        "1"
+      ]
+    },
+    "298": {
+      "op": "return",
+      "stack_out": [
+        "appId#0"
+      ]
+    },
+    "299": {
+      "block": "setRegistryApp_else_body@3",
+      "stack_in": [
+        "appId#0"
+      ],
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
+    },
+    "302": {
+      "op": "b setRegistryApp_after_if_else@4"
+    },
+    "305": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.withdrawALGO[routing]",
+      "params": {},
+      "block": "withdrawALGO",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1"
+    },
+    "308": {
+      "op": "dupn 2",
+      "defined_out": [
+        "receiver#0",
+        "receiver#0 (copy)"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "receiver#0 (copy)"
+      ]
+    },
+    "310": {
+      "op": "len",
+      "defined_out": [
+        "len%0#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "len%0#0"
+      ]
+    },
+    "311": {
+      "op": "intc_2 // 32",
+      "defined_out": [
+        "32",
+        "len%0#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "len%0#0",
+        "32"
+      ]
+    },
+    "312": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "eq%0#0"
+      ]
+    },
+    "313": {
+      "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
+      "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
+      "stack_out": [
+        "receiver#0",
+        "receiver#0"
+      ]
+    },
+    "314": {
+      "op": "txna ApplicationArgs 2",
+      "defined_out": [
+        "receiver#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "tmp%2#0"
+      ]
+    },
+    "317": {
+      "op": "dup",
+      "defined_out": [
+        "receiver#0",
+        "tmp%2#0",
+        "tmp%2#0 (copy)"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "tmp%2#0",
+        "tmp%2#0 (copy)"
+      ]
+    },
+    "318": {
+      "op": "len",
+      "defined_out": [
+        "len%1#0",
+        "receiver#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "tmp%2#0",
+        "len%1#0"
+      ]
+    },
+    "319": {
+      "op": "intc_3 // 8",
+      "defined_out": [
+        "8",
+        "len%1#0",
+        "receiver#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "tmp%2#0",
+        "len%1#0",
+        "8"
+      ]
+    },
+    "320": {
+      "op": "==",
+      "defined_out": [
+        "eq%1#0",
+        "receiver#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "tmp%2#0",
+        "eq%1#0"
+      ]
+    },
+    "321": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "tmp%2#0"
+      ]
+    },
+    "322": {
+      "op": "btoi",
+      "defined_out": [
+        "amount#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "323": {
+      "op": "swap",
+      "defined_out": [
+        "amount#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "receiver#0"
+      ]
+    },
+    "324": {
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
+    },
+    "327": {
+      "op": "global ZeroAddress",
+      "defined_out": [
+        "amount#0",
+        "receiver#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "receiver#0",
+        "tmp%0#1"
+      ]
+    },
+    "329": {
+      "op": "!=",
+      "defined_out": [
+        "amount#0",
+        "cond#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "cond#0"
+      ]
+    },
+    "330": {
+      "op": "bnz withdrawALGO_after_if_else@3",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "333": {
+      "op": "bytec_2 // \"ERR:AUTH\"",
+      "defined_out": [
+        "\"ERR:AUTH\"",
+        "amount#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "\"ERR:AUTH\""
+      ]
+    },
+    "334": {
+      "op": "log",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "335": {
+      "op": "err"
+    },
+    "336": {
+      "block": "withdrawALGO_after_if_else@3",
+      "stack_in": [
+        "receiver#0",
+        "amount#0"
+      ],
+      "op": "itxn_begin"
+    },
+    "337": {
+      "op": "dup",
+      "defined_out": [
+        "amount#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "amount#0"
+      ]
+    },
+    "338": {
+      "op": "itxn_field Amount",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "340": {
+      "op": "dig 1",
+      "defined_out": [
+        "amount#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "receiver#0"
+      ]
+    },
+    "342": {
+      "op": "itxn_field Receiver",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "344": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "amount#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "1"
+      ]
+    },
+    "345": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "347": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "amount#0",
+        "receiver#0"
+      ],
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "0"
+      ]
+    },
+    "348": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "350": {
+      "op": "itxn_submit"
+    },
+    "351": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "receiver#0",
+        "amount#0",
+        "1"
+      ]
+    },
+    "352": {
+      "op": "return",
+      "stack_out": [
+        "receiver#0",
+        "amount#0"
+      ]
+    },
+    "353": {
+      "subroutine": "smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]",
+      "params": {},
+      "block": "increaseBudget",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "356": {
+      "op": "btoi",
+      "defined_out": [
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0"
+      ]
+    },
+    "357": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "358": {
+      "block": "increaseBudget_while_top@2",
+      "stack_in": [
+        "itxns#0",
+        "i#0"
+      ],
+      "op": "dup",
+      "defined_out": [
+        "i#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "i#0"
+      ]
+    },
+    "359": {
+      "op": "dig 2",
+      "defined_out": [
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "i#0",
+        "itxns#0"
+      ]
+    },
+    "361": {
+      "op": "<",
+      "defined_out": [
+        "i#0",
+        "itxns#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "tmp%0#1"
+      ]
+    },
+    "362": {
+      "op": "bz increaseBudget_after_while@5",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "365": {
+      "op": "itxn_begin"
+    },
+    "366": {
+      "op": "pushint 5 // 5",
+      "defined_out": [
+        "5",
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "5"
+      ]
+    },
+    "368": {
+      "op": "itxn_field OnCompletion",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "370": {
+      "op": "bytec 6 // base64(C4EBQw==)",
+      "defined_out": [
+        "C4EBQw==",
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "C4EBQw=="
+      ]
+    },
+    "372": {
+      "op": "itxn_field ClearStateProgramPages",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "374": {
+      "op": "bytec 6 // base64(C4EBQw==)",
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "C4EBQw=="
+      ]
+    },
+    "376": {
+      "op": "itxn_field ApprovalProgramPages",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "378": {
+      "op": "pushint 6 // 6",
+      "defined_out": [
+        "6",
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "6"
+      ]
+    },
+    "380": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "382": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "0"
+      ]
+    },
+    "383": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "385": {
+      "op": "itxn_submit"
+    },
+    "386": {
+      "op": "dup",
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "i#0"
+      ]
+    },
+    "387": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "i#0",
+        "1"
+      ]
+    },
+    "388": {
+      "op": "+",
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "i#0"
+      ]
+    },
+    "389": {
+      "op": "bury 1",
+      "defined_out": [
+        "i#0",
+        "itxns#0"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "391": {
+      "op": "b increaseBudget_while_top@2"
+    },
+    "394": {
+      "block": "increaseBudget_after_while@5",
+      "stack_in": [
+        "itxns#0",
+        "i#0"
+      ],
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "itxns#0",
+        "i#0",
+        "1"
+      ]
+    },
+    "395": {
+      "op": "return",
+      "stack_out": [
+        "itxns#0",
+        "i#0"
+      ]
+    },
+    "396": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveAdmin",
+      "params": {},
+      "block": "resolveAdmin",
+      "stack_in": [],
+      "op": "proto 0 1"
+    },
+    "399": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0"
+      ],
+      "stack_out": [
+        "0"
+      ]
+    },
+    "400": {
+      "op": "bytec_0 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\"",
+        "0"
+      ],
+      "stack_out": [
+        "0",
+        "\"registryApp\""
+      ]
+    },
+    "401": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "maybe_exists%0#0",
+        "maybe_value%0#0"
+      ],
+      "stack_out": [
+        "maybe_value%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "402": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "maybe_value%0#0"
+      ]
+    },
+    "403": {
+      "op": "bytec 5 // \"admin\"",
+      "defined_out": [
+        "\"admin\"",
+        "maybe_value%0#0"
+      ],
+      "stack_out": [
+        "maybe_value%0#0",
+        "\"admin\""
+      ]
+    },
+    "405": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "exists#0",
+        "value#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "exists#0"
+      ]
+    },
+    "406": {
+      "op": "bnz resolveAdmin_after_if_else@3",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "409": {
+      "op": "bytec 4 // \"ERR:AK_NX\"",
+      "defined_out": [
+        "\"ERR:AK_NX\"",
+        "value#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "\"ERR:AK_NX\""
+      ]
+    },
+    "411": {
+      "op": "log",
+      "stack_out": [
+        "value#0"
+      ]
+    },
+    "412": {
+      "op": "err"
+    },
+    "413": {
+      "block": "resolveAdmin_after_if_else@3",
+      "stack_in": [
+        "value#0"
+      ],
+      "op": "frame_dig 0",
+      "defined_out": [
+        "value#0"
+      ],
+      "stack_out": [
+        "value#0",
+        "value#0"
+      ]
+    },
+    "415": {
+      "op": "swap"
+    },
+    "416": {
+      "retsub": true,
+      "op": "retsub"
+    },
+    "417": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "params": {},
+      "block": "ensureCallerIsAdmin",
+      "stack_in": [],
+      "op": "txn Sender",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "419": {
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveAdmin",
+      "op": "callsub resolveAdmin",
+      "defined_out": [
+        "tmp%0#0",
+        "tmp%1#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "tmp%1#0"
+      ]
+    },
+    "422": {
+      "op": "==",
+      "defined_out": [
+        "cond#0"
+      ],
+      "stack_out": [
+        "cond#0"
+      ]
+    },
+    "423": {
+      "op": "bnz ensureCallerIsAdmin_after_if_else@3",
+      "stack_out": []
+    },
+    "426": {
+      "op": "bytec_2 // \"ERR:AUTH\"",
+      "defined_out": [
+        "\"ERR:AUTH\""
+      ],
+      "stack_out": [
+        "\"ERR:AUTH\""
+      ]
+    },
+    "427": {
+      "op": "log",
+      "stack_out": []
+    },
+    "428": {
+      "op": "err"
+    },
+    "429": {
+      "block": "ensureCallerIsAdmin_after_if_else@3",
+      "stack_in": [],
+      "retsub": true,
+      "op": "retsub"
+    }
+  }
+}

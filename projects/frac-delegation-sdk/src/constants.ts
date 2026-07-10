@@ -1,4 +1,4 @@
-// sync with "increaseBudget opcode cost" registry tests
+/** Verbatim copy of ggov-sdk/src/constants.ts */
 export const increaseBudgetBaseCost = 23
 export const increaseBudgetIncrementCost = 23
 

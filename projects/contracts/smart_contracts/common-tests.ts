@@ -2,7 +2,11 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Account, Address } from 'algosdk'
-import { FracDelegationRegistrySDK } from 'frac-delegation-sdk'
+import {
+  FracDelegationInstanceFactory,
+  FracDelegationInstanceSDK,
+  FracDelegationRegistrySDK,
+} from 'frac-delegation-sdk'
 import { calculateCommitteeId, GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
@@ -93,6 +97,57 @@ export const generateAccountWithFracSDK = async (
 ) => {
   const account = await localnet.context.generateAccount({ initialFunds })
   return { account, sdk: createFracSDK(localnet, registryAppId, account) }
+}
+
+export const deployUnboundFracInstance = async (localnet: AlgorandFixture, account: Address) => {
+  // Deploy a standalone `FracDelegationInstance` app WITHOUT binding it to a registry - test
+  // scaffolding. Leaves the instance in the pre-bind state (`registryApp === 0`, creator-gated
+  // bootstrap window); call `sdk.setRegistryApp` to finalize.
+  await localnet.algorand.account.ensureFundedFromEnvironment(account, (10).algos())
+
+  const factory = localnet.algorand.client.getTypedAppFactory(FracDelegationInstanceFactory, {
+    defaultSender: account,
+    defaultSigner: localnet.algorand.account.getSigner(account),
+  })
+
+  const { appClient } = await factory.send.create.bare({ extraProgramPages: 3 })
+  await localnet.algorand.send.payment({
+    sender: account,
+    receiver: appClient.appAddress,
+    amount: (1).algo(),
+  })
+
+  return { client: appClient, sdk: createFracInstanceSDK(localnet, appClient.appId, account) }
+}
+
+export const deployFracInstance = async (localnet: AlgorandFixture, account: Address) => {
+  // Deploy a frac registry plus a standalone instance bound to it (the full test bootstrap).
+  const { client: registryAppClient, sdk: registrySdk } = await deployFracRegistry(localnet, account)
+  const { client, sdk } = await deployUnboundFracInstance(localnet, account)
+  await sdk.setRegistryApp({ appId: registryAppClient.appId })
+
+  return {
+    registryAppClient,
+    registrySdk,
+    client,
+    sdk,
+  }
+}
+
+export const createFracInstanceSDK = (localnet: AlgorandFixture, instanceAppId: bigint, account: Address) =>
+  new FracDelegationInstanceSDK({
+    algorand: localnet.algorand,
+    instanceAppId,
+    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
+  })
+
+export const generateAccountWithFracInstanceSDK = async (
+  localnet: AlgorandFixture,
+  instanceAppId: bigint,
+  initialFunds = (1).algos(),
+) => {
+  const account = await localnet.context.generateAccount({ initialFunds })
+  return { account, sdk: createFracInstanceSDK(localnet, instanceAppId, account) }
 }
 
 async function createCommittee(
