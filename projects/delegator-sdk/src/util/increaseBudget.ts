@@ -33,7 +33,7 @@ export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>
   // get atc & modify the first txn fee (need to clone to make txns mutable)
   const atc = (await (await builder.composer()).build()).atc.clone()
   // @ts-expect-error private and readonly
-  atc.transactions[0].txn.fee = 543_210n
+  atc.transactions[0].txn.fee = 256_000n // 256x min fee
 
   // we also need to replace signers with empty signers for simulation
   // otherwise end users would be prompted to sign for this
@@ -57,9 +57,9 @@ export async function getIncreaseBudgetBuilder<T extends DelegatorComposer<any>>
   // inner app calls can not be relied upon fully
   // because their budget is added at call time
   // TODO FUTURE optimistic inner check, fallback to outer count
-  // TODO FUTURE add app call if refs are missing - currently increaseBudget addition is load bearing in some cases 
+  // TODO FUTURE add app call if refs are missing - currently increaseBudget addition is load bearing in some cases
   // (single vote app call does not have enough ref slots to go through without increaseBudget, succeeds only as a side effect)
-  const numAppCalls = txnResults.filter(({ txnResult }: any) => txnResult?.txn.txn.type === 'appl').length
+  const numAppCalls = txnResults.filter(({ txnResult }) => txnResult?.txn.txn.type === 'appl').length
 
   let existingBudget = 700 * numAppCalls
 
