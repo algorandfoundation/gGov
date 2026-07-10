@@ -1,6 +1,10 @@
 /**
  * Addresses that are not eligible for algoquarters.
  *
+ * Scope: protocol escrow/reserve contracts only. Liquidity pool addresses are NOT
+ * excluded — LP holdings are circulating supply held by real accounts and
+ * must accrue algoquarters like any other holder.
+ *
  * Their balances are still tracked during transfer replay and stored in
  * `SnapshotData.excluded`. This preserves every asset location and allows the
  * total supply to be verified.
