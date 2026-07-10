@@ -52,13 +52,13 @@ export async function getIncreaseBudgetBuilder<T extends { composer(): Promise<a
   // we had code here to return early if there was a failureMessage
   // but that meant that in some cases the actual failure would be obscured by out of budget errors
 
-  // get existing budget: count app calls
-  // NOTE only goes 1 level deep in itxns
-  const numAppCalls = txnResults.reduce((count: number, { txnResult }: any) => {
-    if (txnResult?.txn.txn.type !== 'appl') return count
-    const innerTxns = txnResult.innerTxns ?? []
-    return count + 1 + innerTxns.length
-  }, 0)
+  // get existing budget: count OUTER app calls
+  // inner app calls can not be relied upon fully
+  // because their budget is added at call time
+  // TODO FUTURE optimistic inner check, fallback to outer count
+  // TODO FUTURE add app call if refs are missing - currently increaseBudget addition is load bearing in some cases 
+  // (single vote app call does not have enough ref slots to go through without increaseBudget, succeeds only as a side effect)
+  const numAppCalls = txnResults.filter(({ txnResult }: any) => txnResult?.txn.txn.type === 'appl').length
 
   let existingBudget = 700 * numAppCalls
 
