@@ -1,4 +1,4 @@
-// sync with "increaseBudget opcode cost" registry tests
+// sync with "increaseBudget opcode cost" tests in contracts/smart_contracts/base/base.e2e.spec.ts
 export const increaseBudgetBaseCost = 23
 export const increaseBudgetIncrementCost = 23
 
