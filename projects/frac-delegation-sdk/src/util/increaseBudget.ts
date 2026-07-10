@@ -2,6 +2,7 @@
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { modelsv2, TransactionSigner, Algodv2, makeEmptyTransactionSigner } from 'algosdk'
 import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants'
+import { TransactionComposer } from '@algorandfoundation/algokit-utils/types/composer'
 
 export const SIMULATE_PARAMS = {
   allowMoreLogging: true,
@@ -19,7 +20,9 @@ const simulateRequest = new modelsv2.SimulateRequest({
 /* Utility to increase the budget of a transaction group if needed.
  * Simulates and returns undefined if we are under budget, otherwise returns a new builder with an increaseBudget call prepended.
  */
-export async function getIncreaseBudgetBuilder<T extends { composer(): Promise<any>; increaseBudget(args: any): any }>(
+export async function getIncreaseBudgetBuilder<
+  T extends { composer(): Promise<TransactionComposer>; increaseBudget(args: any): any },
+>(
   builder: T,
   newBuilderFactory: () => T,
   sender: string,
@@ -32,7 +35,8 @@ export async function getIncreaseBudgetBuilder<T extends { composer(): Promise<a
   // increase first txn's fee so we do not fail because of fees
   // get atc & modify the first txn fee (need to clone to make txns mutable)
   const atc = (await (await builder.composer()).build()).atc.clone()
-  atc.transactions[0].txn.fee = 543_210n
+  // @ts-expect-error private and readonly
+  atc.transactions[0].txn.fee = 256_000n // 256x min fee
 
   // we also need to replace signers with empty signers for simulation
   // otherwise end users would be prompted to sign for this
@@ -52,13 +56,13 @@ export async function getIncreaseBudgetBuilder<T extends { composer(): Promise<a
   // we had code here to return early if there was a failureMessage
   // but that meant that in some cases the actual failure would be obscured by out of budget errors
 
-  // get existing budget: count app calls
-  // NOTE only goes 1 level deep in itxns
-  const numAppCalls = txnResults.reduce((count: number, { txnResult }: any) => {
-    if (txnResult?.txn.txn.type !== 'appl') return count
-    const innerTxns = txnResult.innerTxns ?? []
-    return count + 1 + innerTxns.length
-  }, 0)
+  // get existing budget: count OUTER app calls
+  // inner app calls can not be relied upon fully
+  // because their budget is added at call time
+  // TODO FUTURE optimistic inner check, fallback to outer count
+  // TODO FUTURE add app call if refs are missing - currently increaseBudget addition is load bearing in some cases
+  // (single vote app call does not have enough ref slots to go through without increaseBudget, succeeds only as a side effect)
+  const numAppCalls = txnResults.filter(({ txnResult }) => txnResult?.txn.txn.type === 'appl').length
 
   let existingBudget = 700 * numAppCalls
 
