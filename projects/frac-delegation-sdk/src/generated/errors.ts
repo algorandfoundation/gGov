@@ -5,6 +5,7 @@
  */
 export const ErrorMessages: Record<string, string> = {
   "ERR:AUTH": "Unauthorized - you do not have permissions to perform this action",
+  "ERR:AK_NX": "App global state key not found",
   "ERR:C_EX": "Committee already exists",
   "ERR:C_NX": "Committee does not exist",
   "ERR:PE_LT": "Period end must be greater than period start",

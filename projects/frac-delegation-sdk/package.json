@@ -16,7 +16,7 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "cp ../contracts/smart_contracts/artifacts/frac-delegation/FracDelegationRegistryClient.ts src/generated/FracDelegationRegistryClient.ts && tsx ../common/sdks/generate-errors.ts .",
+    "prebuild": "cp ../contracts/smart_contracts/artifacts/frac-delegation/FracDelegationRegistryClient.ts src/generated/FracDelegationRegistryClient.ts && cp ../contracts/smart_contracts/artifacts/frac-delegation/FracDelegationInstanceClient.ts src/generated/FracDelegationInstanceClient.ts && tsx ../common/sdks/generate-errors.ts .",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

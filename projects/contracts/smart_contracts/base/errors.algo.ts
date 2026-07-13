@@ -1,5 +1,6 @@
 // Error codes for contracts - messages in comments are parsed by SDK build script
 export const errUnauthorized = 'ERR:AUTH' // Unauthorized - you do not have permissions to perform this action
+export const errAppGlobalKeyNotFound = 'ERR:AK_NX' // App global state key not found
 
 // Committee errors
 export const errCommitteeExists = 'ERR:C_EX' // Committee already exists
