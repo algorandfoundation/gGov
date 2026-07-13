@@ -50,8 +50,13 @@ export class FracDelegationInstanceContract extends BaseContract {
     return this.operator.value
   }
 
-  /** Caller must match the resolved admin (`BaseContract` override). */
+  /**
+   * Caller must match the resolved admin (`BaseContract` override). The creator always
+   * passes too - this is an permanent escape hatch for the original spawning registry
+   * to have control in case an unintended registry is set.
+   */
   protected override ensureCallerIsAdmin(): void {
+    if (Txn.sender === Global.creatorAddress) return
     ensure(Txn.sender === this.resolveAdmin(), errUnauthorized)
   }
 
@@ -78,14 +83,17 @@ export class FracDelegationInstanceContract extends BaseContract {
     this.operator.value = newOperator
   }
 
-  /** Set the `registryApp` ID. Admin only. */
+  /**
+   * Set the `registryApp` ID. Admin only. Validates the new registry exposes an `admin` key
+   * before binding, so a bad `appId` can't brick role resolution. Note an nonexistent app will
+   * revert on `app_global_get_ex`, so new registry must exist and have an `admin` key.
+   * This is a migration path for the registry app. Always set the new registry before deleting
+   * the old one (if so), never after - as admin auth could be bricked.
+   */
   public setRegistryApp(appId: uint64): void {
-    const [_, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`admin`)
-    if (!exists) {
-      ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
-    } else {
-      this.ensureCallerIsAdmin()
-    }
+    this.ensureCallerIsAdmin()
+    const [_, exists] = op.AppGlobal.getExBytes(appId, Bytes`admin`)
+    ensure(exists, errAppGlobalKeyNotFound)
     this.registryApp.value = appId
   }
 

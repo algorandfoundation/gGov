@@ -54,7 +54,7 @@ describe('FracDelegationInstance admin', () => {
       const { sdk: nonCreatorSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId)
 
       await expect(nonCreatorSDK.setRegistryApp({ appId: registrySdk.appId })).rejects.toThrow(
-        transformedError(errUnauthorized),
+        transformedError(errAppGlobalKeyNotFound),
       )
 
       await sdk.setRegistryApp({ appId: registrySdk.appId })
@@ -113,44 +113,45 @@ describe('FracDelegationInstance admin', () => {
 
   describe('setRegistryApp', () => {
     test('the registry admin can rebind to a second registry, and roles follow it', async () => {
-      const { testAccount } = localnet.context
-      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const { testAccount: creator } = localnet.context
+      const { registrySdk, sdk } = await deployFracInstance(localnet, creator)
+      // Move the registry admin off-creator so the rebind exercises the resolved-admin path
+      const { account: admin, sdk: adminSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId)
+      await registrySdk.setAdmin({ newAdmin: admin.toString() })
 
       const secondRegistryCreator = await localnet.context.generateAccount({ initialFunds: (10).algos() })
       const { sdk: secondRegistrySdk } = await deployFracRegistry(localnet, secondRegistryCreator)
 
-      await sdk.setRegistryApp({ appId: secondRegistrySdk.appId })
+      await adminSDK.setRegistryApp({ appId: secondRegistrySdk.appId })
       expect(await sdk.getRegistryApp()).toBe(secondRegistrySdk.appId)
       expect(await sdk.getAdmin()).toBe(secondRegistryCreator.toString())
       expect(await sdk.getOperator()).toBe(secondRegistryCreator.toString())
 
       // the first registry's admin lost admin over the instance
-      await expect(sdk.setOperator({ newOperator: testAccount.toString() })).rejects.toThrow(
+      await expect(adminSDK.setOperator({ newOperator: admin.toString() })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
 
-    test('rebinding to an app with no admin key bricks role resolution; only the creator can rebind back', async () => {
+    test('registry rebinding is validated at write time; the creator can rebind as escape-hatch', async () => {
       const { testAccount: creator } = localnet.context
       const { registrySdk, sdk } = await deployFracInstance(localnet, creator)
-      // Move the registry admin off-creator so the recovery below genuinely exercises the creator gate.
-      const { account: admin, sdk: adminSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId)
-      await registrySdk.setAdmin({ newAdmin: admin.toString() })
 
-      // Bind the instance to itself: an existing app with no `admin` key, standing in for a dead
-      // registry. (A nonexistent id is worse and unrecoverable: app_global_get_ex panics instead
-      // of returning exists=false, so even setRegistryApp's own gate check fails.)
-      await adminSDK.setRegistryApp({ appId: sdk.appId })
-      await expect(sdk.getAdmin()).rejects.toThrow(transformedError(errAppGlobalKeyNotFound))
+      // The new binding must have an `admin` key (the instance does not have, so it fails)
+      await expect(sdk.setRegistryApp({ appId: sdk.appId })).rejects.toThrow(transformedError(errAppGlobalKeyNotFound))
 
-      const { sdk: recoveryRegistrySdk } = await deployFracRegistry(localnet, admin)
+      // Example: delete the bound registry: role resolution dies with it (getEx on a nonexistent
+      // app panics rather than returning exists=false).
+      await registrySdk.deleteApplication({})
+      await expect(sdk.getAdmin()).rejects.toThrow()
 
-      // With no `admin` key to resolve, setRegistryApp falls back to the creator gate: the former
-      // admin is locked out and only the creator can rebind to a live registry.
-      await expect(adminSDK.setRegistryApp({ appId: sdk.appId })).rejects.toThrow(transformedError(errUnauthorized))
+      // The creator can set a new registry.
+      const recoveryCreator = await localnet.context.generateAccount({ initialFunds: (10).algos() })
+      const { sdk: recoveryRegistrySdk } = await deployFracRegistry(localnet, recoveryCreator)
       await sdk.setRegistryApp({ appId: recoveryRegistrySdk.appId })
       expect(await sdk.getRegistryApp()).toBe(recoveryRegistrySdk.appId)
-      expect(await sdk.getAdmin()).toBe(admin.toString())
+      // Registry's admin initial value is the creator.
+      expect(await sdk.getAdmin()).toBe(recoveryCreator.toString())
     })
   })
 
@@ -244,6 +245,29 @@ describe('FracDelegationInstance admin', () => {
 
     test('non-admin cannot delete the instance app', async () => {
       await expect(nonAdminSDK.deleteApplication({})).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('creator escape-hatch: the creator has admin privileges', async () => {
+      const { testAccount: creator } = localnet.context
+      const { sdk } = await deployFracInstance(localnet, creator)
+      const user = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      // The creator should be able to set the operator
+      await expect(sdk.setOperator({ newOperator: user.toString() })).resolves.not.toThrow()
+      // The creator should be able to set the registry app
+      await expect(sdk.setRegistryApp({ appId: 12345n })).resolves.not.toThrow()
+      // The creator should be able to withdraw ALGO
+      await expect(
+        sdk.withdrawALGO({ receiver: user.toString(), amount: (1).algos().microAlgo }),
+      ).resolves.not.toThrow()
+      // The creator should be able to update the instance app
+      await expect(
+        sdk.readClient.send.update.bare({
+          sender: creator.toString(),
+          signer: creator.signer,
+        }),
+      ).resolves.not.toThrow()
+      // The creator should be able to delete the instance app
+      await expect(sdk.deleteApplication({})).resolves.not.toThrow()
     })
   })
 })
