@@ -74,7 +74,7 @@
                 ]
             },
             "readonly": false,
-            "desc": "Set the `registryApp` ID. Admin only. Validates the new registry exposes an `admin` key \nbefore binding, so a bad `appId` can't brick role resolution. Note an nonexistent app will \nrevert on `app_global_get_ex`, so new registry must exist and have an `admin` key. \nThis is a migration path for the registry app. Always set the new registry before deleting\nthe old one (if so), never after - as admin auth could be bricked.",
+            "desc": "Set the `registryApp` ID. Admin only. Validates the new registry exposes an `admin` key\nbefore binding, so a bad `appId` can't brick role resolution. Note an nonexistent app will\nrevert on `app_global_get_ex`, so new registry must exist and have an `admin` key.\nThis is a migration path for the registry app. Always set the new registry before deleting\nthe old one (if so), never after - as admin auth could be bricked.",
             "events": [],
             "recommendations": {}
         },

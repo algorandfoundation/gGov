@@ -253,8 +253,9 @@ describe('FracDelegationInstance admin', () => {
       const user = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       // The creator should be able to set the operator
       await expect(sdk.setOperator({ newOperator: user.toString() })).resolves.not.toThrow()
-      // The creator should be able to set the registry app
-      await expect(sdk.setRegistryApp({ appId: 12345n })).resolves.not.toThrow()
+      // The creator should be able to set the registry app (still validated: must resolve an admin)
+      const { sdk: secondRegistrySdk } = await deployFracRegistry(localnet, user)
+      await expect(sdk.setRegistryApp({ appId: secondRegistrySdk.appId })).resolves.not.toThrow()
       // The creator should be able to withdraw ALGO
       await expect(
         sdk.withdrawALGO({ receiver: user.toString(), amount: (1).algos().microAlgo }),
