@@ -13,7 +13,7 @@ import {
 } from '@algorandfoundation/algorand-typescript'
 import { Uint16 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
-import { errAppGlobalKeyNotFound, errNotOperator, errUnauthorized } from '../base/errors.algo'
+import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
 import { ensure } from '../base/utils.algo'
 
 /**
@@ -51,7 +51,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   /** Instance admin is the registry's `admin` */
   protected resolveAdmin(): Account {
     const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`admin`)
-    ensure(exists, errAppGlobalKeyNotFound)
+    ensure(exists, errRegistryMissing)
     return Account(value)
   }
 
@@ -63,7 +63,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   protected resolveOperator(): Account {
     if (this.operator.value === Global.zeroAddress) {
       const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`defaultOperator`)
-      ensure(exists, errAppGlobalKeyNotFound)
+      ensure(exists, errRegistryMissing)
       return Account(value)
     }
     return this.operator.value
@@ -81,8 +81,15 @@ export class FracDelegationInstanceContract extends BaseContract {
 
   /** Caller must match the resolved operator. */
   protected ensureCallerIsOperator(): void {
-    ensure(Txn.sender === this.resolveOperator(), errNotOperator)
+    ensure(Txn.sender === this.resolveOperator(), errUnauthorized)
   }
+
+  /** Caller must match the resolved operator. */
+  protected ensureCallerIsRegistry(): void {
+    ensure(this.registryApp.value > 0, errRegistryMissing)
+    ensure(Global.callerApplicationId === this.registryApp.value, errUnauthorized)
+  }
+
 
   @abimethod({ readonly: true })
   public getAdmin(): Account {
@@ -112,7 +119,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   public setRegistryApp(appId: uint64): void {
     this.ensureCallerIsAdmin()
     const [_, exists] = op.AppGlobal.getExBytes(appId, Bytes`admin`)
-    ensure(exists, errAppGlobalKeyNotFound)
+    ensure(exists, errRegistryMissing)
     this.registryApp.value = appId
   }
 
