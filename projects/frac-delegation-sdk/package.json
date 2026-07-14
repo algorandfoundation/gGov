@@ -26,6 +26,9 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "p-map": "^7.0.4"
+  },
   "peerDependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",
     "algosdk": "^3.5.2"
