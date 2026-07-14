@@ -263,9 +263,6 @@ export class FracDelegationRegistryContract extends BaseContract {
     // sender must be instance
     ensure(Txn.sender === instance.appId.address, errUnauthorized)
 
-    instance.numAccounts++
-    this.instances(instanceNumId).value = clone(instance)
-
     if (!this.accounts(account).exists) {
       this.lastAccountId.value++
       const accountId = u32(this.lastAccountId.value)
@@ -283,6 +280,9 @@ export class FracDelegationRegistryContract extends BaseContract {
     if (!found) {
       accountRecord.instanceNumIds.push(instanceNumId)
       this.accounts(account).value = clone(accountRecord)
+      
+      instance.numAccounts++
+      this.instances(instanceNumId).value = clone(instance)
     }
 
     return accountRecord
