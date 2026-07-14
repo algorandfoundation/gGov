@@ -3,6 +3,7 @@ import {
   Application,
   baremethod,
   Box,
+  BoxMap,
   Bytes,
   bytes,
   compile,
@@ -15,11 +16,12 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
-import { Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
+import { encodeArc4, methodSelector, Uint16 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
 import { errInstanceAppNotConfigured, errUnauthorized } from '../base/errors.algo'
-import { ensure, u32 } from '../base/utils.algo'
+import { ensure, u16 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
+import { FracRegAccount, FracInstance } from '../base/types.algo'
 
 /**
  * Fractional Delegation Registry: global singleton, instance deployer.
@@ -35,11 +37,19 @@ export class FracDelegationRegistryContract extends BaseContract {
   defaultOperator = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** gGov registry application ID */
   gGovRegistryApp = GlobalState<Application>()
+  /** Last account numeric ID */
+  lastAccountId = GlobalState<uint64>({ initialValue: 0 })
+  /** Account registry; account ID + frac instance (numeric) IDs  */
+  accounts = BoxMap<Account, FracRegAccount>({ keyPrefix: 'a' })
+  /** Last account numeric ID */
+  lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
+  /** Account registry; account ID + frac instance (numeric) IDs  */
+  instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
   /**
    * FracDelegationInstance approval program bytecode. Chunk-uploaded by admin;
    * read by createInstance when spawning a new instance app. Lets admins ship
-   * instance approval-program upgrades without redeploying the registry. Existing
-   * instances are independent apps and are unaffected.
+   * instance factory code updates without redeploying the registry.
+   * Existing instances are independent apps and are unaffected.
    */
   instanceApprovalBox = Box<bytes>({ key: 'Iap' })
 
@@ -136,13 +146,10 @@ export class FracDelegationRegistryContract extends BaseContract {
    * @param mbrPayment Payment txn covering the new period app's MBR. Receiver must be this registry's address.
    * @returns [instanceNumId, appId]
    */
-  public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint32, uint64] {
+  public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
     this.ensureCallerIsAdmin()
     ensure(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     ensure(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
-
-    // TODO: numeric id assignment, increment counter, etc
-    // TODO: create instance box, check doesn't exist yet, register name
 
     // IMPORTANT: Always allocate the MAXIMUM AVM extraProgramPages (3) and reserve 2 extra
     // slots in each global-schema dimension (uint + bytes). This headroom lets the
@@ -165,10 +172,19 @@ export class FracDelegationRegistryContract extends BaseContract {
     const page2: bytes =
       approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
 
+    this.lastInstanceNumId.value++
+    const instanceNum = u16(this.lastInstanceNumId.value)
+
     const compiled = compile(FracDelegationInstanceContract) // clearStateProgram only — approval comes from box
     const created = itxn
       .applicationCall({
         approvalProgram: [page1, page2],
+        // ABI create call: selector + encoded (uint16 instanceNum, string name)
+        appArgs: [
+          methodSelector(FracDelegationInstanceContract.prototype.createApplication),
+          instanceNum.bytes,
+          encodeArc4(name),
+        ],
         clearStateProgram: compiled.clearStateProgram,
         extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
         globalNumUint: INSTANCE_GLOBAL_NUM_UINT,
@@ -184,8 +200,13 @@ export class FracDelegationRegistryContract extends BaseContract {
       })
       .submit()
 
-    // TODO: call instance and assing numeric id
+    this.instances(instanceNum).value = {
+      appId: Application(newApp.id),
+      name,
+      numAccounts: 0,
+      numEscrows: 0,
+    }
 
-    return [u32(5), newApp.id]
+    return [instanceNum, newApp.id]
   }
 }

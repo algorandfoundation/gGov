@@ -1,4 +1,4 @@
-import { Account, uint64 } from '@algorandfoundation/algorand-typescript'
+import { Account, Application, uint64 } from '@algorandfoundation/algorand-typescript'
 import { StaticBytes, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { u16, u32 } from './utils.algo'
 
@@ -263,4 +263,21 @@ export type GGovDelegationCleared = {
   delegator: Account
   /** Delegatee the delegation pointed at before being cleared */
   previousDelegatee: Account
+}
+
+/** Account stored in Fractional Delegation Registry */
+export type FracRegAccount = {
+  /** Short incremental account ID */
+  accountId: Uint32
+  /** numeric IDs of all frac instances this account appears in */
+  instanceNumIds: Uint16[]
+}
+
+/** Frac Registry representation of Frac Instances */
+export type FracInstance = {
+  appId: Application
+  name: string
+  numAccounts: uint64
+  numEscrows: uint64
+  // forgetting one here
 }

@@ -5,7 +5,7 @@
     "../../base/utils.algo.ts",
     "../../frac-delegation/fracDelegationInstance.algo.ts"
   ],
-  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AEyBE;AAAkD;;AAAlD;AAEA;AAAgD;;AAAhD;AALF;;AAAA;;;AAAA;;AAAA;AAAA;AAAA;;AAAA;AAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;;;AAAA;;;;;;;;;;;;;;AAAA;AAAA;;AAAA;;;;;;;;;;;;;;AAAA;AAmGG;;AAAA;AAEC;;;AAFD;AAAA;AANA;;AAAA;AAEC;;;AAFD;AAAA;AA7FH;;AAAA;AAAA;AAAA;AAAA;AA+CW;;;AAFR;AAAA;AAAA;AAAA;AAAA;AAAA;;AAvBK;AAjBN;AAiBM;AAAA;AAAwB;;AAAxB;AAAJ;;;AACkD;AApBpD;AAoBoD;AAAA;AAAwB;;;;;;;;;;;;;;;;;AAAhD;AAAA;AAAA;;ADbxB;;;ACce;ADbjB;AACA;;ACsCD;AAAA;AAAA;AAAA;AAAA;AAAA;AAvBQ;AAtBT;AAsBS;AAAA;AAyBA;;;AAMT;;;AAAA;AAAA;AAAA;AAAA;AAAA;AACE;;;AAtDF;AAuDE;AAAA;AAFF;AAAA;AAYA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AACE;;;AACmD;;AAA/B;AAAA;;AD9DlB;;;AC+Da;AD9Df;AACA;ACTF;AAuEE;;AAAA;AAJF;AAAA;AAcA;;;AAAA;;AAAA;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AACE;;;AACoB;;AAAb;AD5EL;;;AC4EsC;;AD3ExC;AACA;AC2EA;;;;;;;;AAAA;;;AAAA;;;AAAA;AAHF;AAAA;AFtFC;;;AAAA;AAGsB;AAAG;AAAA;;AAAA;AAAxB;;;AACE;AAIkB;;;;AANN;;;;AAAA;;;;AAEZ;;;;AAAA;;;AAAA;AADiC;AAAA;AAAA;AAAA;;;;;AAHpC;AAAA;AEYD;;;AACkD;AARlD;AAQkD;AAAA;AAAwB;;AAAhD;ADDtB;;;ACEa;ADDf;AACA;ACCA;;AAAA;AAAA;AAuBI;;AAAe;;AAAf;AAAJ;;;AAA0C;AACnC;;AAAe;;;AAAf;AD3BL;;;AC2ByC;;AD1B3C;AACA;",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AE0BE;AAAkD;;AAAlD;AAEA;AAAgD;;AAAhD;AALF;;AAAA;;;AAAA;;AAAA;AAAA;AAAA;;AAAA;;;AAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;;;AAAA;;;;;;;;;;;;;;AAAA;AAAA;;;;;;AAAA;;;AAAA;;;;AAAA;AAAA;;AAAA;AAAA;;AAAA;;;;;;AAAA;AAqHG;;AAAA;AAEC;;;AAFD;AAAA;AANA;;AAAA;AAEC;;;AAFD;AAAA;AA3FD;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;;AAbA;;;;;;;;;;;;;;;AAcE;;AAAA;AAZF;;;;;;AAaE;AAAA;AAFF;AAAA;AA6CS;;;AAFR;AAAA;AAAA;AAAA;AAAA;AAAA;;AAvBK;AAnCN;AAmCM;AAAA;AAAwB;;AAAxB;AAAJ;;;AACkD;AAtCpD;AAsCoD;AAAA;AAAwB;;;;;;;;;;;;;;;;;AAAhD;AAAA;AAAA;;ADhCxB;;;ACiCe;ADhCjB;AACA;;ACyDD;AAAA;AAAA;AAAA;AAAA;AAAA;AAvBQ;AAxCT;AAwCS;AAAA;AAyBA;;;AAMT;;;AAAA;AAAA;AAAA;;AAAA;AAAA;AACE;;;AAxEF;AAyEE;AAAA;AAFF;AAAA;AAYA;;;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;AACE;;;AACmD;;AAA/B;AAAA;;ADjFlB;;;ACkFa;ADjFf;AACA;ACRF;AAyFE;;AAAA;AAJF;AAAA;AAcA;;;AAAA;;AAAA;AAAA;;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;AACE;;;AACoB;;AAAb;AD/FL;;;AC+FsC;;AD9FxC;AACA;AC8FA;;;;;;;;AAAA;;;AAAA;;;AAAA;AAHF;AAAA;AFzGC;;;AAAA;AAGsB;AAAG;AAAA;;AAAA;AAAxB;;;AACE;AAIkB;;;AANN;;;;AAAA;;;;AAEZ;;;;AAAA;;;AAAA;AADiC;AAAA;AAAA;AAAA;;;;;AAHpC;AAAA;AE+BD;;;AACkD;AA1BlD;AA0BkD;AAAA;AAAwB;;AAAhD;ADpBtB;;;ACqBa;ADpBf;AACA;ACoBA;;AAAA;AAAA;AAuBI;;AAAe;;AAAf;AAAJ;;;AAA0C;AACnC;;AAAe;;;AAAf;AD9CL;;;AC8CyC;;AD7C3C;AACA;",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -13,7 +13,7 @@
       "params": {},
       "block": "main",
       "stack_in": [],
-      "op": "intcblock 1 0 32 8"
+      "op": "intcblock 1 0 5 2"
     },
     "7": {
       "op": "bytecblock \"registryApp\" \"operator\" \"ERR:AK_NX\" 0x151f7c75 \"admin\" \"ERR:AUTH\" base64(C4EBQw==)"
@@ -91,7 +91,7 @@
       ]
     },
     "80": {
-      "op": "bz main_bare_routing@15",
+      "op": "bz main_bare_routing@17",
       "stack_out": []
     },
     "83": {
@@ -127,10 +127,10 @@
       ]
     },
     "89": {
-      "op": "assert",
+      "op": "bz main_create_NoOp@13",
       "stack_out": []
     },
-    "90": {
+    "92": {
       "op": "pushbytess 0xac8b24de 0xbe48a207 0x440d953b 0x8ede09b3 0x928ddc5e 0x4118ecbf // method \"getAdmin()address\", method \"getOperator()address\", method \"setOperator(address)void\", method \"setRegistryApp(uint64)void\", method \"withdrawALGO(address,uint64)void\", method \"increaseBudget(uint64)void\"",
       "defined_out": [
         "Method(getAdmin()address)",
@@ -149,7 +149,7 @@
         "Method(increaseBudget(uint64)void)"
       ]
     },
-    "122": {
+    "124": {
       "op": "txna ApplicationArgs 0",
       "defined_out": [
         "Method(getAdmin()address)",
@@ -170,112 +170,121 @@
         "tmp%6#0"
       ]
     },
-    "125": {
+    "127": {
       "op": "match getAdmin getOperator setOperator setRegistryApp withdrawALGO increaseBudget",
       "stack_out": []
     },
-    "139": {
-      "block": "main_after_if_else@20",
-      "stack_in": [],
+    "141": {
       "op": "err"
     },
-    "140": {
-      "block": "main_bare_routing@15",
+    "142": {
+      "block": "main_create_NoOp@13",
       "stack_in": [],
-      "op": "txn OnCompletion",
+      "op": "pushbytes 0x5cf468c1 // method \"createApplication(uint16,string)void\"",
       "defined_out": [
+        "Method(createApplication(uint16,string)void)"
+      ],
+      "stack_out": [
+        "Method(createApplication(uint16,string)void)"
+      ]
+    },
+    "148": {
+      "op": "txna ApplicationArgs 0",
+      "defined_out": [
+        "Method(createApplication(uint16,string)void)",
         "tmp%7#0"
       ],
       "stack_out": [
+        "Method(createApplication(uint16,string)void)",
         "tmp%7#0"
       ]
     },
-    "142": {
-      "op": "switch main___algots__.defaultCreate@16 main_after_if_else@20 main_after_if_else@20 main_after_if_else@20 main_updateApplication@17 main_deleteApplication@18",
+    "151": {
+      "op": "match createApplication",
       "stack_out": []
     },
-    "156": {
+    "155": {
       "op": "err"
     },
-    "157": {
-      "block": "main_deleteApplication@18",
+    "156": {
+      "block": "main_bare_routing@17",
       "stack_in": [],
-      "op": "txn ApplicationID",
+      "op": "pushint 4 // UpdateApplication",
       "defined_out": [
-        "tmp%12#0"
+        "UpdateApplication"
       ],
       "stack_out": [
-        "tmp%12#0"
+        "UpdateApplication"
+      ]
+    },
+    "158": {
+      "op": "intc_2 // DeleteApplication",
+      "defined_out": [
+        "DeleteApplication",
+        "UpdateApplication"
+      ],
+      "stack_out": [
+        "UpdateApplication",
+        "DeleteApplication"
       ]
     },
     "159": {
-      "error": "can only call when not creating",
-      "op": "assert // can only call when not creating",
-      "stack_out": []
-    },
-    "160": {
-      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
-      "op": "callsub ensureCallerIsAdmin"
-    },
-    "163": {
-      "op": "intc_0 // 1",
+      "op": "txn OnCompletion",
       "defined_out": [
-        "1"
+        "DeleteApplication",
+        "UpdateApplication",
+        "tmp%8#0"
       ],
       "stack_out": [
-        "1"
+        "UpdateApplication",
+        "DeleteApplication",
+        "tmp%8#0"
       ]
     },
-    "164": {
-      "op": "return",
+    "161": {
+      "op": "match main_updateApplication@18 main_deleteApplication@19",
       "stack_out": []
-    },
-    "165": {
-      "block": "main_updateApplication@17",
-      "stack_in": [],
-      "op": "txn ApplicationID",
-      "defined_out": [
-        "tmp%10#0"
-      ],
-      "stack_out": [
-        "tmp%10#0"
-      ]
     },
     "167": {
+      "op": "err"
+    },
+    "168": {
+      "block": "main_deleteApplication@19",
+      "stack_in": [],
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%11#0"
+      ],
+      "stack_out": [
+        "tmp%11#0"
+      ]
+    },
+    "170": {
       "error": "can only call when not creating",
       "op": "assert // can only call when not creating",
       "stack_out": []
     },
-    "168": {
+    "171": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
       "op": "callsub ensureCallerIsAdmin"
     },
-    "171": {
+    "174": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1"
       ],
       "stack_out": [
         "1"
-      ]
-    },
-    "172": {
-      "op": "return",
-      "stack_out": []
-    },
-    "173": {
-      "block": "main___algots__.defaultCreate@16",
-      "stack_in": [],
-      "op": "txn ApplicationID",
-      "defined_out": [
-        "tmp%8#0"
-      ],
-      "stack_out": [
-        "tmp%8#0"
       ]
     },
     "175": {
-      "op": "!",
+      "op": "return",
+      "stack_out": []
+    },
+    "176": {
+      "block": "main_updateApplication@18",
+      "stack_in": [],
+      "op": "txn ApplicationID",
       "defined_out": [
         "tmp%9#0"
       ],
@@ -283,12 +292,16 @@
         "tmp%9#0"
       ]
     },
-    "176": {
-      "error": "can only call when creating",
-      "op": "assert // can only call when creating",
+    "178": {
+      "error": "can only call when not creating",
+      "op": "assert // can only call when not creating",
       "stack_out": []
     },
-    "177": {
+    "179": {
+      "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
+    },
+    "182": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1"
@@ -297,11 +310,270 @@
         "1"
       ]
     },
-    "178": {
+    "183": {
       "op": "return",
       "stack_out": []
     },
-    "179": {
+    "184": {
+      "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.createApplication[routing]",
+      "params": {},
+      "block": "createApplication",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0"
+      ]
+    },
+    "187": {
+      "op": "dup",
+      "defined_out": [
+        "instanceNumId#0",
+        "instanceNumId#0 (copy)"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "instanceNumId#0 (copy)"
+      ]
+    },
+    "188": {
+      "op": "len",
+      "defined_out": [
+        "instanceNumId#0",
+        "len%0#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "len%0#0"
+      ]
+    },
+    "189": {
+      "op": "intc_3 // 2",
+      "defined_out": [
+        "2",
+        "instanceNumId#0",
+        "len%0#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "len%0#0",
+        "2"
+      ]
+    },
+    "190": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "eq%0#0"
+      ]
+    },
+    "191": {
+      "error": "invalid number of bytes for arc4.uint16",
+      "op": "assert // invalid number of bytes for arc4.uint16",
+      "stack_out": [
+        "instanceNumId#0"
+      ]
+    },
+    "192": {
+      "op": "txna ApplicationArgs 2",
+      "defined_out": [
+        "instanceNumId#0",
+        "tmp%1#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0"
+      ]
+    },
+    "195": {
+      "op": "dup",
+      "defined_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "tmp%1#0 (copy)"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "tmp%1#0 (copy)"
+      ]
+    },
+    "196": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "instanceNumId#0",
+        "tmp%1#0",
+        "tmp%1#0 (copy)"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "tmp%1#0 (copy)",
+        "0"
+      ]
+    },
+    "197": {
+      "error": "invalid array length header",
+      "op": "extract_uint16 // on error: invalid array length header",
+      "defined_out": [
+        "aggregate%array_length%0#0",
+        "instanceNumId#0",
+        "tmp%1#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "aggregate%array_length%0#0"
+      ]
+    },
+    "198": {
+      "op": "intc_3 // 2",
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "aggregate%array_length%0#0",
+        "2"
+      ]
+    },
+    "199": {
+      "op": "+",
+      "defined_out": [
+        "add%0#0",
+        "instanceNumId#0",
+        "tmp%1#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "add%0#0"
+      ]
+    },
+    "200": {
+      "op": "dig 1",
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "add%0#0",
+        "tmp%1#0 (copy)"
+      ]
+    },
+    "202": {
+      "op": "len",
+      "defined_out": [
+        "add%0#0",
+        "instanceNumId#0",
+        "len%1#0",
+        "tmp%1#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "add%0#0",
+        "len%1#0"
+      ]
+    },
+    "203": {
+      "op": "==",
+      "defined_out": [
+        "eq%1#0",
+        "instanceNumId#0",
+        "tmp%1#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0",
+        "eq%1#0"
+      ]
+    },
+    "204": {
+      "error": "invalid number of bytes for arc4.dynamic_array<arc4.uint8>",
+      "op": "assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>",
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#0"
+      ]
+    },
+    "205": {
+      "op": "extract 2 0",
+      "defined_out": [
+        "instanceNumId#0",
+        "name#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "name#0"
+      ]
+    },
+    "208": {
+      "op": "pushbytes \"instanceNumId\"",
+      "defined_out": [
+        "\"instanceNumId\"",
+        "instanceNumId#0",
+        "name#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "name#0",
+        "\"instanceNumId\""
+      ]
+    },
+    "223": {
+      "op": "uncover 2",
+      "stack_out": [
+        "name#0",
+        "\"instanceNumId\"",
+        "instanceNumId#0"
+      ]
+    },
+    "225": {
+      "op": "app_global_put",
+      "stack_out": [
+        "name#0"
+      ]
+    },
+    "226": {
+      "op": "pushbytes \"name\"",
+      "defined_out": [
+        "\"name\"",
+        "name#0"
+      ],
+      "stack_out": [
+        "name#0",
+        "\"name\""
+      ]
+    },
+    "232": {
+      "op": "swap",
+      "stack_out": [
+        "\"name\"",
+        "name#0"
+      ]
+    },
+    "233": {
+      "op": "app_global_put",
+      "stack_out": []
+    },
+    "234": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1"
+      ],
+      "stack_out": [
+        "1"
+      ]
+    },
+    "235": {
+      "op": "return",
+      "stack_out": []
+    },
+    "236": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.getAdmin[routing]",
       "params": {},
       "block": "getAdmin",
@@ -315,7 +587,7 @@
         "tmp%0#1"
       ]
     },
-    "182": {
+    "239": {
       "op": "bytec_3 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -326,14 +598,14 @@
         "0x151f7c75"
       ]
     },
-    "183": {
+    "240": {
       "op": "swap",
       "stack_out": [
         "0x151f7c75",
         "tmp%0#1"
       ]
     },
-    "184": {
+    "241": {
       "op": "concat",
       "defined_out": [
         "tmp%2#0"
@@ -342,11 +614,11 @@
         "tmp%2#0"
       ]
     },
-    "185": {
+    "242": {
       "op": "log",
       "stack_out": []
     },
-    "186": {
+    "243": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1"
@@ -355,11 +627,11 @@
         "1"
       ]
     },
-    "187": {
+    "244": {
       "op": "return",
       "stack_out": []
     },
-    "188": {
+    "245": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.getOperator[routing]",
       "params": {},
       "block": "getOperator",
@@ -369,7 +641,7 @@
         "value#0"
       ]
     },
-    "189": {
+    "246": {
       "op": "dup",
       "defined_out": [
         "0"
@@ -379,7 +651,7 @@
         "0"
       ]
     },
-    "190": {
+    "247": {
       "op": "bytec_1 // \"operator\"",
       "defined_out": [
         "\"operator\"",
@@ -391,7 +663,7 @@
         "\"operator\""
       ]
     },
-    "191": {
+    "248": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -403,7 +675,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "192": {
+    "249": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -411,7 +683,7 @@
         "maybe_value%0#0"
       ]
     },
-    "193": {
+    "250": {
       "op": "global ZeroAddress",
       "defined_out": [
         "maybe_value%0#0",
@@ -423,7 +695,7 @@
         "tmp%0#1"
       ]
     },
-    "195": {
+    "252": {
       "op": "==",
       "defined_out": [
         "tmp%1#1"
@@ -433,20 +705,20 @@
         "tmp%1#1"
       ]
     },
-    "196": {
+    "253": {
       "op": "bz getOperator_after_if_else@3",
       "stack_out": [
         "value#0"
       ]
     },
-    "199": {
+    "256": {
       "op": "intc_1 // 0",
       "stack_out": [
         "value#0",
         "0"
       ]
     },
-    "200": {
+    "257": {
       "op": "bytec_0 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -458,7 +730,7 @@
         "\"registryApp\""
       ]
     },
-    "201": {
+    "258": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -470,7 +742,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "202": {
+    "259": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -478,7 +750,7 @@
         "maybe_value%1#0"
       ]
     },
-    "203": {
+    "260": {
       "op": "pushbytes \"defaultOperator\"",
       "defined_out": [
         "\"defaultOperator\"",
@@ -490,7 +762,7 @@
         "\"defaultOperator\""
       ]
     },
-    "220": {
+    "277": {
       "op": "app_global_get_ex",
       "defined_out": [
         "exists#0",
@@ -502,7 +774,7 @@
         "exists#0"
       ]
     },
-    "221": {
+    "278": {
       "op": "swap",
       "stack_out": [
         "value#0",
@@ -510,7 +782,7 @@
         "value#0"
       ]
     },
-    "222": {
+    "279": {
       "op": "bury 2",
       "defined_out": [
         "exists#0",
@@ -521,13 +793,13 @@
         "exists#0"
       ]
     },
-    "224": {
+    "281": {
       "op": "bnz getOperator_after_if_else@7",
       "stack_out": [
         "value#0"
       ]
     },
-    "227": {
+    "284": {
       "op": "bytec_2 // \"ERR:AK_NX\"",
       "defined_out": [
         "\"ERR:AK_NX\"",
@@ -538,16 +810,16 @@
         "\"ERR:AK_NX\""
       ]
     },
-    "228": {
+    "285": {
       "op": "log",
       "stack_out": [
         "value#0"
       ]
     },
-    "229": {
+    "286": {
       "op": "err"
     },
-    "230": {
+    "287": {
       "block": "getOperator_after_if_else@7",
       "stack_in": [
         "value#0"
@@ -561,7 +833,7 @@
         "tmp%0#1"
       ]
     },
-    "231": {
+    "288": {
       "block": "getOperator_after_inlined_smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveOperator@4",
       "stack_in": [
         "value#0",
@@ -577,7 +849,7 @@
         "0x151f7c75"
       ]
     },
-    "232": {
+    "289": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -589,7 +861,7 @@
         "tmp%0#1"
       ]
     },
-    "233": {
+    "290": {
       "op": "concat",
       "defined_out": [
         "tmp%2#0"
@@ -599,13 +871,13 @@
         "tmp%2#0"
       ]
     },
-    "234": {
+    "291": {
       "op": "log",
       "stack_out": [
         "value#0"
       ]
     },
-    "235": {
+    "292": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1"
@@ -615,13 +887,13 @@
         "1"
       ]
     },
-    "236": {
+    "293": {
       "op": "return",
       "stack_out": [
         "value#0"
       ]
     },
-    "237": {
+    "294": {
       "block": "getOperator_after_if_else@3",
       "stack_in": [
         "value#0"
@@ -635,7 +907,7 @@
         "0"
       ]
     },
-    "238": {
+    "295": {
       "op": "bytec_1 // \"operator\"",
       "defined_out": [
         "\"operator\"",
@@ -647,7 +919,7 @@
         "\"operator\""
       ]
     },
-    "239": {
+    "296": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -659,7 +931,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "240": {
+    "297": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "defined_out": [
@@ -670,10 +942,10 @@
         "tmp%0#1"
       ]
     },
-    "241": {
+    "298": {
       "op": "b getOperator_after_inlined_smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveOperator@4"
     },
-    "244": {
+    "301": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.setOperator[routing]",
       "params": {},
       "block": "setOperator",
@@ -686,7 +958,7 @@
         "newOperator#0"
       ]
     },
-    "247": {
+    "304": {
       "op": "dup",
       "defined_out": [
         "newOperator#0",
@@ -697,7 +969,7 @@
         "newOperator#0 (copy)"
       ]
     },
-    "248": {
+    "305": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -708,8 +980,8 @@
         "len%0#0"
       ]
     },
-    "249": {
-      "op": "intc_2 // 32",
+    "306": {
+      "op": "pushint 32 // 32",
       "defined_out": [
         "32",
         "len%0#0",
@@ -721,7 +993,7 @@
         "32"
       ]
     },
-    "250": {
+    "308": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -732,18 +1004,18 @@
         "eq%0#0"
       ]
     },
-    "251": {
+    "309": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "newOperator#0"
       ]
     },
-    "252": {
+    "310": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
       "op": "callsub ensureCallerIsAdmin"
     },
-    "255": {
+    "313": {
       "op": "bytec_1 // \"operator\"",
       "defined_out": [
         "\"operator\"",
@@ -754,18 +1026,18 @@
         "\"operator\""
       ]
     },
-    "256": {
+    "314": {
       "op": "swap",
       "stack_out": [
         "\"operator\"",
         "newOperator#0"
       ]
     },
-    "257": {
+    "315": {
       "op": "app_global_put",
       "stack_out": []
     },
-    "258": {
+    "316": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1"
@@ -774,11 +1046,11 @@
         "1"
       ]
     },
-    "259": {
+    "317": {
       "op": "return",
       "stack_out": []
     },
-    "260": {
+    "318": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.setRegistryApp[routing]",
       "params": {},
       "block": "setRegistryApp",
@@ -791,7 +1063,7 @@
         "tmp%0#0"
       ]
     },
-    "263": {
+    "321": {
       "op": "dup",
       "defined_out": [
         "tmp%0#0",
@@ -802,7 +1074,7 @@
         "tmp%0#0 (copy)"
       ]
     },
-    "264": {
+    "322": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -813,8 +1085,8 @@
         "len%0#0"
       ]
     },
-    "265": {
-      "op": "intc_3 // 8",
+    "323": {
+      "op": "pushint 8 // 8",
       "defined_out": [
         "8",
         "len%0#0",
@@ -826,7 +1098,7 @@
         "8"
       ]
     },
-    "266": {
+    "325": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -837,14 +1109,14 @@
         "eq%0#0"
       ]
     },
-    "267": {
+    "326": {
       "error": "invalid number of bytes for arc4.uint64",
       "op": "assert // invalid number of bytes for arc4.uint64",
       "stack_out": [
         "tmp%0#0"
       ]
     },
-    "268": {
+    "327": {
       "op": "btoi",
       "defined_out": [
         "appId#0"
@@ -853,7 +1125,7 @@
         "appId#0"
       ]
     },
-    "269": {
+    "328": {
       "op": "dup",
       "defined_out": [
         "appId#0"
@@ -863,11 +1135,11 @@
         "appId#0"
       ]
     },
-    "270": {
+    "329": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
       "op": "callsub ensureCallerIsAdmin"
     },
-    "273": {
+    "332": {
       "op": "bytec 4 // \"admin\"",
       "defined_out": [
         "\"admin\"",
@@ -879,7 +1151,7 @@
         "\"admin\""
       ]
     },
-    "275": {
+    "334": {
       "op": "app_global_get_ex",
       "defined_out": [
         "_#0",
@@ -892,20 +1164,20 @@
         "exists#0"
       ]
     },
-    "276": {
+    "335": {
       "op": "bury 1",
       "stack_out": [
         "appId#0",
         "exists#0"
       ]
     },
-    "278": {
+    "337": {
       "op": "bnz setRegistryApp_after_if_else@3",
       "stack_out": [
         "appId#0"
       ]
     },
-    "281": {
+    "340": {
       "op": "bytec_2 // \"ERR:AK_NX\"",
       "defined_out": [
         "\"ERR:AK_NX\"",
@@ -916,16 +1188,16 @@
         "\"ERR:AK_NX\""
       ]
     },
-    "282": {
+    "341": {
       "op": "log",
       "stack_out": [
         "appId#0"
       ]
     },
-    "283": {
+    "342": {
       "op": "err"
     },
-    "284": {
+    "343": {
       "block": "setRegistryApp_after_if_else@3",
       "stack_in": [
         "appId#0"
@@ -939,7 +1211,7 @@
         "\"registryApp\""
       ]
     },
-    "285": {
+    "344": {
       "op": "dig 1",
       "defined_out": [
         "\"registryApp\"",
@@ -951,13 +1223,13 @@
         "appId#0"
       ]
     },
-    "287": {
+    "346": {
       "op": "app_global_put",
       "stack_out": [
         "appId#0"
       ]
     },
-    "288": {
+    "347": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1",
@@ -968,20 +1240,20 @@
         "1"
       ]
     },
-    "289": {
+    "348": {
       "op": "return",
       "stack_out": [
         "appId#0"
       ]
     },
-    "290": {
+    "349": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.withdrawALGO[routing]",
       "params": {},
       "block": "withdrawALGO",
       "stack_in": [],
       "op": "txna ApplicationArgs 1"
     },
-    "293": {
+    "352": {
       "op": "dupn 2",
       "defined_out": [
         "receiver#0",
@@ -993,7 +1265,7 @@
         "receiver#0 (copy)"
       ]
     },
-    "295": {
+    "354": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -1005,8 +1277,8 @@
         "len%0#0"
       ]
     },
-    "296": {
-      "op": "intc_2 // 32",
+    "355": {
+      "op": "pushint 32 // 32",
       "defined_out": [
         "32",
         "len%0#0",
@@ -1019,7 +1291,7 @@
         "32"
       ]
     },
-    "297": {
+    "357": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -1031,7 +1303,7 @@
         "eq%0#0"
       ]
     },
-    "298": {
+    "358": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
@@ -1039,7 +1311,7 @@
         "receiver#0"
       ]
     },
-    "299": {
+    "359": {
       "op": "txna ApplicationArgs 2",
       "defined_out": [
         "receiver#0",
@@ -1051,7 +1323,7 @@
         "tmp%2#0"
       ]
     },
-    "302": {
+    "362": {
       "op": "dup",
       "defined_out": [
         "receiver#0",
@@ -1065,7 +1337,7 @@
         "tmp%2#0 (copy)"
       ]
     },
-    "303": {
+    "363": {
       "op": "len",
       "defined_out": [
         "len%1#0",
@@ -1079,8 +1351,8 @@
         "len%1#0"
       ]
     },
-    "304": {
-      "op": "intc_3 // 8",
+    "364": {
+      "op": "pushint 8 // 8",
       "defined_out": [
         "8",
         "len%1#0",
@@ -1095,7 +1367,7 @@
         "8"
       ]
     },
-    "305": {
+    "366": {
       "op": "==",
       "defined_out": [
         "eq%1#0",
@@ -1109,7 +1381,7 @@
         "eq%1#0"
       ]
     },
-    "306": {
+    "367": {
       "error": "invalid number of bytes for arc4.uint64",
       "op": "assert // invalid number of bytes for arc4.uint64",
       "stack_out": [
@@ -1118,7 +1390,7 @@
         "tmp%2#0"
       ]
     },
-    "307": {
+    "368": {
       "op": "btoi",
       "defined_out": [
         "amount#0",
@@ -1130,7 +1402,7 @@
         "amount#0"
       ]
     },
-    "308": {
+    "369": {
       "op": "swap",
       "defined_out": [
         "amount#0",
@@ -1142,11 +1414,11 @@
         "receiver#0"
       ]
     },
-    "309": {
+    "370": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
       "op": "callsub ensureCallerIsAdmin"
     },
-    "312": {
+    "373": {
       "op": "global ZeroAddress",
       "defined_out": [
         "amount#0",
@@ -1160,7 +1432,7 @@
         "tmp%0#1"
       ]
     },
-    "314": {
+    "375": {
       "op": "!=",
       "defined_out": [
         "amount#0",
@@ -1173,14 +1445,14 @@
         "cond#0"
       ]
     },
-    "315": {
+    "376": {
       "op": "bnz withdrawALGO_after_if_else@3",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "318": {
+    "379": {
       "op": "bytec 5 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\"",
@@ -1193,17 +1465,17 @@
         "\"ERR:AUTH\""
       ]
     },
-    "320": {
+    "381": {
       "op": "log",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "321": {
+    "382": {
       "op": "err"
     },
-    "322": {
+    "383": {
       "block": "withdrawALGO_after_if_else@3",
       "stack_in": [
         "receiver#0",
@@ -1211,7 +1483,7 @@
       ],
       "op": "itxn_begin"
     },
-    "323": {
+    "384": {
       "op": "dup",
       "defined_out": [
         "amount#0"
@@ -1222,14 +1494,14 @@
         "amount#0"
       ]
     },
-    "324": {
+    "385": {
       "op": "itxn_field Amount",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "326": {
+    "387": {
       "op": "dig 1",
       "defined_out": [
         "amount#0",
@@ -1241,14 +1513,14 @@
         "receiver#0"
       ]
     },
-    "328": {
+    "389": {
       "op": "itxn_field Receiver",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "330": {
+    "391": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1",
@@ -1261,14 +1533,14 @@
         "1"
       ]
     },
-    "331": {
+    "392": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "333": {
+    "394": {
       "op": "intc_1 // 0",
       "defined_out": [
         "0",
@@ -1281,17 +1553,17 @@
         "0"
       ]
     },
-    "334": {
+    "395": {
       "op": "itxn_field Fee",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "336": {
+    "397": {
       "op": "itxn_submit"
     },
-    "337": {
+    "398": {
       "op": "intc_0 // 1",
       "stack_out": [
         "receiver#0",
@@ -1299,14 +1571,14 @@
         "1"
       ]
     },
-    "338": {
+    "399": {
       "op": "return",
       "stack_out": [
         "receiver#0",
         "amount#0"
       ]
     },
-    "339": {
+    "400": {
       "subroutine": "smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]",
       "params": {},
       "block": "increaseBudget",
@@ -1319,7 +1591,7 @@
         "tmp%0#0"
       ]
     },
-    "342": {
+    "403": {
       "op": "btoi",
       "defined_out": [
         "itxns#0"
@@ -1328,7 +1600,7 @@
         "itxns#0"
       ]
     },
-    "343": {
+    "404": {
       "op": "intc_1 // 0",
       "defined_out": [
         "i#0",
@@ -1339,7 +1611,7 @@
         "i#0"
       ]
     },
-    "344": {
+    "405": {
       "block": "increaseBudget_while_top@2",
       "stack_in": [
         "itxns#0",
@@ -1355,7 +1627,7 @@
         "i#0"
       ]
     },
-    "345": {
+    "406": {
       "op": "dig 2",
       "defined_out": [
         "i#0",
@@ -1368,7 +1640,7 @@
         "itxns#0"
       ]
     },
-    "347": {
+    "408": {
       "op": "<",
       "defined_out": [
         "i#0",
@@ -1381,18 +1653,18 @@
         "tmp%0#1"
       ]
     },
-    "348": {
+    "409": {
       "op": "bz increaseBudget_after_while@5",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "351": {
+    "412": {
       "op": "itxn_begin"
     },
-    "352": {
-      "op": "pushint 5 // 5",
+    "413": {
+      "op": "intc_2 // 5",
       "defined_out": [
         "5",
         "i#0",
@@ -1404,14 +1676,14 @@
         "5"
       ]
     },
-    "354": {
+    "414": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "356": {
+    "416": {
       "op": "bytec 6 // base64(C4EBQw==)",
       "defined_out": [
         "C4EBQw==",
@@ -1424,14 +1696,14 @@
         "C4EBQw=="
       ]
     },
-    "358": {
+    "418": {
       "op": "itxn_field ClearStateProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "360": {
+    "420": {
       "op": "bytec 6 // base64(C4EBQw==)",
       "stack_out": [
         "itxns#0",
@@ -1439,14 +1711,14 @@
         "C4EBQw=="
       ]
     },
-    "362": {
+    "422": {
       "op": "itxn_field ApprovalProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "364": {
+    "424": {
       "op": "pushint 6 // 6",
       "defined_out": [
         "6",
@@ -1459,14 +1731,14 @@
         "6"
       ]
     },
-    "366": {
+    "426": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "368": {
+    "428": {
       "op": "intc_1 // 0",
       "defined_out": [
         "0",
@@ -1479,17 +1751,17 @@
         "0"
       ]
     },
-    "369": {
+    "429": {
       "op": "itxn_field Fee",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "371": {
+    "431": {
       "op": "itxn_submit"
     },
-    "372": {
+    "432": {
       "op": "dup",
       "stack_out": [
         "itxns#0",
@@ -1497,7 +1769,7 @@
         "i#0"
       ]
     },
-    "373": {
+    "433": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1",
@@ -1511,7 +1783,7 @@
         "1"
       ]
     },
-    "374": {
+    "434": {
       "op": "+",
       "stack_out": [
         "itxns#0",
@@ -1519,7 +1791,7 @@
         "i#0"
       ]
     },
-    "375": {
+    "435": {
       "op": "bury 1",
       "defined_out": [
         "i#0",
@@ -1530,10 +1802,10 @@
         "i#0"
       ]
     },
-    "377": {
+    "437": {
       "op": "b increaseBudget_while_top@2"
     },
-    "380": {
+    "440": {
       "block": "increaseBudget_after_while@5",
       "stack_in": [
         "itxns#0",
@@ -1549,21 +1821,21 @@
         "1"
       ]
     },
-    "381": {
+    "441": {
       "op": "return",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "382": {
+    "442": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveAdmin",
       "params": {},
       "block": "resolveAdmin",
       "stack_in": [],
       "op": "proto 0 1"
     },
-    "385": {
+    "445": {
       "op": "intc_1 // 0",
       "defined_out": [
         "0"
@@ -1572,7 +1844,7 @@
         "0"
       ]
     },
-    "386": {
+    "446": {
       "op": "bytec_0 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -1583,7 +1855,7 @@
         "\"registryApp\""
       ]
     },
-    "387": {
+    "447": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -1594,14 +1866,14 @@
         "maybe_exists%0#0"
       ]
     },
-    "388": {
+    "448": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "389": {
+    "449": {
       "op": "bytec 4 // \"admin\"",
       "defined_out": [
         "\"admin\"",
@@ -1612,7 +1884,7 @@
         "\"admin\""
       ]
     },
-    "391": {
+    "451": {
       "op": "app_global_get_ex",
       "defined_out": [
         "exists#0",
@@ -1623,13 +1895,13 @@
         "exists#0"
       ]
     },
-    "392": {
+    "452": {
       "op": "bnz resolveAdmin_after_if_else@3",
       "stack_out": [
         "value#0"
       ]
     },
-    "395": {
+    "455": {
       "op": "bytec_2 // \"ERR:AK_NX\"",
       "defined_out": [
         "\"ERR:AK_NX\"",
@@ -1640,16 +1912,16 @@
         "\"ERR:AK_NX\""
       ]
     },
-    "396": {
+    "456": {
       "op": "log",
       "stack_out": [
         "value#0"
       ]
     },
-    "397": {
+    "457": {
       "op": "err"
     },
-    "398": {
+    "458": {
       "block": "resolveAdmin_after_if_else@3",
       "stack_in": [
         "value#0"
@@ -1663,14 +1935,14 @@
         "value#0"
       ]
     },
-    "400": {
+    "460": {
       "op": "swap"
     },
-    "401": {
+    "461": {
       "retsub": true,
       "op": "retsub"
     },
-    "402": {
+    "462": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.ensureCallerIsAdmin",
       "params": {},
       "block": "ensureCallerIsAdmin",
@@ -1683,7 +1955,7 @@
         "tmp%0#0"
       ]
     },
-    "404": {
+    "464": {
       "op": "global CreatorAddress",
       "defined_out": [
         "tmp%0#0",
@@ -1694,7 +1966,7 @@
         "tmp%1#0"
       ]
     },
-    "406": {
+    "466": {
       "op": "==",
       "defined_out": [
         "tmp%2#0"
@@ -1703,15 +1975,15 @@
         "tmp%2#0"
       ]
     },
-    "407": {
+    "467": {
       "op": "bz ensureCallerIsAdmin_after_if_else@2",
       "stack_out": []
     },
-    "410": {
+    "470": {
       "retsub": true,
       "op": "retsub"
     },
-    "411": {
+    "471": {
       "block": "ensureCallerIsAdmin_after_if_else@2",
       "stack_in": [],
       "op": "txn Sender",
@@ -1722,7 +1994,7 @@
         "tmp%3#0"
       ]
     },
-    "413": {
+    "473": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.resolveAdmin",
       "op": "callsub resolveAdmin",
       "defined_out": [
@@ -1734,7 +2006,7 @@
         "tmp%4#0"
       ]
     },
-    "416": {
+    "476": {
       "op": "==",
       "defined_out": [
         "cond#0"
@@ -1743,11 +2015,11 @@
         "cond#0"
       ]
     },
-    "417": {
+    "477": {
       "op": "bnz ensureCallerIsAdmin_after_if_else@5",
       "stack_out": []
     },
-    "420": {
+    "480": {
       "op": "bytec 5 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\""
@@ -1756,14 +2028,14 @@
         "\"ERR:AUTH\""
       ]
     },
-    "422": {
+    "482": {
       "op": "log",
       "stack_out": []
     },
-    "423": {
+    "483": {
       "op": "err"
     },
-    "424": {
+    "484": {
       "block": "ensureCallerIsAdmin_after_if_else@5",
       "stack_in": [],
       "retsub": true,
