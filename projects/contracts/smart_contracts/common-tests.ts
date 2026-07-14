@@ -2,7 +2,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Account, Address } from 'algosdk'
-import { FracDelegationInstanceSDK, FracDelegationRegistrySDK } from 'frac-delegation-sdk'
+import { FracDelegationSDK, FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import { calculateCommitteeId, GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
@@ -184,7 +184,7 @@ export const deployFracRegistry = async (localnet: AlgorandFixture, account: Add
 // --------------------------------------------------------------------
 
 export const createFracInstanceSDK = (localnet: AlgorandFixture, instanceAppId: bigint, account: Address) =>
-  new FracDelegationInstanceSDK({
+  new FracDelegationSDK({
     algorand: localnet.algorand,
     instanceAppId,
     writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
