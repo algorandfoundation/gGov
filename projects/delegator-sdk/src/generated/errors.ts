@@ -70,5 +70,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GD_NR": "Transaction malformed - no account reference to delegator",
   "ERR:GD_SD": "Cannot delegate to self",
   "ERR:GD_EX": "Delegation already exists for account",
-  "ERR:FI_NC": "Instance approval program not yet uploaded to registry"
+  "ERR:FI_NC": "Instance approval program not yet uploaded to registry",
+  "ERR:FI_NX": "Instance does not exist"
 };
