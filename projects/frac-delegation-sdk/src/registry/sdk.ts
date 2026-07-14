@@ -185,7 +185,7 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     mbrAmount,
     note,
     builder,
-  }: Omit<FracDelegationRegistryContractArgs['createInstance(string,pay)(uint32,uint64)'], 'mbrPayment'> & {
+  }: Omit<FracDelegationRegistryContractArgs['createInstance(string,pay)(uint16,uint64)'], 'mbrPayment'> & {
     mbrAmount?: bigint | number
   } & CommonMethodBuilderArgs) {
     const writer = this.writerAccount!
