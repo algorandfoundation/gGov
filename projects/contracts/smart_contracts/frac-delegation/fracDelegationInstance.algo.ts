@@ -20,7 +20,7 @@ import { ensure } from '../base/utils.algo'
  *
  * Resolves its admin and operator from the registry global state.
  */
-@contract({ name: 'FracDelegationInstance', stateTotals: { globalBytes: 8, globalUints: 8 } })
+@contract({ name: 'FracDelegationInstance' })
 export class FracDelegationInstanceContract extends BaseContract {
   /** `FracDelegationRegistry` app ID; initialized at creator app ID (defaults to zero if non-app)*/
   registryApp = GlobalState<uint64>({ initialValue: Global.callerApplicationId })

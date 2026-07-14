@@ -85,3 +85,6 @@ export const errGGovNoDelegation = 'ERR:GD_NX' // No delegation for account
 export const errGGovDelegationNoAcctRef = 'ERR:GD_NR' // Transaction malformed - no account reference to delegator
 export const errGGovSelfDelegate = 'ERR:GD_SD' // Cannot delegate to self
 export const errGGovDelegationExists = 'ERR:GD_EX' // Delegation already exists for account
+
+// Frac delegation
+export const errInstanceAppNotConfigured = 'ERR:FI_NC' // Instance approval program not yet uploaded to registry

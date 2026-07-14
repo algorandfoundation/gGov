@@ -20,7 +20,7 @@ main:
 
 main_after_if_else@2:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:23-24
-    // @contract({ name: 'FracDelegationInstance', stateTotals: { globalBytes: 8, globalUints: 8 } })
+    // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
     txn NumAppArgs
     bz main_bare_routing@15
@@ -35,13 +35,13 @@ main_after_if_else@2:
 
 main_after_if_else@20:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:23-24
-    // @contract({ name: 'FracDelegationInstance', stateTotals: { globalBytes: 8, globalUints: 8 } })
+    // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
     err
 
 main_bare_routing@15:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:23-24
-    // @contract({ name: 'FracDelegationInstance', stateTotals: { globalBytes: 8, globalUints: 8 } })
+    // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
     txn OnCompletion
     switch main___algots__.defaultCreate@16 main_after_if_else@20 main_after_if_else@20 main_after_if_else@20 main_updateApplication@17 main_deleteApplication@18
@@ -75,7 +75,7 @@ main_updateApplication@17:
 
 main___algots__.defaultCreate@16:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:23-24
-    // @contract({ name: 'FracDelegationInstance', stateTotals: { globalBytes: 8, globalUints: 8 } })
+    // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
     txn ApplicationID
     !
