@@ -1,9 +1,14 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { FracDelegationRegistrySDK } from 'frac-delegation-sdk'
+import { FracDelegationInstanceFactory, FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import { errUnauthorized } from '../base/errors.algo'
-import { createFracSDK, deployFracRegistry, generateAccountWithFracSDK, transformedError } from '../common-tests'
+import {
+  createFracRegistrySDK,
+  deployFracRegistry,
+  generateAccountWithFracRegSDK,
+  transformedError,
+} from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 
 describe('FracDelegationRegistry admin', () => {
@@ -21,7 +26,9 @@ describe('FracDelegationRegistry admin', () => {
     // guard against either drifting silently on a contract change.
     test('registry deploys with extraProgramPages=3 and a global schema summing to 64', async () => {
       const { testAccount: admin } = localnet.context
-      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (10).algos())
+      // createRegistry pays the registry MBR + box MBR + initial funding out of the
+      // deployer's balance; top the test admin up so it can cover the transfers + fees.
+      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
       const { appClient } = await FracDelegationRegistrySDK.createRegistry({
         algorand: localnet.algorand,
         deployer: { sender: admin, signer: localnet.algorand.account.getSigner(admin) },
@@ -32,9 +39,27 @@ describe('FracDelegationRegistry admin', () => {
       expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
     })
 
+    test('createRegistry uploads the instance approval bytecode at bootstrap', async () => {
+      const { testAccount: admin } = localnet.context
+      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
+      const { appClient } = await FracDelegationRegistrySDK.createRegistry({
+        algorand: localnet.algorand,
+        deployer: { sender: admin, signer: localnet.algorand.account.getSigner(admin) },
+      })
+
+      // The uploaded box must match this build's compiled instance approval program.
+      const instanceFactory = localnet.algorand.client.getTypedAppFactory(FracDelegationInstanceFactory, {
+        defaultSender: admin,
+        defaultSigner: localnet.algorand.account.getSigner(admin),
+      })
+      const compiled = await instanceFactory.appFactory.compile()
+      const box = await localnet.algorand.app.getBoxValue(appClient.appId, 'Iap')
+      expect(box).toEqual(compiled.approvalProgram)
+    })
+
     test('createRegistry applies optional configuration and initial funding', async () => {
       const { testAccount: admin } = localnet.context
-      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (10).algos())
+      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
       const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const initialFundingAlgos = 2
       const gGovRegistryAppId = 12345n
@@ -110,7 +135,7 @@ describe('FracDelegationRegistry admin', () => {
       await expect(sdk.setGGovRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
 
       // new admin can call admin-gated methods
-      const newAdminSDK = createFracSDK(localnet, sdk.appId, newAdmin)
+      const newAdminSDK = createFracRegistrySDK(localnet, sdk.appId, newAdmin)
       await expect(newAdminSDK.setDefaultOperator({ newDefaultOperator: newAdmin.toString() })).resolves.toBeDefined()
     })
 
@@ -179,7 +204,8 @@ describe('FracDelegationRegistry admin', () => {
       await localnet.newScope()
       const { testAccount } = localnet.context
       ;({ sdk } = await deployFracRegistry(localnet, testAccount))
-      ;({ account: nonAdmin, sdk: nonAdminSDK } = await generateAccountWithFracSDK(localnet, sdk.appId))
+      ;({ account: nonAdmin, sdk: nonAdminSDK } = await generateAccountWithFracRegSDK(localnet, sdk.appId))
+      await localnet.algorand.account.ensureFundedFromEnvironment(nonAdmin, (25).algos())
     })
 
     test('non-admin cannot setAdmin', async () => {
@@ -196,6 +222,16 @@ describe('FracDelegationRegistry admin', () => {
 
     test('non-admin cannot set the gGov registry app id', async () => {
       await expect(nonAdminSDK.setGGovRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot uploadInstanceApprovalPartial', async () => {
+      await expect(
+        nonAdminSDK.uploadInstanceApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]) }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot createInstance', async () => {
+      await expect(nonAdminSDK.addInstance({ name: 'Some Label' })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot withdraw ALGO', async () => {
