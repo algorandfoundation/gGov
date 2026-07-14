@@ -192,7 +192,7 @@
             "returns": {
                 "type": "(uint32,uint16[])",
                 "struct": "FracRegAccount",
-                "desc": "account ID or 0 if not found"
+                "desc": "FracRegAccount for the account, or an empty record (accountId 0, no instances) if not registered"
             },
             "actions": {
                 "create": [],
@@ -201,7 +201,7 @@
                 ]
             },
             "readonly": true,
-            "desc": "Get account ID if exists, else return 0",
+            "desc": "Get account's registry record if it exists, else an empty record",
             "events": [],
             "recommendations": {}
         },
@@ -224,7 +224,7 @@
                 ]
             },
             "readonly": true,
-            "desc": "Log multiple accounts' IDs (or zero if not found)\nUsed to fetch account>ID/instances quickly off-chain",
+            "desc": "Log each account's FracRegAccount record (empty record if not registered)\nUsed to fetch account records/instances quickly off-chain",
             "events": [],
             "recommendations": {}
         },
@@ -234,7 +234,7 @@
                 {
                     "type": "address",
                     "name": "account",
-                    "desc": "Account to get or create ID for"
+                    "desc": "Account to get or create a record for"
                 },
                 {
                     "type": "uint16",
@@ -245,7 +245,7 @@
             "returns": {
                 "type": "(uint32,uint16[])",
                 "struct": "FracRegAccount",
-                "desc": "account ID"
+                "desc": "FracRegAccount for the account, including the associated instance"
             },
             "actions": {
                 "create": [],

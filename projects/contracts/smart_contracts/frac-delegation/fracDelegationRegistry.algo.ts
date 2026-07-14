@@ -218,9 +218,9 @@ export class FracDelegationRegistryContract extends BaseContract {
   }
 
   /**
-   * Get account ID if exists, else return 0
-   * @param account Account to get ID for
-   * @returns Account ID or 0 if not exists
+   * Get account's registry record if it exists, else an empty record
+   * @param account Account to look up
+   * @returns FracRegAccount for the account, or an empty record (accountId 0, no instances) if not registered
    */
   protected getAccountIfExists(account: Account): FracRegAccount {
     const box = this.accounts(account)
@@ -229,9 +229,9 @@ export class FracDelegationRegistryContract extends BaseContract {
   }
 
   /**
-   * Get account ID if exists, else return 0
+   * Get account's registry record if it exists, else an empty record
    * @param account account to look up
-   * @returns account ID or 0 if not found
+   * @returns FracRegAccount for the account, or an empty record (accountId 0, no instances) if not registered
    */
   @abimethod({ readonly: true })
   public getAccount(account: Account): FracRegAccount {
@@ -239,8 +239,8 @@ export class FracDelegationRegistryContract extends BaseContract {
   }
 
   /**
-   * Log multiple accounts' IDs (or zero if not found)
-   * Used to fetch account>ID/instances quickly off-chain
+   * Log each account's FracRegAccount record (empty record if not registered)
+   * Used to fetch account records/instances quickly off-chain
    * @param accounts accounts to log
    */
   @abimethod({ readonly: true })
@@ -252,9 +252,9 @@ export class FracDelegationRegistryContract extends BaseContract {
 
   /**
    * Get validated account or create account, associating instance. To be called by instances only.
-   * @param account Account to get or create ID for
+   * @param account Account to get or create a record for
    * @param instanceNumId Instance number ID to associate with the account
-   * @returns account ID
+   * @returns FracRegAccount for the account, including the associated instance
    */
   public getOrCreateAccountWithInstance(account: Account, instanceNumId: Uint16): FracRegAccount {
     ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
