@@ -5,7 +5,7 @@
     "../../base/utils.algo.ts",
     "../../frac-delegation/fracDelegationRegistry.algo.ts"
   ],
-  "mappings": "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",
+  "mappings": "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",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -4689,7 +4689,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
     "781": {
@@ -4697,7 +4697,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0"
       ]
     },
@@ -4706,7 +4706,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4724,7 +4724,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4742,7 +4742,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4761,7 +4761,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4780,7 +4780,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4795,7 +4795,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4816,7 +4816,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4837,7 +4837,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4859,7 +4859,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4881,7 +4881,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4898,7 +4898,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4918,7 +4918,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4934,7 +4934,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4955,7 +4955,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4975,7 +4975,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -4998,7 +4998,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5015,7 +5015,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5031,7 +5031,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5052,7 +5052,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5068,7 +5068,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5086,7 +5086,7 @@
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5102,7 +5102,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5122,7 +5122,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5144,7 +5144,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5168,7 +5168,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5192,7 +5192,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5214,7 +5214,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5237,7 +5237,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5256,7 +5256,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5277,7 +5277,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5293,7 +5293,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5312,7 +5312,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5328,7 +5328,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5346,7 +5346,7 @@
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5355,204 +5355,14 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0"
       ],
-      "op": "dupn 2",
-      "defined_out": [
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0 (copy)"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0 (copy)"
-      ]
-    },
-    "848": {
-      "op": "pushints 10 8 // 10, 8",
-      "defined_out": [
-        "10",
-        "8",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0 (copy)"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0 (copy)",
-        "10",
-        "8"
-      ]
-    },
-    "852": {
-      "op": "box_extract",
-      "defined_out": [
-        "box%box_extract%1#0",
-        "box_prefixed_key%0#0"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "box%box_extract%1#0"
-      ]
-    },
-    "853": {
-      "op": "btoi",
-      "defined_out": [
-        "box_prefixed_key%0#0",
-        "values%1#0"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "values%1#0"
-      ]
-    },
-    "854": {
-      "op": "intc_0 // 1",
-      "defined_out": [
-        "1",
-        "box_prefixed_key%0#0",
-        "values%1#0"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "values%1#0",
-        "1"
-      ]
-    },
-    "855": {
-      "op": "+",
-      "defined_out": [
-        "box_prefixed_key%0#0",
-        "tmp%2#1"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "tmp%2#1"
-      ]
-    },
-    "856": {
-      "op": "itob",
-      "defined_out": [
-        "aggregate%val_as_bytes%0#0",
-        "box_prefixed_key%0#0"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "aggregate%val_as_bytes%0#0"
-      ]
-    },
-    "857": {
-      "op": "pushint 10 // 10"
-    },
-    "859": {
-      "op": "swap",
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%0#0",
-        "10",
-        "aggregate%val_as_bytes%0#0"
-      ]
-    },
-    "860": {
-      "op": "box_replace",
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0"
-      ]
-    },
-    "861": {
       "op": "pushbytes \"a\"",
       "defined_out": [
-        "\"a\"",
-        "box_prefixed_key%0#0"
+        "\"a\""
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5563,17 +5373,16 @@
         "\"a\""
       ]
     },
-    "864": {
+    "849": {
       "op": "dig 3",
       "defined_out": [
         "\"a\"",
-        "account#0",
-        "box_prefixed_key%0#0"
+        "account#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5585,17 +5394,16 @@
         "account#0"
       ]
     },
-    "866": {
+    "851": {
       "op": "concat",
       "defined_out": [
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5603,15 +5411,15 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "867": {
+    "852": {
       "op": "dup",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5619,21 +5427,20 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0"
       ]
     },
-    "868": {
+    "853": {
       "op": "bury 9",
       "defined_out": [
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5641,22 +5448,21 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "870": {
+    "855": {
       "op": "box_len",
       "defined_out": [
         "_%1#0",
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "maybe_exists%1#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5668,12 +5474,12 @@
         "maybe_exists%1#0"
       ]
     },
-    "871": {
+    "856": {
       "op": "bury 1",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5684,12 +5490,12 @@
         "maybe_exists%1#0"
       ]
     },
-    "873": {
+    "858": {
       "op": "bnz getOrCreateAccountWithInstance_after_if_else@3",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5699,12 +5505,12 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "876": {
+    "861": {
       "op": "intc_1 // 0",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5715,19 +5521,18 @@
         "0"
       ]
     },
-    "877": {
+    "862": {
       "op": "bytec_3 // \"lastAccountId\"",
       "defined_out": [
         "\"lastAccountId\"",
         "0",
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5739,19 +5544,18 @@
         "\"lastAccountId\""
       ]
     },
-    "878": {
+    "863": {
       "op": "app_global_get_ex",
       "defined_out": [
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "maybe_exists%2#0",
         "maybe_value%0#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5763,13 +5567,13 @@
         "maybe_exists%2#0"
       ]
     },
-    "879": {
+    "864": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5780,12 +5584,18 @@
         "maybe_value%0#0"
       ]
     },
-    "880": {
+    "865": {
       "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "account#0",
+        "box_prefixed_key%2#0",
+        "maybe_value%0#0"
+      ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5797,18 +5607,17 @@
         "1"
       ]
     },
-    "881": {
+    "866": {
       "op": "+",
       "defined_out": [
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "tmp%3#1"
+        "box_prefixed_key%2#0",
+        "tmp%2#1"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5816,15 +5625,15 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%3#1"
+        "tmp%2#1"
       ]
     },
-    "882": {
+    "867": {
       "op": "bytec_3 // \"lastAccountId\"",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5832,24 +5641,23 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%3#1",
+        "tmp%2#1",
         "\"lastAccountId\""
       ]
     },
-    "883": {
+    "868": {
       "op": "dig 1",
       "defined_out": [
         "\"lastAccountId\"",
         "account#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "tmp%3#1",
-        "tmp%3#1 (copy)"
+        "box_prefixed_key%2#0",
+        "tmp%2#1",
+        "tmp%2#1 (copy)"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5857,17 +5665,17 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%3#1",
+        "tmp%2#1",
         "\"lastAccountId\"",
-        "tmp%3#1 (copy)"
+        "tmp%2#1 (copy)"
       ]
     },
-    "885": {
+    "870": {
       "op": "app_global_put",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5875,22 +5683,21 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%3#1"
+        "tmp%2#1"
       ]
     },
-    "886": {
+    "871": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
         "account#0",
         "accountId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5901,19 +5708,18 @@
         "accountId#0"
       ]
     },
-    "889": {
+    "874": {
       "op": "bytec 8 // 0x00060000",
       "defined_out": [
         "0x00060000",
         "account#0",
         "accountId#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5925,18 +5731,17 @@
         "0x00060000"
       ]
     },
-    "891": {
+    "876": {
       "op": "concat",
       "defined_out": [
         "account#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5947,12 +5752,12 @@
         "aggregate%concat%0#0"
       ]
     },
-    "892": {
+    "877": {
       "op": "dig 8",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5961,22 +5766,21 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "894": {
+    "879": {
       "op": "dup",
       "defined_out": [
         "account#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0 (copy)"
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0 (copy)"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -5985,23 +5789,22 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0 (copy)"
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0 (copy)"
       ]
     },
-    "895": {
+    "880": {
       "op": "box_del",
       "defined_out": [
         "account#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "{box_del}"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6010,16 +5813,16 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "{box_del}"
       ]
     },
-    "896": {
+    "881": {
       "op": "pop",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6028,15 +5831,15 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "aggregate%concat%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "897": {
+    "882": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6044,16 +5847,16 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%concat%0#0"
       ]
     },
-    "898": {
+    "883": {
       "op": "box_put",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6063,12 +5866,12 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "899": {
+    "884": {
       "block": "getOrCreateAccountWithInstance_after_if_else@3",
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6079,12 +5882,12 @@
       ],
       "op": "dig 7",
       "defined_out": [
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6092,19 +5895,19 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "901": {
+    "886": {
       "op": "dup",
       "defined_out": [
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0 (copy)"
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0 (copy)"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6112,21 +5915,21 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0 (copy)"
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0 (copy)"
       ]
     },
-    "902": {
+    "887": {
       "op": "box_get",
       "defined_out": [
         "accountRecord#0",
         "aggregate%box_get%1#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6134,17 +5937,17 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "aggregate%box_get%1#0"
       ]
     },
-    "903": {
+    "888": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6152,17 +5955,17 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%box_get%1#0",
         "accountRecord#0"
       ]
     },
-    "904": {
+    "889": {
       "op": "dup",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6170,18 +5973,18 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%box_get%1#0",
         "accountRecord#0",
         "accountRecord#0 (copy)"
       ]
     },
-    "905": {
+    "890": {
       "op": "cover 2",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6189,23 +5992,23 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "aggregate%box_get%1#0",
         "accountRecord#0"
       ]
     },
-    "907": {
+    "892": {
       "op": "bury 13",
       "defined_out": [
         "accountRecord#0",
         "aggregate%box_get%1#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6213,18 +6016,18 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "aggregate%box_get%1#0"
       ]
     },
-    "909": {
+    "894": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6232,21 +6035,21 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0"
       ]
     },
-    "910": {
+    "895": {
       "op": "intc_1 // 0",
       "defined_out": [
         "accountRecord#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6254,22 +6057,22 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "found#0"
       ]
     },
-    "911": {
+    "896": {
       "op": "bury 7",
       "defined_out": [
         "accountRecord#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6277,22 +6080,22 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0"
       ]
     },
-    "913": {
+    "898": {
       "op": "dup",
       "defined_out": [
         "accountRecord#0",
         "accountRecord#0 (copy)",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6300,24 +6103,24 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "accountRecord#0 (copy)"
       ]
     },
-    "914": {
+    "899": {
       "op": "pushint 4 // 4",
       "defined_out": [
         "4",
         "accountRecord#0",
         "accountRecord#0 (copy)",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6325,24 +6128,24 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "accountRecord#0 (copy)",
         "4"
       ]
     },
-    "916": {
+    "901": {
       "op": "extract_uint16",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6350,17 +6153,17 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "aggregate%extract_uint16%0#0"
       ]
     },
-    "917": {
+    "902": {
       "op": "dup",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6368,18 +6171,18 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%extract_uint16%0#0 (copy)"
       ]
     },
-    "918": {
+    "903": {
       "op": "cover 2",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6387,24 +6190,24 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "accountRecord#0",
         "aggregate%extract_uint16%0#0"
       ]
     },
-    "920": {
+    "905": {
       "op": "bury 10",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6412,17 +6215,17 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "accountRecord#0"
       ]
     },
-    "922": {
+    "907": {
       "op": "dup",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6430,25 +6233,25 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "accountRecord#0",
         "accountRecord#0 (copy)"
       ]
     },
-    "923": {
+    "908": {
       "op": "len",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%len%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6456,18 +6259,18 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "accountRecord#0",
         "aggregate%len%0#0"
       ]
     },
-    "924": {
+    "909": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6475,18 +6278,18 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%len%0#0",
         "accountRecord#0"
       ]
     },
-    "925": {
+    "910": {
       "op": "cover 2",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6494,25 +6297,25 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%len%0#0"
       ]
     },
-    "927": {
+    "912": {
       "op": "substring3",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6520,23 +6323,23 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%substring3%0#0"
       ]
     },
-    "928": {
+    "913": {
       "op": "bury 10",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6544,15 +6347,15 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "930": {
+    "915": {
       "op": "pushint 6 // 6",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6560,11 +6363,11 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "6"
       ]
     },
-    "932": {
+    "917": {
       "op": "intc_3 // 2",
       "defined_out": [
         "2",
@@ -6572,13 +6375,13 @@
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6586,25 +6389,25 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "6",
         "2"
       ]
     },
-    "933": {
+    "918": {
       "op": "box_extract",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box%box_extract%2#0",
-        "box_prefixed_key%3#0",
+        "box%box_extract%1#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6612,23 +6415,23 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box%box_extract%2#0"
+        "box%box_extract%1#0"
       ]
     },
-    "934": {
+    "919": {
       "op": "btoi",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6639,20 +6442,20 @@
         "box%array_length%0#0"
       ]
     },
-    "935": {
+    "920": {
       "op": "bury 6",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6662,21 +6465,21 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "937": {
+    "922": {
       "op": "intc_1 // 0",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0",
         "item_index_internal%0#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6687,21 +6490,21 @@
         "item_index_internal%0#0"
       ]
     },
-    "938": {
+    "923": {
       "op": "bury 4",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0",
         "item_index_internal%0#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6711,12 +6514,12 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "940": {
+    "925": {
       "block": "getOrCreateAccountWithInstance_for_header@4",
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6732,7 +6535,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6743,7 +6546,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "942": {
+    "927": {
       "op": "dig 6",
       "defined_out": [
         "box%array_length%0#0",
@@ -6752,7 +6555,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6764,7 +6567,7 @@
         "box%array_length%0#0"
       ]
     },
-    "944": {
+    "929": {
       "op": "<",
       "defined_out": [
         "box%array_length%0#0",
@@ -6774,7 +6577,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6785,12 +6588,12 @@
         "continue_looping%0#0"
       ]
     },
-    "945": {
+    "930": {
       "op": "bz getOrCreateAccountWithInstance_block@10",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6800,12 +6603,12 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "948": {
+    "933": {
       "op": "dig 3",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6816,7 +6619,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "950": {
+    "935": {
       "op": "intc_3 // 2",
       "defined_out": [
         "2",
@@ -6826,7 +6629,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6838,7 +6641,7 @@
         "2"
       ]
     },
-    "951": {
+    "936": {
       "op": "*",
       "defined_out": [
         "box%array_length%0#0",
@@ -6848,7 +6651,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6859,7 +6662,7 @@
         "box%element_offset%0#0"
       ]
     },
-    "952": {
+    "937": {
       "op": "pushint 8 // 8",
       "defined_out": [
         "8",
@@ -6870,7 +6673,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6882,17 +6685,17 @@
         "8"
       ]
     },
-    "954": {
+    "939": {
       "op": "+",
       "defined_out": [
         "box%array_length%0#0",
-        "box%offset%5#0",
+        "box%offset%3#0",
         "item_index_internal%0#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6900,21 +6703,21 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box%offset%5#0"
+        "box%offset%3#0"
       ]
     },
-    "955": {
+    "940": {
       "op": "dig 8",
       "defined_out": [
         "box%array_length%0#0",
-        "box%offset%5#0",
-        "box_prefixed_key%3#0",
+        "box%offset%3#0",
+        "box_prefixed_key%2#0",
         "item_index_internal%0#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6922,16 +6725,16 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box%offset%5#0",
-        "box_prefixed_key%3#0"
+        "box%offset%3#0",
+        "box_prefixed_key%2#0"
       ]
     },
-    "957": {
+    "942": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6939,16 +6742,16 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "box%offset%5#0"
+        "box_prefixed_key%2#0",
+        "box%offset%3#0"
       ]
     },
-    "958": {
+    "943": {
       "op": "intc_3 // 2",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6956,23 +6759,23 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "box%offset%5#0",
+        "box_prefixed_key%2#0",
+        "box%offset%3#0",
         "2"
       ]
     },
-    "959": {
+    "944": {
       "op": "box_extract",
       "defined_out": [
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "item_index_internal%0#0",
         "temp#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -6983,18 +6786,18 @@
         "temp#0"
       ]
     },
-    "960": {
+    "945": {
       "op": "btoi",
       "defined_out": [
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "item_index_internal%0#0",
-        "tmp%6#0"
+        "tmp%5#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7002,22 +6805,47 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%6#0"
+        "tmp%5#0"
       ]
     },
-    "961": {
+    "946": {
       "op": "dig 2",
       "defined_out": [
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "instanceNumId#0",
         "item_index_internal%0#0",
+        "tmp%5#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "tmp%5#0",
+        "instanceNumId#0"
+      ]
+    },
+    "948": {
+      "op": "btoi",
+      "defined_out": [
+        "box%array_length%0#0",
+        "box_prefixed_key%2#0",
+        "instanceNumId#0",
+        "item_index_internal%0#0",
+        "tmp%5#0",
         "tmp%6#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7025,48 +6853,23 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%6#0",
-        "instanceNumId#0"
+        "tmp%5#0",
+        "tmp%6#0"
       ]
     },
-    "963": {
-      "op": "btoi",
-      "defined_out": [
-        "box%array_length%0#0",
-        "box_prefixed_key%3#0",
-        "instanceNumId#0",
-        "item_index_internal%0#0",
-        "tmp%6#0",
-        "tmp%7#0"
-      ],
-      "stack_out": [
-        "accountRecord#0",
-        "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "aggregate%extract_uint16%0#0",
-        "box%array_length%0#0",
-        "found#0",
-        "item_index_internal%0#0",
-        "account#0",
-        "instanceNumId#0",
-        "box_prefixed_key%0#0",
-        "tmp%6#0",
-        "tmp%7#0"
-      ]
-    },
-    "964": {
+    "949": {
       "op": "==",
       "defined_out": [
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "instanceNumId#0",
         "item_index_internal%0#0",
-        "tmp%8#0"
+        "tmp%7#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7074,15 +6877,15 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "tmp%8#0"
+        "tmp%7#0"
       ]
     },
-    "965": {
+    "950": {
       "op": "bz getOrCreateAccountWithInstance_after_if_else@7",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7092,11 +6895,11 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "968": {
+    "953": {
       "op": "intc_0 // 1",
       "defined_out": [
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0",
         "instanceNumId#0",
         "item_index_internal%0#0"
@@ -7104,7 +6907,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7115,11 +6918,11 @@
         "found#0"
       ]
     },
-    "969": {
+    "954": {
       "op": "bury 5",
       "defined_out": [
         "box%array_length%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0",
         "instanceNumId#0",
         "item_index_internal%0#0"
@@ -7127,7 +6930,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7137,12 +6940,12 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "971": {
+    "956": {
       "block": "getOrCreateAccountWithInstance_block@10",
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7158,7 +6961,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7169,12 +6972,12 @@
         "found#0"
       ]
     },
-    "973": {
+    "958": {
       "op": "bnz getOrCreateAccountWithInstance_after_if_else@12",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7184,7 +6987,7 @@
         "box_prefixed_key%0#0"
       ]
     },
-    "976": {
+    "961": {
       "op": "dig 8",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7193,7 +6996,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7204,7 +7007,7 @@
         "aggregate%substring3%0#0"
       ]
     },
-    "978": {
+    "963": {
       "op": "dup",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7214,7 +7017,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7226,7 +7029,7 @@
         "aggregate%substring3%0#0 (copy)"
       ]
     },
-    "979": {
+    "964": {
       "op": "dig 3",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7237,7 +7040,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7250,7 +7053,7 @@
         "instanceNumId#0"
       ]
     },
-    "981": {
+    "966": {
       "error": "max array length exceeded",
       "op": "concat // on error: max array length exceeded",
       "defined_out": [
@@ -7262,7 +7065,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7274,12 +7077,12 @@
         "concat%0#0"
       ]
     },
-    "982": {
+    "967": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7291,7 +7094,7 @@
         "aggregate%substring3%0#0"
       ]
     },
-    "983": {
+    "968": {
       "op": "intc_1 // 0",
       "defined_out": [
         "0",
@@ -7303,7 +7106,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7316,7 +7119,7 @@
         "0"
       ]
     },
-    "984": {
+    "969": {
       "op": "extract_uint16",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7328,7 +7131,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7340,7 +7143,7 @@
         "extract_uint16%0#0"
       ]
     },
-    "985": {
+    "970": {
       "op": "intc_0 // 1",
       "defined_out": [
         "1",
@@ -7353,7 +7156,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7366,7 +7169,7 @@
         "1"
       ]
     },
-    "986": {
+    "971": {
       "op": "+",
       "defined_out": [
         "add%0#0",
@@ -7378,7 +7181,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7390,7 +7193,7 @@
         "add%0#0"
       ]
     },
-    "987": {
+    "972": {
       "op": "itob",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7402,7 +7205,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7414,7 +7217,7 @@
         "as_bytes%0#0"
       ]
     },
-    "988": {
+    "973": {
       "op": "extract 6 2",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7426,7 +7229,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7438,7 +7241,7 @@
         "as_u16_bytes%0#0"
       ]
     },
-    "991": {
+    "976": {
       "op": "replace2 0",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -7449,7 +7252,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7460,7 +7263,7 @@
         "replace%0#0"
       ]
     },
-    "993": {
+    "978": {
       "op": "dig 10",
       "defined_out": [
         "accountRecord#0",
@@ -7472,7 +7275,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7484,12 +7287,12 @@
         "accountRecord#0"
       ]
     },
-    "995": {
+    "980": {
       "op": "intc_1 // 0",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7502,7 +7305,7 @@
         "0"
       ]
     },
-    "996": {
+    "981": {
       "op": "dig 9",
       "defined_out": [
         "0",
@@ -7516,7 +7319,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7530,7 +7333,7 @@
         "aggregate%extract_uint16%0#0"
       ]
     },
-    "998": {
+    "983": {
       "op": "extract3",
       "defined_out": [
         "accountRecord#0",
@@ -7544,7 +7347,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7556,12 +7359,12 @@
         "aggregate%data_up_to_item%0#0"
       ]
     },
-    "999": {
+    "984": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7573,12 +7376,12 @@
         "replace%0#0"
       ]
     },
-    "1000": {
+    "985": {
       "op": "concat",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7589,12 +7392,12 @@
         "accountRecord#0"
       ]
     },
-    "1001": {
+    "986": {
       "op": "dup",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7606,7 +7409,7 @@
         "accountRecord#0"
       ]
     },
-    "1002": {
+    "987": {
       "op": "bury 11",
       "defined_out": [
         "accountRecord#0",
@@ -7618,7 +7421,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7629,20 +7432,20 @@
         "accountRecord#0"
       ]
     },
-    "1004": {
+    "989": {
       "op": "dig 8",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7651,24 +7454,24 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "accountRecord#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
     },
-    "1006": {
+    "991": {
       "op": "dup",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0 (copy)",
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0 (copy)",
         "found#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7677,17 +7480,17 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "accountRecord#0",
-        "box_prefixed_key%3#0",
-        "box_prefixed_key%3#0 (copy)"
+        "box_prefixed_key%2#0",
+        "box_prefixed_key%2#0 (copy)"
       ]
     },
-    "1007": {
+    "992": {
       "op": "box_del",
       "defined_out": [
         "accountRecord#0",
         "aggregate%extract_uint16%0#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "found#0",
         "instanceNumId#0",
         "{box_del}"
@@ -7695,7 +7498,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7704,16 +7507,16 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "accountRecord#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "{box_del}"
       ]
     },
-    "1008": {
+    "993": {
       "op": "pop",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7722,15 +7525,234 @@
         "instanceNumId#0",
         "box_prefixed_key%0#0",
         "accountRecord#0",
-        "box_prefixed_key%3#0"
+        "box_prefixed_key%2#0"
       ]
+    },
+    "994": {
+      "op": "swap",
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%2#0",
+        "accountRecord#0"
+      ]
+    },
+    "995": {
+      "op": "box_put",
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0"
+      ]
+    },
+    "996": {
+      "op": "dupn 2",
+      "defined_out": [
+        "accountRecord#0",
+        "aggregate%extract_uint16%0#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0 (copy)",
+        "box_prefixed_key%2#0",
+        "found#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0 (copy)"
+      ]
+    },
+    "998": {
+      "op": "pushints 10 8 // 10, 8",
+      "defined_out": [
+        "10",
+        "8",
+        "accountRecord#0",
+        "aggregate%extract_uint16%0#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0 (copy)",
+        "box_prefixed_key%2#0",
+        "found#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0 (copy)",
+        "10",
+        "8"
+      ]
+    },
+    "1002": {
+      "op": "box_extract",
+      "defined_out": [
+        "accountRecord#0",
+        "aggregate%extract_uint16%0#0",
+        "aggregate%substring3%0#0",
+        "box%box_extract%3#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%2#0",
+        "found#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "box%box_extract%3#0"
+      ]
+    },
+    "1003": {
+      "op": "btoi",
+      "defined_out": [
+        "accountRecord#0",
+        "aggregate%extract_uint16%0#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%2#0",
+        "found#0",
+        "instanceNumId#0",
+        "values%1#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "values%1#0"
+      ]
+    },
+    "1004": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "values%1#0",
+        "1"
+      ]
+    },
+    "1005": {
+      "op": "+",
+      "defined_out": [
+        "accountRecord#0",
+        "aggregate%extract_uint16%0#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%2#0",
+        "found#0",
+        "instanceNumId#0",
+        "tmp%10#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "tmp%10#0"
+      ]
+    },
+    "1006": {
+      "op": "itob",
+      "defined_out": [
+        "accountRecord#0",
+        "aggregate%extract_uint16%0#0",
+        "aggregate%substring3%0#0",
+        "aggregate%val_as_bytes%0#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%2#0",
+        "found#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "accountRecord#0",
+        "aggregate%substring3%0#0",
+        "box_prefixed_key%2#0",
+        "aggregate%extract_uint16%0#0",
+        "box%array_length%0#0",
+        "found#0",
+        "item_index_internal%0#0",
+        "account#0",
+        "instanceNumId#0",
+        "box_prefixed_key%0#0",
+        "box_prefixed_key%0#0",
+        "aggregate%val_as_bytes%0#0"
+      ]
+    },
+    "1007": {
+      "op": "pushint 10 // 10"
     },
     "1009": {
       "op": "swap",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7738,16 +7760,17 @@
         "account#0",
         "instanceNumId#0",
         "box_prefixed_key%0#0",
-        "box_prefixed_key%3#0",
-        "accountRecord#0"
+        "box_prefixed_key%0#0",
+        "10",
+        "aggregate%val_as_bytes%0#0"
       ]
     },
     "1010": {
-      "op": "box_put",
+      "op": "box_replace",
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7762,7 +7785,7 @@
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7778,7 +7801,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7798,7 +7821,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7819,7 +7842,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7835,7 +7858,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7854,7 +7877,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7870,7 +7893,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7885,7 +7908,7 @@
       "stack_in": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7901,7 +7924,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7921,7 +7944,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7938,7 +7961,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
@@ -7957,7 +7980,7 @@
       "stack_out": [
         "accountRecord#0",
         "aggregate%substring3%0#0",
-        "box_prefixed_key%3#0",
+        "box_prefixed_key%2#0",
         "aggregate%extract_uint16%0#0",
         "box%array_length%0#0",
         "found#0",
