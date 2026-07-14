@@ -90,7 +90,16 @@ export class FracDelegationRegistryContract extends BaseContract {
     this.ensureCallerIsAdmin()
   }
 
-  /** App deletable by admin */
+  /**
+   * App deletable by admin.
+   *
+   * WARNING: Dangerous action. Instances created by this registry read role
+   * data from this registry's global state. Deleting it breaks that lookup and
+   * removes the creator escape hatch, because this app is their creator.
+   *
+   * Only delete this app after every bound instance has been rebound to a
+   * replacement registry via the instance's `setRegistryApp`.
+   */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.ensureCallerIsAdmin()
@@ -121,6 +130,12 @@ export class FracDelegationRegistryContract extends BaseContract {
 
   // ── Admin: instance management ─────────────────────────---------
 
+  /**
+   * Spawn a fresh frac-instance app. Admin only.
+   * @param name Instance label for reference.
+   * @param mbrPayment Payment txn covering the new period app's MBR. Receiver must be this registry's address.
+   * @returns [instanceNumId, appId]
+   */
   public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint32, uint64] {
     this.ensureCallerIsAdmin()
     ensure(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
