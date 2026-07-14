@@ -162,7 +162,7 @@
                 {
                     "type": "pay",
                     "name": "mbrPayment",
-                    "desc": "Payment txn covering the new period app's MBR. Receiver must be this registry's address."
+                    "desc": "Payment txn covering the new instance app's MBR. Receiver must be this registry's address."
                 }
             ],
             "returns": {
@@ -329,7 +329,7 @@
                     "keyType": "AVMString",
                     "valueType": "AVMUint64",
                     "key": "bGFzdEluc3RhbmNlTnVtSWQ=",
-                    "desc": "Last account numeric ID"
+                    "desc": "Last instance numeric ID"
                 }
             },
             "local": {},
@@ -355,7 +355,7 @@
                 "instances": {
                     "keyType": "uint16",
                     "valueType": "FracInstance",
-                    "desc": "Account registry; account ID + frac instance (numeric) IDs",
+                    "desc": "Instance registry; app ID + name + associated accounts + registered escrows",
                     "prefix": "aQ=="
                 }
             }

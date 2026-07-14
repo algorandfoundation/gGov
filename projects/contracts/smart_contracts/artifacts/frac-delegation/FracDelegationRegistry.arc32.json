@@ -123,7 +123,7 @@
                 "lastInstanceNumId": {
                     "type": "uint64",
                     "key": "lastInstanceNumId",
-                    "descr": "Last account numeric ID"
+                    "descr": "Last instance numeric ID"
                 }
             },
             "reserved": {}
@@ -228,7 +228,7 @@
                     {
                         "type": "pay",
                         "name": "mbrPayment",
-                        "desc": "Payment txn covering the new period app's MBR. Receiver must be this registry's address."
+                        "desc": "Payment txn covering the new instance app's MBR. Receiver must be this registry's address."
                     }
                 ],
                 "readonly": false,

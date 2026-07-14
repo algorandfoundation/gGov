@@ -43,9 +43,9 @@ export class FracDelegationRegistryContract extends BaseContract {
   lastAccountId = GlobalState<uint64>({ initialValue: 0 })
   /** Account registry; account ID + frac instance (numeric) IDs  */
   accounts = BoxMap<Account, FracRegAccount>({ keyPrefix: 'a' })
-  /** Last account numeric ID */
+  /** Last instance numeric ID */
   lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
-  /** Account registry; account ID + frac instance (numeric) IDs  */
+  /** Instance registry; app ID + name + associated accounts + registered escrows */
   instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
   /**
    * FracDelegationInstance approval program bytecode. Chunk-uploaded by admin;
@@ -145,7 +145,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   /**
    * Spawn a fresh frac-instance app. Admin only.
    * @param name Instance label for reference.
-   * @param mbrPayment Payment txn covering the new period app's MBR. Receiver must be this registry's address.
+   * @param mbrPayment Payment txn covering the new instance app's MBR. Receiver must be this registry's address.
    * @returns [instanceNumId, appId]
    */
   public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
