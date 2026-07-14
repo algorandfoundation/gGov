@@ -212,6 +212,8 @@ export class FracDelegationRegistryContract extends BaseContract {
     return [instanceNum, newApp.id]
   }
 
+  // ── Accounts (users) ─────────────────────────-----------------------------
+
   /** Get empty frac delegation registry account struct with `accountId` */
   protected getEmptyFracRegAccount(accountId: Uint32): FracRegAccount {
     return { accountId: accountId, instanceNumIds: [] }
@@ -280,7 +282,7 @@ export class FracDelegationRegistryContract extends BaseContract {
     if (!found) {
       accountRecord.instanceNumIds.push(instanceNumId)
       this.accounts(account).value = clone(accountRecord)
-      
+
       instance.numAccounts++
       this.instances(instanceNumId).value = clone(instance)
     }
