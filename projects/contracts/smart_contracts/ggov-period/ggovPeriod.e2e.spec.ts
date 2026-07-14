@@ -17,7 +17,6 @@ import {
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
   errGGovVotingNotStarted,
-  errNotOperator,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
@@ -1432,7 +1431,7 @@ describe('GGovPeriod contract', () => {
 
       const nonOp = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const nonOpSDK = createUserSDK(localnet, appClient.appId, nonOp)
-      await expect(nonOpSDK.setReady({ periodId, ready: true })).rejects.toThrow(transformedError(errNotOperator))
+      await expect(nonOpSDK.setReady({ periodId, ready: true })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('Cannot edit period once ready; can edit again after un-ready', async () => {
@@ -1573,7 +1572,9 @@ describe('GGovPeriod contract', () => {
 
       const nonOp = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const nonOpSDK = createUserSDK(localnet, appClient.appId, nonOp)
-      await expect(nonOpSDK.removeTopic({ periodId, topicIndex: 0n })).rejects.toThrow(transformedError(errNotOperator))
+      await expect(nonOpSDK.removeTopic({ periodId, topicIndex: 0n })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
     })
 
     test('Cannot removeTopic once period is ready', async () => {
