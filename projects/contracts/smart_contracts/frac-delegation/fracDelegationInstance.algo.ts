@@ -11,6 +11,7 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
+import { Uint16 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
 import { errAppGlobalKeyNotFound, errNotOperator, errUnauthorized } from '../base/errors.algo'
 import { ensure } from '../base/utils.algo'
@@ -26,6 +27,24 @@ export class FracDelegationInstanceContract extends BaseContract {
   registryApp = GlobalState<uint64>({ initialValue: Global.callerApplicationId })
   /** Instance operator; zero address falls back to the registry's `defaultOperator` */
   operator = GlobalState<Account>({ initialValue: Global.zeroAddress })
+  /** Registry-assigned numeric ID for this instance. Set once at creation. */
+  instanceNumId = GlobalState<Uint16>()
+  /** Human-readable instance label. Set once at creation. */
+  name = GlobalState<string>()
+
+  // ── Create ────────────────────────────────────────────────────────
+
+  /**
+   * Convention-based create. Records the registry-assigned numeric ID and label
+   * passed as app arguments. `registryApp` and `operator` are seeded from their
+   * GlobalState initial values (registry = creating app; operator = zero/fallback).
+   * @param instanceNumId Numeric ID assigned by the registry
+   * @param name Human-readable instance label
+   */
+  public createApplication(instanceNumId: Uint16, name: string): void {
+    this.instanceNumId.value = instanceNumId
+    this.name.value = name
+  }
 
   // ── Role resolution ───────────────────────────────────────────────
 
