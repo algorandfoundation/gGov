@@ -6,22 +6,24 @@ import {
   BoxMap,
   Bytes,
   bytes,
+  clone,
   compile,
   contract,
   Global,
   GlobalState,
   gtxn,
   itxn,
+  log,
   op,
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
-import { encodeArc4, methodSelector, Uint16 } from '@algorandfoundation/algorand-typescript/arc4'
+import { abimethod, encodeArc4, methodSelector, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
-import { errInstanceAppNotConfigured, errUnauthorized } from '../base/errors.algo'
-import { ensure, u16 } from '../base/utils.algo'
+import { errInstanceAppNotConfigured, errInstanceAppNotExists, errUnauthorized } from '../base/errors.algo'
+import { FracInstance, FracRegAccount } from '../base/types.algo'
+import { ensure, u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
-import { FracRegAccount, FracInstance } from '../base/types.algo'
 
 /**
  * Fractional Delegation Registry: global singleton, instance deployer.
@@ -208,5 +210,83 @@ export class FracDelegationRegistryContract extends BaseContract {
     }
 
     return [instanceNum, newApp.id]
+  }
+
+  // ── Accounts (users) ─────────────────────────-----------------------------
+
+  /** Get empty frac delegation registry account struct with `accountId` */
+  protected getEmptyFracRegAccount(accountId: Uint32): FracRegAccount {
+    return { accountId: accountId, instanceNumIds: [] }
+  }
+
+  /**
+   * Get account's registry record if it exists, else an empty record
+   * @param account Account to look up
+   * @returns FracRegAccount for the account, or an empty record (accountId 0, no instances) if not registered
+   */
+  protected getAccountIfExists(account: Account): FracRegAccount {
+    const box = this.accounts(account)
+    if (box.exists) return box.value
+    else return this.getEmptyFracRegAccount(u32(0))
+  }
+
+  /**
+   * Get account's registry record if it exists, else an empty record
+   * @param account account to look up
+   * @returns FracRegAccount for the account, or an empty record (accountId 0, no instances) if not registered
+   */
+  @abimethod({ readonly: true })
+  public getAccount(account: Account): FracRegAccount {
+    return this.getAccountIfExists(account)
+  }
+
+  /**
+   * Log each account's FracRegAccount record (empty record if not registered)
+   * Used to fetch account records/instances quickly off-chain
+   * @param accounts accounts to log
+   */
+  @abimethod({ readonly: true })
+  public logAccounts(accounts: Account[]): void {
+    for (const account of accounts) {
+      log(encodeArc4(this.getAccountIfExists(account)))
+    }
+  }
+
+  /**
+   * Get validated account or create account, associating instance. To be called by instances only.
+   * @param account Account to get or create a record for
+   * @param instanceNumId Instance number ID to associate with the account
+   * @returns FracRegAccount for the account, including the associated instance
+   */
+  public getOrCreateAccountWithInstance(account: Account, instanceNumId: Uint16): FracRegAccount {
+    ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    const instance = clone(this.instances(instanceNumId).value)
+
+    // sender must be instance
+    ensure(Txn.sender === instance.appId.address, errUnauthorized)
+
+    if (!this.accounts(account).exists) {
+      this.lastAccountId.value++
+      const accountId = u32(this.lastAccountId.value)
+      this.accounts(account).value = this.getEmptyFracRegAccount(accountId)
+    }
+
+    const accountRecord = clone(this.accounts(account).value)
+    let found = false
+    for (const i of clone(accountRecord.instanceNumIds)) {
+      if (i.asUint64() === instanceNumId.asUint64()) {
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      accountRecord.instanceNumIds.push(instanceNumId)
+      this.accounts(account).value = clone(accountRecord)
+
+      instance.numAccounts++
+      this.instances(instanceNumId).value = clone(instance)
+    }
+
+    return accountRecord
   }
 }

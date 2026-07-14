@@ -35,7 +35,6 @@ import {
   errGGovVotePowerMismatch,
   errGGovVotingEnded,
   errGGovVotingNotStarted,
-  errNotOperator,
   errPeriodEndLessThanStart,
   errUnauthorized,
 } from '../base/errors.algo'
@@ -121,7 +120,7 @@ export class GGovPeriodContract extends BaseContract {
       appId: Application(this.registryApp.value),
       args: [Txn.sender],
     }).returnValue
-    ensure(ok, errNotOperator)
+    ensure(ok, errUnauthorized)
   }
 
   /** Inner-call the registry's verifyAdmin and ensure caller is the admin. */
