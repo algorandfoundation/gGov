@@ -87,11 +87,35 @@ describe('FracDelegationInstance admin', () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracInstance(localnet, testAccount)
 
-      await expect(
-        sdk.readClient.send.update.bare({ sender: testAccount.toString(), signer: testAccount.signer }),
-      ).resolves.toBeDefined()
+      await expect(sdk.updateInstanceApp({})).resolves.toBeDefined()
 
-      await sdk.deleteApplication({})
+      await sdk.deleteInstanceApp({})
+      await expect(localnet.algorand.app.getById(sdk.appId)).rejects.toThrow()
+    })
+
+    // TODO: unskip once FracDelegationInstanceContract.deleteApplication() actually cleans the
+    // app balance (currently a no-op besides the admin check — see the TODO/commented-out
+    // closeRemainderTo on the contract method).
+    test.skip('delete sends the whole app balance to the caller', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployFracInstance(localnet, testAccount)
+      // Fund the instance well above its base MBR so there's real escrow to recover.
+      await localnet.algorand.send.payment({
+        sender: testAccount,
+        receiver: sdk.readClient.appAddress,
+        amount: (2).algos(),
+      })
+
+      // TODO: add boxes as well
+
+      const appBalanceBeforeDelete = (await localnet.algorand.account.getInformation(sdk.readClient.appAddress)).balance
+        .microAlgo
+      const adminBefore = await localnet.algorand.account.getInformation(testAccount)
+
+      await sdk.deleteInstanceApp({})
+
+      const adminAfter = await localnet.algorand.account.getInformation(testAccount)
+      expect(adminAfter.balance.microAlgo).toBe(adminBefore.balance.microAlgo + appBalanceBeforeDelete - 2000n)
       await expect(localnet.algorand.app.getById(sdk.appId)).rejects.toThrow()
     })
   })
@@ -158,16 +182,11 @@ describe('FracDelegationInstance admin', () => {
     })
 
     test('non-admin cannot update the instance app', async () => {
-      await expect(
-        sdk.readClient.send.update.bare({
-          sender: nonAdmin.toString(),
-          signer: nonAdmin.signer,
-        }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.updateInstanceApp({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot delete the instance app', async () => {
-      await expect(nonAdminSDK.deleteApplication({})).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.deleteInstanceApp({})).rejects.toThrow(transformedError(errUnauthorized))
     })
   })
 

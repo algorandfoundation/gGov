@@ -91,17 +91,13 @@ describe('GGovRegistry admin', () => {
     test('admin can update the registry app', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      await expect(
-        sdk.readClient.send.update.bare({ sender: testAccount.toString(), signer: testAccount.signer }),
-      ).resolves.toBeDefined()
+      await expect(sdk.updateApplication({})).resolves.toBeDefined()
     })
 
     test('admin can delete the registry app', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      await expect(
-        sdk.readClient.send.delete.bare({ sender: testAccount.toString(), signer: testAccount.signer }),
-      ).resolves.toBeDefined()
+      await expect(sdk.deleteApplication({})).resolves.toBeDefined()
     })
   })
 
@@ -244,12 +240,7 @@ describe('GGovRegistry admin', () => {
     })
 
     test('non-admin cannot update the registry app', async () => {
-      await expect(
-        sdk.readClient.send.update.bare({
-          sender: nonAdmin.toString(),
-          signer: nonAdmin.signer,
-        }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.updateApplication({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot delete the registry app', async () => {
