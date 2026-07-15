@@ -280,7 +280,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.ensureCallerIsAdmin()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
     itxn.payment({ receiver, amount }).submit()
   }
 

@@ -155,14 +155,6 @@ describe('FracDelegationRegistry admin', () => {
   })
 
   describe('withdrawALGO', () => {
-    test('withdrawing to the zero address fails', async () => {
-      const { testAccount } = localnet.context
-      const { sdk } = await deployFracRegistry(localnet, testAccount)
-      await expect(sdk.withdrawALGO({ receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: 1n })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
-    })
-
     test('withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracRegistry(localnet, testAccount)

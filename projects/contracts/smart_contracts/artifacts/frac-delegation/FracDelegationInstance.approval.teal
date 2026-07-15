@@ -4,7 +4,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 1 0 32 5
-    bytecblock "registryApp" "operator" "escrows" "ERR:RM" 0x151f7c75 "admin" "ERR:AUTH" base64(C4EBQw==)
+    bytecblock "registryApp" "operator" "escrows" "ERR:RM" 0x151f7c75 "admin" base64(C4EBQw==)
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:29
@@ -54,27 +54,27 @@ main_bare_routing@18:
     err
 
 main_deleteApplication@20:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:185
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:184
     // @baremethod({ allowActions: ['DeleteApplication'] })
     txn ApplicationID
     assert // can only call when not creating
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:187
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:186
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:185
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:184
     // @baremethod({ allowActions: ['DeleteApplication'] })
     intc_0 // 1
     return
 
 main_updateApplication@19:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:179
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:178
     // @baremethod({ allowActions: ['UpdateApplication'] })
     txn ApplicationID
     assert // can only call when not creating
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:181
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:180
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:179
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:178
     // @baremethod({ allowActions: ['UpdateApplication'] })
     intc_0 // 1
     return
@@ -286,7 +286,7 @@ withdrawALGO:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:150
     // public withdrawALGO(receiver: Account, amount: uint64): void {
     txna ApplicationArgs 1
-    dupn 2
+    dup
     len
     intc_2 // 32
     ==
@@ -298,34 +298,13 @@ withdrawALGO:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    swap
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:151
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:152
-    // ensure(receiver !== Global.zeroAddress, errUnauthorized)
-    global ZeroAddress
-    !=
-    // smart_contracts/base/utils.algo.ts:33
-    // if (!cond) {
-    bnz withdrawALGO_after_if_else@3
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:152
-    // ensure(receiver !== Global.zeroAddress, errUnauthorized)
-    bytec 6 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
-    // log(code)
-    log
-    // smart_contracts/base/utils.algo.ts:35
-    // err()
-    err
-
-withdrawALGO_after_if_else@3:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:153
     // itxn.payment({ receiver, amount }).submit()
     itxn_begin
-    dup
     itxn_field Amount
-    dig 1
     itxn_field Receiver
     intc_0 // 1
     itxn_field TypeEnum
@@ -340,7 +319,7 @@ withdrawALGO_after_if_else@3:
 
 // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.registerEscrow[routing]() -> void:
 registerEscrow:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:169
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:168
     // public registerEscrow(account: Account): void {
     txna ApplicationArgs 1
     dup
@@ -380,7 +359,7 @@ registerEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationInsta
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:41
     // escrows = Box<Account[]>({ key: 'escrows' })
     bytec_2 // "escrows"
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:171
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:170
     // const escrows = this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
     box_len
     bury 1
@@ -388,13 +367,13 @@ registerEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationInsta
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:41
     // escrows = Box<Account[]>({ key: 'escrows' })
     bytec_2 // "escrows"
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:171
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:170
     // const escrows = this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
     box_get
     assert // Box must have value
 
 registerEscrow_ternary_merge@4:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:172
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:171
     // escrows.push(account)
     dup
     dig 2
@@ -410,24 +389,24 @@ registerEscrow_ternary_merge@4:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:41
     // escrows = Box<Account[]>({ key: 'escrows' })
     bytec_2 // "escrows"
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:173
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:172
     // this.escrows.value = clone(escrows)
     box_del
     pop
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:41
     // escrows = Box<Account[]>({ key: 'escrows' })
     bytec_2 // "escrows"
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:173
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:172
     // this.escrows.value = clone(escrows)
     swap
     box_put
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:169
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:168
     // public registerEscrow(account: Account): void {
     intc_0 // 1
     return
 
 registerEscrow_ternary_false@3:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:171
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:170
     // const escrows = this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
     pushbytes 0x0000
     b registerEscrow_ternary_merge@4
@@ -465,9 +444,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:23
     // const empty = compile(EmptyContract)
-    bytec 7 // base64(C4EBQw==)
+    bytec 6 // base64(C4EBQw==)
     itxn_field ClearStateProgramPages
-    bytec 7 // base64(C4EBQw==)
+    bytec 6 // base64(C4EBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:25-30
     // itxn
@@ -563,7 +542,7 @@ ensureCallerIsAdmin_after_if_else@2:
     bnz ensureCallerIsAdmin_after_if_else@5
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:87
     // ensure(Txn.sender === this.resolveAdmin(), errUnauthorized)
-    bytec 6 // "ERR:AUTH"
+    pushbytes "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
     log
