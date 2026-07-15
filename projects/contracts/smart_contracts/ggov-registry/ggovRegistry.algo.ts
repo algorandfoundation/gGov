@@ -296,7 +296,15 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
   }
 
-  /** App deletable by admin */
+  /**
+   * App deletable by admin.
+   *
+   * NOTE: MBR is not recovered by this implementation — the whole account balance (base + any MBR,
+   * including boxes' ones) stays locked forever. This should be a rare action; if recovery is ever
+   * needed, update this method to delete every box first, then add a closeRemainderTo payment
+   * (it fails if any box is still present). See GGovPeriodContract.deleteApplication() for
+   * a reference implementation.
+   */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.ensureCallerIsAdmin()
@@ -547,29 +555,29 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
         globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
       })
       .submit()
-    const newAppId = created.createdApp
+    const newApp = created.createdApp
 
     itxn
       .payment({
-        receiver: newAppId.address,
+        receiver: newApp.address,
         amount: mbrPayment.amount,
       })
       .submit()
 
     compileArc4(GGovPeriodContract).call.init({
-      appId: newAppId,
+      appId: newApp.id,
       args: [Global.currentApplicationId, periodId, committeeId, u32(votingStart), u32(votingEnd)],
     })
 
     this.periods(periodId).value = {
-      appId: newAppId.id,
+      appId: newApp.id,
       votingStart: u32(votingStart),
       votingEnd: u32(votingEnd),
       numTopics: u32(0),
       ready: false,
     }
 
-    return [periodId, newAppId.id]
+    return [periodId, newApp.id]
   }
 
   /**

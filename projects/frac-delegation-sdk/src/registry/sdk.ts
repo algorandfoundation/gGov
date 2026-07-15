@@ -9,6 +9,7 @@ import { APP_SPEC as INSTANCE_APP_SPEC } from '../generated/FracDelegationInstan
 import { ConstructorArgs, SenderWithSigner, CommonMethodBuilderArgs, FracDelegationRegistryContractArgs } from './types'
 import { requireWriterWithClient } from '../util/requiresSender'
 import { FracDelegationRegistryReaderSDK } from './sdkReader'
+import { FracDelegationReaderSDK } from '../instance/sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 import { chunk } from '../util/chunk'
@@ -134,20 +135,52 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
   // ── Admin: lifecycle ────────────────────────────────────────────
 
   /**
-   * Delete the `FracDelegationRegistry` app. Admin-only (the contract's `deleteApplication`
-   * baremethod checks the caller is the admin directly — no inner call). On deletion the AVM
-   * closes the registry app account and sends its residual ALGO to the deleting sender, so
-   * withdraw any meaningful balance first.
-   *
-   * WARNING: Dangerous action — understand the implications before calling.
-   * See the `deleteApplication` contract's method docstring for details.
+   * Update the `FracDelegationRegistry` app's program to the build exported by this
+   * `frac-delegation-sdk` version. Admin-only. The write client compiles the current
+   * approval/clear programs from its embedded app spec, so the on-chain code is replaced
+   * with the version bundled here.
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
-    // TODO: query known instances and reject if any still reference this registry app.
+  makeUpdateApplicationTxns({ builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    builder = builder.update.bare({})
+    return builder
+  }
+
+  updateApplication = this.makeTxnExecutor({
+    maker: this.makeUpdateApplicationTxns,
+  })
+
+  /**
+   * Delete the `FracDelegationRegistry` app. Admin-only. Refuses if any existing recorded
+   * instance is still bound to this registry (instance.registryApp === this registry's appId).
+   * Rebind (setRegistryApp) or delete those instances first.
+   *
+   * WARNING: does NOT return the app's balance or clean up its boxes — the whole balance
+   * (base MBR, any boxes' MBR, plus any other funds) becomes permanently unreachable once
+   * the app is deleted. See contract's `deleteApplication` baremethod for details.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async makeDeleteApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
+    const existingInstances = await this.getExistingInstances()
+    const boundInstanceIds = (
+      await Promise.all(
+        [...existingInstances].map(async ([id, instance]) => {
+          const reader = new FracDelegationReaderSDK({ algorand: this.algorand, instanceAppId: instance.appId })
+          return (await reader.getRegistryApp()) === this.appId ? id : null
+        }),
+      )
+    ).filter((id) => id !== null)
+    if (boundInstanceIds.length > 0) {
+      throw new Error(
+        `Cannot delete registry ${this.appId}: instance(s) ${boundInstanceIds.join(', ')} are still bound to it. Rebind (setRegistryApp) or delete them first.`,
+      )
+    }
+
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.delete.bare({ note })
     return builder
   }
 

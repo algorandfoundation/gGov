@@ -123,12 +123,16 @@ export class FracDelegationRegistryContract extends BaseContract {
   /**
    * App deletable by admin.
    *
-   * WARNING: Dangerous action. Instances created by this registry read role
-   * data from this registry's global state. Deleting it breaks that lookup and
-   * removes the creator escape hatch, because this app is their creator.
+   * WARNING: Dangerous action. Instances created by this registry read role data from this
+   * registry's global state. Deleting it breaks that lookup and removes the creator escape
+   * hatch, because this app is their creator. Only delete this app after every bound instance
+   * has been rebound to a replacement registry via the instance's `setRegistryApp`.
    *
-   * Only delete this app after every bound instance has been rebound to a
-   * replacement registry via the instance's `setRegistryApp`.
+   * NOTE: MBR is not recovered by this implementation — the whole account balance (base + any MBR,
+   * including boxes' ones) stays locked forever. This should be a rare action; if recovery is ever
+   * needed, update this method to delete every box first, then add a closeRemainderTo payment
+   * (it fails if any box is still present). See GGovPeriodContract.deleteApplication() for
+   * a reference implementation.
    */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {

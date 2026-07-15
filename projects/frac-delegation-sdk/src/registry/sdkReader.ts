@@ -4,6 +4,7 @@ import { encodeAddress, makeEmptyTransactionSigner } from 'algosdk'
 import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
+  FracInstance,
   FracRegAccount,
   APP_SPEC,
 } from '../generated/FracDelegationRegistryClient'
@@ -127,5 +128,38 @@ export class FracDelegationRegistryReaderSDK {
       (log) =>
         getABIDecodedValue(new Uint8Array(log!), 'FracRegAccount', this.readClient.appSpec.structs) as FracRegAccount,
     )
+  }
+
+  // ── Instances ────────────────────────────────────────────────────
+
+  /**
+   * All recorded instances, keyed by `instanceNumId`. The `instances` box entry is never removed
+   * once created (the contract has no on-chain instance-removal path), so this may include
+   * entries for instance apps that have been deleted.
+   */
+  async getInstances(): Promise<Map<number, FracInstance>> {
+    return this.readClient.state.box.instances.getMap()
+  }
+
+  /** Whether the given instance's app id still exists on-chain. */
+  async instanceAppExists(appId: bigint | number): Promise<boolean> {
+    try {
+      await this.algorand.app.getById(BigInt(appId))
+      return true
+    } catch (e: any) {
+      if (e?.status === 404) return false
+      throw e
+    }
+  }
+
+  /** Wrap `getInstances()` and filter to instances whose app still exists on-chain. */
+  async getExistingInstances(): Promise<Map<number, FracInstance>> {
+    const instances = await this.getInstances()
+    const entries = await Promise.all(
+      [...instances].map(async ([id, instance]) =>
+        (await this.instanceAppExists(instance.appId)) ? ([id, instance] as const) : null,
+      ),
+    )
+    return new Map(entries.filter((entry): entry is readonly [number, FracInstance] => entry !== null))
   }
 }

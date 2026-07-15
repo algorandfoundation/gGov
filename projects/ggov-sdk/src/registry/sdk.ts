@@ -244,10 +244,30 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   })
 
   /**
-   * Delete the GGovRegistry app. Admin-only (the contract's deleteApplication baremethod
-   * checks the caller is the admin directly — no inner call). On deletion the AVM closes the
-   * registry app account and sends its residual ALGO to the deleting sender, so withdraw any
-   * meaningful balance first.
+   * Update the `GGovRegistry` app's program to the build exported by this `ggov-sdk`  version.
+   * Admin-only. The write client compiles the current approval/clear programs from its embedded
+   * app spec, so the on-chain code is replaced with the version bundled here.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeUpdateApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.update.bare({})
+    return builder
+  }
+
+  updateApplication = this.makeTxnExecutor({
+    maker: this.makeUpdateApplicationTxns,
+  })
+
+  /**
+   * Delete the `GGovRegistry` app. Admin-only.
+   *
+   * WARNING: unlike {@link GGovSDK.deletePeriodApp}, this does NOT return the app's balance or
+   * clean up its boxes — the contract's `deleteApplication` is just an admin check, nothing else.
+   * The whole balance (base MBR, any boxes' MBR, plus any other funds) becomes permanently unreachable
+   * once the app is deleted, and any live delegations or period summaries are orphaned. See contract's
+   * `deleteApplication` baremethod for details.
    */
   @requireWriterWithClient()
   @wrapErrors()
@@ -257,6 +277,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     return builder
   }
 
+  /**
+   * Delete the `GGovRegistry` app. Admin-only.
+   *
+   * See {@link makeDeleteApplicationTxns} for important admin/MBR-recovery caveats.
+   */
   deleteApplication = this.makeTxnExecutor({
     maker: this.makeDeleteApplicationTxns,
   })

@@ -5,6 +5,7 @@ import { FracDelegationInstanceFactory, FracDelegationRegistrySDK } from 'frac-d
 import { errUnauthorized } from '../base/errors.algo'
 import {
   createFracRegistrySDK,
+  deployFracInstance,
   deployFracRegistry,
   generateAccountWithFracRegSDK,
   transformedError,
@@ -142,15 +143,24 @@ describe('FracDelegationRegistry admin', () => {
     test('admin can update the registry app', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracRegistry(localnet, testAccount)
-      await expect(
-        sdk.readClient.send.update.bare({ sender: testAccount.toString(), signer: testAccount.signer }),
-      ).resolves.toBeDefined()
+      await expect(sdk.updateApplication({})).resolves.toBeDefined()
     })
 
     test('admin can delete the registry app', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracRegistry(localnet, testAccount)
       await expect(sdk.deleteApplication({})).resolves.toBeDefined()
+    })
+
+    test('delete refuses while an instance it created is still bound to it, then succeeds once deleted', async () => {
+      const { testAccount } = localnet.context
+      const { sdk: registrySdk } = await deployFracRegistry(localnet, testAccount)
+      const { sdk: instanceSdk } = await deployFracInstance(localnet, testAccount, { registrySdk })
+
+      await expect(registrySdk.deleteApplication({})).rejects.toThrow(/still bound/)
+
+      await instanceSdk.deleteInstanceApp({})
+      await expect(registrySdk.deleteApplication({})).resolves.toBeDefined()
     })
   })
 
@@ -241,12 +251,7 @@ describe('FracDelegationRegistry admin', () => {
     })
 
     test('non-admin cannot update the registry app', async () => {
-      await expect(
-        sdk.readClient.send.update.bare({
-          sender: nonAdmin.toString(),
-          signer: nonAdmin.signer,
-        }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.updateApplication({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot delete the registry app', async () => {
