@@ -6,11 +6,11 @@ import {
   FracDelegationInstanceContractArgs,
 } from './types'
 import { requireWriterWithClient } from '../util/requiresSender'
-import { FracDelegationInstanceReaderSDK } from './sdkReader'
+import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 
-export class FracDelegationInstanceSDK extends FracDelegationInstanceReaderSDK {
+export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
   public writeClient?: FracDelegationInstanceClient
 
@@ -82,6 +82,28 @@ export class FracDelegationInstanceSDK extends FracDelegationInstanceReaderSDK {
 
   withdrawALGO = this.makeTxnExecutor({
     maker: this.makeWithdrawALGOTxns,
+  })
+
+  // ── Escrows ──────────────────────────────────────────────────────
+
+  /**
+   * Append `account` to the instance's escrows list. Normally driven by the registry via
+   * `FracDelegationRegistrySDK.registerEscrow` (which also enforces unique assignment and keeps
+   * its counter in sync); calling this directly is the admin escape hatch and bypasses both.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeRegisterEscrowTxns({
+    account,
+    builder,
+  }: FracDelegationInstanceContractArgs['registerEscrow(address)void'] & InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.registerEscrow({ args: { account } })
+    return builder
+  }
+
+  registerEscrow = this.makeTxnExecutor({
+    maker: this.makeRegisterEscrowTxns,
   })
 
   // ── Admin: lifecycle ────────────────────────────────────────────

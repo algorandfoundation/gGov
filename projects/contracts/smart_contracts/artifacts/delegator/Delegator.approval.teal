@@ -531,8 +531,8 @@ syncProposalMetadata_after_if_else@28:
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@32
     // smart_contracts/delegator/delegator.algo.ts:172
-    // ensure(registryAppExists, errXGovRegistryMissing)
-    pushbytes "ERR:XGRM"
+    // ensure(registryAppExists, errRegistryMissing)
+    pushbytes "ERR:RM"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
     log

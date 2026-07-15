@@ -2,11 +2,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Account, Address } from 'algosdk'
-import {
-  FracDelegationInstanceFactory,
-  FracDelegationInstanceSDK,
-  FracDelegationRegistrySDK,
-} from 'frac-delegation-sdk'
+import { FracDelegationSDK, FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import { calculateCommitteeId, GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
@@ -15,7 +11,11 @@ import { XGovProposalMockClient, XGovProposalMockComposer } from './artifacts/xg
 import { XGovRegistryMockFactory } from './artifacts/xgov-registry-mock/XGovRegistryMockClient'
 import { STATUS_SUBMITTED } from './xgov-proposal-mock/xGovProposalMock.algo'
 
-async function lastBlockTimestamp(algorand: AlgorandClient): Promise<number> {
+// --------------------------------------------------------------------
+// COMMON
+// --------------------------------------------------------------------
+
+const lastBlockTimestamp = async (algorand: AlgorandClient): Promise<number> => {
   const { algod } = algorand.client
   const { lastRound } = await algod.status().do()
   const {
@@ -29,6 +29,18 @@ async function lastBlockTimestamp(algorand: AlgorandClient): Promise<number> {
 export function transformedError(errCode: string) {
   return errCode.replace('ERR:', 'Error ')
 }
+
+// TODO(instances-box): once the registry registers instances (numeric id -> app id box), resolve
+// the spawned app id through the registry reader instead. Delete this helper if not needed anymore.
+const lastCreatedAppId = async (localnet: AlgorandFixture, creatorAddress: string): Promise<bigint> => {
+  const info = await localnet.algorand.client.algod.accountInformation(creatorAddress).do()
+  const created = info.createdApps ?? []
+  return BigInt(created[created.length - 1].id)
+}
+
+// --------------------------------------------------------------------
+// GGOV REGISTRY: create SDK, generate account with SDK
+// --------------------------------------------------------------------
 
 export const deployRegistry = async (localnet: AlgorandFixture, account: Address, firstPeriodId?: bigint | number) => {
   // Deploy through the production path (GGovRegistrySDK.createRegistry) so every test exercises the
@@ -48,198 +60,6 @@ export const deployRegistry = async (localnet: AlgorandFixture, account: Address
     client: appClient,
     sdk,
   }
-}
-
-export const createSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
-  new GGovRegistrySDK({
-    algorand: localnet.algorand,
-    registryAppId,
-    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
-  })
-
-export const generateAccountWithSDK = async (
-  localnet: AlgorandFixture,
-  registryAppId: bigint,
-  initialFunds = (1).algos(),
-) => {
-  const account = await localnet.context.generateAccount({ initialFunds })
-  return { account, sdk: createSDK(localnet, registryAppId, account) }
-}
-
-export const deployFracRegistry = async (localnet: AlgorandFixture, account: Address) => {
-  // Deploy through the production path (FracDelegationRegistrySDK.createRegistry):
-  // extraProgramPages: 3, global schema at the AVM cap. Analogous to deployRegistry.
-  await localnet.algorand.account.ensureFundedFromEnvironment(account, (10).algos())
-  const signer = localnet.algorand.account.getSigner(account)
-
-  const { sdk, appClient } = await FracDelegationRegistrySDK.createRegistry({
-    algorand: localnet.algorand,
-    deployer: { sender: account, signer },
-  })
-
-  return {
-    client: appClient,
-    sdk,
-  }
-}
-
-export const createFracSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
-  new FracDelegationRegistrySDK({
-    algorand: localnet.algorand,
-    registryAppId,
-    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
-  })
-
-export const generateAccountWithFracSDK = async (
-  localnet: AlgorandFixture,
-  registryAppId: bigint,
-  initialFunds = (1).algos(),
-) => {
-  const account = await localnet.context.generateAccount({ initialFunds })
-  return { account, sdk: createFracSDK(localnet, registryAppId, account) }
-}
-
-export const deployUnboundFracInstance = async (localnet: AlgorandFixture, account: Address) => {
-  // Deploy a standalone `FracDelegationInstance` app WITHOUT binding it to a registry - test
-  // scaffolding. Leaves the instance in the pre-bind state (`registryApp === 0`, creator-gated
-  // bootstrap window); call `sdk.setRegistryApp` to finalize.
-  await localnet.algorand.account.ensureFundedFromEnvironment(account, (10).algos())
-
-  const factory = localnet.algorand.client.getTypedAppFactory(FracDelegationInstanceFactory, {
-    defaultSender: account,
-    defaultSigner: localnet.algorand.account.getSigner(account),
-  })
-
-  const { appClient } = await factory.send.create.bare({ extraProgramPages: 3 })
-  await localnet.algorand.send.payment({
-    sender: account,
-    receiver: appClient.appAddress,
-    amount: (1).algo(),
-  })
-
-  return { client: appClient, sdk: createFracInstanceSDK(localnet, appClient.appId, account) }
-}
-
-export const deployFracInstance = async (localnet: AlgorandFixture, account: Address) => {
-  // Deploy a frac registry plus a standalone instance bound to it (the full test bootstrap).
-  const { client: registryAppClient, sdk: registrySdk } = await deployFracRegistry(localnet, account)
-  const { client, sdk } = await deployUnboundFracInstance(localnet, account)
-  await sdk.setRegistryApp({ appId: registryAppClient.appId })
-
-  return {
-    registryAppClient,
-    registrySdk,
-    client,
-    sdk,
-  }
-}
-
-export const createFracInstanceSDK = (localnet: AlgorandFixture, instanceAppId: bigint, account: Address) =>
-  new FracDelegationInstanceSDK({
-    algorand: localnet.algorand,
-    instanceAppId,
-    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
-  })
-
-export const generateAccountWithFracInstanceSDK = async (
-  localnet: AlgorandFixture,
-  instanceAppId: bigint,
-  initialFunds = (1).algos(),
-) => {
-  const account = await localnet.context.generateAccount({ initialFunds })
-  return { account, sdk: createFracInstanceSDK(localnet, instanceAppId, account) }
-}
-
-async function createCommittee(
-  localnet: AlgorandFixture,
-  registryAppId: bigint,
-  totalMembers: number,
-  votesPerMember: number,
-): Promise<{ committee: GGovCommitteeFile; govs: (Address & Account & TransactionSignerAccount)[] }> {
-  const govs = await Promise.all(
-    Array.from({ length: totalMembers }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
-  )
-  const committee: GGovCommitteeFile = {
-    ...committeeTemplate,
-    totalMembers,
-    totalVotes: totalMembers * votesPerMember,
-    registryId: Number(registryAppId),
-    govs: govs.map((a) => ({
-      address: a.toString(),
-      votes: votesPerMember,
-    })),
-  }
-
-  return { committee, govs }
-}
-
-export async function configureProposal(args: {
-  proposalAppClient: XGovProposalMockClient
-  committee?: GGovCommitteeFile
-  status?: number
-  voteOpenTs?: number
-  votingDuration?: number
-}) {
-  const { proposalAppClient, ...rest } = args
-  const { committee, status, voteOpenTs, votingDuration } = rest
-  if (process.env.NOOP_TEST_LOGGER !== 'true') {
-    console.log('Configuring proposal', rest)
-  }
-  const builder: XGovProposalMockComposer<any> = proposalAppClient.newGroup()
-  if (committee !== undefined) {
-    builder.setCommitteeId({
-      args: { committeeId: calculateCommitteeId(JSON.stringify(committee)) },
-    })
-  }
-  if (status !== undefined) {
-    builder.setStatus({ args: { status } })
-  }
-  if (voteOpenTs !== undefined) {
-    builder.setVoteOpenTs({ args: { voteOpenTs } })
-  }
-  if (votingDuration !== undefined) {
-    builder.setVotingDuration({ args: { votingDuration } })
-  }
-  await builder.send()
-}
-
-export const deployXGovMocksAndRegistry = async (localnet: AlgorandFixture, adminAccount: Address, numGovs: number) => {
-  const factory = localnet.algorand.client.getTypedAppFactory(XGovRegistryMockFactory, {
-    defaultSender: adminAccount,
-  })
-
-  const { appClient: registryAppClient } = await factory.deploy({
-    onUpdate: 'append',
-    onSchemaBreak: 'append',
-  })
-
-  await localnet.algorand.account.ensureFundedFromEnvironment(registryAppClient.appAddress, (10).algos())
-
-  const { return: proposalAppId } = await registryAppClient.send.createProposal({
-    args: {},
-    extraFee: (2000).microAlgo(),
-  })
-  const proposalAppClient = new XGovProposalMockClient({
-    algorand: localnet.algorand,
-    appId: proposalAppId!,
-    defaultSender: adminAccount,
-  })
-
-  const { committee, govs } = await createCommittee(localnet, registryAppClient.appId, numGovs, 1)
-  const proposalConfigPromise = configureProposal({
-    proposalAppClient,
-    committee,
-    status: STATUS_SUBMITTED,
-    voteOpenTs: await lastBlockTimestamp(localnet.algorand),
-    votingDuration: 3600, // 1 hour
-  })
-
-  const { sdk: ggovRegistrySDK } = await deployRegistry(localnet, adminAccount)
-  await ggovRegistrySDK.uploadCommitteeFile(committee)
-  await ggovRegistrySDK.setXGovRegistryApp({ appId: registryAppClient.appId })
-  await proposalConfigPromise
-
-  return { registryAppClient, proposalAppClient, ggovRegistrySDK, committee, govs }
 }
 
 export const deployRegistryWithCommittee = async (localnet: AlgorandFixture, numGovs = 3, votesPerMember = 10) => {
@@ -298,6 +118,219 @@ export const deployRegistryWithTwoCommittees = async (localnet: AlgorandFixture,
 
   return { sdk, committeeId1, committeeId2, committee1File, committee2File, accountA, accountB, accountC }
 }
+
+// --------------------------------------------------------------------
+// GGOV REGISTRY: deploy helpers
+// --------------------------------------------------------------------
+
+export const createSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
+  new GGovRegistrySDK({
+    algorand: localnet.algorand,
+    registryAppId,
+    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
+  })
+
+export const generateAccountWithSDK = async (
+  localnet: AlgorandFixture,
+  registryAppId: bigint,
+  initialFunds = (1).algos(),
+) => {
+  const account = await localnet.context.generateAccount({ initialFunds })
+  return { account, sdk: createSDK(localnet, registryAppId, account) }
+}
+
+// --------------------------------------------------------------------
+// FRAC REGISTRY: create SDK, generate account with SDK
+// --------------------------------------------------------------------
+
+export const createFracRegistrySDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
+  new FracDelegationRegistrySDK({
+    algorand: localnet.algorand,
+    registryAppId,
+    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
+  })
+
+export const generateAccountWithFracRegSDK = async (
+  localnet: AlgorandFixture,
+  registryAppId: bigint,
+  initialFunds = (1).algos(),
+) => {
+  const account = await localnet.context.generateAccount({ initialFunds })
+  return { account, sdk: createFracRegistrySDK(localnet, registryAppId, account) }
+}
+
+// --------------------------------------------------------------------
+// FRAC REGISTRY: deploy helpers
+// --------------------------------------------------------------------
+
+export const deployFracRegistry = async (localnet: AlgorandFixture, account: Address) => {
+  // Analogous to deployRegistry
+  await localnet.algorand.account.ensureFundedFromEnvironment(account, (25).algos())
+  const signer = localnet.algorand.account.getSigner(account)
+
+  const { sdk, appClient } = await FracDelegationRegistrySDK.createRegistry({
+    algorand: localnet.algorand,
+    deployer: { sender: account, signer },
+  })
+
+  return {
+    client: appClient,
+    sdk,
+  }
+}
+
+// --------------------------------------------------------------------
+// FRAC INSTANCE: create SDK, generate account with SDK
+// --------------------------------------------------------------------
+
+export const createFracInstanceSDK = (localnet: AlgorandFixture, instanceAppId: bigint, account: Address) =>
+  new FracDelegationSDK({
+    algorand: localnet.algorand,
+    instanceAppId,
+    writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
+  })
+
+export const generateAccountWithFracInstanceSDK = async (
+  localnet: AlgorandFixture,
+  instanceAppId: bigint,
+  initialFunds = (1).algos(),
+) => {
+  const account = await localnet.context.generateAccount({ initialFunds })
+  return { account, sdk: createFracInstanceSDK(localnet, instanceAppId, account) }
+}
+
+// --------------------------------------------------------------------
+// FRAC INSTANCE: deploy helpers
+// --------------------------------------------------------------------
+
+export const deployFracInstance = async (
+  localnet: AlgorandFixture,
+  account: Address,
+  opts: {
+    /** Instance label passed to addInstance */
+    name?: string
+    /** Spawn from this registry instead of deploying a fresh one (its writer must be the registry admin) */
+    registrySdk?: FracDelegationRegistrySDK
+    /** Set as the registry's defaultOperator before spawning */
+    defaultOperator?: Address
+  } = {},
+) => {
+  // Spawn an instance via addInstance - the production path
+  const { name = 'frac-instance', defaultOperator } = opts
+  const registrySdk = opts.registrySdk ?? (await deployFracRegistry(localnet, account)).sdk
+  if (defaultOperator !== undefined) {
+    await registrySdk.setDefaultOperator({ newDefaultOperator: defaultOperator.toString() })
+  }
+  const instanceId = await registrySdk.addInstance({ name })
+  const appId = await lastCreatedAppId(localnet, registrySdk.readClient.appAddress.toString())
+
+  return {
+    registrySdk,
+    appId,
+    instanceId,
+    sdk: createFracInstanceSDK(localnet, appId, account),
+  }
+}
+
+// --------------------------------------------------------------------
+// XGOV HELPERS
+// --------------------------------------------------------------------
+
+export const configureXGovProposal = async (args: {
+  proposalAppClient: XGovProposalMockClient
+  committee?: GGovCommitteeFile // it's xgov committee file, but we don't have a separate type
+  status?: number
+  voteOpenTs?: number
+  votingDuration?: number
+}) => {
+  const { proposalAppClient, ...rest } = args
+  const { committee, status, voteOpenTs, votingDuration } = rest
+  if (process.env.NOOP_TEST_LOGGER !== 'true') {
+    console.log('Configuring proposal', rest)
+  }
+  const builder: XGovProposalMockComposer<any> = proposalAppClient.newGroup()
+  if (committee !== undefined) {
+    builder.setCommitteeId({
+      args: { committeeId: calculateCommitteeId(JSON.stringify(committee)) },
+    })
+  }
+  if (status !== undefined) {
+    builder.setStatus({ args: { status } })
+  }
+  if (voteOpenTs !== undefined) {
+    builder.setVoteOpenTs({ args: { voteOpenTs } })
+  }
+  if (votingDuration !== undefined) {
+    builder.setVotingDuration({ args: { votingDuration } })
+  }
+  await builder.send()
+}
+
+const createXGovCommittee = async (
+  localnet: AlgorandFixture,
+  registryAppId: bigint,
+  totalMembers: number,
+  votesPerMember: number,
+): Promise<{ committee: GGovCommitteeFile; xGovs: (Address & Account & TransactionSignerAccount)[] }> => {
+  const xGovs = await Promise.all(
+    Array.from({ length: totalMembers }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
+  )
+  const committee: GGovCommitteeFile = {
+    ...committeeTemplate,
+    totalMembers,
+    totalVotes: totalMembers * votesPerMember,
+    registryId: Number(registryAppId),
+    govs: xGovs.map((a) => ({
+      address: a.toString(),
+      votes: votesPerMember,
+    })),
+  }
+
+  return { committee, xGovs }
+}
+
+export const deployXGovMocksAndRegistry = async (localnet: AlgorandFixture, adminAccount: Address, numGovs: number) => {
+  const factory = localnet.algorand.client.getTypedAppFactory(XGovRegistryMockFactory, {
+    defaultSender: adminAccount,
+  })
+
+  const { appClient: registryAppClient } = await factory.deploy({
+    onUpdate: 'append',
+    onSchemaBreak: 'append',
+  })
+
+  await localnet.algorand.account.ensureFundedFromEnvironment(registryAppClient.appAddress, (10).algos())
+
+  const { return: proposalAppId } = await registryAppClient.send.createProposal({
+    args: {},
+    extraFee: (2000).microAlgo(),
+  })
+  const proposalAppClient = new XGovProposalMockClient({
+    algorand: localnet.algorand,
+    appId: proposalAppId!,
+    defaultSender: adminAccount,
+  })
+
+  const { committee, xGovs } = await createXGovCommittee(localnet, registryAppClient.appId, numGovs, 1)
+  const proposalConfigPromise = configureXGovProposal({
+    proposalAppClient,
+    committee,
+    status: STATUS_SUBMITTED,
+    voteOpenTs: await lastBlockTimestamp(localnet.algorand),
+    votingDuration: 3600, // 1 hour
+  })
+
+  const { sdk: ggovRegistrySDK } = await deployRegistry(localnet, adminAccount)
+  await ggovRegistrySDK.uploadCommitteeFile(committee)
+  await ggovRegistrySDK.setXGovRegistryApp({ appId: registryAppClient.appId })
+  await proposalConfigPromise
+
+  return { registryAppClient, proposalAppClient, ggovRegistrySDK, committee, govs: xGovs }
+}
+
+// --------------------------------------------------------------------
+// LEGACY DELEGATOR
+// --------------------------------------------------------------------
 
 export const deployDelegatorFull = async (
   localnet: AlgorandFixture,

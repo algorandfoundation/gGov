@@ -1,3 +1,4 @@
+/** Verbatim copy of ggov-sdk/src/util/chunk.ts */
 export function chunk<T>(array: T[], size: number): T[][] {
   if (size <= 0) throw new RangeError('chunk size must be a positive integer')
   const chunkedArr: T[][] = []
