@@ -39,7 +39,7 @@ export const errPeriodEndInvalid = 'ERR:PE' // Period end is invalid - must alig
 export const errNoVotingPower = 'ERR:A_NV' // No voting power for account
 
 // xGov sync errors
-export const errXGovRegistryMissing = 'ERR:XGRM' // xGov registry app ID in oracle is missing
+export const errRegistryMissing = 'ERR:RM' // Registry configuration is missing
 export const errXGovProposalInvalidCreator = 'ERR:XGPC' // Proposal creator does not match xGov registry escrow
 export const errXGovProposalCommitteeMissing = 'ERR:XGPM' // Committee ID missing from proposal. This should never happen.
 export const errXGovProposalVoteOpenTsMissing = 'ERR:XGVOM' // Vote open timestamp missing from proposal. This should never happen.
@@ -57,7 +57,6 @@ export const errAccountNumMismatch = 'ERR:ANM' // Number of accounts provided do
 export const errState = 'ERR:ST' // Invalid state for this action
 
 // gGov auth
-export const errNotOperator = 'ERR:G_OP' // Caller must be operator
 export const errAlreadyInit = 'ERR:AI' // Contract already initialised
 
 // gGov period
@@ -84,3 +83,8 @@ export const errGGovNoDelegation = 'ERR:GD_NX' // No delegation for account
 export const errGGovDelegationNoAcctRef = 'ERR:GD_NR' // Transaction malformed - no account reference to delegator
 export const errGGovSelfDelegate = 'ERR:GD_SD' // Cannot delegate to self
 export const errGGovDelegationExists = 'ERR:GD_EX' // Delegation already exists for account
+
+// Frac delegation
+export const errInstanceAppNotConfigured = 'ERR:FI_NC' // Instance approval program not yet uploaded to registry
+export const errInstanceAppNotExists = 'ERR:FI_NX' // Instance does not exist
+export const errEscrowAssigned = 'ERR:FE_AS' // Escrow account is already assigned to an instance

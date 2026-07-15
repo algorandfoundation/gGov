@@ -346,7 +346,8 @@ describe('GGovRegistry committees', () => {
         args: { account: accountB.toString() },
       })
       expect(registryAccount!.committeeOffsets).toHaveLength(1)
-      expect(registryAccount!.committeeOffsets[0][0]).toBe(1)
+      // The surviving offset is the second committee's; numeric IDs start at 1, so it is 2.
+      expect(registryAccount!.committeeOffsets[0][0]).toBe(2)
       const { return: registryAccountA } = await sdk.readClient.send.getAccount({
         args: { account: accountA.toString() },
       })

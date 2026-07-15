@@ -38,7 +38,7 @@ import {
   errXGovProposalCommitteeMissing,
   errXGovProposalInvalidCreator,
   errXGovProposalStatusMissing,
-  errXGovRegistryMissing,
+  errRegistryMissing,
 } from '../base/errors.algo'
 import {
   AccountAlgohourInput,
@@ -169,7 +169,7 @@ export class Delegator extends AccountIdContract {
       this.committeeOracleApp.value,
       ggovRegistryXGovKey,
     )
-    ensure(registryAppExists, errXGovRegistryMissing)
+    ensure(registryAppExists, errRegistryMissing)
     const proposalCreator = proposalId.creator
     const registryEscrow = Application(registryAppId).address
     ensure(proposalCreator === registryEscrow, errXGovProposalInvalidCreator)

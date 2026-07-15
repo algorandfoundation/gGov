@@ -35,7 +35,6 @@ import {
   errGGovVotePowerMismatch,
   errGGovVotingEnded,
   errGGovVotingNotStarted,
-  errNotOperator,
   errPeriodEndLessThanStart,
   errUnauthorized,
 } from '../base/errors.algo'
@@ -122,7 +121,7 @@ export class GGovPeriodContract extends BaseContract {
       appId: Application(this.registryApp.value),
       args: [Txn.sender],
     }).returnValue
-    ensure(ok, errNotOperator)
+    ensure(ok, errUnauthorized)
   }
 
   /** Inner-call the registry's verifyAdmin and ensure caller is the admin. */
@@ -542,7 +541,6 @@ export class GGovPeriodContract extends BaseContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.checkAdminCaller()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
     itxn.payment({ receiver, amount }).submit()
   }
 

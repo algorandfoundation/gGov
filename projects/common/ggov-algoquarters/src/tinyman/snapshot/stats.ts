@@ -6,7 +6,7 @@ import { deserializeBalances } from './operations'
 import type { BalanceMap, SnapshotData } from '../types'
 
 const TOP_N = 5
-const LARGE_HOLDER_THRESHOLD_PERCENT = 15n
+const LARGE_HOLDER_THRESHOLD_PERCENT = 40n
 
 function analyzeSnapshot(data: SnapshotData) {
   const eligible = deserializeBalances(data.balances)
@@ -66,12 +66,12 @@ export function logSnapshotStats(data: SnapshotData): void {
   console.log(`  [stALGO] non-zero holders      ${stAlgoHolders}  (excluded: ${stAlgoExcluded})`)
   console.log(`\n  tALGO+stALGO non-zero holders  ${uniqueHolders}  (holding both: ${bothHolders})`)
 
-  console.log(`\nTop ${TOP_N} tALGO holders (check if any should be in exclusions.ts):`)
+  console.log(`\nTop ${TOP_N} tALGO holders (% of circulating supply):`)
   for (const [address, balance] of topHolders(eligible, 'talgo')) {
     console.log(`  ${address}  ${balance.talgo.toLocaleString()} (${formatPercent(balance.talgo, circulating.talgo)}%)`)
   }
 
-  console.log(`\nTop ${TOP_N} stALGO holders (check if any should be in exclusions.ts):`)
+  console.log(`\nTop ${TOP_N} stALGO holders (% of circulating supply):`)
   for (const [address, balance] of topHolders(eligible, 'stalgo')) {
     console.log(
       `  ${address}  ${balance.stalgo.toLocaleString()} (${formatPercent(balance.stalgo, circulating.stalgo)}%)`,
@@ -91,7 +91,7 @@ export function checkLargeHolders(data: SnapshotData): void {
   if (largeHolders.length === 0) return
 
   const lines = [
-    `${largeHolders.length} non-excluded address(es) hold >${LARGE_HOLDER_THRESHOLD_PERCENT}% of circulating supply; check if it should be added to exclusions.ts or tweak LARGE_HOLDER_THRESHOLD_PERCENT to avoid this error:`,
+    `${largeHolders.length} non-excluded address(es) hold >${LARGE_HOLDER_THRESHOLD_PERCENT}% of circulating supply. If it's an escrow/reserve contract, add it to exclusions.ts; if it's an LP pool or other real holder, disregard or tweak LARGE_HOLDER_THRESHOLD_PERCENT instead:`,
   ]
   for (const [address, balance] of largeHolders) {
     lines.push(

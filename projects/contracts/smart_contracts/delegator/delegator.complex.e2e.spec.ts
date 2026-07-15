@@ -6,7 +6,7 @@ import { calculateCommitteeId, GGovCommitteeFile, GGovRegistrySDK } from 'ggov-s
 import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import { XGovProposalMockClient } from '../artifacts/xgov-proposal-mock/XGovProposalMockClient'
 import { errCommitteeNotExists, errState } from '../base/errors.algo'
-import { configureProposal, deployDelegatorFull, transformedError } from '../common-tests'
+import { configureXGovProposal, deployDelegatorFull, transformedError } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 import { STATUS_EMPTY } from '../xgov-proposal-mock/xGovProposalMock.algo'
 
@@ -70,7 +70,7 @@ describe.skip('Delegator complex e2e tests', () => {
 
     test('It should not syncProposalMetadata at invalid proposal state', async () => {
       await syncCommitteeMetadata()
-      await configureProposal({
+      await configureXGovProposal({
         proposalAppClient,
         status: STATUS_EMPTY,
       })

@@ -531,8 +531,8 @@ syncProposalMetadata_after_if_else@28:
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@32
     // smart_contracts/delegator/delegator.algo.ts:172
-    // ensure(registryAppExists, errXGovRegistryMissing)
-    pushbytes "ERR:XGRM"
+    // ensure(registryAppExists, errRegistryMissing)
+    pushbytes "ERR:RM"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
     log
@@ -2887,19 +2887,19 @@ logCommitteeMetadata_after_if_else@6:
     b logCommitteeMetadata_for_header@2
 
 logCommitteeMetadata_else_body@5:
-    // smart_contracts/base/types.algo.ts:85
+    // smart_contracts/base/types.algo.ts:89
     // periodStart: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:86
+    // smart_contracts/base/types.algo.ts:90
     // periodEnd: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:87
+    // smart_contracts/base/types.algo.ts:91
     // extDelegatedVotes: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:84-89
+    // smart_contracts/base/types.algo.ts:88-93
     // return {
     //   periodStart: u32(0),
     //   periodEnd: u32(0),
@@ -2986,27 +2986,27 @@ logProposalMetadata_after_if_else@6:
     b logProposalMetadata_for_header@2
 
 logProposalMetadata_else_body@5:
-    // smart_contracts/base/types.algo.ts:120
+    // smart_contracts/base/types.algo.ts:124
     // extVoteStartTime: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:121
+    // smart_contracts/base/types.algo.ts:125
     // extVoteEndTime: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:122
+    // smart_contracts/base/types.algo.ts:126
     // extTotalVotingPower: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:123
+    // smart_contracts/base/types.algo.ts:127
     // extAccountsPendingVotes: [] as AccountIdWithVotes[],
     intc_0 // 0
     itob
-    // smart_contracts/base/types.algo.ts:125
+    // smart_contracts/base/types.algo.ts:129
     // intVoteEndTime: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:117-132
+    // smart_contracts/base/types.algo.ts:121-136
     // return {
     //   status: '' as DelegatorProposalStatus,
     //   committeeId: new StaticBytes<32>(),

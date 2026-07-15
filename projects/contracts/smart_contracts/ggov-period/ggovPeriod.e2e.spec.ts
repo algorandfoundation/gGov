@@ -17,7 +17,6 @@ import {
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
   errGGovVotingNotStarted,
-  errNotOperator,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
@@ -1472,7 +1471,7 @@ describe('GGovPeriod contract', () => {
 
       const nonOp = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const nonOpSDK = createUserSDK(localnet, appClient.appId, nonOp)
-      await expect(nonOpSDK.setReady({ periodId, ready: true })).rejects.toThrow(transformedError(errNotOperator))
+      await expect(nonOpSDK.setReady({ periodId, ready: true })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('Cannot edit period once ready; can edit again after un-ready', async () => {
@@ -1613,7 +1612,9 @@ describe('GGovPeriod contract', () => {
 
       const nonOp = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const nonOpSDK = createUserSDK(localnet, appClient.appId, nonOp)
-      await expect(nonOpSDK.removeTopic({ periodId, topicIndex: 0n })).rejects.toThrow(transformedError(errNotOperator))
+      await expect(nonOpSDK.removeTopic({ periodId, topicIndex: 0n })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
     })
 
     test('Cannot removeTopic once period is ready', async () => {
@@ -1784,15 +1785,6 @@ describe('GGovPeriod contract', () => {
         nonAdminSDK.withdrawPeriodALGO({ periodId, receiver: nonAdmin.toString(), amount: (1).algos().microAlgo }),
       ).rejects.toThrow(transformedError(errUnauthorized))
       void periodAppId
-    })
-
-    test('Cannot withdraw to the zero address', async () => {
-      const { sdk, periodId, periodAddress } = await deployWithPeriod(localnet)
-      await localnet.algorand.account.ensureFundedFromEnvironment(periodAddress, (6).algos())
-      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
-      await expect(
-        sdk.withdrawPeriodALGO({ periodId, receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: (1).algos().microAlgo }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('Withdrawing more than the available balance fails (min balance protected by AVM)', async () => {

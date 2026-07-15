@@ -1,6 +1,6 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovRegistrySDK, GGovCommitteeFile, increaseBudgetBaseCost, increaseBudgetIncrementCost } from 'ggov-sdk'
+import { GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
 import { errUnauthorized } from '../base/errors.algo'
 import { createSDK, deployRegistry, generateAccountWithSDK, transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -33,33 +33,6 @@ describe('GGovRegistry admin', () => {
       expect(appInfo.extraProgramPages).toBe(3)
       expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
     })
-  })
-
-  describe('increaseBudget opcode cost', () => {
-    let sdk: GGovRegistrySDK
-    beforeAll(async () => {
-      await localnet.newScope()
-      ;({ sdk } = await deployRegistry(localnet, localnet.context.testAccount))
-    })
-    for (let i = 0; i < 3; i++) {
-      test(`It should cost ${increaseBudgetBaseCost + i * increaseBudgetIncrementCost} with itxns=${i}`, async () => {
-        const { testAccount } = localnet.context
-        const {
-          simulateResponse: {
-            txnGroups: [{ appBudgetConsumed }],
-          },
-        } = await sdk
-          .writeClient!.newGroup()
-          .increaseBudget({
-            sender: testAccount.toString(),
-            signer: testAccount.signer,
-            args: { itxns: BigInt(i) },
-            extraFee: (i * 1000).microAlgo(),
-          })
-          .simulate()
-        expect(appBudgetConsumed).toBe(increaseBudgetBaseCost + i * increaseBudgetIncrementCost) // if this fails then update the new value in SDK/constants
-      })
-    }
   })
 
   // Admin configs and management

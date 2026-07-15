@@ -1,6 +1,6 @@
 import { Network } from './types'
 
-const defaultReaderAccount = 'A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE'
+export const defaultReaderAccount = 'A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE'
 
 const networkConfigs: Record<Network, { registryAppId: bigint; readerAccount: string }> = {
   localnet: {

@@ -80,8 +80,12 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   xGovRegistryApp = GlobalState<Application>({ key: ggovRegistryXGovKey })
   /** Committee metadata box map */
   committees = BoxMap<CommitteeId, CommitteeMetadata>({ keyPrefix: 'c' })
-  /** Last committee numeric ID; superbox prefix for committees */
-  lastCommitteeId = GlobalState<uint64>({ initialValue: 0 })
+  /**
+   * Last committee numeric ID; superbox prefix for committees. Starts at 1 so that numeric ID 0
+   * is never assigned and can be relied on as the "no such committee" sentinel returned by
+   * `getEmptyCommitteeMetadata`.
+   */
+  lastCommitteeId = GlobalState<uint64>({ initialValue: 1 })
 
   /** Admin address; defaults to creator. Rotatable via `setAdmin`. */
   admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
@@ -280,7 +284,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.ensureCallerIsAdmin()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized) // TODO Remove incl tests
     itxn.payment({ receiver, amount }).submit()
   }
 
