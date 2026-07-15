@@ -2,7 +2,12 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { FracDelegationRegistrySDK } from 'frac-delegation-sdk'
-import { deployFracInstance, deployFracRegistry, generateAccountWithFracRegSDK, transformedError } from '../common-tests'
+import {
+  deployFracInstance,
+  deployFracRegistry,
+  generateAccountWithFracRegSDK,
+  transformedError,
+} from '../common-tests'
 import { errUnauthorized } from '../base/errors.algo'
 import { configureTestLogging } from '../test-utils'
 
