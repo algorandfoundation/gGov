@@ -235,6 +235,15 @@ export function getEmptyGGovPeriod(): GGovPeriod {
   }
 }
 
+export function getEmptyGGovPeriodShort(): GGovPeriodShort {
+  return {
+    committeeId: new StaticBytes<32>(),
+    votingStart: u32(0),
+    votingEnd: u32(0),
+    topicOptionLengths: [] as Uint32[],
+  }
+}
+
 export function getEmptyGGovVoteRecord(): GGovVoteRecord {
   return {
     isDelegated: false,

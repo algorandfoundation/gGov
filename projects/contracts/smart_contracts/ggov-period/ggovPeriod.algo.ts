@@ -41,6 +41,7 @@ import {
 import {
   CommitteeId,
   getEmptyGGovPeriod,
+  getEmptyGGovPeriodShort,
   getEmptyGGovVoteRecord,
   GGovPeriod,
   GGovPeriodMeta,
@@ -463,6 +464,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Short period information to be used by fractional delegator */
   @abimethod({ readonly: true })
   public getPeriodShort(): GGovPeriodShort {
+    if (this.registryApp.value === 0) return getEmptyGGovPeriodShort()
     const topics = clone(this.topicOptionsArr.value)
     const lengths: Uint32[] = []
     for (let i: uint64 = 0; i < topics.length; i++) {

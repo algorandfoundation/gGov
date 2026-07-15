@@ -1342,6 +1342,21 @@ describe('GGovPeriod contract', () => {
       expect(short.votingStart).toBeGreaterThan(0)
       expect(short.votingEnd).toBeGreaterThan(0)
     })
+
+    test('returns an empty shape for a period app that was never initialised', async () => {
+      // A bare-created period app has registryApp still 0, so its global keys and topic boxes
+      // don't exist yet. getPeriodShort must return the empty shape rather than assert, matching
+      // getPeriod/logPeriod.
+      const admin = localnet.context.testAccount
+      const periodFactory = localnet.algorand.client.getTypedAppFactory(GGovPeriodFactory, { defaultSender: admin })
+      const { appClient } = await periodFactory.send.create.bare()
+
+      const { return: short } = await appClient.send.getPeriodShort({ args: {} })
+      expect(short!.committeeId).toEqual(new Uint8Array(32))
+      expect(short!.votingStart).toBe(0)
+      expect(short!.votingEnd).toBe(0)
+      expect(short!.topicOptionLengths).toEqual([])
+    })
   })
 
   // ── Body uploads ────────────────────────────────────────────────
