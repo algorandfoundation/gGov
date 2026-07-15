@@ -253,8 +253,10 @@ export class FracDelegationRegistryContract extends BaseContract {
   }
 
   /**
-   * Get validated account or create account, associating instance. To be called by instances only.
-   * @param account Account to get or create a record for
+   * Get validated account or create account, associating instance.
+   * Callable by the associated instance app (the production path) or the registry admin
+   * (bootstrap/administration path).
+   * @param account Account to get or create ID for
    * @param instanceNumId Instance number ID to associate with the account
    * @returns FracRegAccount for the account, including the associated instance
    */
@@ -262,8 +264,8 @@ export class FracDelegationRegistryContract extends BaseContract {
     ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     const instance = clone(this.instances(instanceNumId).value)
 
-    // sender must be instance
-    ensure(Txn.sender === instance.appId.address, errUnauthorized)
+    // sender must be the instance app itself, or the registry admin
+    ensure(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
 
     if (!this.accounts(account).exists) {
       this.lastAccountId.value++
