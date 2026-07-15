@@ -6,8 +6,8 @@ import {
   ConstructorArgs,
   AccountWithVotes,
   SenderWithSigner,
-  CommitteeId,
   GGovCommitteeFile,
+  CommitteeId,
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
 } from './types'
@@ -108,10 +108,8 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   }: Omit<
     GGovRegistryContractArgs['registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void'],
     'committeeId'
-  > & {
-    committeeId: string | Uint8Array
-  } & CommonMethodBuilderArgs) {
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+  > & { committeeId: CommitteeId } & CommonMethodBuilderArgs) {
+    const committeeRaw = committeeIdToRaw(committeeId)
     const { sender, signer } = this.writerAccount!
     builder = builder ?? this.writeClient!.newGroup()
     return builder.registerCommittee({
@@ -127,11 +125,8 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriterWithClient()
   @wrapErrors()
-  makeUnregisterCommitteeTxns({
-    committeeId,
-    builder,
-  }: { committeeId: string | Uint8Array } & CommonMethodBuilderArgs) {
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+  makeUnregisterCommitteeTxns({ committeeId, builder }: { committeeId: CommitteeId } & CommonMethodBuilderArgs) {
+    const committeeRaw = committeeIdToRaw(committeeId)
     const { sender, signer } = this.writerAccount!
     builder = builder ?? this.writeClient!.newGroup()
     return builder.unregisterCommittee({
@@ -151,9 +146,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     committeeId,
     govs,
     builder,
-  }: { committeeId: string | Uint8Array; govs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
+  }: { committeeId: CommitteeId; govs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+    const committeeRaw = committeeIdToRaw(committeeId)
     builder = builder ?? this.writeClient!.newGroup()
     const govChunks = chunk(govs, 8)
     if (govChunks.length > 15) {
@@ -273,10 +268,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     govs,
     builder,
   }: Omit<GGovRegistryContractArgs['uningestGovs(byte[32],address[])void'], 'committeeId'> & {
-    committeeId: string | Uint8Array
+    committeeId: CommitteeId
   } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+    const committeeRaw = committeeIdToRaw(committeeId)
     builder = builder ?? this.writeClient!.newGroup()
     return builder.uningestGovs({
       args: { committeeId: committeeRaw, govs },
@@ -301,7 +296,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     committeeId,
     accounts,
   }: {
-    committeeId: string | Uint8Array
+    committeeId: CommitteeId
     accounts: string[]
   }): Promise<void> {
     const metadata = await this.getCommitteeMetadata(committeeId)
@@ -390,10 +385,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     data,
     note,
     builder,
-  }: {
-    startOffset: bigint | number
-    data: Uint8Array
-  } & CommonMethodBuilderArgs) {
+  }: GGovRegistryContractArgs['uploadPeriodApprovalPartial(uint64,byte[])void'] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
     return builder.uploadPeriodApprovalPartial({
       args: { startOffset, data },
@@ -447,10 +439,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     mbrAmount,
     note,
     builder,
-  }: {
+  }: Omit<
+    GGovRegistryContractArgs['createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)'],
+    'committeeId' | 'mbrPayment'
+  > & {
     committeeId: CommitteeId
-    votingStart: bigint | number
-    votingEnd: bigint | number
     mbrAmount?: bigint | number
   } & CommonMethodBuilderArgs) {
     const writer = this.writerAccount!
