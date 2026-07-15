@@ -29,8 +29,8 @@ import {
   errGGovNoOptions,
   errGGovNotReady,
   errGGovReady,
-  errGGovUnvotable,
   errGGovTopicIndexOOB,
+  errGGovUnvotable,
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
   errGGovVotingEnded,
@@ -45,6 +45,7 @@ import {
   getEmptyGGovVoteRecord,
   GGovPeriod,
   GGovPeriodMeta,
+  GGovPeriodShort,
   GGovTopic,
   GGovTopicOptions,
   GGovTopicVotes,
@@ -457,6 +458,22 @@ export class GGovPeriodContract extends BaseContract {
       votingStart: u32(this.votingStart.value),
       votingEnd: u32(this.votingEnd.value),
       topics: clone(topics),
+    }
+  }
+
+  /** Short period information to be used by fractional delegator */
+  @abimethod({ readonly: true })
+  public getPeriodShort(): GGovPeriodShort {
+    const topics = clone(this.topicOptionsArr.value)
+    const lengths: Uint32[] = []
+    for (let i: uint64 = 0; i < topics.length; i++) {
+      lengths.push(u32(topics[i].options.length))
+    }
+    return {
+      committeeId: this.committeeId.value,
+      votingStart: u32(this.votingStart.value),
+      votingEnd: u32(this.votingEnd.value),
+      topicOptionLengths: lengths,
     }
   }
 

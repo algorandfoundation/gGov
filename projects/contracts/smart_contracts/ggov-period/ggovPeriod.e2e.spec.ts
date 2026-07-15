@@ -1305,6 +1305,46 @@ describe('GGovPeriod contract', () => {
     })
   })
 
+  // ── getPeriodShort ───────────────────────────────────────────────
+
+  describe('getPeriodShort', () => {
+    test('returns committee, voting window, and per-topic option counts', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [
+        ['Yes', 'No'],
+        ['A', 'B', 'C', 'D'],
+      ])
+
+      const short = await sdk.getPeriodShort(periodId)
+      expect(short.committeeId).toEqual(committeeId)
+      // One entry per topic, holding that topic's option count — no options/votes payload.
+      expect(short.topicOptionLengths).toEqual([2, 4])
+
+      // The window agrees with what the full getPeriod read reports for the same period.
+      const period = await sdk.getPeriod(periodId)
+      expect(short.votingStart).toBe(period.votingStart)
+      expect(short.votingEnd).toBe(period.votingEnd)
+    })
+
+    test('returns empty topic option counts for a period with no topics', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+
+      const short = await sdk.getPeriodShort(periodId)
+      expect(short.committeeId).toEqual(committeeId)
+      expect(short.topicOptionLengths).toEqual([])
+      expect(short.votingStart).toBeGreaterThan(0)
+      expect(short.votingEnd).toBeGreaterThan(0)
+    })
+  })
+
   // ── Body uploads ────────────────────────────────────────────────
 
   describe('uploadPeriodBodyPartial', () => {

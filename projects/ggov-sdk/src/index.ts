@@ -3,7 +3,13 @@ export * from './period/sdkReader'
 export * from './constants'
 export * from './period/types'
 export { GGovRegistryFactory, GGovRegistryClient } from './generated/GGovRegistryClient'
-export { GGovPeriodFactory, GGovPeriodClient, type GGovPeriod, type GGovVoteRecord } from './generated/GGovPeriodClient'
+export {
+  GGovPeriodFactory,
+  GGovPeriodClient,
+  type GGovPeriod,
+  type GGovPeriodShort,
+  type GGovVoteRecord,
+} from './generated/GGovPeriodClient'
 
 // Registry SDK surface.
 export {

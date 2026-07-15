@@ -39,12 +39,12 @@ import {
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
+  errTotalGovsExceeded,
   errTotalMembersOverflow,
   errTotalMembersZero,
   errTotalVotesExceeded,
   errTotalVotesMismatch,
   errTotalVotesZero,
-  errTotalGovsExceeded,
   errUnauthorized,
   errZeroVotes,
 } from '../base/errors.algo'
@@ -54,11 +54,11 @@ import {
   AccountWithVotes,
   CommitteeId,
   CommitteeMetadata,
+  getEmptyCommitteeMetadata,
+  getEmptyGGovPeriodSummary,
   GGovDelegationCleared,
   GGovDelegationSet,
   GGovPeriodSummary,
-  getEmptyCommitteeMetadata,
-  getEmptyGGovPeriodSummary,
 } from '../base/types.algo'
 import { ensure, ensureExtra, u16, u32 } from '../base/utils.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
@@ -280,7 +280,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.ensureCallerIsAdmin()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
+    ensure(receiver !== Global.zeroAddress, errUnauthorized) // TODO Remove incl tests
     itxn.payment({ receiver, amount }).submit()
   }
 

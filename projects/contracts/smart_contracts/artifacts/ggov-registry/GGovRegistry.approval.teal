@@ -2397,14 +2397,14 @@ withdrawALGO:
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:283
-    // ensure(receiver !== Global.zeroAddress, errUnauthorized)
+    // ensure(receiver !== Global.zeroAddress, errUnauthorized) // TODO Remove incl tests
     global ZeroAddress
     !=
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz withdrawALGO_after_if_else@3
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:283
-    // ensure(receiver !== Global.zeroAddress, errUnauthorized)
+    // ensure(receiver !== Global.zeroAddress, errUnauthorized) // TODO Remove incl tests
     bytec 5 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
     // log(code)
