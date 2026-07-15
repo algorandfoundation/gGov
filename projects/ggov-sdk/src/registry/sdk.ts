@@ -6,8 +6,8 @@ import {
   ConstructorArgs,
   AccountWithVotes,
   SenderWithSigner,
-  CommitteeId,
   GGovCommitteeFile,
+  CommitteeId,
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
 } from './types'
@@ -108,10 +108,8 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   }: Omit<
     GGovRegistryContractArgs['registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void'],
     'committeeId'
-  > & {
-    committeeId: string | Uint8Array
-  } & CommonMethodBuilderArgs) {
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+  > & { committeeId: CommitteeId } & CommonMethodBuilderArgs) {
+    const committeeRaw = committeeIdToRaw(committeeId)
     const { sender, signer } = this.writerAccount!
     builder = builder ?? this.writeClient!.newGroup()
     return builder.registerCommittee({
@@ -127,11 +125,8 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriterWithClient()
   @wrapErrors()
-  makeUnregisterCommitteeTxns({
-    committeeId,
-    builder,
-  }: { committeeId: string | Uint8Array } & CommonMethodBuilderArgs) {
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+  makeUnregisterCommitteeTxns({ committeeId, builder }: { committeeId: CommitteeId } & CommonMethodBuilderArgs) {
+    const committeeRaw = committeeIdToRaw(committeeId)
     const { sender, signer } = this.writerAccount!
     builder = builder ?? this.writeClient!.newGroup()
     return builder.unregisterCommittee({
@@ -151,9 +146,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     committeeId,
     govs,
     builder,
-  }: { committeeId: string | Uint8Array; govs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
+  }: { committeeId: CommitteeId; govs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+    const committeeRaw = committeeIdToRaw(committeeId)
     builder = builder ?? this.writeClient!.newGroup()
     const govChunks = chunk(govs, 8)
     if (govChunks.length > 15) {
@@ -249,19 +244,44 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   })
 
   /**
-   * Delete the GGovRegistry app. Admin-only (the contract's deleteApplication baremethod
-   * checks the caller is the admin directly — no inner call). On deletion the AVM closes the
-   * registry app account and sends its residual ALGO to the deleting sender, so withdraw any
-   * meaningful balance first.
+   * Update the `GGovRegistry` app's program to the build exported by this `ggov-sdk`  version.
+   * Admin-only. The write client compiles the current approval/clear programs from its embedded
+   * app spec, so the on-chain code is replaced with the version bundled here.
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+  makeUpdateApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    builder = builder.update.bare({ note })
     return builder
   }
 
+  updateApplication = this.makeTxnExecutor({
+    maker: this.makeUpdateApplicationTxns,
+  })
+
+  /**
+   * Delete the `GGovRegistry` app. Admin-only.
+   *
+   * WARNING: unlike {@link GGovSDK.deletePeriodApp}, this does NOT return the app's balance or
+   * clean up its boxes — the contract's `deleteApplication` is just an admin check, nothing else.
+   * The whole balance (base MBR, any boxes' MBR, plus any other funds) becomes permanently unreachable
+   * once the app is deleted, and any live delegations or period summaries are orphaned. See contract's
+   * `deleteApplication` baremethod for details.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeDeleteApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.delete.bare({ note })
+    return builder
+  }
+
+  /**
+   * Delete the `GGovRegistry` app. Admin-only.
+   *
+   * See {@link makeDeleteApplicationTxns} for important admin/MBR-recovery caveats.
+   */
   deleteApplication = this.makeTxnExecutor({
     maker: this.makeDeleteApplicationTxns,
   })
@@ -273,10 +293,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     govs,
     builder,
   }: Omit<GGovRegistryContractArgs['uningestGovs(byte[32],address[])void'], 'committeeId'> & {
-    committeeId: string | Uint8Array
+    committeeId: CommitteeId
   } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+    const committeeRaw = committeeIdToRaw(committeeId)
     builder = builder ?? this.writeClient!.newGroup()
     return builder.uningestGovs({
       args: { committeeId: committeeRaw, govs },
@@ -301,7 +321,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     committeeId,
     accounts,
   }: {
-    committeeId: string | Uint8Array
+    committeeId: CommitteeId
     accounts: string[]
   }): Promise<void> {
     const metadata = await this.getCommitteeMetadata(committeeId)
@@ -390,10 +410,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     data,
     note,
     builder,
-  }: {
-    startOffset: bigint | number
-    data: Uint8Array
-  } & CommonMethodBuilderArgs) {
+  }: GGovRegistryContractArgs['uploadPeriodApprovalPartial(uint64,byte[])void'] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
     return builder.uploadPeriodApprovalPartial({
       args: { startOffset, data },
@@ -447,10 +464,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     mbrAmount,
     note,
     builder,
-  }: {
+  }: Omit<
+    GGovRegistryContractArgs['createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)'],
+    'committeeId' | 'mbrPayment'
+  > & {
     committeeId: CommitteeId
-    votingStart: bigint | number
-    votingEnd: bigint | number
     mbrAmount?: bigint | number
   } & CommonMethodBuilderArgs) {
     const writer = this.writerAccount!

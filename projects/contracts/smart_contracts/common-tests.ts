@@ -4,9 +4,7 @@ import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing
 import { Account, Address } from 'algosdk'
 import { FracDelegationSDK, FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import { calculateCommitteeId, GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
-import { XGovDelegatorSDK } from 'xgov-delegator-sdk'
 import committeeTemplate from '../../common/committee-files/template.json'
-import { DelegatorFactory } from './artifacts/delegator/DelegatorClient'
 import { XGovProposalMockClient, XGovProposalMockComposer } from './artifacts/xgov-proposal-mock/XGovProposalMockClient'
 import { XGovRegistryMockFactory } from './artifacts/xgov-registry-mock/XGovRegistryMockClient'
 import { STATUS_SUBMITTED } from './xgov-proposal-mock/xGovProposalMock.algo'
@@ -326,106 +324,4 @@ export const deployXGovMocksAndRegistry = async (localnet: AlgorandFixture, admi
   await proposalConfigPromise
 
   return { registryAppClient, proposalAppClient, ggovRegistrySDK, committee, govs: xGovs }
-}
-
-// --------------------------------------------------------------------
-// LEGACY DELEGATOR
-// --------------------------------------------------------------------
-
-export const deployDelegatorFull = async (
-  localnet: AlgorandFixture,
-  adminAccount: Address,
-  numGovs: number,
-  numSugDelegators: number,
-) => {
-  const { proposalAppClient, registryAppClient, ggovRegistrySDK, committee, govs } = await deployXGovMocksAndRegistry(
-    localnet,
-    adminAccount,
-    numGovs,
-  )
-  const { adminSDK, userSDK } = await deployDelegatorSimple(localnet, adminAccount, govs[0])
-
-  await adminSDK.setCommitteeOracleApp({ appId: ggovRegistrySDK.appId })
-
-  const subDelegators = await Promise.all(
-    Array.from({ length: numSugDelegators }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
-  )
-
-  await Promise.all([
-    adminSDK.addAccountAlgoHours({
-      accountAlgohours: subDelegators.map((account) => ({ account: account.toString(), algoHours: 100n })),
-      periodStart: committee.periodStart,
-    }),
-    adminSDK.addAccountAlgoHours({
-      accountAlgohours: subDelegators.map((account) => ({ account: account.toString(), algoHours: 100n })),
-      periodStart: committee.periodStart + 1_000_000,
-    }),
-    adminSDK.addAccountAlgoHours({
-      accountAlgohours: subDelegators.map((account) => ({ account: account.toString(), algoHours: 100n })),
-      periodStart: committee.periodStart + 2_000_000,
-    }),
-  ])
-
-  await Promise.all(
-    Array.from({ length: 3 }, (_, idx) =>
-      adminSDK.updateAlgoHourPeriodFinality({
-        periodStart: committee.periodStart + idx * 1_000_000,
-        final: true,
-        totalAlgohours: BigInt(subDelegators.length * 100),
-      }),
-    ),
-  )
-
-  return {
-    delegatorAdminSDK: adminSDK,
-    delegatorUserSDK: userSDK,
-    ggovRegistrySDK,
-    registryAppClient,
-    proposalAppClient,
-    committee,
-    govs,
-    subDelegators,
-  }
-}
-
-export const deployDelegatorSimple = async (
-  localnet: AlgorandFixture,
-  adminAccount: Address,
-  userAccount?: Address,
-) => {
-  const factory = localnet.algorand.client.getTypedAppFactory(DelegatorFactory, {
-    defaultSender: adminAccount,
-  })
-
-  const { appClient } = await factory.deploy({
-    onUpdate: 'append',
-    onSchemaBreak: 'append',
-  })
-
-  await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (10).algos())
-
-  const sender = adminAccount
-  const signer = localnet.algorand.account.getSigner(sender)
-
-  const retVal: { client: typeof appClient; adminSDK: XGovDelegatorSDK; userSDK?: XGovDelegatorSDK } = {
-    client: appClient,
-    adminSDK: new XGovDelegatorSDK({
-      algorand: localnet.algorand,
-      delegatorAppId: appClient.appId,
-      writerAccount: { sender, signer },
-      debug: false,
-    }),
-  }
-
-  if (userAccount) {
-    const userSigner = localnet.algorand.account.getSigner(userAccount)
-    retVal.userSDK = new XGovDelegatorSDK({
-      algorand: localnet.algorand,
-      delegatorAppId: appClient.appId,
-      writerAccount: { sender: userAccount, signer: userSigner },
-      debug: false,
-    })
-  }
-
-  return retVal
 }

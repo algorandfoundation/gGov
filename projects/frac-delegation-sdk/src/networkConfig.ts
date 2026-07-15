@@ -4,7 +4,7 @@ export const defaultReaderAccount = 'A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGR
 
 const networkConfigs: Record<Network, { registryAppId: bigint; readerAccount: string }> = {
   localnet: {
-    registryAppId: 0n, // TODO: set when a deterministic localnet deploy exists
+    registryAppId: 1008n,
     readerAccount: defaultReaderAccount,
   },
   testnet: {

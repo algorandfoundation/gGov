@@ -242,19 +242,35 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   // ── Admin: lifecycle ────────────────────────────────────────────
 
   /**
-   * Delete the `FracDelegationInstance` app. Admin-only (the resolved admin, i.e. the
-   * registry's `admin`). On deletion the AVM closes the instance app account and sends its
-   * residual ALGO to the deleting sender, so withdraw any meaningful balance first.
+   * Update a deployed instance app program to the `FracDelegationInstance` build exported by this
+   * `frac-delegation-sdk` version. The instance write client compiles the current approval/clear
+   * programs from its embedded app spec, so the on-chain code is replaced with the version bundled
+   * here. Admin-only (the resolved admin, i.e. the registry's `admin`).
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteApplicationTxns({ builder }: InstanceMethodBuilderArgs) {
+  makeUpdateInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    return builder.update.bare({ note })
+  }
+
+  updateInstanceApp = this.makeTxnExecutor({
+    maker: this.makeUpdateInstanceAppTxns,
+  })
+
+  /** Delete the `FracDelegationInstance` app. Admin-only. */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeDeleteInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
+    // TODO: recover MBR and clean up boxes once the contract supports it — see the TODO on the
+    // contract's deleteApplication baremethod. Reference: GGovSDK.deletePeriodApp() in
+    // ggov-sdk/src/period/sdk.ts (enumerates boxes, deletes them in pages, then closes out).
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.delete.bare({ note })
     return builder
   }
 
-  deleteApplication = this.makeTxnExecutor({
-    maker: this.makeDeleteApplicationTxns,
+  deleteInstanceApp = this.makeTxnExecutor({
+    maker: this.makeDeleteInstanceAppTxns,
   })
 }

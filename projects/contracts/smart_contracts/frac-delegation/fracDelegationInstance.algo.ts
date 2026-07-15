@@ -441,5 +441,11 @@ export class FracDelegationInstanceContract extends BaseContract {
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.ensureCallerIsAdmin()
+    // TODO: delete boxes to recover their MBR. Fixed-key boxes can be deleted inline; for any
+    // unbounded boxmap, add a batch delete method the SDK can page-drain before this call.
+    // See GGovPeriodContract.deleteApplication() for a reference implementation.
+
+    // Close out all escrow balance to caller
+    // itxn.payment({ receiver: Txn.sender, amount: 0, closeRemainderTo: Txn.sender }).submit()
   }
 }
