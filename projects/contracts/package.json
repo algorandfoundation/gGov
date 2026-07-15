@@ -17,7 +17,7 @@
     "test:watch": "vitest watch",
     "sync-clock": "tsx scripts/sync-localnet-clock.ts",
     "check-clients": "tsx scripts/check-generated-clients.ts",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit && tsc -p scripts/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@algorandfoundation/algorand-typescript": "^1.1.0",
