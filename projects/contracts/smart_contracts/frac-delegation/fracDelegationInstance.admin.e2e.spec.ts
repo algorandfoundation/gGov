@@ -1,7 +1,7 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { FracDelegationInstanceFactory, FracDelegationInstanceSDK } from 'frac-delegation-sdk'
+import { FracDelegationInstanceFactory, FracDelegationSDK } from 'frac-delegation-sdk'
 import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
 import {
   createFracInstanceSDK,
@@ -134,9 +134,9 @@ describe('FracDelegationInstance admin', () => {
 
   // Auth
   describe('admin auth', () => {
-    let sdk: FracDelegationInstanceSDK
+    let sdk: FracDelegationSDK
     let nonAdmin: Awaited<ReturnType<typeof localnet.context.generateAccount>>
-    let nonAdminSDK: FracDelegationInstanceSDK
+    let nonAdminSDK: FracDelegationSDK
 
     beforeAll(async () => {
       await localnet.newScope()

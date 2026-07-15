@@ -6,7 +6,7 @@ import { SIMULATE_PARAMS } from '../util/increaseBudget'
 import { errorTransformer } from '../util/wrapErrors'
 import { InstanceReaderConstructorArgs } from './types'
 
-export class FracDelegationInstanceReaderSDK {
+export class FracDelegationReaderSDK {
   static APP_SPEC = APP_SPEC
 
   public algorand: AlgorandClient
