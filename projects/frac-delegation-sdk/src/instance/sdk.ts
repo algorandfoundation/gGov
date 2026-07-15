@@ -9,6 +9,7 @@ import { requireWriterWithClient } from '../util/requiresSender'
 import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
+import { committeeIdToRaw } from '../util/comitteeId'
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -104,6 +105,42 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
 
   registerEscrow = this.makeTxnExecutor({
     maker: this.makeRegisterEscrowTxns,
+  })
+
+  // ── Committees ───────────────────────────────────────────────────
+
+  /**
+   * Sync the instance's snapshot of gGov committee `committeeId` from the gGov registry
+   * (resolved from the frac registry's `gGovRegistryApp`). Operator only.
+   *
+   * Rebuilds `committees(committeeId)` from scratch, so it is safe to re-run after more escrows
+   * are registered. The gGov registry app and the boxes both apps touch are resolved
+   * automatically via resource population; the instance app account pays the box MBR, which
+   * grows with the escrow count.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async makeSyncCommitteeTxns({
+    committeeId,
+    note,
+    builder,
+  }: Omit<FracDelegationInstanceContractArgs['syncCommittee(byte[32])(uint16,uint32[],uint32)'], 'committeeId'> & {
+    /** 32-byte committee ID, raw bytes or base64 */
+    committeeId: Uint8Array | string
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    // extraFee covers the inner calls to the gGov registry: one getCommitteeMetadata, plus one
+    // tryGetGovVotingPower per registered escrow.
+    const innerCalls = 1 + (await this.getEscrows()).length
+    return builder.syncCommittee({
+      args: { committeeId: committeeIdToRaw(committeeId) },
+      note,
+      extraFee: (innerCalls * 1000).microAlgo(),
+    })
+  }
+
+  syncCommittee = this.makeTxnExecutor({
+    maker: this.makeSyncCommitteeTxns,
   })
 
   // ── Admin: lifecycle ────────────────────────────────────────────

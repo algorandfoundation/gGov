@@ -524,7 +524,6 @@ export class GGovPeriodContract extends BaseContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.checkAdminCaller()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
     itxn.payment({ receiver, amount }).submit()
   }
 
