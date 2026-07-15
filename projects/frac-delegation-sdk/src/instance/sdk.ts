@@ -128,12 +128,12 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   /** Delete the `FracDelegationInstance` app. Admin-only. */
   @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteInstanceAppTxns({ builder }: InstanceMethodBuilderArgs) {
+  makeDeleteInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
     // TODO: recover MBR and clean up boxes once the contract supports it — see the TODO on the
     // contract's deleteApplication baremethod. Reference: GGovSDK.deletePeriodApp() in
     // ggov-sdk/src/period/sdk.ts (enumerates boxes, deletes them in pages, then closes out).
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    builder = builder.delete.bare({ note })
     return builder
   }
 

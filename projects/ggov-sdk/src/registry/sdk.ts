@@ -250,9 +250,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeUpdateApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+  makeUpdateApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.update.bare({})
+    builder = builder.update.bare({ note })
     return builder
   }
 
@@ -271,9 +271,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+  makeDeleteApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    builder = builder.delete.bare({ note })
     return builder
   }
 

@@ -142,9 +142,9 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeUpdateApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+  makeUpdateApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.update.bare({})
+    builder = builder.update.bare({ note })
     return builder
   }
 

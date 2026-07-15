@@ -1,6 +1,7 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { getABIDecodedValue } from '@algorandfoundation/algokit-utils/types/app-arc56'
 import { encodeAddress, makeEmptyTransactionSigner } from 'algosdk'
+import pMap from 'p-map'
 import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
@@ -155,10 +156,10 @@ export class FracDelegationRegistryReaderSDK {
   /** Wrap `getInstances()` and filter to instances whose app still exists on-chain. */
   async getExistingInstances(): Promise<Map<number, FracInstance>> {
     const instances = await this.getInstances()
-    const entries = await Promise.all(
-      [...instances].map(async ([id, instance]) =>
-        (await this.instanceAppExists(instance.appId)) ? ([id, instance] as const) : null,
-      ),
+    const entries = await pMap(
+      [...instances],
+      async ([id, instance]) => ((await this.instanceAppExists(instance.appId)) ? ([id, instance] as const) : null),
+      { concurrency: this.concurrency },
     )
     return new Map(entries.filter((entry): entry is readonly [number, FracInstance] => entry !== null))
   }
