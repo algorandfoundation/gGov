@@ -36,11 +36,6 @@ const CLIENT_PAIRS: ClientPair[] = [
     contract: resolve(contractsRoot, 'smart_contracts/artifacts/ggov-period/GGovPeriodClient.ts'),
     sdk: resolve(projectsRoot, 'ggov-sdk/src/generated/GGovPeriodClient.ts'),
   },
-  // {
-  //   name: 'DelegatorClient',
-  //   contract: resolve(contractsRoot, 'smart_contracts/artifacts/delegator/DelegatorClient.ts'),
-  //   sdk: resolve(projectsRoot, 'delegator-sdk/src/generated/DelegatorClient.ts'),
-  // },
 ]
 
 const REBUILD_HINT = [

@@ -14,9 +14,6 @@
       "path": "./projects/ggov-sdk",
     },
     {
-      "path": "./projects/delegator-sdk",
-    },
-    {
       "path": "./projects/common",
     },
   ],

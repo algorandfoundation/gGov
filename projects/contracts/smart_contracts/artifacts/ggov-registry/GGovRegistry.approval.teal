@@ -225,22 +225,22 @@ getEmptyCommitteeMetadata:
 
 // smart_contracts/base/types.algo.ts::getEmptyGGovPeriodSummary() -> bytes:
 getEmptyGGovPeriodSummary:
-    // smart_contracts/base/types.algo.ts:160
+    // smart_contracts/base/types.algo.ts:94
     // votingStart: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:161
+    // smart_contracts/base/types.algo.ts:95
     // votingEnd: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:162
+    // smart_contracts/base/types.algo.ts:96
     // numTopics: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:159
+    // smart_contracts/base/types.algo.ts:93
     // appId: 0,
     intc_0 // 0
-    // smart_contracts/base/types.algo.ts:158-164
+    // smart_contracts/base/types.algo.ts:92-98
     // return {
     //   appId: 0,
     //   votingStart: u32(0),
