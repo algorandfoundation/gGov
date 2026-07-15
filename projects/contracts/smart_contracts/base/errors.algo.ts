@@ -46,8 +46,6 @@ export const errXGovProposalVoteOpenTsMissing = 'ERR:XGVOM' // Vote open timesta
 export const errXGovProposalVotingDurationMissing = 'ERR:XGVDM' // Voting duration missing from proposal. This should never happen.
 export const errXGovProposalStatusMissing = 'ERR:XGSM' // Status missing from proposal. This should never happen.
 
-export const errProposalExists = 'ERR:P_EX' // Proposal already exists in delegator
-export const errProposalNotExists = 'ERR:P_NX' // Proposal does not exist in delegator
 export const errProposalCancelled = 'ERR:P_C' // Proposal has been cancelled
 export const errEarly = 'ERR:EAR' // Too early to perform this action
 export const errLate = 'ERR:LAT' // Too late to perform this action

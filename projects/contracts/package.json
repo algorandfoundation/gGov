@@ -17,14 +17,13 @@
     "test:watch": "vitest watch",
     "sync-clock": "tsx scripts/sync-localnet-clock.ts",
     "check-clients": "tsx scripts/check-generated-clients.ts",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit && tsc -p scripts/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@algorandfoundation/algorand-typescript": "^1.1.0",
     "@d13co/superbox": "^2.0.0",
     "frac-delegation-sdk": "link:../frac-delegation-sdk",
-    "ggov-sdk": "link:../ggov-sdk",
-    "xgov-delegator-sdk": "link:../delegator-sdk"
+    "ggov-sdk": "link:../ggov-sdk"
   },
   "devDependencies": {
     "@algorandfoundation/algokit-client-generator": "^6.0.0",

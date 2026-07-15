@@ -2993,18 +2993,18 @@ getPeriod:
     app_global_get_ex
     assert // check GlobalState exists
     bnz getPeriod_after_if_else@3
-    // smart_contracts/base/types.algo.ts:224
+    // smart_contracts/base/types.algo.ts:158
     // votingStart: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:225
+    // smart_contracts/base/types.algo.ts:159
     // votingEnd: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:223
+    // smart_contracts/base/types.algo.ts:157
     // committeeId: new StaticBytes<32>(),
     pushbytes 0x0000000000000000000000000000000000000000000000000000000000000000
-    // smart_contracts/base/types.algo.ts:222-227
+    // smart_contracts/base/types.algo.ts:156-161
     // return {
     //   committeeId: new StaticBytes<32>(),
     //   votingStart: u32(0),
@@ -3465,7 +3465,7 @@ getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GG
     return
 
 getVotingRecord_after_if_else@3:
-    // smart_contracts/base/types.algo.ts:231-234
+    // smart_contracts/base/types.algo.ts:165-168
     // return {
     //   isDelegated: false,
     //   topicVotes: [] as Uint32[][],
