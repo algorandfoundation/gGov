@@ -31,8 +31,8 @@ describe('GGovRegistry readers', () => {
         expect(registryAccount!.accountId).toBeGreaterThan(0)
         // should have exactly one committee offset entry
         expect(registryAccount!.committeeOffsets).toHaveLength(1)
-        // committee numericId should be 0 (first committee)
-        expect(registryAccount!.committeeOffsets[0][0]).toBe(0)
+        // committee numericId should be 1 (first committee; ids start at 1, 0 means "none")
+        expect(registryAccount!.committeeOffsets[0][0]).toBe(1)
       }
     })
 
@@ -57,9 +57,9 @@ describe('GGovRegistry readers', () => {
       expect(registryAccount!.accountId).toBeGreaterThan(0)
       expect(registryAccount!.committeeOffsets).toHaveLength(2)
 
-      // numericId 0 = first committee, numericId 1 = second committee
+      // numericId 1 = first committee, numericId 2 = second committee
       const numericIds = registryAccount!.committeeOffsets.map(([cId]) => cId).sort()
-      expect(numericIds).toEqual([0, 1])
+      expect(numericIds).toEqual([1, 2])
     })
   })
 
