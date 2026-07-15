@@ -1,10 +1,15 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { makeEmptyTransactionSigner } from 'algosdk'
-import { FracDelegationInstanceClient, APP_SPEC } from '../generated/FracDelegationInstanceClient'
+import {
+  FracDelegationInstanceClient,
+  APP_SPEC,
+  FracInstanceCommittee,
+} from '../generated/FracDelegationInstanceClient'
 import { defaultReaderAccount } from '../networkConfig'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
 import { errorTransformer } from '../util/wrapErrors'
 import { undefinedIfBoxMissing } from '../util/boxes'
+import { committeeIdToRaw } from '../util/comitteeId'
 import { InstanceReaderConstructorArgs } from './types'
 
 export class FracDelegationReaderSDK {
@@ -56,6 +61,14 @@ export class FracDelegationReaderSDK {
     // The box only exists once the first escrow is registered; treat "not found" as empty.
     const escrows = await undefinedIfBoxMissing(() => this.readClient.state.box.escrows())
     return escrows ?? []
+  }
+
+  /**
+   * This instance's synced snapshot of a gGov committee, or undefined if `syncCommittee` has
+   * never been run for it. `escrowsVotes` is index-synced with `getEscrows()`.
+   */
+  async getCommittee(committeeId: Uint8Array | string): Promise<FracInstanceCommittee | undefined> {
+    return undefinedIfBoxMissing(() => this.readClient.state.box.committees.value(committeeIdToRaw(committeeId)))
   }
 
   /** Read all instance global state, plus the current network round. */
