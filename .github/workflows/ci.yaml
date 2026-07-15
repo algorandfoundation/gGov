@@ -139,7 +139,7 @@ jobs:
           fi
 
       - name: Build SDKs
-        run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk' --project-name 'delegator-sdk'
+        run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
 
       - name: Typecheck
         run: algokit project run typecheck
@@ -196,7 +196,7 @@ jobs:
         run: pipx install algokit
 
       - name: Build SDKs
-        run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk' --project-name 'delegator-sdk'
+        run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
 
       - name: Start LocalNet
         run: algokit localnet start

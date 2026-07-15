@@ -2993,18 +2993,18 @@ getPeriod:
     app_global_get_ex
     assert // check GlobalState exists
     bnz getPeriod_after_if_else@3
-    // smart_contracts/base/types.algo.ts:232
+    // smart_contracts/base/types.algo.ts:166
     // votingStart: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:233
+    // smart_contracts/base/types.algo.ts:167
     // votingEnd: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:231
+    // smart_contracts/base/types.algo.ts:165
     // committeeId: new StaticBytes<32>(),
     bytec 24 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // smart_contracts/base/types.algo.ts:230-235
+    // smart_contracts/base/types.algo.ts:164-169
     // return {
     //   committeeId: new StaticBytes<32>(),
     //   votingStart: u32(0),
@@ -3237,18 +3237,18 @@ getPeriodShort:
     app_global_get_ex
     assert // check GlobalState exists
     bnz getPeriodShort_after_if_else@3
-    // smart_contracts/base/types.algo.ts:241
+    // smart_contracts/base/types.algo.ts:175
     // votingStart: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:242
+    // smart_contracts/base/types.algo.ts:176
     // votingEnd: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:240
+    // smart_contracts/base/types.algo.ts:174
     // committeeId: new StaticBytes<32>(),
     bytec 24 // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // smart_contracts/base/types.algo.ts:239-244
+    // smart_contracts/base/types.algo.ts:173-178
     // return {
     //   committeeId: new StaticBytes<32>(),
     //   votingStart: u32(0),
@@ -3641,7 +3641,7 @@ getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GG
     return
 
 getVotingRecord_after_if_else@3:
-    // smart_contracts/base/types.algo.ts:248-251
+    // smart_contracts/base/types.algo.ts:182-185
     // return {
     //   isDelegated: false,
     //   topicVotes: [] as Uint32[][],

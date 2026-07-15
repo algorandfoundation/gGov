@@ -9,6 +9,7 @@ import { requireWriterWithClient } from '../util/requiresSender'
 import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
+import { committeeIdToRaw } from '../util/comitteeId'
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -106,22 +107,74 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     maker: this.makeRegisterEscrowTxns,
   })
 
-  // ── Admin: lifecycle ────────────────────────────────────────────
+  // ── Committees ───────────────────────────────────────────────────
 
   /**
-   * Delete the `FracDelegationInstance` app. Admin-only (the resolved admin, i.e. the
-   * registry's `admin`). On deletion the AVM closes the instance app account and sends its
-   * residual ALGO to the deleting sender, so withdraw any meaningful balance first.
+   * Sync the instance's snapshot of gGov committee `committeeId` from the gGov registry
+   * (resolved from the frac registry's `gGovRegistryApp`). Operator only.
+   *
+   * Rebuilds `committees(committeeId)` from scratch, so it is safe to re-run after more escrows
+   * are registered. The gGov registry app and the boxes both apps touch are resolved
+   * automatically via resource population; the instance app account pays the box MBR, which
+   * grows with the escrow count.
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteApplicationTxns({ builder }: InstanceMethodBuilderArgs) {
+  async makeSyncCommitteeTxns({
+    committeeId,
+    note,
+    builder,
+  }: Omit<FracDelegationInstanceContractArgs['syncCommittee(byte[32])(uint16,uint32[],uint32)'], 'committeeId'> & {
+    /** 32-byte committee ID, raw bytes or base64 */
+    committeeId: Uint8Array | string
+  } & InstanceMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    // extraFee covers the inner calls to the gGov registry: one getCommitteeMetadata, plus one
+    // tryGetGovVotingPower per registered escrow.
+    const innerCalls = 1 + (await this.getEscrows()).length
+    return builder.syncCommittee({
+      args: { committeeId: committeeIdToRaw(committeeId) },
+      note,
+      extraFee: (innerCalls * 1000).microAlgo(),
+    })
+  }
+
+  syncCommittee = this.makeTxnExecutor({
+    maker: this.makeSyncCommitteeTxns,
+  })
+
+  // ── Admin: lifecycle ────────────────────────────────────────────
+
+  /**
+   * Update a deployed instance app program to the `FracDelegationInstance` build exported by this
+   * `frac-delegation-sdk` version. The instance write client compiles the current approval/clear
+   * programs from its embedded app spec, so the on-chain code is replaced with the version bundled
+   * here. Admin-only (the resolved admin, i.e. the registry's `admin`).
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeUpdateInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    return builder.update.bare({ note })
+  }
+
+  updateInstanceApp = this.makeTxnExecutor({
+    maker: this.makeUpdateInstanceAppTxns,
+  })
+
+  /** Delete the `FracDelegationInstance` app. Admin-only. */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeDeleteInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
+    // TODO: recover MBR and clean up boxes once the contract supports it — see the TODO on the
+    // contract's deleteApplication baremethod. Reference: GGovSDK.deletePeriodApp() in
+    // ggov-sdk/src/period/sdk.ts (enumerates boxes, deletes them in pages, then closes out).
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.delete.bare({ note })
     return builder
   }
 
-  deleteApplication = this.makeTxnExecutor({
-    maker: this.makeDeleteApplicationTxns,
+  deleteInstanceApp = this.makeTxnExecutor({
+    maker: this.makeDeleteInstanceAppTxns,
   })
 }

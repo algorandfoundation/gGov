@@ -39,8 +39,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:XGVOM": "Vote open timestamp missing from proposal. This should never happen.",
   "ERR:XGVDM": "Voting duration missing from proposal. This should never happen.",
   "ERR:XGSM": "Status missing from proposal. This should never happen.",
-  "ERR:P_EX": "Proposal already exists in delegator",
-  "ERR:P_NX": "Proposal does not exist in delegator",
   "ERR:P_C": "Proposal has been cancelled",
   "ERR:EAR": "Too early to perform this action",
   "ERR:LAT": "Too late to perform this action",
@@ -70,5 +68,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GD_EX": "Delegation already exists for account",
   "ERR:FI_NC": "Instance approval program not yet uploaded to registry",
   "ERR:FI_NX": "Instance does not exist",
-  "ERR:FE_AS": "Escrow account is already assigned to an instance"
+  "ERR:FE_AS": "Escrow account is already assigned to an instance",
+  "ERR:FE_NX": "Instance has no registered escrows"
 };

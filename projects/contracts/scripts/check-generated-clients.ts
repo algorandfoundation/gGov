@@ -27,6 +27,16 @@ interface ClientPair {
 
 const CLIENT_PAIRS: ClientPair[] = [
   {
+    name: 'FracDelegationRegistryClient',
+    contract: resolve(contractsRoot, 'smart_contracts/artifacts/frac-delegation/FracDelegationRegistryClient.ts'),
+    sdk: resolve(projectsRoot, 'frac-delegation-sdk/src/generated/FracDelegationRegistryClient.ts'),
+  },
+  {
+    name: 'FracDelegationInstanceClient',
+    contract: resolve(contractsRoot, 'smart_contracts/artifacts/frac-delegation/FracDelegationInstanceClient.ts'),
+    sdk: resolve(projectsRoot, 'frac-delegation-sdk/src/generated/FracDelegationInstanceClient.ts'),
+  },
+  {
     name: 'GGovRegistryClient',
     contract: resolve(contractsRoot, 'smart_contracts/artifacts/ggov-registry/GGovRegistryClient.ts'),
     sdk: resolve(projectsRoot, 'ggov-sdk/src/generated/GGovRegistryClient.ts'),
@@ -36,16 +46,12 @@ const CLIENT_PAIRS: ClientPair[] = [
     contract: resolve(contractsRoot, 'smart_contracts/artifacts/ggov-period/GGovPeriodClient.ts'),
     sdk: resolve(projectsRoot, 'ggov-sdk/src/generated/GGovPeriodClient.ts'),
   },
-  // {
-  //   name: 'DelegatorClient',
-  //   contract: resolve(contractsRoot, 'smart_contracts/artifacts/delegator/DelegatorClient.ts'),
-  //   sdk: resolve(projectsRoot, 'delegator-sdk/src/generated/DelegatorClient.ts'),
-  // },
 ]
 
 const REBUILD_HINT = [
   'Rebuild the contracts and SDKs so the generated clients match:',
   '  pnpm --filter smart_contracts build',
+  '  pnpm --filter frac-delegation-sdk build',
   '  pnpm --filter ggov-sdk build',
 ].join('\n')
 

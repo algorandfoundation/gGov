@@ -1,8 +1,10 @@
 import {
   abimethod,
   Account,
+  Application,
   baremethod,
   Box,
+  BoxMap,
   Bytes,
   clone,
   contract,
@@ -13,10 +15,12 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
-import { Uint16 } from '@algorandfoundation/algorand-typescript/arc4'
+import { compileArc4, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
-import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
-import { ensure } from '../base/utils.algo'
+import { errCommitteeNotExists, errNoEscrows, errRegistryMissing, errUnauthorized } from '../base/errors.algo'
+import { CommitteeId, FracInstanceCommittee } from '../base/types.algo'
+import { ensure, u32 } from '../base/utils.algo'
+import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
 
 /**
  * Fractional Delegation Instance: per-protocol delegation contract.
@@ -39,6 +43,12 @@ export class FracDelegationInstanceContract extends BaseContract {
    * of this list in its per-instance `numEscrows` counter for cheap off-chain reads.
    */
   escrows = Box<Account[]>({ key: 'escrows' })
+  /**
+   * Per-committee snapshot of escrow voting power, synced from the gGov registry by
+   * `syncCommittee`. Keyed by the 32-byte committee ID under the `c` prefix, matching the
+   * gGov registry's own committees BoxMap.
+   */
+  committees = BoxMap<CommitteeId, FracInstanceCommittee>({ keyPrefix: 'c' })
 
   // ── Create ────────────────────────────────────────────────────────
 
@@ -90,6 +100,16 @@ export class FracDelegationInstanceContract extends BaseContract {
   /** Caller must match the resolved operator. */
   protected ensureCallerIsOperator(): void {
     ensure(Txn.sender === this.resolveOperator(), errUnauthorized)
+  }
+
+  /**
+   * gGov registry app to read committee data from, resolved from the registry's
+   * `gGovRegistryApp` global state. Throws if the registry has not configured one yet.
+   */
+  protected resolveGGovRegistryApp(): Application {
+    const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, Bytes`gGovRegistryApp`)
+    ensure(exists && appId > 0, errRegistryMissing)
+    return Application(appId)
   }
 
   /** Caller must be the configured registry application (inner app call). */
@@ -172,6 +192,66 @@ export class FracDelegationInstanceContract extends BaseContract {
     this.escrows.value = clone(escrows)
   }
 
+  // ── Committees ────────────────────────────────────────────────────
+
+  /**
+   * Sync this instance's view of gGov committee `committeeId` from the gGov registry
+   * (resolved from the frac registry's `gGovRegistryApp`). Operator only.
+   *
+   * Reads each registered escrow's voting power in the committee and writes the result to
+   * `committees(committeeId)`: `escrowsVotes` index-synced with the `escrows` box, plus their sum
+   * as `totalVotes`. Idempotent and safe to re-run — the box is rebuilt from scratch on every call,
+   * so re-syncing after more escrows are registered picks the new ones up (and refreshes the
+   * existing entries). Escrows are read with the non-throwing `tryGetGovVotingPower`, so an
+   * escrow that is not a member of the committee simply contributes 0 rather than blocking
+   * the whole sync.
+   *
+   * Requires at least one registered escrow, and requires the committee to be fully ingested on
+   * the gGov registry (`mustBeComplete`), so a snapshot is never taken against a half-ingested
+   * member set. The instance app account pays the box MBR, which grows with the escrow count —
+   * keep it funded.
+   * @param committeeId 32-byte gGov committee ID
+   * @returns The synced committee record
+   */
+  public syncCommittee(committeeId: CommitteeId): FracInstanceCommittee {
+    this.ensureCallerIsOperator()
+    const gGovRegistryAppId = this.resolveGGovRegistryApp()
+
+    // Nothing to snapshot without escrows. Checked before the first inner call so the failure
+    // costs nothing, and so an empty record can never be written.
+    const escrows = this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
+    ensure(escrows.length > 0, errNoEscrows)
+
+    const gGovRegistry = compileArc4(GGovRegistryContract)
+
+    // An unknown committee returns empty metadata rather than throwing; numericId 0 is never
+    // assigned by the registry, so it marks "no such committee".
+    const committeeMetadata = gGovRegistry.call.getCommitteeMetadata({
+      appId: gGovRegistryAppId,
+      args: [committeeId, true],
+    }).returnValue
+    ensure(committeeMetadata.numericId.asUint64() > 0, errCommitteeNotExists)
+
+    const escrowsVotes: Uint32[] = []
+    let totalVotes: uint64 = 0
+    for (const escrow of escrows) {
+      const votes = gGovRegistry.call.tryGetGovVotingPower({
+        appId: gGovRegistryAppId,
+        args: [committeeId, escrow],
+      }).returnValue
+      escrowsVotes.push(votes)
+      totalVotes += votes.asUint64()
+    }
+
+    const committee: FracInstanceCommittee = {
+      committeeNumId: committeeMetadata.numericId,
+      escrowsVotes: clone(escrowsVotes),
+      totalVotes: u32(totalVotes),
+    }
+    this.committees(committeeId).value = clone(committee)
+    return committee
+  }
+
   // ── Admin: lifecycle ──────────────────────────────────────────────
 
   /** App updatable by the resolved admin */
@@ -184,5 +264,11 @@ export class FracDelegationInstanceContract extends BaseContract {
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.ensureCallerIsAdmin()
+    // TODO: delete boxes to recover their MBR. Fixed-key boxes can be deleted inline; for any
+    // unbounded boxmap, add a batch delete method the SDK can page-drain before this call.
+    // See GGovPeriodContract.deleteApplication() for a reference implementation.
+
+    // Close out all escrow balance to caller
+    // itxn.payment({ receiver: Txn.sender, amount: 0, closeRemainderTo: Txn.sender }).submit()
   }
 }

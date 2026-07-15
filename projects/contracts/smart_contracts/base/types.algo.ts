@@ -77,72 +77,6 @@ export type AlgohourPeriodTotals = {
   final: boolean
 }
 
-export type DelegatorCommittee = {
-  periodStart: Uint32
-  periodEnd: Uint32
-  extDelegatedVotes: Uint32
-  extDelegatedAccountVotes: AccountIdWithVotes[]
-}
-
-export function getEmptyDelegatorCommittee(): DelegatorCommittee {
-  return {
-    periodStart: u32(0),
-    periodEnd: u32(0),
-    extDelegatedVotes: u32(0),
-    extDelegatedAccountVotes: [] as AccountIdWithVotes[],
-  }
-}
-
-export type DelegatorProposalStatus = 'WAIT' | 'VOTE' | 'VOTD' | 'CANC'
-
-export type DelegatorProposal = {
-  status: DelegatorProposalStatus
-
-  committeeId: CommitteeId
-
-  extVoteStartTime: Uint32
-  extVoteEndTime: Uint32
-  extTotalVotingPower: Uint32
-  extAccountsPendingVotes: AccountIdWithVotes[]
-  extAccountsVoted: AccountIdWithVotes[]
-
-  intVoteEndTime: Uint32
-
-  intTotalAlgohours: uint64
-  intVotedAlgohours: uint64
-
-  intVotesYesAlgohours: uint64
-  intVotesNoAlgohours: uint64
-  intVotesAbstainAlgohours: uint64
-  intVotesBoycottAlgohours: uint64
-}
-
-export function getEmptyDelegatorProposal(): DelegatorProposal {
-  return {
-    status: '' as DelegatorProposalStatus,
-    committeeId: new StaticBytes<32>(),
-    extVoteStartTime: u32(0),
-    extVoteEndTime: u32(0),
-    extTotalVotingPower: u32(0),
-    extAccountsPendingVotes: [] as AccountIdWithVotes[],
-    extAccountsVoted: [] as AccountIdWithVotes[],
-    intVoteEndTime: u32(0),
-    intTotalAlgohours: 0,
-    intVotedAlgohours: 0,
-    intVotesYesAlgohours: 0,
-    intVotesNoAlgohours: 0,
-    intVotesAbstainAlgohours: 0,
-    intVotesBoycottAlgohours: 0,
-  }
-}
-
-export type DelegatorVote = {
-  yesVotes: uint64
-  noVotes: uint64
-  abstainVotes: uint64
-  boycottVotes: uint64
-}
-
 // gGov types
 
 /** Summary of a period stored on the registry side. Kept in sync by the period contract via updatePeriodSummary. */
@@ -301,4 +235,20 @@ export type FracInstance = {
   numAccounts: uint64
   numEscrows: uint64
   // forgetting one here
+}
+
+/**
+ * A Frac Instance's synced snapshot of one gGov committee, written by `syncCommittee`.
+ *
+ * `escrowsVotes` is index-synced with the instance's `escrows` box: `escrowsVotes[i]` is the gGov
+ * voting power of `escrows[i]` in this committee, and is 0 for an escrow that is not a member.
+ * Because `escrows` is append-only, indexes stay stable across re-syncs.
+ */
+export type FracInstanceCommittee = {
+  /** Committee numeric ID, as assigned by the gGov registry */
+  committeeNumId: Uint16
+  /** gGov voting power per escrow, index-synced with the instance's `escrows` box */
+  escrowsVotes: Uint32[]
+  /** Sum of `escrowsVotes` */
+  totalVotes: Uint32
 }

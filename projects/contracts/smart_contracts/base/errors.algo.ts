@@ -46,8 +46,6 @@ export const errXGovProposalVoteOpenTsMissing = 'ERR:XGVOM' // Vote open timesta
 export const errXGovProposalVotingDurationMissing = 'ERR:XGVDM' // Voting duration missing from proposal. This should never happen.
 export const errXGovProposalStatusMissing = 'ERR:XGSM' // Status missing from proposal. This should never happen.
 
-export const errProposalExists = 'ERR:P_EX' // Proposal already exists in delegator
-export const errProposalNotExists = 'ERR:P_NX' // Proposal does not exist in delegator
 export const errProposalCancelled = 'ERR:P_C' // Proposal has been cancelled
 export const errEarly = 'ERR:EAR' // Too early to perform this action
 export const errLate = 'ERR:LAT' // Too late to perform this action
@@ -88,3 +86,4 @@ export const errGGovDelegationExists = 'ERR:GD_EX' // Delegation already exists 
 export const errInstanceAppNotConfigured = 'ERR:FI_NC' // Instance approval program not yet uploaded to registry
 export const errInstanceAppNotExists = 'ERR:FI_NX' // Instance does not exist
 export const errEscrowAssigned = 'ERR:FE_AS' // Escrow account is already assigned to an instance
+export const errNoEscrows = 'ERR:FE_NX' // Instance has no registered escrows
