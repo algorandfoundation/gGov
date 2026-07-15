@@ -1,10 +1,19 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { makeEmptyTransactionSigner } from 'algosdk'
-import { FracDelegationRegistryClient, APP_SPEC } from '../generated/FracDelegationRegistryClient'
+import { getABIDecodedValue } from '@algorandfoundation/algokit-utils/types/app-arc56'
+import { encodeAddress, makeEmptyTransactionSigner } from 'algosdk'
+import {
+  FracDelegationRegistryClient,
+  FracDelegationRegistryComposer,
+  FracRegAccount,
+  APP_SPEC,
+} from '../generated/FracDelegationRegistryClient'
 import { getConstructorConfig } from '../networkConfig'
 import { ReaderConstructorArgs } from './types'
+import { chunk } from '../util/chunk'
+import { chunked } from '../util/chunked'
 import { errorTransformer } from '../util/wrapErrors'
 import { undefinedIfBoxMissing } from '../util/boxes'
+import { SIMULATE_PARAMS } from '../util/increaseBudget'
 
 export class FracDelegationRegistryReaderSDK {
   static APP_SPEC = APP_SPEC
@@ -67,5 +76,56 @@ export class FracDelegationRegistryReaderSDK {
       this.algorand.client.algod.status().do(),
     ])
     return { ...state, currentRound: status.lastRound }
+  }
+
+  // ── Accounts ─────────────────────────────────────────────────────
+
+  /** List account addresses registered on the registry (box-name scan). */
+  async getAccounts(): Promise<string[]> {
+    const boxNames = await this.algorand.app.getBoxNames(this.appId)
+    return boxNames
+      .filter(({ nameRaw }) => nameRaw[0] === 97 && nameRaw.length === 33) // 'a' prefix + 32-byte address
+      .map(({ nameRaw }) => encodeAddress(nameRaw.slice(1)).toString())
+  }
+
+  /**
+   * Map each account address to its numeric registry account ID.
+   * Defaults to every registered account when `accounts` is omitted.
+   */
+  async getAccountIdMap(accounts?: string[]): Promise<Map<string, number>> {
+    accounts = accounts ?? (await this.getAccounts())
+    const fracRegAccounts = await this._getFracRegAccountsChunked(accounts)
+    return new Map(accounts.map((account, index) => [account, fracRegAccounts[index].accountId]))
+  }
+
+  /**
+   * Map each account address to its full `FracRegAccount` record (accountId + instance numeric IDs).
+   * Defaults to every registered account when `accounts` is omitted.
+   */
+  async getFracRegAccountsMap(accounts?: string[]): Promise<Map<string, FracRegAccount>> {
+    accounts = accounts ?? (await this.getAccounts())
+    const fracRegAccounts = await this._getFracRegAccountsChunked(accounts)
+    return new Map(accounts.map((account, index) => [account, fracRegAccounts[index]]))
+  }
+
+  /**
+   * Batch-read `FracRegAccount` records via `logAccounts`, index-aligned with `accounts`.
+   * Unknown accounts come back with accountId 0 and no instances. Each simulate group packs
+   * up to two 63-account `logAccounts` calls; the decorator fans out larger requests concurrently.
+   */
+  @chunked(126)
+  private async _getFracRegAccountsChunked(accounts: string[]): Promise<FracRegAccount[]> {
+    if (accounts.length === 0) return []
+    const accountArgs = chunk(accounts, 63)
+    let builder: FracDelegationRegistryComposer<any> = this.readClient.newGroup()
+    for (const accountChunk of accountArgs) {
+      builder = builder.logAccounts({ args: { accounts: accountChunk } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map(
+      (log) =>
+        getABIDecodedValue(new Uint8Array(log!), 'FracRegAccount', this.readClient.appSpec.structs) as FracRegAccount,
+    )
   }
 }
