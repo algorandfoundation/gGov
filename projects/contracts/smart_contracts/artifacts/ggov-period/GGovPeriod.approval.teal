@@ -4,129 +4,129 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 2 1 4
-    bytecblock "t" "o" "registryApp" "" 0x151f7c75 0x0000 0x0002 "P" "votingStart" "votingEnd" 0x000000000000000000 "ready" "committeeId" "v" 0x00 "firstVotingRound" "periodId" "ERR:AUTH" "lastVotingRound" "ERR:GT_NO" 0x00020002 "ERR:GT_OB" 0xc8d461ab "ERR:GV_MM" 0x0004 base64(C4EBQw==)
+    bytecblock "t" "o" "registryApp" "" 0x151f7c75 0x0000 "votingStart" "votingEnd" 0x0002 "P" "committeeId" 0x000000000000000000 "ready" "v" 0x00 "firstVotingRound" "periodId" "ERR:AUTH" "lastVotingRound" "ERR:GT_NO" 0x00020002 "ERR:GT_OB" 0xc8d461ab "ERR:GV_MM" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(C4EBQw==)
     txn ApplicationID
     bnz main_after_if_else@2
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
     intc_0 // 0
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
     // ready = GlobalState<boolean>({ initialValue: false })
-    bytec 11 // "ready"
+    bytec 12 // "ready"
     intc_0 // 0
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:76
     // firstVotingRound = GlobalState<uint64>({ initialValue: 0 })
     bytec 15 // "firstVotingRound"
     intc_0 // 0
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:76
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:78
     // lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
     bytec 18 // "lastVotingRound"
     intc_0 // 0
     app_global_put
 
 main_after_if_else@2:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:59-60
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:61-62
     // @contract({ name: 'GGovPeriod' })
     // export class GGovPeriodContract extends BaseContract {
     txn NumAppArgs
-    bz main_bare_routing@26
+    bz main_bare_routing@27
     txn OnCompletion
     !
     assert // OnCompletion must be NoOp
     txn ApplicationID
     assert
-    pushbytess 0xf579cac2 0xfb5545f6 0xb47296da 0xb7eed924 0xb8c70a00 0x62d28589 0x385e34c7 0x0b307ee7 0x04faff08 0x6b385713 0x289ac812 0x6cfd36c3 0x045c2509 0x86a129e7 0x82264e95 0x928ddc5e 0x4118ecbf // method "init(uint64,uint32,byte[32],uint32,uint32)void", method "editPeriod(byte[32],uint64,uint64)void", method "addTopic(string[])uint64", method "editTopic(uint64,string[])void", method "removeTopic(uint64)void", method "setReady(bool)void", method "uploadPeriodBodyPartial(uint64,byte[])void", method "uploadTopicBodyPartial(uint64,uint64,byte[])void", method "deleteTopicBodies(uint64[])void", method "vote(address,uint32[][])void", method "canVote(address,address)(bool,uint64)", method "getPeriod()(byte[32],uint32,uint32,(string[],uint32[])[])", method "logPeriod()void", method "getVotingRecord(address)(bool,uint32[][])", method "logVotingRecord(address)void", method "withdrawALGO(address,uint64)void", method "increaseBudget(uint64)void"
+    pushbytess 0xf579cac2 0xfb5545f6 0xb47296da 0xb7eed924 0xb8c70a00 0x62d28589 0x385e34c7 0x0b307ee7 0x04faff08 0x6b385713 0x289ac812 0x6cfd36c3 0x1dca5d98 0x045c2509 0x86a129e7 0x82264e95 0x928ddc5e 0x4118ecbf // method "init(uint64,uint32,byte[32],uint32,uint32)void", method "editPeriod(byte[32],uint64,uint64)void", method "addTopic(string[])uint64", method "editTopic(uint64,string[])void", method "removeTopic(uint64)void", method "setReady(bool)void", method "uploadPeriodBodyPartial(uint64,byte[])void", method "uploadTopicBodyPartial(uint64,uint64,byte[])void", method "deleteTopicBodies(uint64[])void", method "vote(address,uint32[][])void", method "canVote(address,address)(bool,uint64)", method "getPeriod()(byte[32],uint32,uint32,(string[],uint32[])[])", method "getPeriodShort()(byte[32],uint32,uint32,uint32[])", method "logPeriod()void", method "getVotingRecord(address)(bool,uint32[][])", method "logVotingRecord(address)void", method "withdrawALGO(address,uint64)void", method "increaseBudget(uint64)void"
     txna ApplicationArgs 0
-    match init editPeriod addTopic editTopic removeTopic setReady uploadPeriodBodyPartial uploadTopicBodyPartial deleteTopicBodies vote canVote getPeriod logPeriod getVotingRecord logVotingRecord withdrawALGO increaseBudget
+    match init editPeriod addTopic editTopic removeTopic setReady uploadPeriodBodyPartial uploadTopicBodyPartial deleteTopicBodies vote canVote getPeriod getPeriodShort logPeriod getVotingRecord logVotingRecord withdrawALGO increaseBudget
 
-main_after_if_else@31:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:59-60
+main_after_if_else@32:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:61-62
     // @contract({ name: 'GGovPeriod' })
     // export class GGovPeriodContract extends BaseContract {
     err
 
-main_bare_routing@26:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:59-60
+main_bare_routing@27:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:61-62
     // @contract({ name: 'GGovPeriod' })
     // export class GGovPeriodContract extends BaseContract {
     txn OnCompletion
-    switch main___algots__.defaultCreate@27 main_after_if_else@31 main_after_if_else@31 main_after_if_else@31 main_updateApplication@28 main_deleteApplication@29
+    switch main___algots__.defaultCreate@28 main_after_if_else@32 main_after_if_else@32 main_after_if_else@32 main_updateApplication@29 main_deleteApplication@30
     err
 
-main_deleteApplication@29:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:544
+main_deleteApplication@30:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:563
     // @baremethod({ allowActions: ['DeleteApplication'] })
     txn ApplicationID
     assert // can only call when not creating
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:546
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:565
     // this.checkAdminCaller()
     callsub checkAdminCaller
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:547
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:566
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:551
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:570
     // this.topicOptionsArr.delete()
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:552
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:571
     // this.topicVotesArr.delete()
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:85
     // periodBody = Box<bytes>({ key: 'P' })
-    bytec 7 // "P"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:553
+    bytec 9 // "P"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:572
     // if (this.periodBody.exists) this.periodBody.delete()
     box_len
     bury 1
-    bz main_after_if_else@34
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
+    bz main_after_if_else@35
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:85
     // periodBody = Box<bytes>({ key: 'P' })
-    bytec 7 // "P"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:553
+    bytec 9 // "P"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:572
     // if (this.periodBody.exists) this.periodBody.delete()
     box_del
     pop
 
-main_after_if_else@34:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:556-559
+main_after_if_else@35:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:575-578
     // compileArc4(GGovRegistryContract).call.removePeriodSummary({
     //   appId: Application(this.registryApp.value),
     //   args: [u32(this.periodId.value)],
     // })
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:557
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:576
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:557
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:576
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:558
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:577
     // args: [u32(this.periodId.value)],
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
     // periodId = GlobalState<uint64>()
     bytec 16 // "periodId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:558
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:577
     // args: [u32(this.periodId.value)],
     app_global_get_ex
     assert // check GlobalState exists
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:556-559
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:575-578
     // compileArc4(GGovRegistryContract).call.removePeriodSummary({
     //   appId: Application(this.registryApp.value),
     //   args: [u32(this.periodId.value)],
@@ -142,7 +142,7 @@ main_after_if_else@34:
     intc_0 // 0
     itxn_field Fee
     itxn_submit
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:561
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:580
     // itxn.payment({ receiver: Txn.sender, amount: 0, closeRemainderTo: Txn.sender }).submit()
     itxn_begin
     txn Sender
@@ -156,26 +156,26 @@ main_after_if_else@34:
     intc_0 // 0
     itxn_field Fee
     itxn_submit
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:544
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:563
     // @baremethod({ allowActions: ['DeleteApplication'] })
     intc_2 // 1
     return
 
-main_updateApplication@28:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:533
+main_updateApplication@29:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:552
     // @baremethod({ allowActions: ['UpdateApplication'] })
     txn ApplicationID
     assert // can only call when not creating
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:535
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:554
     // this.checkAdminCaller()
     callsub checkAdminCaller
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:533
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:552
     // @baremethod({ allowActions: ['UpdateApplication'] })
     intc_2 // 1
     return
 
-main___algots__.defaultCreate@27:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:59-60
+main___algots__.defaultCreate@28:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:61-62
     // @contract({ name: 'GGovPeriod' })
     // export class GGovPeriodContract extends BaseContract {
     txn ApplicationID
@@ -387,7 +387,7 @@ u32:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.init[routing]() -> void:
 init:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:96
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:98
     // @abimethod()
     txna ApplicationArgs 1
     dup
@@ -420,20 +420,20 @@ init:
     intc_3 // 4
     ==
     assert // invalid number of bytes for arc4.uint32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:104
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:106
     // ensure(this.registryApp.value === 0, errAlreadyInit)
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:104
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:106
     // ensure(this.registryApp.value === 0, errAlreadyInit)
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bz init_after_if_else@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:104
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:106
     // ensure(this.registryApp.value === 0, errAlreadyInit)
     pushbytes "ERR:AI"
     // smart_contracts/base/utils.algo.ts:34
@@ -444,7 +444,7 @@ init:
     err
 
 init_after_if_else@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:105
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:107
     // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
     txn Sender
     global CreatorAddress
@@ -452,7 +452,7 @@ init_after_if_else@3:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz init_after_if_else@7
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:105
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:107
     // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
     bytec 17 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
@@ -463,82 +463,82 @@ init_after_if_else@3:
     err
 
 init_after_if_else@7:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:106
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:108
     // this.registryApp.value = registryApp.id
     dig 5
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:107
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:109
     // this.periodId.value = periodId.asUint64()
     dig 3
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
     // periodId = GlobalState<uint64>()
     bytec 16 // "periodId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:107
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:109
     // this.periodId.value = periodId.asUint64()
     swap
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
     // committeeId = GlobalState<CommitteeId>()
-    bytec 12 // "committeeId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:108
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:110
     // this.committeeId.value = committeeId
     dig 3
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:109
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:111
     // this.votingStart.value = votingStart.asUint64()
     dig 1
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
     // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:109
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:111
     // this.votingStart.value = votingStart.asUint64()
     swap
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:110
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:112
     // this.votingEnd.value = votingEnd.asUint64()
     dup
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:110
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:112
     // this.votingEnd.value = votingEnd.asUint64()
     swap
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:111
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:113
     // this.topicOptionsArr.value = [] as GGovTopicOptions[]
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:111
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:113
     // this.topicOptionsArr.value = [] as GGovTopicOptions[]
     bytec 5 // 0x0000
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:112
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:114
     // this.topicVotesArr.value = [] as GGovTopicVotes[]
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:112
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:114
     // this.topicVotesArr.value = [] as GGovTopicVotes[]
     bytec 5 // 0x0000
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:96
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:98
     // @abimethod()
     intc_2 // 1
     return
@@ -546,7 +546,7 @@ init_after_if_else@7:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.editPeriod[routing]() -> void:
 editPeriod:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:161
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:163
     // public editPeriod(committeeId: CommitteeId, votingStart: uint64, votingEnd: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -571,19 +571,19 @@ editPeriod:
     btoi
     dup
     cover 2
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:162
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:164
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:163
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:165
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:164
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:166
     // ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
     <
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz editPeriod_after_if_else@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:164
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:166
     // ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
     pushbytes "ERR:PE_LT"
     // smart_contracts/base/utils.algo.ts:34
@@ -594,31 +594,31 @@ editPeriod:
     err
 
 editPeriod_after_if_else@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
     // committeeId = GlobalState<CommitteeId>()
-    bytec 12 // "committeeId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:165
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:167
     // this.committeeId.value = committeeId
     dig 3
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
     // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:166
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:168
     // this.votingStart.value = votingStart
     dig 2
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:167
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:169
     // this.votingEnd.value = votingEnd
     dig 1
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:168
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:170
     // this.syncSummaryToRegistry()
     callsub syncSummaryToRegistry
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:161
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:163
     // public editPeriod(committeeId: CommitteeId, votingStart: uint64, votingEnd: uint64): void {
     intc_2 // 1
     return
@@ -628,7 +628,7 @@ editPeriod_after_if_else@3:
 addTopic:
     intc_0 // 0
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:171
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:173
     // public addTopic(options: string[]): uint64 {
     txna ApplicationArgs 1
     dupn 2
@@ -646,7 +646,7 @@ addTopic:
     intc_0 // 0
 
 addTopic_for_header@1:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:171
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:173
     // public addTopic(options: string[]): uint64 {
     dup
     dig 5
@@ -680,7 +680,7 @@ addTopic_for_header@1:
     b addTopic_for_header@1
 
 addTopic_after_for@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:171
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:173
     // public addTopic(options: string[]): uint64 {
     dig 3
     intc_1 // 2
@@ -688,17 +688,17 @@ addTopic_after_for@4:
     dig 3
     ==
     assert // invalid number of bytes for arc4.dynamic_array<string>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:172
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:174
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:173
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:175
     // this.ensureEditable()
     callsub ensureEditable
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     dig 4
     bnz addTopic_after_if_else@11
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:174
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:176
     // ensure(options.length > 0, errGGovNoOptions)
     bytec 19 // "ERR:GT_NO"
     // smart_contracts/base/utils.algo.ts:34
@@ -709,23 +709,23 @@ addTopic_after_for@4:
     err
 
 addTopic_after_if_else@11:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:176
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:178
     // const votes: Uint32[] = []
     bytec 5 // 0x0000
     bury 8
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:177
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:179
     // for (let i: uint64 = 0; i < options.length; i++) {
     intc_0 // 0
     bury 7
 
 addTopic_while_top@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:177
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:179
     // for (let i: uint64 = 0; i < options.length; i++) {
     dig 6
     dig 5
     <
     bz addTopic_after_while@8
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:178
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:180
     // votes.push(u32(0))
     intc_0 // 0
     callsub u32
@@ -742,7 +742,7 @@ addTopic_while_top@6:
     extract 6 2
     replace2 0
     bury 8
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:177
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:179
     // for (let i: uint64 = 0; i < options.length; i++) {
     dig 6
     intc_2 // 1
@@ -751,30 +751,30 @@ addTopic_while_top@6:
     b addTopic_while_top@6
 
 addTopic_after_while@8:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
-    // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
-    bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:182
-    // const optionsArr = clone(this.topicOptionsArr.value)
-    box_get
-    assert // Box must have value
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
-    // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
-    bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:183
-    // const votesArr = clone(this.topicVotesArr.value)
-    box_get
-    assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:184
+    // const optionsArr = clone(this.topicOptionsArr.value)
+    box_get
+    assert // Box must have value
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
+    // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
+    bytec_0 // "t"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:185
+    // const votesArr = clone(this.topicVotesArr.value)
+    box_get
+    assert // Box must have value
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
+    bytec_1 // "o"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:186
     // const topicIndex: uint64 = optionsArr.length
     intc_0 // 0
     intc_1 // 2
     box_extract
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:185
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:187
     // optionsArr.push(clone(newOptions))
     dig 2
     intc_0 // 0
@@ -788,7 +788,7 @@ addTopic_after_while@8:
     intc_2 // 1
     uncover 3
     callsub dynamic_array_concat_dynamic_element
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:186
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:188
     // votesArr.push(clone(newVotes))
     dig 2
     intc_0 // 0
@@ -802,38 +802,38 @@ addTopic_after_while@8:
     intc_2 // 1
     uncover 3
     callsub dynamic_array_concat_dynamic_element
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:187
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:189
     // this.topicOptionsArr.value = clone(optionsArr)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:187
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:189
     // this.topicOptionsArr.value = clone(optionsArr)
     uncover 2
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:188
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:190
     // this.topicVotesArr.value = clone(votesArr)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:188
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:190
     // this.topicVotesArr.value = clone(votesArr)
     swap
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:189
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:191
     // this.syncSummaryToRegistry()
     callsub syncSummaryToRegistry
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:171
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:173
     // public addTopic(options: string[]): uint64 {
     itob
     bytec 4 // 0x151f7c75
@@ -849,7 +849,7 @@ editTopic:
     intc_0 // 0
     dupn 2
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:193
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:195
     // public editTopic(topicIndex: uint64, options: string[]): void {
     txna ApplicationArgs 1
     dup
@@ -874,7 +874,7 @@ editTopic:
     intc_0 // 0
 
 editTopic_for_header@1:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:193
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:195
     // public editTopic(topicIndex: uint64, options: string[]): void {
     dup
     dig 5
@@ -908,7 +908,7 @@ editTopic_for_header@1:
     b editTopic_for_header@1
 
 editTopic_after_for@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:193
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:195
     // public editTopic(topicIndex: uint64, options: string[]): void {
     dig 3
     intc_1 // 2
@@ -916,17 +916,17 @@ editTopic_after_for@4:
     dig 3
     ==
     assert // invalid number of bytes for arc4.dynamic_array<string>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:194
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:196
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:195
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:197
     // this.ensureEditable()
     callsub ensureEditable
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     dig 4
     bnz editTopic_after_if_else@11
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:196
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:198
     // ensure(options.length > 0, errGGovNoOptions)
     bytec 19 // "ERR:GT_NO"
     // smart_contracts/base/utils.algo.ts:34
@@ -937,28 +937,28 @@ editTopic_after_for@4:
     err
 
 editTopic_after_if_else@11:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:197
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:199
     // const optionsArr = clone(this.topicOptionsArr.value)
     box_get
     swap
     bury 12
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:198
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:200
     // const votesArr = clone(this.topicVotesArr.value)
     box_get
     swap
     bury 10
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:199
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:201
     // ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     intc_0 // 0
     intc_1 // 2
@@ -969,7 +969,7 @@ editTopic_after_if_else@11:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz editTopic_after_if_else@15
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:199
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:201
     // ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     bytec 21 // "ERR:GT_OB"
     // smart_contracts/base/utils.algo.ts:34
@@ -980,23 +980,23 @@ editTopic_after_if_else@11:
     err
 
 editTopic_after_if_else@15:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:201
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:203
     // const votes: Uint32[] = []
     bytec 5 // 0x0000
     bury 10
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:202
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:204
     // for (let i: uint64 = 0; i < options.length; i++) {
     intc_0 // 0
     bury 8
 
 editTopic_while_top@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:202
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:204
     // for (let i: uint64 = 0; i < options.length; i++) {
     dig 7
     dig 5
     <
     bz editTopic_after_while@8
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:203
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:205
     // votes.push(u32(0))
     intc_0 // 0
     callsub u32
@@ -1013,7 +1013,7 @@ editTopic_while_top@6:
     extract 6 2
     replace2 0
     bury 10
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:202
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:204
     // for (let i: uint64 = 0; i < options.length; i++) {
     dig 7
     intc_2 // 1
@@ -1022,9 +1022,9 @@ editTopic_while_top@6:
     b editTopic_while_top@6
 
 editTopic_after_while@8:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:205
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:207
     // optionsArr[topicIndex] = { options: clone(options) }
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     dig 6
     concat
     dig 11
@@ -1040,9 +1040,9 @@ editTopic_after_while@8:
     uncover 2
     dig 2
     callsub dynamic_array_replace_dynamic_element
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:206
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:208
     // votesArr[topicIndex] = { votes: clone(votes) }
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     dig 12
     concat
     dig 11
@@ -1055,35 +1055,35 @@ editTopic_after_while@8:
     swap
     uncover 3
     callsub dynamic_array_replace_dynamic_element
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:207
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:209
     // this.topicOptionsArr.value = clone(optionsArr)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:207
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:209
     // this.topicOptionsArr.value = clone(optionsArr)
     uncover 2
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:208
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:210
     // this.topicVotesArr.value = clone(votesArr)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:208
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:210
     // this.topicVotesArr.value = clone(votesArr)
     swap
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:193
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:195
     // public editTopic(topicIndex: uint64, options: string[]): void {
     intc_2 // 1
     return
@@ -1094,7 +1094,7 @@ removeTopic:
     intc_0 // 0
     dup
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:212
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:214
     // public removeTopic(topicIndex: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -1104,34 +1104,34 @@ removeTopic:
     assert // invalid number of bytes for arc4.uint64
     btoi
     dup
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:213
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:215
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:214
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:216
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:215
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:217
     // const optionsArr = clone(this.topicOptionsArr.value)
     box_get
     swap
     cover 2
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:216
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:218
     // const votesArr = clone(this.topicVotesArr.value)
     box_get
     swap
     cover 2
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:217
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:219
     // ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     intc_0 // 0
     intc_1 // 2
@@ -1141,7 +1141,7 @@ removeTopic:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz removeTopic_after_if_else@9
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:217
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:219
     // ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     bytec 21 // "ERR:GT_OB"
     // smart_contracts/base/utils.algo.ts:34
@@ -1152,24 +1152,24 @@ removeTopic:
     err
 
 removeTopic_after_if_else@9:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:218
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:220
     // const nextOptions: GGovTopicOptions[] = []
     bytec 5 // 0x0000
     bury 6
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:219
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:221
     // const nextVotes: GGovTopicVotes[] = []
     bytec 5 // 0x0000
     bury 5
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:220
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:222
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     intc_0 // 0
     bury 4
 
 removeTopic_while_top@2:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:220
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:222
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     intc_0 // 0
     intc_1 // 2
@@ -1178,13 +1178,13 @@ removeTopic_while_top@2:
     dig 4
     >
     bz removeTopic_after_while@6
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:221
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:223
     // if (i !== topicIndex) {
     dig 3
     dig 3
     !=
     bz removeTopic_after_if_else@5
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:222
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:224
     // nextOptions.push(clone(optionsArr[i]))
     dig 1
     dup
@@ -1227,7 +1227,7 @@ removeTopic_while_top@2:
     extract_uint16
     swap
     extract 2 0
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     uncover 3
     concat
     cover 2
@@ -1235,7 +1235,7 @@ removeTopic_while_top@2:
     uncover 3
     callsub dynamic_array_concat_dynamic_element
     bury 9
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:223
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:225
     // nextVotes.push(clone(votesArr[i]))
     dig 3
     dup
@@ -1263,7 +1263,7 @@ removeTopic_while_top@2:
     extract_uint16
     swap
     extract 2 0
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     uncover 3
     concat
     cover 2
@@ -1273,7 +1273,7 @@ removeTopic_while_top@2:
     bury 5
 
 removeTopic_after_if_else@5:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:220
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:222
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     dig 3
     intc_2 // 1
@@ -1282,38 +1282,38 @@ removeTopic_after_if_else@5:
     b removeTopic_while_top@2
 
 removeTopic_after_while@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:226
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:228
     // this.topicOptionsArr.value = clone(nextOptions)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:226
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:228
     // this.topicOptionsArr.value = clone(nextOptions)
     dig 6
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:227
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:229
     // this.topicVotesArr.value = clone(nextVotes)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:227
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:229
     // this.topicVotesArr.value = clone(nextVotes)
     dig 5
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:228
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:230
     // this.syncSummaryToRegistry()
     callsub syncSummaryToRegistry
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:212
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:214
     // public removeTopic(topicIndex: uint64): void {
     intc_2 // 1
     return
@@ -1323,7 +1323,7 @@ removeTopic_after_while@6:
 setReady:
     bytec_3 // ""
     dupn 4
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:232
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:234
     // public setReady(ready: boolean): void {
     txna ApplicationArgs 1
     dup
@@ -1334,26 +1334,26 @@ setReady:
     intc_0 // 0
     getbit
     dup
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:233
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:235
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:235
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:237
     // if (ready) {
     bz setReady_else_body@6
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:244
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:246
     // let logSize: uint64 = 81
     pushint 81 // 81
     bury 2
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:245
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:247
     // for (let i: uint64 = 0; i < votesArr.length; i++) {
     intc_0 // 0
     bury 5
 
 setReady_while_top@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:245
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:247
     // for (let i: uint64 = 0; i < votesArr.length; i++) {
     intc_0 // 0
     intc_1 // 2
@@ -1362,7 +1362,7 @@ setReady_while_top@3:
     dig 5
     >
     bz setReady_after_while@5
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:246
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:248
     // logSize += 4 + 4 * votesArr[i].votes.length
     intc_1 // 2
     dig 5
@@ -1371,10 +1371,10 @@ setReady_while_top@3:
     *
     intc_1 // 2
     +
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:246
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:248
     // logSize += 4 + 4 * votesArr[i].votes.length
     swap
     intc_1 // 2
@@ -1382,10 +1382,10 @@ setReady_while_top@3:
     btoi
     intc_3 // 4
     +
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:246
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:248
     // logSize += 4 + 4 * votesArr[i].votes.length
     swap
     intc_1 // 2
@@ -1398,7 +1398,7 @@ setReady_while_top@3:
     dig 3
     +
     bury 3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:245
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:247
     // for (let i: uint64 = 0; i < votesArr.length; i++) {
     intc_2 // 1
     +
@@ -1406,7 +1406,7 @@ setReady_while_top@3:
     b setReady_while_top@3
 
 setReady_after_while@5:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:248
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:250
     // ensure(logSize <= 1024, errGGovUnvotable)
     dig 1
     pushint 1024 // 1024
@@ -1414,7 +1414,7 @@ setReady_after_while@5:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz setReady_after_if_else@13
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:248
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:250
     // ensure(logSize <= 1024, errGGovUnvotable)
     pushbytes "ERR:GP_UV"
     // smart_contracts/base/utils.algo.ts:34
@@ -1425,32 +1425,32 @@ setReady_after_while@5:
     err
 
 setReady_after_if_else@13:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
     // ready = GlobalState<boolean>({ initialValue: false })
-    bytec 11 // "ready"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:258
+    bytec 12 // "ready"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:260
     // this.ready.value = ready
     dig 1
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:259
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:261
     // this.syncSummaryToRegistry()
     callsub syncSummaryToRegistry
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:232
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:234
     // public setReady(ready: boolean): void {
     intc_2 // 1
     return
 
 setReady_else_body@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:251
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:253
     // for (let i: uint64 = 0; i < votesArr.length; i++) {
     intc_0 // 0
     bury 4
 
 setReady_while_top@7:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:251
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:253
     // for (let i: uint64 = 0; i < votesArr.length; i++) {
     intc_0 // 0
     intc_1 // 2
@@ -1459,13 +1459,13 @@ setReady_while_top@7:
     dig 4
     >
     bz setReady_after_if_else@13
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:253
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:255
     // for (let j: uint64 = 0; j < tallies.length; j++) {
     intc_0 // 0
     bury 3
 
 setReady_while_top@9:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:252-253
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254-255
     // const tallies = clone(votesArr[i].votes)
     // for (let j: uint64 = 0; j < tallies.length; j++) {
     intc_1 // 2
@@ -1475,10 +1475,10 @@ setReady_while_top@9:
     +
     dup
     bury 7
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:252-253
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254-255
     // const tallies = clone(votesArr[i].votes)
     // for (let j: uint64 = 0; j < tallies.length; j++) {
     swap
@@ -1487,25 +1487,25 @@ setReady_while_top@9:
     btoi
     intc_3 // 4
     +
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:252-253
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254-255
     // const tallies = clone(votesArr[i].votes)
     // for (let j: uint64 = 0; j < tallies.length; j++) {
     swap
     intc_1 // 2
     box_extract
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:253
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:255
     // for (let j: uint64 = 0; j < tallies.length; j++) {
     dig 3
     >
     bz setReady_after_while@11
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:256
     // ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
     dig 6
     intc_1 // 2
@@ -1513,10 +1513,10 @@ setReady_while_top@9:
     btoi
     intc_3 // 4
     +
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:256
     // ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
     dig 1
     intc_1 // 2
@@ -1534,10 +1534,10 @@ setReady_while_top@9:
     intc_3 // 4
     *
     +
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:256
     // ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
     swap
     intc_3 // 4
@@ -1546,7 +1546,7 @@ setReady_while_top@9:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bz setReady_after_if_else@16
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:254
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:256
     // ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
     pushbytes "ERR:GP_VE"
     // smart_contracts/base/utils.algo.ts:34
@@ -1557,7 +1557,7 @@ setReady_while_top@9:
     err
 
 setReady_after_if_else@16:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:253
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:255
     // for (let j: uint64 = 0; j < tallies.length; j++) {
     dig 2
     intc_2 // 1
@@ -1566,7 +1566,7 @@ setReady_after_if_else@16:
     b setReady_while_top@9
 
 setReady_after_while@11:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:251
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:253
     // for (let i: uint64 = 0; i < votesArr.length; i++) {
     dig 3
     intc_2 // 1
@@ -1577,7 +1577,7 @@ setReady_after_while@11:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.uploadPeriodBodyPartial[routing]() -> void:
 uploadPeriodBodyPartial:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:264
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:266
     // public uploadPeriodBodyPartial(startOffset: uint64, data: bytes): void {
     txna ApplicationArgs 1
     dup
@@ -1600,59 +1600,59 @@ uploadPeriodBodyPartial:
     extract 2 0
     dup
     cover 2
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:265
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:267
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:266
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:268
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:268
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:270
     // const writeEnd: uint64 = startOffset + data.length
     len
     dig 1
     +
     swap
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:269
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:271
     // if (startOffset === 0) {
     bnz uploadPeriodBodyPartial_else_body@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:270
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:272
     // op.Box.delete(boxKey)
-    bytec 7 // "P"
+    bytec 9 // "P"
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:271
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:273
     // op.Box.create(boxKey, writeEnd)
-    bytec 7 // "P"
+    bytec 9 // "P"
     dig 1
     box_create
     pop
 
 uploadPeriodBodyPartial_after_if_else@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:278
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:280
     // op.Box.replace(boxKey, startOffset, data)
-    bytec 7 // "P"
+    bytec 9 // "P"
     dig 3
     dig 3
     box_replace
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:264
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:266
     // public uploadPeriodBodyPartial(startOffset: uint64, data: bytes): void {
     intc_2 // 1
     return
 
 uploadPeriodBodyPartial_else_body@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:273
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:275
     // const [boxLen] = op.Box.length(boxKey)
-    bytec 7 // "P"
+    bytec 9 // "P"
     box_len
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:274
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:276
     // if (writeEnd > boxLen) {
     dig 1
     <
     bz uploadPeriodBodyPartial_after_if_else@6
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:275
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:277
     // op.Box.resize(boxKey, writeEnd)
-    bytec 7 // "P"
+    bytec 9 // "P"
     dig 1
     box_resize
     b uploadPeriodBodyPartial_after_if_else@6
@@ -1660,7 +1660,7 @@ uploadPeriodBodyPartial_else_body@3:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.uploadTopicBodyPartial[routing]() -> void:
 uploadTopicBodyPartial:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:281
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:283
     // public uploadTopicBodyPartial(topicIndex: uint64, startOffset: uint64, data: bytes): void {
     txna ApplicationArgs 1
     dup
@@ -1691,13 +1691,13 @@ uploadTopicBodyPartial:
     extract 2 0
     dup
     cover 3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:285
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:287
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:286
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:288
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:156
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:158
     // return TOPIC_BODY_BOX_PREFIX.concat(encodeArc4(u32(topicIndex)))
     uncover 2
     callsub u32
@@ -1705,51 +1705,51 @@ uploadTopicBodyPartial:
     swap
     concat
     cover 2
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:288
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:290
     // const writeEnd: uint64 = startOffset + data.length
     len
     dig 1
     +
     swap
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:289
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:291
     // if (startOffset === 0) {
     bnz uploadTopicBodyPartial_else_body@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:290
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:292
     // op.Box.delete(boxKey)
     dig 1
     dup
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:291
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:293
     // op.Box.create(boxKey, writeEnd)
     dig 1
     box_create
     pop
 
 uploadTopicBodyPartial_after_if_else@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:298
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:300
     // op.Box.replace(boxKey, startOffset, data)
     dig 1
     dig 4
     dig 4
     box_replace
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:281
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:283
     // public uploadTopicBodyPartial(topicIndex: uint64, startOffset: uint64, data: bytes): void {
     intc_2 // 1
     return
 
 uploadTopicBodyPartial_else_body@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:293
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:295
     // const [boxLen] = op.Box.length(boxKey)
     dig 1
     box_len
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:294
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:296
     // if (writeEnd > boxLen) {
     dig 1
     <
     bz uploadTopicBodyPartial_after_if_else@6
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:295
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:297
     // op.Box.resize(boxKey, writeEnd)
     dup2
     box_resize
@@ -1758,7 +1758,7 @@ uploadTopicBodyPartial_else_body@3:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.deleteTopicBodies[routing]() -> void:
 deleteTopicBodies:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:308
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:310
     // public deleteTopicBodies(topicIndexes: uint64[]): void {
     txna ApplicationArgs 1
     dupn 2
@@ -1774,16 +1774,16 @@ deleteTopicBodies:
     len
     ==
     assert // invalid number of bytes for arc4.dynamic_array<uint64>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:309
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:311
     // this.checkAdminCaller()
     callsub checkAdminCaller
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:310
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:312
     // this.ensureEditable()
     callsub ensureEditable
     intc_0 // 0
 
 deleteTopicBodies_for_header@2:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:311
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:313
     // for (const idx of clone(topicIndexes)) {
     dup
     dig 2
@@ -1797,13 +1797,13 @@ deleteTopicBodies_for_header@2:
     pushint 8 // 8
     *
     extract_uint64
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:156
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:158
     // return TOPIC_BODY_BOX_PREFIX.concat(encodeArc4(u32(topicIndex)))
     callsub u32
     pushbytes "T"
     swap
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:312
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:314
     // op.Box.delete(this.topicBodyBoxKey(idx))
     box_del
     pop
@@ -1813,7 +1813,7 @@ deleteTopicBodies_for_header@2:
     b deleteTopicBodies_for_header@2
 
 deleteTopicBodies_after_for@5:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:308
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:310
     // public deleteTopicBodies(topicIndexes: uint64[]): void {
     intc_2 // 1
     return
@@ -1825,7 +1825,7 @@ vote:
     dupn 6
     bytec_3 // ""
     dupn 10
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:325
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
     // public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
     txna ApplicationArgs 1
     dup
@@ -1849,7 +1849,7 @@ vote:
     intc_0 // 0
 
 vote_for_header@1:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:325
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
     // public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
     dup
     dig 5
@@ -1885,7 +1885,7 @@ vote_for_header@1:
     b vote_for_header@1
 
 vote_after_for@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:325
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
     // public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
     dig 3
     intc_1 // 2
@@ -1893,20 +1893,20 @@ vote_after_for@4:
     dig 3
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.dynamic_array<arc4.uint32>>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:326
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
     // ensure(this.ready.value, errGGovNotReady)
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
     // ready = GlobalState<boolean>({ initialValue: false })
-    bytec 11 // "ready"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:326
+    bytec 12 // "ready"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
     // ensure(this.ready.value, errGGovNotReady)
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@55
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:326
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
     // ensure(this.ready.value, errGGovNotReady)
     pushbytes "ERR:GP_NR"
     // smart_contracts/base/utils.algo.ts:34
@@ -1917,14 +1917,14 @@ vote_after_for@4:
     err
 
 vote_after_if_else@55:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:329
     // ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     global LatestTimestamp
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
     // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:329
     // ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     app_global_get_ex
     assert // check GlobalState exists
@@ -1932,7 +1932,7 @@ vote_after_if_else@55:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@59
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:329
     // ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     pushbytes "ERR:GP_NS"
     // smart_contracts/base/utils.algo.ts:34
@@ -1943,14 +1943,14 @@ vote_after_if_else@55:
     err
 
 vote_after_if_else@59:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:330
     // ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
     global LatestTimestamp
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:330
     // ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
     app_global_get_ex
     assert // check GlobalState exists
@@ -1958,7 +1958,7 @@ vote_after_if_else@59:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@63
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:330
     // ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
     pushbytes "ERR:GP_EN"
     // smart_contracts/base/utils.algo.ts:34
@@ -1969,33 +1969,33 @@ vote_after_if_else@59:
     err
 
 vote_after_if_else@63:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:333
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:335
     // let isDelegated = false
     intc_0 // 0
     bury 14
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:334
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:336
     // if (Txn.sender !== voterAccount) {
     txn Sender
     dig 7
     !=
     bz vote_after_if_else@12
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:335-338
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:337-340
     // const expectedDelegatee = compileArc4(GGovRegistryContract).call.getDelegate({
     //   appId: Application(this.registryApp.value),
     //   args: [voterAccount],
     // }).returnValue
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:336
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:338
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:336
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:338
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:335-338
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:337-340
     // const expectedDelegatee = compileArc4(GGovRegistryContract).call.getDelegate({
     //   appId: Application(this.registryApp.value),
     //   args: [voterAccount],
@@ -2025,14 +2025,14 @@ vote_after_if_else@63:
     pushint 32 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:339
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:341
     // ensure(expectedDelegatee === Txn.sender, errGGovNoDelegation)
     txn Sender
     ==
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@51
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:339
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:341
     // ensure(expectedDelegatee === Txn.sender, errGGovNoDelegation)
     pushbytes "ERR:GD_NX"
     // smart_contracts/base/utils.algo.ts:34
@@ -2043,7 +2043,7 @@ vote_after_if_else@63:
     err
 
 vote_after_if_else@51:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:343
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:345
     // ensure(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
     txn NumAccounts
     bz vote_bool_false@10
@@ -2058,7 +2058,7 @@ vote_bool_merge@11:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@47
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:343
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:345
     // ensure(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
     pushbytes "ERR:GD_NR"
     // smart_contracts/base/utils.algo.ts:34
@@ -2069,39 +2069,39 @@ vote_bool_merge@11:
     err
 
 vote_after_if_else@47:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:344
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:346
     // isDelegated = true
     intc_2 // 1
     bury 14
 
 vote_after_if_else@12:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:348-351
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:350-353
     // const votingPower = compileArc4(GGovRegistryContract).call.getGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
     // }).returnValue
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:349
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:351
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:349
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:351
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:350
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:352
     // args: [this.committeeId.value, voterAccount],
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
     // committeeId = GlobalState<CommitteeId>()
-    bytec 12 // "committeeId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:350
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:352
     // args: [this.committeeId.value, voterAccount],
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:348-351
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:350-353
     // const votingPower = compileArc4(GGovRegistryContract).call.getGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
@@ -2133,33 +2133,33 @@ vote_after_if_else@12:
     intc_3 // 4
     ==
     assert // invalid number of bytes for arc4.uint32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:354
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:356
     // const globalVotesArr = clone(this.topicVotesArr.value)
     box_get
     swap
     bury 25
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:354-355
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:356-357
     // const globalVotesArr = clone(this.topicVotesArr.value)
     // ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
     intc_0 // 0
     intc_1 // 2
     box_extract
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:355
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:357
     // ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
     dig 5
     ==
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@43
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:355
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:357
     // ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
     bytec 23 // "ERR:GV_MM"
     // smart_contracts/base/utils.algo.ts:34
@@ -2170,23 +2170,23 @@ vote_after_if_else@12:
     err
 
 vote_after_if_else@43:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:87
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:89
     // voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
     bytec 13 // "v"
     dig 7
     concat
     dup
     bury 21
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:360
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:362
     // if (voteRecordBox.exists) {
     box_len
     bury 1
     bz vote_after_if_else@24
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:362
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:364
     // if (isDelegated && !existingRecord.isDelegated) {
     dig 13
     bz vote_after_if_else@17
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:361-362
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:363-364
     // const existingRecord = clone(voteRecordBox.value)
     // if (isDelegated && !existingRecord.isDelegated) {
     dig 19
@@ -2195,25 +2195,25 @@ vote_after_if_else@43:
     box_extract
     intc_0 // 0
     getbit
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:362
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:364
     // if (isDelegated && !existingRecord.isDelegated) {
     bnz vote_after_if_else@17
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:363
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:365
     // log(errGGovCannotOverride)
     pushbytes "ERR:GV_OD"
     log
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:364
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:366
     // err()
     err
 
 vote_after_if_else@17:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:366
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:368
     // for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
     intc_0 // 0
     bury 15
 
 vote_while_top@18:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:366
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:368
     // for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
     dig 19
     pushint 3 // 3
@@ -2223,17 +2223,17 @@ vote_while_top@18:
     dig 15
     >
     bz vote_after_if_else@24
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:369
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:371
     // const subtractedVotes: Uint32[] = []
     bytec 5 // 0x0000
     bury 22
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:370
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:372
     // for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
     intc_0 // 0
     bury 11
 
 vote_while_top@20:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:370
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:372
     // for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
     dig 19
     dup
@@ -2265,7 +2265,7 @@ vote_while_top@20:
     dig 11
     >
     bz vote_after_while@22
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:371
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:373
     // subtractedVotes.push(u32(currentVotes[j].asUint64() - oldTopicVotes[j].asUint64()))
     dig 23
     dup
@@ -2359,7 +2359,7 @@ vote_while_top@20:
     extract 6 2
     replace2 0
     bury 23
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:370
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:372
     // for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
     intc_2 // 1
     +
@@ -2367,9 +2367,9 @@ vote_while_top@20:
     b vote_while_top@20
 
 vote_after_while@22:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:373
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:375
     // globalVotesArr[i] = { votes: clone(subtractedVotes) }
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     dig 22
     concat
     dig 24
@@ -2386,7 +2386,7 @@ vote_after_while@22:
     dig 2
     callsub dynamic_array_replace_dynamic_element
     bury 25
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:366
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:368
     // for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
     intc_2 // 1
     +
@@ -2394,13 +2394,13 @@ vote_after_while@22:
     b vote_while_top@18
 
 vote_after_if_else@24:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:378
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:380
     // for (let i: uint64 = 0; i < newTopicVotes.length; i++) {
     intc_0 // 0
     bury 13
 
 vote_while_top@25:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:378
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:380
     // for (let i: uint64 = 0; i < newTopicVotes.length; i++) {
     dig 12
     dig 5
@@ -2408,7 +2408,7 @@ vote_while_top@25:
     dup
     bury 10
     bz vote_after_while@30
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:379
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:381
     // const topicVote = clone(newTopicVotes[i])
     dig 8
     assert // index access is out of bounds
@@ -2433,7 +2433,7 @@ vote_while_top@25:
     extract3
     dup
     bury 24
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:380
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:382
     // ensure(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
     intc_0 // 0
     extract_uint16 // on error: invalid array length header
@@ -2485,7 +2485,7 @@ vote_while_top@25:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@39
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:380
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:382
     // ensure(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
     bytec 23 // "ERR:GV_MM"
     // smart_contracts/base/utils.algo.ts:34
@@ -2496,27 +2496,27 @@ vote_while_top@25:
     err
 
 vote_after_if_else@39:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:381
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:383
     // let voteSum: uint64 = 0
     intc_0 // 0
     bury 8
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:383
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:385
     // const nextGlobalVotes: Uint32[] = []
     bytec 5 // 0x0000
     bury 23
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:384
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:386
     // for (let j: uint64 = 0; j < topicVote.length; j++) {
     intc_0 // 0
     bury 10
 
 vote_while_top@27:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:384
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:386
     // for (let j: uint64 = 0; j < topicVote.length; j++) {
     dig 9
     dig 18
     <
     bz vote_after_while@29
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:385
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:387
     // nextGlobalVotes.push(u32(currentGlobalVotes[j].asUint64() + topicVote[j].asUint64()))
     dig 24
     extract 2 0
@@ -2549,12 +2549,12 @@ vote_while_top@27:
     extract 6 2
     replace2 0
     bury 25
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:386
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:388
     // voteSum += topicVote[j].asUint64()
     dig 9
     +
     bury 9
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:384
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:386
     // for (let j: uint64 = 0; j < topicVote.length; j++) {
     intc_2 // 1
     +
@@ -2562,7 +2562,7 @@ vote_while_top@27:
     b vote_while_top@27
 
 vote_after_while@29:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:388
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:390
     // ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
     dig 18
     btoi
@@ -2571,7 +2571,7 @@ vote_after_while@29:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz vote_after_if_else@35
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:388
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:390
     // ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
     pushbytes "ERR:GV_VP"
     // smart_contracts/base/utils.algo.ts:34
@@ -2582,9 +2582,9 @@ vote_after_while@29:
     err
 
 vote_after_if_else@35:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:389
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:391
     // globalVotesArr[i] = { votes: clone(nextGlobalVotes) }
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     dig 23
     concat
     dig 13
@@ -2603,20 +2603,20 @@ vote_after_if_else@35:
     b vote_while_top@25
 
 vote_after_while@30:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:395
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:397
     // sender: Txn.sender,
     txn Sender
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:396
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:398
     // updateVote: voteRecordBox.exists,
     dig 20
     box_len
     cover 2
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:397
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:399
     // votingPower: votingPower.asUint64(),
     dig 20
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:393-399
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:395-401
     // emit<GGovVoteCast>({
     //   voter: voterAccount,
     //   sender: Txn.sender,
@@ -2643,48 +2643,48 @@ vote_after_while@30:
     swap
     concat
     log
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:402
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:404
     // if (this.firstVotingRound.value === 0) {
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:76
     // firstVotingRound = GlobalState<uint64>({ initialValue: 0 })
     bytec 15 // "firstVotingRound"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:402
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:404
     // if (this.firstVotingRound.value === 0) {
     app_global_get_ex
     assert // check GlobalState exists
     bnz vote_after_if_else@32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:76
     // firstVotingRound = GlobalState<uint64>({ initialValue: 0 })
     bytec 15 // "firstVotingRound"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:403
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:405
     // this.firstVotingRound.value = Global.round
     global Round
     app_global_put
 
 vote_after_if_else@32:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:76
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:78
     // lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
     bytec 18 // "lastVotingRound"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:405
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:407
     // this.lastVotingRound.value = Global.round
     global Round
     app_global_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:407
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:409
     // this.topicVotesArr.value = clone(globalVotesArr)
     box_del
     pop
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:407
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:409
     // this.topicVotesArr.value = clone(globalVotesArr)
     dig 24
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:408-411
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:410-413
     // voteRecordBox.value = {
     //   isDelegated: isDelegated,
     //   topicVotes: clone(newTopicVotes),
@@ -2703,7 +2703,7 @@ vote_after_if_else@32:
     pop
     swap
     box_put
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:325
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:327
     // public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
     intc_2 // 1
     return
@@ -2718,7 +2718,7 @@ canVote:
     intc_0 // 0
     dup
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -2732,21 +2732,21 @@ canVote:
     pushint 32 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:419
     // if (!this.ready.value) return [false, 0]
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
     // ready = GlobalState<boolean>({ initialValue: false })
-    bytec 11 // "ready"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
+    bytec 12 // "ready"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:419
     // if (!this.ready.value) return [false, 0]
     app_global_get_ex
     assert // check GlobalState exists
     bnz canVote_after_if_else@3
-    bytec 10 // 0x000000000000000000
+    bytec 11 // 0x000000000000000000
 
 canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     bytec 4 // 0x151f7c75
     swap
@@ -2756,67 +2756,67 @@ canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriod
     return
 
 canVote_after_if_else@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:418
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:420
     // if (Global.latestTimestamp < this.votingStart.value) return [false, 0]
     global LatestTimestamp
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
     // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:418
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:420
     // if (Global.latestTimestamp < this.votingStart.value) return [false, 0]
     app_global_get_ex
     assert // check GlobalState exists
     <
     bz canVote_after_if_else@5
-    bytec 10 // 0x000000000000000000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    bytec 11 // 0x000000000000000000
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
 canVote_after_if_else@5:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:419
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:421
     // if (Global.latestTimestamp >= this.votingEnd.value) return [false, 0]
     global LatestTimestamp
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:419
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:421
     // if (Global.latestTimestamp >= this.votingEnd.value) return [false, 0]
     app_global_get_ex
     assert // check GlobalState exists
     >=
     bz canVote_after_if_else@7
-    bytec 10 // 0x000000000000000000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    bytec 11 // 0x000000000000000000
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
 canVote_after_if_else@7:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:421
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:423
     // if (senderAccount !== voterAccount) {
     dup
     dig 2
     !=
     bz canVote_after_if_else@17
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:422-425
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:424-427
     // const delegate = compileArc4(GGovRegistryContract).call.getDelegate({
     //   appId: Application(this.registryApp.value),
     //   args: [voterAccount],
     // }).returnValue
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:423
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:425
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:423
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:425
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:422-425
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:424-427
     // const delegate = compileArc4(GGovRegistryContract).call.getDelegate({
     //   appId: Application(this.registryApp.value),
     //   args: [voterAccount],
@@ -2848,37 +2848,37 @@ canVote_after_if_else@7:
     pushint 32 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:426
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:428
     // if (delegate === Global.zeroAddress) return [false, 0]
     global ZeroAddress
     ==
     bz canVote_after_if_else@11
-    bytec 10 // 0x000000000000000000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    bytec 11 // 0x000000000000000000
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
 canVote_after_if_else@11:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:427
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:429
     // if (delegate !== senderAccount) return [false, 0]
     dig 4
     dig 1
     !=
     bz canVote_after_if_else@13
-    bytec 10 // 0x000000000000000000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    bytec 11 // 0x000000000000000000
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
 canVote_after_if_else@13:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:87
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:89
     // voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
     bytec 13 // "v"
     dig 2
     concat
     dup
     bury 5
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:432
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:434
     // if (recordBox.exists && !recordBox.value.isDelegated) return [false, 0]
     box_len
     bury 1
@@ -2890,39 +2890,39 @@ canVote_after_if_else@13:
     intc_0 // 0
     getbit
     bnz canVote_after_if_else@17
-    bytec 10 // 0x000000000000000000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    bytec 11 // 0x000000000000000000
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
 canVote_after_if_else@17:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:435-438
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:437-440
     // const power = compileArc4(GGovRegistryContract).call.tryGetGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
     // }).returnValue
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:436
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:438
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:436
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:438
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:437
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:439
     // args: [this.committeeId.value, voterAccount],
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
     // committeeId = GlobalState<CommitteeId>()
-    bytec 12 // "committeeId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:437
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:439
     // args: [this.committeeId.value, voterAccount],
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:435-438
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:437-440
     // const power = compileArc4(GGovRegistryContract).call.tryGetGovVotingPower({
     //   appId: Application(this.registryApp.value),
     //   args: [this.committeeId.value, voterAccount],
@@ -2953,26 +2953,26 @@ canVote_after_if_else@17:
     intc_3 // 4
     ==
     assert // invalid number of bytes for arc4.uint32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:439
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:441
     // if (power.asUint64() === 0) return [false, 0]
     btoi
     dup
     bury 4
     bnz canVote_after_if_else@20
-    bytec 10 // 0x000000000000000000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    bytec 11 // 0x000000000000000000
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
 canVote_after_if_else@20:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:440
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:442
     // return [true, power.asUint64()]
     dig 2
     itob
     pushbytes 0x80
     swap
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:415
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:417
     // @abimethod({ readonly: true })
     b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21
 
@@ -2982,29 +2982,29 @@ getPeriod:
     intc_0 // 0
     dupn 2
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:447
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:449
     // if (this.registryApp.value === 0) return getEmptyGGovPeriod()
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:447
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:449
     // if (this.registryApp.value === 0) return getEmptyGGovPeriod()
     app_global_get_ex
     assert // check GlobalState exists
     bnz getPeriod_after_if_else@3
-    // smart_contracts/base/types.algo.ts:224
+    // smart_contracts/base/types.algo.ts:232
     // votingStart: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:225
+    // smart_contracts/base/types.algo.ts:233
     // votingEnd: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:223
+    // smart_contracts/base/types.algo.ts:231
     // committeeId: new StaticBytes<32>(),
-    pushbytes 0x0000000000000000000000000000000000000000000000000000000000000000
-    // smart_contracts/base/types.algo.ts:222-227
+    bytec 24 // 0x0000000000000000000000000000000000000000000000000000000000000000
+    // smart_contracts/base/types.algo.ts:230-235
     // return {
     //   committeeId: new StaticBytes<32>(),
     //   votingStart: u32(0),
@@ -3015,11 +3015,11 @@ getPeriod:
     concat
     swap
     concat
-    pushbytes 0x002a0000
+    bytec 25 // 0x002a0000
     concat
 
 getPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriod@7:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:445
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:447
     // @abimethod({ readonly: true })
     bytec 4 // 0x151f7c75
     swap
@@ -3029,38 +3029,38 @@ getPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeri
     return
 
 getPeriod_after_if_else@3:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:448
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:450
     // const optionsArr = clone(this.topicOptionsArr.value)
     box_get
     swap
     bury 5
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:449
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:451
     // const votesArr = clone(this.topicVotesArr.value)
     box_get
     swap
     bury 3
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:450
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:452
     // const topics: GGovTopic[] = []
     bytec 5 // 0x0000
     bury 3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:451
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:453
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     intc_0 // 0
     bury 1
 
 getPeriod_while_top@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:451
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:453
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     intc_0 // 0
     intc_1 // 2
@@ -3069,7 +3069,7 @@ getPeriod_while_top@4:
     dig 1
     >
     bz getPeriod_after_while@6
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:452
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:454
     // topics.push({ options: clone(optionsArr[i].options), votes: clone(votesArr[i].votes) })
     dig 3
     dup
@@ -3146,7 +3146,7 @@ getPeriod_while_top@4:
     +
     itob
     extract 6 2
-    bytec 24 // 0x0004
+    bytec 26 // 0x0004
     swap
     concat
     uncover 2
@@ -3159,7 +3159,7 @@ getPeriod_while_top@4:
     extract_uint16
     swap
     extract 2 0
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     uncover 3
     concat
     cover 2
@@ -3170,39 +3170,39 @@ getPeriod_while_top@4:
     b getPeriod_while_top@4
 
 getPeriod_after_while@6:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:455
-    // committeeId: this.committeeId.value,
-    intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
-    // committeeId = GlobalState<CommitteeId>()
-    bytec 12 // "committeeId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:455
-    // committeeId: this.committeeId.value,
-    app_global_get_ex
-    assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:456
-    // votingStart: u32(this.votingStart.value),
-    intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
-    // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:456
-    // votingStart: u32(this.votingStart.value),
-    app_global_get_ex
-    assert // check GlobalState exists
-    callsub u32
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:457
-    // votingEnd: u32(this.votingEnd.value),
+    // committeeId: this.committeeId.value,
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
+    // committeeId = GlobalState<CommitteeId>()
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:457
+    // committeeId: this.committeeId.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:458
+    // votingStart: u32(this.votingStart.value),
     intc_0 // 0
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // votingStart = GlobalState<uint64>()
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:458
+    // votingStart: u32(this.votingStart.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    callsub u32
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:459
+    // votingEnd: u32(this.votingEnd.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:457
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:459
     // votingEnd: u32(this.votingEnd.value),
     app_global_get_ex
     assert // check GlobalState exists
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:454-459
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:456-461
     // return {
     //   committeeId: this.committeeId.value,
     //   votingStart: u32(this.votingStart.value),
@@ -3213,13 +3213,189 @@ getPeriod_after_while@6:
     concat
     swap
     concat
-    pushbytes 0x002a
+    bytec 27 // 0x002a
     concat
     dig 3
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:445
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:447
     // @abimethod({ readonly: true })
     b getPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriod@7
+
+
+// smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriodShort[routing]() -> void:
+getPeriodShort:
+    intc_0 // 0
+    bytec_3 // ""
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:467
+    // if (this.registryApp.value === 0) return getEmptyGGovPeriodShort()
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
+    // registryApp = GlobalState<uint64>({ initialValue: 0 })
+    bytec_2 // "registryApp"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:467
+    // if (this.registryApp.value === 0) return getEmptyGGovPeriodShort()
+    app_global_get_ex
+    assert // check GlobalState exists
+    bnz getPeriodShort_after_if_else@3
+    // smart_contracts/base/types.algo.ts:241
+    // votingStart: u32(0),
+    intc_0 // 0
+    callsub u32
+    // smart_contracts/base/types.algo.ts:242
+    // votingEnd: u32(0),
+    intc_0 // 0
+    callsub u32
+    // smart_contracts/base/types.algo.ts:240
+    // committeeId: new StaticBytes<32>(),
+    bytec 24 // 0x0000000000000000000000000000000000000000000000000000000000000000
+    // smart_contracts/base/types.algo.ts:239-244
+    // return {
+    //   committeeId: new StaticBytes<32>(),
+    //   votingStart: u32(0),
+    //   votingEnd: u32(0),
+    //   topicOptionLengths: [] as Uint32[],
+    // }
+    uncover 2
+    concat
+    swap
+    concat
+    bytec 25 // 0x002a0000
+    concat
+
+getPeriodShort_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriodShort@7:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:465
+    // @abimethod({ readonly: true })
+    bytec 4 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_2 // 1
+    return
+
+getPeriodShort_after_if_else@3:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:469
+    // const lengths: Uint32[] = []
+    bytec 5 // 0x0000
+    bury 2
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:470
+    // for (let i: uint64 = 0; i < topics.length; i++) {
+    intc_0 // 0
+    bury 1
+
+getPeriodShort_while_top@4:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
+    bytec_1 // "o"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:470
+    // for (let i: uint64 = 0; i < topics.length; i++) {
+    intc_0 // 0
+    intc_1 // 2
+    box_extract
+    btoi
+    dig 1
+    >
+    bz getPeriodShort_after_while@6
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:471
+    // lengths.push(u32(topics[i].options.length))
+    intc_1 // 2
+    dig 1
+    dup
+    cover 2
+    *
+    intc_1 // 2
+    +
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
+    bytec_1 // "o"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:471
+    // lengths.push(u32(topics[i].options.length))
+    swap
+    intc_1 // 2
+    box_extract
+    btoi
+    intc_3 // 4
+    +
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
+    bytec_1 // "o"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:471
+    // lengths.push(u32(topics[i].options.length))
+    swap
+    intc_1 // 2
+    box_extract
+    btoi
+    callsub u32
+    dig 3
+    dup
+    uncover 2
+    concat // on error: max array length exceeded
+    swap
+    intc_0 // 0
+    extract_uint16
+    intc_2 // 1
+    +
+    itob
+    extract 6 2
+    replace2 0
+    bury 3
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:470
+    // for (let i: uint64 = 0; i < topics.length; i++) {
+    intc_2 // 1
+    +
+    bury 1
+    b getPeriodShort_while_top@4
+
+getPeriodShort_after_while@6:
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:474
+    // committeeId: this.committeeId.value,
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
+    // committeeId = GlobalState<CommitteeId>()
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:474
+    // committeeId: this.committeeId.value,
+    app_global_get_ex
+    assert // check GlobalState exists
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:475
+    // votingStart: u32(this.votingStart.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // votingStart = GlobalState<uint64>()
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:475
+    // votingStart: u32(this.votingStart.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    callsub u32
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:476
+    // votingEnd: u32(this.votingEnd.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // votingEnd = GlobalState<uint64>()
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:476
+    // votingEnd: u32(this.votingEnd.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    callsub u32
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:473-478
+    // return {
+    //   committeeId: this.committeeId.value,
+    //   votingStart: u32(this.votingStart.value),
+    //   votingEnd: u32(this.votingEnd.value),
+    //   topicOptionLengths: lengths,
+    // }
+    cover 2
+    concat
+    swap
+    concat
+    bytec 27 // 0x002a
+    concat
+    dig 2
+    concat
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:465
+    // @abimethod({ readonly: true })
+    b getPeriodShort_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriodShort@7
 
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod[routing]() -> void:
@@ -3227,78 +3403,78 @@ logPeriod:
     intc_0 // 0
     dup
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:471
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:490
     // if (this.registryApp.value === 0) return
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:471
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:490
     // if (this.registryApp.value === 0) return
     app_global_get_ex
     assert // check GlobalState exists
     bz logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod@7
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:472
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:491
     // const optionsArr = clone(this.topicOptionsArr.value)
     box_get
     swap
     bury 4
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:83
     // topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
     bytec_0 // "t"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:473
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:492
     // const votesArr = clone(this.topicVotesArr.value)
     box_get
     swap
     bury 3
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:475
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:494
     // committeeId: this.committeeId.value,
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:74
     // committeeId = GlobalState<CommitteeId>()
-    bytec 12 // "committeeId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:475
+    bytec 10 // "committeeId"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:494
     // committeeId: this.committeeId.value,
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:476
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:495
     // votingStart: u32(this.votingStart.value),
-    intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
-    // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:476
-    // votingStart: u32(this.votingStart.value),
-    app_global_get_ex
-    assert // check GlobalState exists
-    callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:477
-    // votingEnd: u32(this.votingEnd.value),
     intc_0 // 0
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // votingStart = GlobalState<uint64>()
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:495
+    // votingStart: u32(this.votingStart.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    callsub u32
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:496
+    // votingEnd: u32(this.votingEnd.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:477
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:496
     // votingEnd: u32(this.votingEnd.value),
     app_global_get_ex
     assert // check GlobalState exists
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:478
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:497
     // numTopics: u32(optionsArr.length),
     intc_0 // 0
     intc_1 // 2
     box_extract
     btoi
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:474-479
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:493-498
     // const meta: GGovPeriodMeta = {
     //   committeeId: this.committeeId.value,
     //   votingStart: u32(this.votingStart.value),
@@ -3312,19 +3488,19 @@ logPeriod:
     concat
     swap
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:480
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:499
     // log(encodeArc4(meta))
     log
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:481
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:500
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     intc_0 // 0
     bury 1
 
 logPeriod_while_top@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:481
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:500
     // for (let i: uint64 = 0; i < optionsArr.length; i++) {
     intc_0 // 0
     intc_1 // 2
@@ -3333,7 +3509,7 @@ logPeriod_while_top@4:
     dig 1
     >
     bz logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod@7
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:482
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:501
     // const topic: GGovTopic = { options: clone(optionsArr[i].options), votes: clone(votesArr[i].votes) }
     dig 2
     dup
@@ -3410,20 +3586,20 @@ logPeriod_while_top@4:
     +
     itob
     extract 6 2
-    bytec 24 // 0x0004
+    bytec 26 // 0x0004
     swap
     concat
     uncover 2
     concat
     swap
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:483
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:502
     // log(encodeArc4(topic))
     log
     b logPeriod_while_top@4
 
 logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod@7:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:469
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:488
     // @abimethod({ readonly: true })
     intc_2 // 1
     return
@@ -3431,7 +3607,7 @@ logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeri
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getVotingRecord[routing]() -> void:
 getVotingRecord:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:487
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:506
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -3439,13 +3615,13 @@ getVotingRecord:
     pushint 32 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:87
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:89
     // voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
     bytec 13 // "v"
     swap
     concat
     dup
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:490
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:509
     // if (box.exists) return box.value
     box_len
     bury 1
@@ -3455,7 +3631,7 @@ getVotingRecord:
     assert // Box must have value
 
 getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getVotingRecord@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:487
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:506
     // @abimethod({ readonly: true })
     bytec 4 // 0x151f7c75
     swap
@@ -3465,13 +3641,13 @@ getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GG
     return
 
 getVotingRecord_after_if_else@3:
-    // smart_contracts/base/types.algo.ts:231-234
+    // smart_contracts/base/types.algo.ts:248-251
     // return {
     //   isDelegated: false,
     //   topicVotes: [] as Uint32[][],
     // }
     pushbytes 0x0000030000
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:487
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:506
     // @abimethod({ readonly: true })
     b getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getVotingRecord@4
 
@@ -3480,7 +3656,7 @@ getVotingRecord_after_if_else@3:
 logVotingRecord:
     intc_0 // 0
     bytec_3 // ""
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:502
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:521
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -3488,25 +3664,25 @@ logVotingRecord:
     pushint 32 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:87
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:89
     // voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
     bytec 13 // "v"
     swap
     concat
     dup
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:505
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:524
     // if (!box.exists) return
     box_len
     bury 1
     bz logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord@7
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:506
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:525
     // const record = clone(box.value)
     dupn 2
     box_get
     swap
     bury 5
     assert // Box must have value
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:508
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:527
     // isDelegated: record.isDelegated,
     dup
     intc_0 // 0
@@ -3514,7 +3690,7 @@ logVotingRecord:
     box_extract
     intc_0 // 0
     getbit
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:509
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:528
     // numTopics: u32(record.topicVotes.length),
     swap
     pushint 3 // 3
@@ -3522,7 +3698,7 @@ logVotingRecord:
     box_extract
     btoi
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:507-510
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:526-529
     // const meta: GGovVoteRecordMeta = {
     //   isDelegated: record.isDelegated,
     //   numTopics: u32(record.topicVotes.length),
@@ -3533,16 +3709,16 @@ logVotingRecord:
     setbit
     swap
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:511
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:530
     // log(encodeArc4(meta))
     log
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:512
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:531
     // for (let i: uint64 = 0; i < record.topicVotes.length; i++) {
     intc_0 // 0
     bury 2
 
 logVotingRecord_while_top@4:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:512
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:531
     // for (let i: uint64 = 0; i < record.topicVotes.length; i++) {
     dup
     pushint 3 // 3
@@ -3552,7 +3728,7 @@ logVotingRecord_while_top@4:
     dig 2
     >
     bz logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord@7
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:513
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:532
     // const topicVotes: GGovTopicVotes = { votes: clone(record.topicVotes[i]) }
     dig 2
     dup
@@ -3587,13 +3763,13 @@ logVotingRecord_while_top@4:
     uncover 3
     cover 2
     extract3
-    bytec 6 // 0x0002
+    bytec 8 // 0x0002
     swap
     concat
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:514
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:533
     // log(encodeArc4(topicVotes))
     log
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:512
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:531
     // for (let i: uint64 = 0; i < record.topicVotes.length; i++) {
     intc_2 // 1
     +
@@ -3601,7 +3777,7 @@ logVotingRecord_while_top@4:
     b logVotingRecord_while_top@4
 
 logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord@7:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:502
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:521
     // @abimethod({ readonly: true })
     intc_2 // 1
     return
@@ -3609,7 +3785,7 @@ logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GG
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.withdrawALGO[routing]() -> void:
 withdrawALGO:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:525
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:544
     // public withdrawALGO(receiver: Account, amount: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -3624,10 +3800,10 @@ withdrawALGO:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:526
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:545
     // this.checkAdminCaller()
     callsub checkAdminCaller
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:527
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:546
     // itxn.payment({ receiver, amount }).submit()
     itxn_begin
     itxn_field Amount
@@ -3637,7 +3813,7 @@ withdrawALGO:
     intc_0 // 0
     itxn_field Fee
     itxn_submit
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:525
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:544
     // public withdrawALGO(receiver: Account, amount: uint64): void {
     intc_2 // 1
     return
@@ -3675,9 +3851,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:23
     // const empty = compile(EmptyContract)
-    bytec 25 // base64(C4EBQw==)
+    bytec 28 // base64(C4EBQw==)
     itxn_field ClearStateProgramPages
-    bytec 25 // base64(C4EBQw==)
+    bytec 28 // base64(C4EBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:25-30
     // itxn
@@ -3716,26 +3892,26 @@ increaseBudget_after_while@5:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsOperator() -> void:
 ensureCallerIsOperator:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:119-122
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:121-124
     // const ok = compileArc4(GGovRegistryContract).call.verifyOperator({
     //   appId: Application(this.registryApp.value),
     //   args: [Txn.sender],
     // }).returnValue
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:120
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:122
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:120
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:122
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:121
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:123
     // args: [Txn.sender],
     txn Sender
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:119-122
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:121-124
     // const ok = compileArc4(GGovRegistryContract).call.verifyOperator({
     //   appId: Application(this.registryApp.value),
     //   args: [Txn.sender],
@@ -3769,7 +3945,7 @@ ensureCallerIsOperator:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz ensureCallerIsOperator_after_if_else@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:123
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:125
     // ensure(ok, errUnauthorized)
     bytec 17 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
@@ -3785,26 +3961,26 @@ ensureCallerIsOperator_after_if_else@3:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkAdminCaller() -> void:
 checkAdminCaller:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:128-131
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:130-133
     // const ok = compileArc4(GGovRegistryContract).call.verifyAdmin({
     //   appId: Application(this.registryApp.value),
     //   args: [Txn.sender],
     // }).returnValue
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:129
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:131
     // appId: Application(this.registryApp.value),
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
     // registryApp = GlobalState<uint64>({ initialValue: 0 })
     bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:129
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:131
     // appId: Application(this.registryApp.value),
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:130
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:132
     // args: [Txn.sender],
     txn Sender
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:128-131
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:130-133
     // const ok = compileArc4(GGovRegistryContract).call.verifyAdmin({
     //   appId: Application(this.registryApp.value),
     //   args: [Txn.sender],
@@ -3838,7 +4014,7 @@ checkAdminCaller:
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bnz checkAdminCaller_after_if_else@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:132
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:134
     // ensure(ok, errUnauthorized)
     bytec 17 // "ERR:AUTH"
     // smart_contracts/base/utils.algo.ts:34
@@ -3854,7 +4030,7 @@ checkAdminCaller_after_if_else@3:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.syncSummaryToRegistry() -> void:
 syncSummaryToRegistry:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:137-146
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:139-148
     // compileArc4(GGovRegistryContract).call.updatePeriodSummary({
     //   appId: Application(this.registryApp.value),
     //   args: [
@@ -3866,66 +4042,66 @@ syncSummaryToRegistry:
     //   ],
     // })
     itxn_begin
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:138
-    // appId: Application(this.registryApp.value),
-    intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:62
-    // registryApp = GlobalState<uint64>({ initialValue: 0 })
-    bytec_2 // "registryApp"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:138
-    // appId: Application(this.registryApp.value),
-    app_global_get_ex
-    assert // check GlobalState exists
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:140
-    // u32(this.periodId.value),
+    // appId: Application(this.registryApp.value),
     intc_0 // 0
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:64
+    // registryApp = GlobalState<uint64>({ initialValue: 0 })
+    bytec_2 // "registryApp"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:140
+    // appId: Application(this.registryApp.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:142
+    // u32(this.periodId.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
     // periodId = GlobalState<uint64>()
     bytec 16 // "periodId"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:140
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:142
     // u32(this.periodId.value),
     app_global_get_ex
     assert // check GlobalState exists
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:141
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:143
     // u32(this.votingStart.value),
-    intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:66
-    // votingStart = GlobalState<uint64>()
-    bytec 8 // "votingStart"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:141
-    // u32(this.votingStart.value),
-    app_global_get_ex
-    assert // check GlobalState exists
-    callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:142
-    // u32(this.votingEnd.value),
     intc_0 // 0
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:68
+    // votingStart = GlobalState<uint64>()
+    bytec 6 // "votingStart"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:143
+    // u32(this.votingStart.value),
+    app_global_get_ex
+    assert // check GlobalState exists
+    callsub u32
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:144
+    // u32(this.votingEnd.value),
+    intc_0 // 0
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
     // votingEnd = GlobalState<uint64>()
-    bytec 9 // "votingEnd"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:142
+    bytec 7 // "votingEnd"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:144
     // u32(this.votingEnd.value),
     app_global_get_ex
     assert // check GlobalState exists
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:79
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:81
     // topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
     bytec_1 // "o"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:143
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:145
     // u32(this.topicOptionsArr.value.length),
     intc_0 // 0
     intc_1 // 2
     box_extract
     btoi
     callsub u32
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:144
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:146
     // this.ready.value,
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
     // ready = GlobalState<boolean>({ initialValue: false })
-    bytec 11 // "ready"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:144
+    bytec 12 // "ready"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:146
     // this.ready.value,
     app_global_get_ex
     assert // check GlobalState exists
@@ -3933,7 +4109,7 @@ syncSummaryToRegistry:
     intc_0 // 0
     uncover 2
     setbit
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:137-146
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:139-148
     // compileArc4(GGovRegistryContract).call.updatePeriodSummary({
     //   appId: Application(this.registryApp.value),
     //   args: [
@@ -3968,20 +4144,20 @@ syncSummaryToRegistry:
 
 // smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureEditable() -> void:
 ensureEditable:
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:151
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:153
     // ensure(!this.ready.value, errGGovReady)
     intc_0 // 0
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:70
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:72
     // ready = GlobalState<boolean>({ initialValue: false })
-    bytec 11 // "ready"
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:151
+    bytec 12 // "ready"
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:153
     // ensure(!this.ready.value, errGGovReady)
     app_global_get_ex
     assert // check GlobalState exists
     // smart_contracts/base/utils.algo.ts:33
     // if (!cond) {
     bz ensureEditable_after_if_else@3
-    // smart_contracts/ggov-period/ggovPeriod.algo.ts:151
+    // smart_contracts/ggov-period/ggovPeriod.algo.ts:153
     // ensure(!this.ready.value, errGGovReady)
     pushbytes "ERR:GP_RD"
     // smart_contracts/base/utils.algo.ts:34

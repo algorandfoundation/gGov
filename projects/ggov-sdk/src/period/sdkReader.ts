@@ -7,6 +7,7 @@ import {
   GGovPeriodClient,
   GGovPeriodComposer,
   GGovPeriod,
+  GGovPeriodShort,
   GGovVoteRecord,
   APP_SPEC as PERIOD_APP_SPEC,
 } from '../generated/GGovPeriodClient'
@@ -164,6 +165,19 @@ export class GGovReaderSDK {
     } catch {
       return EMPTY_PERIOD
     }
+  }
+
+  /**
+   * Read the short period shape (committee, voting window, and per-topic option counts) that the
+   * fractional delegator consumes. Unlike `getPeriod`, this never carries the topic options/votes,
+   * so its single ARC-4 return value stays small — no log-line reconstruction needed. Simulated via
+   * the readonly `getPeriodShort` ABI method.
+   */
+  @wrapErrors()
+  async getPeriodShort(periodId: bigint | number): Promise<GGovPeriodShort> {
+    const client = await this.getPeriodReadClient(periodId)
+    const { return: short } = await client.send.getPeriodShort({ args: {} })
+    return short!
   }
 
   /**

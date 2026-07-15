@@ -188,6 +188,14 @@ export type GGovPeriod = {
   topics: GGovTopic[]
 }
 
+/** Period short - used by fractional delegator */
+export type GGovPeriodShort = {
+  committeeId: CommitteeId
+  votingStart: Uint32
+  votingEnd: Uint32
+  topicOptionLengths: Uint32[]
+}
+
 /**
  * Period header, logged as the first line by GGovPeriod.logPeriod() — the non-topic
  * fields of GGovPeriod plus the topic count. Each subsequent log line is one GGovTopic.
@@ -224,6 +232,15 @@ export function getEmptyGGovPeriod(): GGovPeriod {
     votingStart: u32(0),
     votingEnd: u32(0),
     topics: [] as GGovTopic[],
+  }
+}
+
+export function getEmptyGGovPeriodShort(): GGovPeriodShort {
+  return {
+    committeeId: new StaticBytes<32>(),
+    votingStart: u32(0),
+    votingEnd: u32(0),
+    topicOptionLengths: [] as Uint32[],
   }
 }
 

@@ -1304,6 +1304,61 @@ describe('GGovPeriod contract', () => {
     })
   })
 
+  // ── getPeriodShort ───────────────────────────────────────────────
+
+  describe('getPeriodShort', () => {
+    test('returns committee, voting window, and per-topic option counts', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [
+        ['Yes', 'No'],
+        ['A', 'B', 'C', 'D'],
+      ])
+
+      const short = await sdk.getPeriodShort(periodId)
+      expect(short.committeeId).toEqual(committeeId)
+      // One entry per topic, holding that topic's option count — no options/votes payload.
+      expect(short.topicOptionLengths).toEqual([2, 4])
+
+      // The window agrees with what the full getPeriod read reports for the same period.
+      const period = await sdk.getPeriod(periodId)
+      expect(short.votingStart).toBe(period.votingStart)
+      expect(short.votingEnd).toBe(period.votingEnd)
+    })
+
+    test('returns empty topic option counts for a period with no topics', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+
+      const short = await sdk.getPeriodShort(periodId)
+      expect(short.committeeId).toEqual(committeeId)
+      expect(short.topicOptionLengths).toEqual([])
+      expect(short.votingStart).toBeGreaterThan(0)
+      expect(short.votingEnd).toBeGreaterThan(0)
+    })
+
+    test('returns an empty shape for a period app that was never initialised', async () => {
+      // A bare-created period app has registryApp still 0, so its global keys and topic boxes
+      // don't exist yet. getPeriodShort must return the empty shape rather than assert, matching
+      // getPeriod/logPeriod.
+      const admin = localnet.context.testAccount
+      const periodFactory = localnet.algorand.client.getTypedAppFactory(GGovPeriodFactory, { defaultSender: admin })
+      const { appClient } = await periodFactory.send.create.bare()
+
+      const { return: short } = await appClient.send.getPeriodShort({ args: {} })
+      expect(short!.committeeId).toEqual(new Uint8Array(32))
+      expect(short!.votingStart).toBe(0)
+      expect(short!.votingEnd).toBe(0)
+      expect(short!.topicOptionLengths).toEqual([])
+    })
+  })
+
   // ── Body uploads ────────────────────────────────────────────────
 
   describe('uploadPeriodBodyPartial', () => {
