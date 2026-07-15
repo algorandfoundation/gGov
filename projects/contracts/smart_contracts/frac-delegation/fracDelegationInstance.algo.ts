@@ -2,7 +2,9 @@ import {
   abimethod,
   Account,
   baremethod,
+  Box,
   Bytes,
+  clone,
   contract,
   Global,
   GlobalState,
@@ -31,6 +33,12 @@ export class FracDelegationInstanceContract extends BaseContract {
   instanceNumId = GlobalState<Uint16>()
   /** Human-readable instance label. Set once at creation. */
   name = GlobalState<string>()
+  /**
+   * Escrow accounts registered against this instance. Written append-only by `registerEscrow`
+   * (via the registry, or directly by the admin escape hatch). The registry mirrors the length
+   * of this list in its per-instance `numEscrows` counter for cheap off-chain reads.
+   */
+  escrows = Box<Account[]>({ key: 'escrows' })
 
   // ── Create ────────────────────────────────────────────────────────
 
@@ -90,6 +98,16 @@ export class FracDelegationInstanceContract extends BaseContract {
     ensure(Global.callerApplicationId === this.registryApp.value, errUnauthorized)
   }
 
+  /**
+   * Caller must be the bound registry (inner call from `registryApp`) or the resolved admin.
+   * Lets the registry drive `registerEscrow` on the instance while preserving a direct admin
+   * escape hatch (the creator branch of `ensureCallerIsAdmin` still applies).
+   */
+  protected ensureCallerIsAdminOrRegistry(): void {
+    if (this.registryApp.value > 0 && Global.callerApplicationId === this.registryApp.value) return
+    this.ensureCallerIsAdmin()
+  }
+
   @abimethod({ readonly: true })
   public getAdmin(): Account {
     return this.resolveAdmin()
@@ -133,6 +151,26 @@ export class FracDelegationInstanceContract extends BaseContract {
     this.ensureCallerIsAdmin()
     ensure(receiver !== Global.zeroAddress, errUnauthorized)
     itxn.payment({ receiver, amount }).submit()
+  }
+
+  // ── Escrows ───────────────────────────────────────────────────────
+
+  /**
+   * Append `account` to this instance's `escrows` list. Callable by the bound registry (the
+   * normal path — `FracDelegationRegistry.registerEscrow`, which also keeps its per-instance
+   * `numEscrows` counter in sync) or directly by the admin (escape hatch; a direct admin call
+   * does NOT touch the registry counter, so prefer the registry path).
+   *
+   * Append-only: this method performs no de-duplication. On the normal path the registry
+   * enforces globally-unique escrow assignment before calling here, so duplicates only arise if
+   * the admin uses the direct escape hatch to register the same account twice.
+   * @param account Escrow account to append
+   */
+  public registerEscrow(account: Account): void {
+    this.ensureCallerIsAdminOrRegistry()
+    const escrows = this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
+    escrows.push(account)
+    this.escrows.value = clone(escrows)
   }
 
   // ── Admin: lifecycle ──────────────────────────────────────────────

@@ -103,6 +103,34 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     maker: this.makeWithdrawALGOTxns,
   })
 
+  // ── Admin: escrows ───────────────────────────────────────────────
+
+  /**
+   * Register `account` as an escrow of instance `instanceNumId`. Admin only.
+   *
+   * Records the globally-unique escrow -> instance assignment in the registry, bumps the
+   * instance's `numEscrows` counter, and inner-calls the instance's `registerEscrow` so the
+   * account is appended to the instance's own escrows list. Rejects with `ERR:FE_AS` if the
+   * account is already assigned to any instance. The registry's own boxes, the target instance
+   * app, and its escrows box are resolved automatically via resource population.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeRegisterEscrowTxns({
+    instanceNumId,
+    account,
+    note,
+    builder,
+  }: FracDelegationRegistryContractArgs['registerEscrow(uint16,address)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    // extraFee covers the single inner app call to the instance's registerEscrow.
+    return builder.registerEscrow({ args: { instanceNumId, account }, note, extraFee: (1000).microAlgo() })
+  }
+
+  registerEscrow = this.makeTxnExecutor({
+    maker: this.makeRegisterEscrowTxns,
+  })
+
   // ── Admin: lifecycle ────────────────────────────────────────────
 
   /**

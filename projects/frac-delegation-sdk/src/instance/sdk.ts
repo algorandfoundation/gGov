@@ -84,6 +84,28 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     maker: this.makeWithdrawALGOTxns,
   })
 
+  // ── Escrows ──────────────────────────────────────────────────────
+
+  /**
+   * Append `account` to the instance's escrows list. Normally driven by the registry via
+   * `FracDelegationRegistrySDK.registerEscrow` (which also enforces unique assignment and keeps
+   * its counter in sync); calling this directly is the admin escape hatch and bypasses both.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeRegisterEscrowTxns({
+    account,
+    builder,
+  }: FracDelegationInstanceContractArgs['registerEscrow(address)void'] & InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.registerEscrow({ args: { account } })
+    return builder
+  }
+
+  registerEscrow = this.makeTxnExecutor({
+    maker: this.makeRegisterEscrowTxns,
+  })
+
   // ── Admin: lifecycle ────────────────────────────────────────────
 
   /**

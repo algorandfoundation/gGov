@@ -12,6 +12,7 @@ import { ReaderConstructorArgs } from './types'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
 import { errorTransformer } from '../util/wrapErrors'
+import { undefinedIfBoxMissing } from '../util/boxes'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
 
 export class FracDelegationRegistryReaderSDK {
@@ -55,6 +56,16 @@ export class FracDelegationRegistryReaderSDK {
   async getGGovRegistryApp(): Promise<bigint | undefined> {
     const appId = await this.readClient.state.global.gGovRegistryApp()
     return appId === undefined ? undefined : BigInt(appId)
+  }
+
+  /** Registered instance record by numeric id, or undefined if no such instance. */
+  async getInstance(instanceNumId: number | bigint) {
+    return undefinedIfBoxMissing(() => this.readClient.state.box.instances.value(instanceNumId))
+  }
+
+  /** Instance numeric ID an escrow account is assigned to, or undefined if unassigned. */
+  async getEscrowInstance(account: string): Promise<number | undefined> {
+    return undefinedIfBoxMissing(() => this.readClient.state.box.escrows.value(account))
   }
 
   /** Read all registry global state, plus the current network round. */
