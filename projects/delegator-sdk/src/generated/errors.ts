@@ -71,5 +71,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:FI_NC": "Instance approval program not yet uploaded to registry",
   "ERR:FI_NX": "Instance does not exist",
   "ERR:FE_AS": "Escrow account is already assigned to an instance",
-  "ERR:FE_NX": "Instance has no registered escrows"
+  "ERR:FE_NX": "Instance has no registered escrows",
+  "ERR:FP_MM": "Period app does not match the synced period record"
 };

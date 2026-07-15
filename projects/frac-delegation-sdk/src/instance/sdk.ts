@@ -10,6 +10,10 @@ import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 import { committeeIdToRaw } from '../util/comitteeId'
+import { MAX_GROUP_SIZE, REF_SLOTS_PER_APP_CALL } from '../constants'
+
+/** Keeps otherwise-identical padding app calls from colliding into one duplicate txn ID. */
+const noteNonce = () => Math.floor(Math.random() * 100_000_000)
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -107,6 +111,50 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     maker: this.makeRegisterEscrowTxns,
   })
 
+  // ── Reference-slot padding ───────────────────────────────────────
+
+  /**
+   * Escrow count to size reference padding from — an upper bound, never an under-estimate.
+   *
+   * `syncPeriod` actually sizes against the committee snapshot rather than `escrows`, but `escrows`
+   * is append-only and the snapshot is rebuilt from it, so `escrowsVotes.length <= escrows.length`
+   * always holds. Over-padding costs one min fee per spare txn; under-padding fails the group.
+   */
+  private async escrowCountUpperBound() {
+    return (await this.getEscrows()).length
+  }
+
+  /**
+   * Pad `builder` with no-op `increaseBudget` calls until the group carries `refSlots` reference
+   * slots. Foreign/box references are pooled across the group but capped at 8 per app call, so a
+   * method touching more than 8 of them needs company in the group or resource population fails
+   * with "No more transactions below reference limit".
+   *
+   * `increaseBudget` is unauthenticated and does nothing at `itxns: 0`, so a pad costs one min fee
+   * and buys 700 opcodes as a bonus. It has to be an app call to the instance itself: resource
+   * population only parks a box ref on a transaction that already has the box's owning app
+   * available, and these calls do.
+   *
+   * Do not rely on `getIncreaseBudgetBuilder` for this. It prepends an increaseBudget only when the
+   * group is over its *opcode* budget, which has masked the reference shortfall here by accident —
+   * see the TODO in `util/increaseBudget.ts`. Sizing the padding explicitly keeps these methods
+   * working if that heuristic ever stops firing.
+   */
+  private padForRefSlots<T extends { increaseBudget(args: unknown): T }>(builder: T, refSlots: number, label: string) {
+    const appCalls = Math.ceil(refSlots / REF_SLOTS_PER_APP_CALL)
+    if (appCalls > MAX_GROUP_SIZE) {
+      throw new Error(
+        `${label} needs ${refSlots} reference slots (${appCalls} app calls), over the ${MAX_GROUP_SIZE}-txn group ` +
+          `limit: this instance has too many escrows to ${label} in a single group.`,
+      )
+    }
+    for (let i = 1; i < appCalls; i++) {
+      // Distinct notes: otherwise identical pads would collide into one duplicate txn ID.
+      builder = builder.increaseBudget({ args: { itxns: 0 }, note: `${label}-refs-${i}-${noteNonce()}` })
+    }
+    return builder
+  }
+
   // ── Committees ───────────────────────────────────────────────────
 
   /**
@@ -117,6 +165,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * are registered. The gGov registry app and the boxes both apps touch are resolved
    * automatically via resource population; the instance app account pays the box MBR, which
    * grows with the escrow count.
+   *
+   * The group is padded with no-op app calls to carry the per-escrow references — see
+   * `padForRefSlots`.
    */
   @requireWriterWithClient()
   @wrapErrors()
@@ -129,9 +180,15 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     committeeId: Uint8Array | string
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
+    const numEscrows = await this.escrowCountUpperBound()
+    // Slots: the gGov registry reads one box per escrow to resolve its voting power, plus a fixed
+    // 5 boxes (this instance's escrows + committees, the registry's committee metadata and its
+    // account-id map) and 2 app refs (the gGov registry, and registryApp which resolveOperator
+    // reads). Measured against simulate: N=3 -> 10, N=6 -> 13, N=9 -> 16, N=12 -> 19.
+    builder = this.padForRefSlots(builder, numEscrows + 7, 'syncCommittee')
     // extraFee covers the inner calls to the gGov registry: one getCommitteeMetadata, plus one
     // tryGetGovVotingPower per registered escrow.
-    const innerCalls = 1 + (await this.getEscrows()).length
+    const innerCalls = 1 + numEscrows
     return builder.syncCommittee({
       args: { committeeId: committeeIdToRaw(committeeId) },
       note,
@@ -141,6 +198,45 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
 
   syncCommittee = this.makeTxnExecutor({
     maker: this.makeSyncCommitteeTxns,
+  })
+
+  // ── Periods ──────────────────────────────────────────────────────
+
+  /**
+   * Sync the instance's snapshot of the gGov period at `periodApp`. Operator only.
+   *
+   * Records the period's identity and topic shape, and zero-fills its vote tallies — the aggregate
+   * cache plus one box per escrow of the committee snapshot the period is bound to. The period's
+   * committee must already be synced (`syncCommittee`) and the period marked ready.
+   *
+   * Re-runnable while no vote has landed yet; re-sync after a `syncCommittee` to pick up newly
+   * registered escrows. Unlike `syncCommittee` this makes a single inner call regardless of escrow
+   * count, since the per-escrow voting power is read from the local committee box. The period app
+   * and every box touched are resolved automatically via resource population; the instance app
+   * account pays the box MBR, which grows with escrow and topic count.
+   *
+   * The group is padded with no-op app calls when the escrow count needs more reference slots than
+   * one transaction carries — see `syncPeriodRefSlots`.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async makeSyncPeriodTxns({
+    periodApp,
+    note,
+    builder,
+  }: FracDelegationInstanceContractArgs['syncPeriod(uint64)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)'] &
+    InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    // Slots: N escrow boxes + periods + periodVoteCache + committees + the period app's
+    // topicOptionsArr box (read by the getPeriodShort inner call) + 2 app refs (periodApp, and
+    // registryApp which resolveOperator reads). Measured against simulate: N=6 -> 12, N=8 -> 14.
+    builder = this.padForRefSlots(builder, (await this.escrowCountUpperBound()) + 6, 'syncPeriod')
+    // extraFee covers the single inner call to the period app: getPeriodShort.
+    return builder.syncPeriod({ args: { periodApp }, note, extraFee: (1000).microAlgo() })
+  }
+
+  syncPeriod = this.makeTxnExecutor({
+    maker: this.makeSyncPeriodTxns,
   })
 
   // ── Admin: lifecycle ────────────────────────────────────────────

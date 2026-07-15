@@ -1,5 +1,5 @@
 import { Account, Application, uint64 } from '@algorandfoundation/algorand-typescript'
-import { StaticBytes, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
+import { StaticBytes, Uint16, Uint32, Uint8 } from '@algorandfoundation/algorand-typescript/arc4'
 import { u16, u32 } from './utils.algo'
 
 export type CommitteeId = StaticBytes<32>
@@ -317,4 +317,84 @@ export type FracInstanceCommittee = {
   escrowsVotes: Uint32[]
   /** Sum of `escrowsVotes` */
   totalVotes: Uint32
+}
+
+/**
+ * A Frac Instance's synced snapshot of one gGov period, written by `syncPeriod`.
+ *
+ * `committeeNumId` is copied from the instance's local `committees` box rather than re-read from
+ * the gGov registry, which is what keeps `syncPeriod` to a single inner call.
+ *
+ * `periodAppId` is a bare `uint64` rather than an `Application` on purpose: a struct holding a
+ * reference-type field cannot be `clone()`d by algorand-typescript-testing 1.1.0, and `syncPeriod`
+ * clones this struct.
+ */
+export type FracInstancePeriod = {
+  /** The gGov period app this record was synced from */
+  periodAppId: uint64
+  committeeId: CommitteeId
+  /** Committee numeric ID, copied from `FracInstanceCommittee.committeeNumId` */
+  committeeNumId: Uint16
+  /** Voting window start (unix seconds) */
+  votingStart: Uint32
+  /** Voting window end, exclusive (unix seconds) */
+  votingEnd: Uint32
+  /** Option count per topic, parallel to the period's topics */
+  topicOptionLengths: Uint32[]
+  /**
+   * Number of `periodEscrowVotes` boxes stood up for this period - the escrow count of the
+   * committee snapshot it was synced against. Recorded here so the record is self-describing:
+   * re-syncing the committee alone can grow `escrowsVotes` past what this period has boxes for, so
+   * readers must not size off the committee box.
+   */
+  numEscrows: Uint8
+}
+
+/**
+ * A Frac Instance's aggregate vote tallies for one gGov period, zero-filled to the period's topic
+ * shape by `syncPeriod`. Per-escrow detail lives in `FracEscrowVotes`, one box per escrow.
+ *
+ * Every tally is bounded by the committee's total votes, which the gGov registry itself caps at a
+ * `Uint32` (`CommitteeMetadata.totalVotes`, enforced by `ingestedVotes <= totalVotes`). Real totals
+ * are ~3M, so `Uint32` is ~1400x oversized already and `uint64` would only waste box space.
+ *
+ * SIZE: read and written whole via `.value`, so it is bounded by the AVM's 4096-byte stack-bytes
+ * cap - NOT the 32KB box limit (see the paging comment in `FracDelegationRegistry.createInstance`).
+ * Holding only the two aggregate tallies, it is `8 + 2 * (2 + 4*topics*(1 + options))`: ~1.9KB even
+ * at the ~58 topics `GGovPeriod.setReady` allows, so the topic ceiling is the period's, not ours.
+ */
+export type FracPeriodVoteCache = {
+  /** [topic][option] internal vote tally, in AlgoQuarters */
+  internal: Uint32[][]
+  /** [topic][option] cached total of external gGov votes cast by this instance's escrows */
+  ggovTotals: Uint32[][]
+}
+
+/**
+ * `periodEscrowVotes` box key: [gGov period ID, escrow index].
+ *
+ * `Uint8` bounds the escrow index at 255, which is never the binding constraint: the `escrows` box
+ * is a `Box<Account[]>` whose whole-value read already stops decoding at ~127 entries (4096-byte
+ * stack cap / 32 bytes per address).
+ */
+export type FracPeriodEscrowKey = [Uint32, Uint8]
+
+/**
+ * One escrow's external gGov votes for one gGov period, zero-filled to the period's topic shape by
+ * `syncPeriod`. One box per (period, escrow).
+ *
+ * The escrow index is that of the `committees(committeeId).escrowsVotes` snapshot the period was
+ * synced against - and so, transitively, of the append-only `escrows` box. An escrow registered
+ * after the last `syncCommittee` has no snapshot and therefore no voting power to cast, so it gets
+ * no box until the committee is re-synced and the period re-synced behind it.
+ *
+ * Split out of `FracPeriodVoteCache` rather than nested as a `Uint32[][][]`: one combined box is
+ * capped at 4096 bytes by the stack-bytes limit above, which would have bounded the whole system to
+ * ~31 topics at 6 escrows and ~21 at 10 - a ceiling that tightened as escrows were added. One box
+ * per escrow is `2 + 4*topics*(1 + options)` (~930 bytes at 58 topics), so escrow count is
+ * unbounded and each box stays far inside the cap.
+ */
+export type FracEscrowVotes = {
+  /** [topic][option] external gGov votes cast by this escrow */
+  votes: Uint32[][]
 }

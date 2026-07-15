@@ -5,6 +5,12 @@ export const increaseBudgetIncrementCost = 23
 /** Algorand atomic group transaction limit. */
 export const MAX_GROUP_SIZE = 16
 
+/**
+ * Foreign/box reference slots per app call txn — algokit's `MAX_APP_CALL_FOREIGN_REFERENCES`.
+ * Slots are pooled across the group, so a group carries 8 x (number of app calls).
+ */
+export const REF_SLOTS_PER_APP_CALL = 8
+
 /** Body chunk size (bytes) for partial-upload txns (instance approval bytecode). */
 export const BODY_CHUNK_BYTES = 2000
 

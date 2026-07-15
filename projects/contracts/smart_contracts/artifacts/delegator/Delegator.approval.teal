@@ -53,10 +53,10 @@ main___algots__.defaultCreate@24:
 
 // smart_contracts/base/utils.algo.ts::u32(v: uint64) -> bytes:
 u32:
-    // smart_contracts/base/utils.algo.ts:8
+    // smart_contracts/base/utils.algo.ts:12
     // export function u32(v: uint64) {
     proto 1 1
-    // smart_contracts/base/utils.algo.ts:9
+    // smart_contracts/base/utils.algo.ts:13
     // return new Uint32(v)
     frame_dig -1
     itob
@@ -197,16 +197,16 @@ syncCommitteeMetadata:
     // ensure(!committeeBox.exists, errCommitteeExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz syncCommitteeMetadata_after_if_else@14
     // smart_contracts/delegator/delegator.algo.ts:128
     // ensure(!committeeBox.exists, errCommitteeExists)
     pushbytes "ERR:C_EX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -374,20 +374,20 @@ syncCommitteeMetadata_for_header@3:
     btoi
     dup
     bury 6
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bnz syncCommitteeMetadata_after_if_else@10
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 7
     log
     // smart_contracts/delegator/delegator.algo.ts:150
     // ensureExtra(remoteVotes.asUint64() > 0, errNoVotingPower, account.bytes)
     bytec 14 // "ERR:A_NV"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -492,16 +492,16 @@ syncProposalMetadata:
     // ensure(!proposalBox.exists, errProposalExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz syncProposalMetadata_after_if_else@28
     // smart_contracts/delegator/delegator.algo.ts:164
     // ensure(!proposalBox.exists, errProposalExists)
     pushbytes "ERR:P_EX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -527,16 +527,16 @@ syncProposalMetadata_after_if_else@28:
     app_global_get_ex
     swap
     bury 8
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@32
     // smart_contracts/delegator/delegator.algo.ts:172
     // ensure(registryAppExists, errRegistryMissing)
     pushbytes "ERR:RM"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -554,16 +554,16 @@ syncProposalMetadata_after_if_else@32:
     // smart_contracts/delegator/delegator.algo.ts:175
     // ensure(proposalCreator === registryEscrow, errXGovProposalInvalidCreator)
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@36
     // smart_contracts/delegator/delegator.algo.ts:175
     // ensure(proposalCreator === registryEscrow, errXGovProposalInvalidCreator)
     pushbytes "ERR:XGPC"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -575,16 +575,16 @@ syncProposalMetadata_after_if_else@36:
     app_global_get_ex
     swap
     bury 16
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@40
     // smart_contracts/delegator/delegator.algo.ts:180
     // ensure(committeeIdExists, errXGovProposalCommitteeMissing)
     pushbytes "ERR:XGPM"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -608,16 +608,16 @@ syncProposalMetadata_after_if_else@40:
     // ensure(committeeBox.exists, errCommitteeNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@44
     // smart_contracts/delegator/delegator.algo.ts:183
     // ensure(committeeBox.exists, errCommitteeNotExists)
     bytec 15 // "ERR:C_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -691,20 +691,20 @@ syncProposalMetadata_while_top@2:
     // ensureExtra(periodTotalsBox.exists, errAlgoHoursNotExist, op.itob(period))
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@20
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 9
     log
     // smart_contracts/delegator/delegator.algo.ts:195
     // ensureExtra(periodTotalsBox.exists, errAlgoHoursNotExist, op.itob(period))
     bytec 7 // "ERR:AH_NX"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -716,20 +716,20 @@ syncProposalMetadata_after_if_else@20:
     assert // Box must have value
     pushint 64 // 64
     getbit
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@24
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 9
     log
     // smart_contracts/delegator/delegator.algo.ts:196
     // ensureExtra(periodTotalsBox.value.final, errAlgoHoursNotFinal, op.itob(period))
     pushbytes "ERR:AH_NF"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -774,16 +774,16 @@ syncProposalMetadata_after_while@4:
     app_global_get_ex
     pop
     bury 4
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@16
     // smart_contracts/delegator/delegator.algo.ts:205
     // ensure(statusExists, errXGovProposalStatusMissing)
     pushbytes "ERR:XGSM"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -807,16 +807,16 @@ syncProposalMetadata_bool_true@7:
     intc_1 // 1
 
 syncProposalMetadata_bool_merge@9:
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz syncProposalMetadata_after_if_else@12
     // smart_contracts/delegator/delegator.algo.ts:209
     // ensure(status === STATUS_VOTING || (status === STATUS_SUBMITTED && voteOpenTs <= Global.latestTimestamp), errState)
     bytec 16 // "ERR:ST"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -984,16 +984,16 @@ voteInternal:
     // ensure(Txn.sender === voterAccount, errUnauthorized)
     txn Sender
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@26
     // smart_contracts/delegator/delegator.algo.ts:240
     // ensure(Txn.sender === voterAccount, errUnauthorized)
     bytec 18 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1015,16 +1015,16 @@ voteInternal_after_if_else@26:
     // ensure(proposalBox.exists, errProposalNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@30
     // smart_contracts/delegator/delegator.algo.ts:243
     // ensure(proposalBox.exists, errProposalNotExists)
     bytec 19 // "ERR:P_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1050,16 +1050,16 @@ voteInternal_after_if_else@30:
     extract 2 0
     pushbytes "CANC"
     !=
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@34
     // smart_contracts/delegator/delegator.algo.ts:245
     // ensure(proposal.status !== 'CANC', errProposalCancelled)
     pushbytes "ERR:P_C"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1081,16 +1081,16 @@ voteInternal_after_if_else@34:
     // ensure(committeeBox.exists, errCommitteeNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@38
     // smart_contracts/delegator/delegator.algo.ts:248
     // ensure(committeeBox.exists, errCommitteeNotExists)
     bytec 15 // "ERR:C_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1115,16 +1115,16 @@ voteInternal_after_if_else@38:
     btoi
     global LatestTimestamp
     <=
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@42
     // smart_contracts/delegator/delegator.algo.ts:251
     // ensure(proposal.extVoteStartTime.asUint64() <= Global.latestTimestamp, errEarly)
     bytec 20 // "ERR:EAR"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1137,16 +1137,16 @@ voteInternal_after_if_else@42:
     box_extract
     btoi
     <
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@46
     // smart_contracts/delegator/delegator.algo.ts:252
     // ensure(Global.latestTimestamp < proposal.intVoteEndTime.asUint64(), errLate)
     bytec 21 // "ERR:LAT"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1166,16 +1166,16 @@ voteInternal_after_if_else@46:
     // smart_contracts/delegator/delegator.algo.ts:427
     // ensure(periodEnd > periodStart, errPeriodEndLessThanStart)
     <
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@50
     // smart_contracts/delegator/delegator.algo.ts:427
     // ensure(periodEnd > periodStart, errPeriodEndLessThanStart)
     pushbytes "ERR:PE_LT"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1185,16 +1185,16 @@ voteInternal_after_if_else@50:
     dig 9
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz voteInternal_after_if_else@54
     // smart_contracts/delegator/delegator.algo.ts:428
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     bytec_2 // "ERR:PS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1204,16 +1204,16 @@ voteInternal_after_if_else@54:
     dig 10
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz voteInternal_after_if_else@58
     // smart_contracts/delegator/delegator.algo.ts:429
     // ensure(periodEnd % periodLength === 0, errPeriodEndInvalid)
     pushbytes "ERR:PE"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1234,17 +1234,17 @@ voteInternal_after_if_else@58:
     bury 4
 
 voteInternal_after_inlined_smart_contracts/delegator/delegator.algo.ts::Delegator.getAggregatedAccountAlgoHours@15:
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     dig 3
     bnz voteInternal_after_if_else@18
     // smart_contracts/delegator/delegator.algo.ts:259
     // ensure(votingPower > 0, errNoVotingPower)
     bytec 14 // "ERR:A_NV"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1282,16 +1282,16 @@ voteInternal_after_if_else@18:
     // ensure(totalVotesCast === votingPower, errIncorrectVotes)
     dig 4
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteInternal_after_if_else@22
     // smart_contracts/delegator/delegator.algo.ts:261
     // ensure(totalVotesCast === votingPower, errIncorrectVotes)
     pushbytes "ERR:IV"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1634,16 +1634,16 @@ voteExternal:
     // ensure(proposalBox.exists, errProposalNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteExternal_after_if_else@20
     // smart_contracts/delegator/delegator.algo.ts:303
     // ensure(proposalBox.exists, errProposalNotExists)
     bytec 19 // "ERR:P_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1669,16 +1669,16 @@ voteExternal_after_if_else@20:
     extract 2 0
     bytec 22 // "VOTE"
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteExternal_after_if_else@24
     // smart_contracts/delegator/delegator.algo.ts:306
     // ensure(proposal.status === 'VOTE', errState)
     bytec 16 // "ERR:ST"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1691,16 +1691,16 @@ voteExternal_after_if_else@24:
     btoi
     global LatestTimestamp
     <=
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteExternal_after_if_else@28
     // smart_contracts/delegator/delegator.algo.ts:308
     // ensure(proposal.extVoteStartTime.asUint64() <= Global.latestTimestamp, errEarly)
     bytec 20 // "ERR:EAR"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1713,16 +1713,16 @@ voteExternal_after_if_else@28:
     box_extract
     btoi
     <
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteExternal_after_if_else@32
     // smart_contracts/delegator/delegator.algo.ts:309
     // ensure(Global.latestTimestamp < proposal.extVoteEndTime.asUint64(), errLate)
     bytec 21 // "ERR:LAT"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1736,16 +1736,16 @@ voteExternal_after_if_else@32:
     btoi
     dup
     bury 7
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteExternal_after_if_else@36
     // smart_contracts/delegator/delegator.algo.ts:310
     // ensure(proposal.intVotedAlgohours > 0, errNoVotes)
     pushbytes "ERR:NV"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1761,16 +1761,16 @@ voteExternal_after_if_else@36:
     btoi
     dig 2
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz voteExternal_after_if_else@40
     // smart_contracts/delegator/delegator.algo.ts:311
     // ensure(extAccounts.length === proposal.extAccountsPendingVotes.length, errAccountNumMismatch)
     pushbytes "ERR:ANM"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1916,20 +1916,20 @@ voteExternal_while_top@7:
     swap
     itob
     bury 15
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bnz voteExternal_after_if_else@16
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 13
     log
     // smart_contracts/delegator/delegator.algo.ts:328
     // ensureExtra(extAccountId === extAccountsPendingVote.accountId, errAccountIdMismatch, op.itob(i))
     pushbytes "ERR:ID"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -2198,16 +2198,16 @@ addAccountAlgoHours:
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz addAccountAlgoHours_after_if_else@15
     // smart_contracts/delegator/delegator.algo.ts:360
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     bytec_2 // "ERR:PS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2259,20 +2259,20 @@ addAccountAlgoHours_for_header@2:
     // ensureExtra(!box.exists, errAlgoHoursExist, account.bytes)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bz addAccountAlgoHours_after_if_else@11
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 8
     log
     // smart_contracts/delegator/delegator.algo.ts:366
     // ensureExtra(!box.exists, errAlgoHoursExist, account.bytes)
     pushbytes "ERR:AH_EX"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -2373,16 +2373,16 @@ removeAccountAlgoHours:
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz removeAccountAlgoHours_after_if_else@20
     // smart_contracts/delegator/delegator.algo.ts:385
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     bytec_2 // "ERR:PS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2434,20 +2434,20 @@ removeAccountAlgoHours_for_header@2:
     // ensureExtra(box.exists, errAlgoHoursNotExist, account.bytes)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bnz removeAccountAlgoHours_after_if_else@8
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 8
     log
     // smart_contracts/delegator/delegator.algo.ts:391
     // ensureExtra(box.exists, errAlgoHoursNotExist, account.bytes)
     bytec 7 // "ERR:AH_NX"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -2460,20 +2460,20 @@ removeAccountAlgoHours_after_if_else@8:
     btoi
     dig 5
     ==
-    // smart_contracts/base/utils.algo.ts:40
+    // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
     bnz removeAccountAlgoHours_after_if_else@12
-    // smart_contracts/base/utils.algo.ts:41
+    // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 8
     log
     // smart_contracts/delegator/delegator.algo.ts:392
     // ensureExtra(box.value === hours, errAlgoHoursMismatch, account.bytes) // ensure hours to remove matches existing hours to prevent accidental double removal
     bytec 23 // "ERR:AH"
-    // smart_contracts/base/utils.algo.ts:42
+    // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:43
+    // smart_contracts/base/utils.algo.ts:47
     // err()
     err
 
@@ -2494,16 +2494,16 @@ removeAccountAlgoHours_after_if_else@12:
     // ensure(totalBox.exists, errAlgoHoursNotExist)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz removeAccountAlgoHours_after_if_else@16
     // smart_contracts/delegator/delegator.algo.ts:396
     // ensure(totalBox.exists, errAlgoHoursNotExist)
     bytec 7 // "ERR:AH_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2572,16 +2572,16 @@ updateAlgoHourPeriodFinality:
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz updateAlgoHourPeriodFinality_after_if_else@3
     // smart_contracts/delegator/delegator.algo.ts:408
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     bytec_2 // "ERR:PS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2601,16 +2601,16 @@ updateAlgoHourPeriodFinality_after_if_else@3:
     // ensure(box.exists, errAlgoHoursNotExist)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz updateAlgoHourPeriodFinality_after_if_else@7
     // smart_contracts/delegator/delegator.algo.ts:410
     // ensure(box.exists, errAlgoHoursNotExist)
     bytec 7 // "ERR:AH_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2624,16 +2624,16 @@ updateAlgoHourPeriodFinality_after_if_else@7:
     extract_uint64
     dig 2
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz updateAlgoHourPeriodFinality_after_if_else@11
     // smart_contracts/delegator/delegator.algo.ts:411
     // ensure(box.value.totalAlgohours === totalAlgohours, errAlgoHoursMismatch)
     bytec 23 // "ERR:AH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2674,16 +2674,16 @@ getAlgoHourPeriodTotals:
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz getAlgoHourPeriodTotals_after_if_else@7
     // smart_contracts/delegator/delegator.algo.ts:450
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     bytec_2 // "ERR:PS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2750,16 +2750,16 @@ getAccountAlgoHours:
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     intc 4 // 1000000
     %
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz getAccountAlgoHours_after_if_else@10
     // smart_contracts/delegator/delegator.algo.ts:463
     // ensure(periodStart % periodLength === 0, errPeriodStartInvalid)
     bytec_2 // "ERR:PS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -3177,16 +3177,16 @@ mustGetAccountId:
     // ensure(accountIdBox.exists, errAccountNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz mustGetAccountId_after_if_else@3
     // smart_contracts/base/account-id.algo.ts:48
     // ensure(accountIdBox.exists, errAccountNotExists)
     pushbytes "ERR:A_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -3226,16 +3226,16 @@ getOrCreateAccountId:
     // ensure(!box.exists, errAccountExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz getOrCreateAccountId_after_if_else@5
     // smart_contracts/base/account-id.algo.ts:22
     // ensure(!box.exists, errAccountExists)
     pushbytes "ERR:A_EX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -3287,16 +3287,16 @@ ensureCallerIsAdmin:
     txn Sender
     global CreatorAddress
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz ensureCallerIsAdmin_after_if_else@3
     // smart_contracts/base/base.algo.ts:14
     // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
     bytec 18 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 

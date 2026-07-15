@@ -196,16 +196,16 @@ setXGovBox:
     txn Sender
     global CreatorAddress
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz setXGovBox_after_if_else@3
     // smart_contracts/base/base.algo.ts:14
     // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
     pushbytes "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
