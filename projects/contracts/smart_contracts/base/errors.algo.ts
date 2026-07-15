@@ -87,3 +87,4 @@ export const errGGovDelegationExists = 'ERR:GD_EX' // Delegation already exists 
 // Frac delegation
 export const errInstanceAppNotConfigured = 'ERR:FI_NC' // Instance approval program not yet uploaded to registry
 export const errInstanceAppNotExists = 'ERR:FI_NX' // Instance does not exist
+export const errEscrowAssigned = 'ERR:FE_AS' // Escrow account is already assigned to an instance

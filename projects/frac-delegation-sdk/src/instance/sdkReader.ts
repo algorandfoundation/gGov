@@ -4,6 +4,7 @@ import { FracDelegationInstanceClient, APP_SPEC } from '../generated/FracDelegat
 import { defaultReaderAccount } from '../networkConfig'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
 import { errorTransformer } from '../util/wrapErrors'
+import { undefinedIfBoxMissing } from '../util/boxes'
 import { InstanceReaderConstructorArgs } from './types'
 
 export class FracDelegationInstanceReaderSDK {
@@ -48,6 +49,13 @@ export class FracDelegationInstanceReaderSDK {
   async getOperator(): Promise<string> {
     const { returns } = await this.readClient.newGroup().getOperator({ args: {} }).simulate(SIMULATE_PARAMS)
     return returns[0]!
+  }
+
+  /** Escrow accounts registered against this instance (addresses, in registration order). */
+  async getEscrows(): Promise<string[]> {
+    // The box only exists once the first escrow is registered; treat "not found" as empty.
+    const escrows = await undefinedIfBoxMissing(() => this.readClient.state.box.escrows())
+    return escrows ?? []
   }
 
   /** Read all instance global state, plus the current network round. */

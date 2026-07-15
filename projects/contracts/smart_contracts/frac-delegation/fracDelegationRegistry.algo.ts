@@ -18,9 +18,21 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
-import { abimethod, encodeArc4, methodSelector, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
+import {
+  abimethod,
+  compileArc4,
+  encodeArc4,
+  methodSelector,
+  Uint16,
+  Uint32,
+} from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
-import { errInstanceAppNotConfigured, errInstanceAppNotExists, errUnauthorized } from '../base/errors.algo'
+import {
+  errEscrowAssigned,
+  errInstanceAppNotConfigured,
+  errInstanceAppNotExists,
+  errUnauthorized,
+} from '../base/errors.algo'
 import { FracInstance, FracRegAccount } from '../base/types.algo'
 import { ensure, u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
@@ -47,6 +59,12 @@ export class FracDelegationRegistryContract extends BaseContract {
   lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
   /** Account registry; account ID + frac instance (numeric) IDs  */
   instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
+  /**
+   * Escrow assignment: escrow account -> instance numeric ID it belongs to. The presence of a
+   * key enforces globally-unique escrow assignment; `registerEscrow` rejects an account that
+   * already has an entry here.
+   */
+  escrows = BoxMap<Account, Uint16>({ keyPrefix: 'e' })
   /**
    * FracDelegationInstance approval program bytecode. Chunk-uploaded by admin;
    * read by createInstance when spawning a new instance app. Lets admins ship
@@ -286,5 +304,38 @@ export class FracDelegationRegistryContract extends BaseContract {
     }
 
     return accountRecord
+  }
+
+  // ── Admin: escrows ─────────────────────────---------
+
+  /**
+   * Register `account` as an escrow of instance `instanceNumId`. Admin only.
+   *
+   * Enforces globally-unique escrow assignment: an account already recorded in the `escrows`
+   * BoxMap (for any instance) is rejected with `errEscrowAssigned`. On success it records the
+   * escrow -> instance mapping, bumps the instance's `numEscrows` counter, and inner-calls the
+   * instance's `registerEscrow` so the account is appended to the instance's own escrows list.
+   * @param instanceNumId Numeric ID of the target instance
+   * @param account Escrow account to assign
+   */
+  public registerEscrow(instanceNumId: Uint16, account: Account): void {
+    this.ensureCallerIsAdmin()
+    ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    ensure(!this.escrows(account).exists, errEscrowAssigned)
+    const instance = clone(this.instances(instanceNumId).value)
+
+    // Record the globally-unique escrow -> instance assignment.
+    this.escrows(account).value = instanceNumId
+
+    // Mirror the escrow into the instance's own escrows list (typed inner ABI call). Like
+    // createInstance, this references only the instance's method signature, not its (box-hosted)
+    // approval program, so the registry stays small.
+    compileArc4(FracDelegationInstanceContract).call.registerEscrow({
+      appId: instance.appId,
+      args: [account],
+    })
+
+    instance.numEscrows++
+    this.instances(instanceNumId).value = clone(instance)
   }
 }

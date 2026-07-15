@@ -5,7 +5,6 @@
  */
 export const ErrorMessages: Record<string, string> = {
   "ERR:AUTH": "Unauthorized - you do not have permissions to perform this action",
-  "ERR:AK_NX": "App global state key not found",
   "ERR:C_EX": "Committee already exists",
   "ERR:C_NX": "Committee does not exist",
   "ERR:PE_LT": "Period end must be greater than period start",
@@ -34,7 +33,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:PS": "Period start is invalid - must align with period length (1M)",
   "ERR:PE": "Period end is invalid - must align with period length (1M)",
   "ERR:A_NV": "No voting power for account",
-  "ERR:XGRM": "xGov registry app ID in oracle is missing",
+  "ERR:RM": "Registry configuration is missing",
   "ERR:XGPC": "Proposal creator does not match xGov registry escrow",
   "ERR:XGPM": "Committee ID missing from proposal. This should never happen.",
   "ERR:XGVOM": "Vote open timestamp missing from proposal. This should never happen.",
@@ -49,7 +48,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:NV": "No votes found",
   "ERR:ANM": "Number of accounts provided does not match number of accounts with pending votes in proposal",
   "ERR:ST": "Invalid state for this action",
-  "ERR:G_OP": "Caller must be operator",
   "ERR:AI": "Contract already initialised",
   "ERR:GP_EX": "Period already exists",
   "ERR:GP_NX": "Period does not exist",
@@ -71,5 +69,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GD_SD": "Cannot delegate to self",
   "ERR:GD_EX": "Delegation already exists for account",
   "ERR:FI_NC": "Instance approval program not yet uploaded to registry",
-  "ERR:FI_NX": "Instance does not exist"
+  "ERR:FI_NX": "Instance does not exist",
+  "ERR:FE_AS": "Escrow account is already assigned to an instance"
 };
