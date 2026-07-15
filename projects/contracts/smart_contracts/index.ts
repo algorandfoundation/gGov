@@ -27,12 +27,24 @@ async function importDeployerIfExists(dir: string) {
   return null
 }
 
+// Listed contracts deploy first in this order; all others follow alphabetically.
+const DEPLOY_ORDER = ['ggov-registry', 'frac-delegation']
+
 // get a list of all deployers from the subdirectories
 async function getDeployers() {
   const directories = fs
     .readdirSync(baseDir, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => path.resolve(baseDir, dirent.name))
+    .map((dirent) => dirent.name)
+    .sort((a, b) => {
+      const indexA = DEPLOY_ORDER.indexOf(a)
+      const indexB = DEPLOY_ORDER.indexOf(b)
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b)
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
+    })
+    .map((name) => path.resolve(baseDir, name))
 
   const deployers = await Promise.all(directories.map(importDeployerIfExists))
   return deployers.filter((deployer) => deployer !== null) // Filter out null values
