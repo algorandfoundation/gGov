@@ -26,6 +26,10 @@ export type CommitteeMetadata = {
 
 export type CommitteeNumIdAccountId = [Uint16, Uint16] // [committee numeric id, accountId]
 
+/**
+ * Empty/"not found" committee metadata. `numericId` 0 is never assigned by the registry
+ * (`lastCommitteeId` starts at 1), so it doubles as a "no such committee" sentinel.
+ */
 export function getEmptyCommitteeMetadata(): CommitteeMetadata {
   return {
     periodStart: u32(0),
