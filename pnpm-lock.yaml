@@ -182,6 +182,9 @@ importers:
       algosdk:
         specifier: ^3.5.2
         version: 3.5.2
+      p-map:
+        specifier: ^7.0.4
+        version: 7.0.4
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
