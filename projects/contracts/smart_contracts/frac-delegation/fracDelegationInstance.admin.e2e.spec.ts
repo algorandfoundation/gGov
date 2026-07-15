@@ -1,8 +1,8 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { FracDelegationInstanceFactory, FracDelegationInstanceSDK } from 'frac-delegation-sdk'
-import { errAppGlobalKeyNotFound, errUnauthorized } from '../base/errors.algo'
+import { FracDelegationInstanceFactory, FracDelegationSDK } from 'frac-delegation-sdk'
+import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
 import {
   createFracInstanceSDK,
   deployFracInstance,
@@ -134,9 +134,9 @@ describe('FracDelegationInstance admin', () => {
 
   // Auth
   describe('admin auth', () => {
-    let sdk: FracDelegationInstanceSDK
+    let sdk: FracDelegationSDK
     let nonAdmin: Awaited<ReturnType<typeof localnet.context.generateAccount>>
-    let nonAdminSDK: FracDelegationInstanceSDK
+    let nonAdminSDK: FracDelegationSDK
 
     beforeAll(async () => {
       await localnet.newScope()
@@ -200,14 +200,14 @@ describe('FracDelegationInstance admin', () => {
 
       const sdk = createFracInstanceSDK(localnet, appClient.appId, creator)
       expect(await sdk.getRegistryApp()).toBe(0n)
-      await expect(sdk.getAdmin()).rejects.toThrow(transformedError(errAppGlobalKeyNotFound))
+      await expect(sdk.getAdmin()).rejects.toThrow(transformedError(errRegistryMissing))
 
       // Deploy a registry
       const { sdk: registrySdk } = await deployFracRegistry(localnet, creator)
 
       const { sdk: nonCreatorSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId)
       await expect(nonCreatorSDK.setRegistryApp({ appId: registrySdk.appId })).rejects.toThrow(
-        transformedError(errAppGlobalKeyNotFound),
+        transformedError(errRegistryMissing),
       )
 
       // Bound new registry to the instance
@@ -215,7 +215,7 @@ describe('FracDelegationInstance admin', () => {
       expect(await sdk.getRegistryApp()).toBe(registrySdk.appId)
 
       // Cannot set an invalid registry (not `admin` key)
-      await expect(sdk.setRegistryApp({ appId: sdk.appId })).rejects.toThrow(transformedError(errAppGlobalKeyNotFound))
+      await expect(sdk.setRegistryApp({ appId: sdk.appId })).rejects.toThrow(transformedError(errRegistryMissing))
 
       // Brick: deleting the bound registry kills role resolution (getEx on a nonexistent app
       // panics) - the scenario behind the registry deleteApplication WARNING.
