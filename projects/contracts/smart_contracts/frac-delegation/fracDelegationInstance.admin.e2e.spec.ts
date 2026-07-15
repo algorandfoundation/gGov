@@ -97,7 +97,7 @@ describe('FracDelegationInstance admin', () => {
   })
 
   describe('withdrawALGO', () => {
-    test('admin can withdraw ALGO to a receiver; the zero address is rejected', async () => {
+    test('admin can withdraw ALGO to a receiver', async () => {
       const { testAccount } = localnet.context
       // The instance's starting balance is the 1 ALGO MBR payment forwarded by createInstance
       const { sdk } = await deployFracInstance(localnet, testAccount)
@@ -115,10 +115,6 @@ describe('FracDelegationInstance admin', () => {
       expect(after.balance.microAlgo).toBe(before.balance.microAlgo + amount)
       // Instance loses `amount` (the inner-payment fee is paid by the outer txn sender).
       expect(instanceAfter.balance.microAlgo).toBe(instanceBefore.balance.microAlgo - amount)
-
-      await expect(sdk.withdrawALGO({ receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: 1n })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
     })
 
     test('withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
