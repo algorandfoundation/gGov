@@ -169,7 +169,6 @@ export class FracDelegationInstanceContract extends BaseContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.ensureCallerIsAdmin()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
     itxn.payment({ receiver, amount }).submit()
   }
 

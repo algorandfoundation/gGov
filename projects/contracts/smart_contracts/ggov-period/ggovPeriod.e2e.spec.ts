@@ -1747,15 +1747,6 @@ describe('GGovPeriod contract', () => {
       void periodAppId
     })
 
-    test('Cannot withdraw to the zero address', async () => {
-      const { sdk, periodId, periodAddress } = await deployWithPeriod(localnet)
-      await localnet.algorand.account.ensureFundedFromEnvironment(periodAddress, (6).algos())
-      const { ALGORAND_ZERO_ADDRESS_STRING } = await import('algosdk')
-      await expect(
-        sdk.withdrawPeriodALGO({ periodId, receiver: ALGORAND_ZERO_ADDRESS_STRING, amount: (1).algos().microAlgo }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
-    })
-
     test('Withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
       const { sdk, periodId } = await deployWithPeriod(localnet)
       const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
