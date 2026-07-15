@@ -7,7 +7,7 @@ import { errorTransformer } from '../util/wrapErrors'
 import { undefinedIfBoxMissing } from '../util/boxes'
 import { InstanceReaderConstructorArgs } from './types'
 
-export class FracDelegationInstanceReaderSDK {
+export class FracDelegationReaderSDK {
   static APP_SPEC = APP_SPEC
 
   public algorand: AlgorandClient

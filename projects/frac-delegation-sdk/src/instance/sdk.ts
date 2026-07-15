@@ -6,11 +6,11 @@ import {
   FracDelegationInstanceContractArgs,
 } from './types'
 import { requireWriterWithClient } from '../util/requiresSender'
-import { FracDelegationInstanceReaderSDK } from './sdkReader'
+import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 
-export class FracDelegationInstanceSDK extends FracDelegationInstanceReaderSDK {
+export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
   public writeClient?: FracDelegationInstanceClient
 

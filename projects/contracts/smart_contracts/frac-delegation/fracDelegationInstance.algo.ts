@@ -92,7 +92,7 @@ export class FracDelegationInstanceContract extends BaseContract {
     ensure(Txn.sender === this.resolveOperator(), errUnauthorized)
   }
 
-  /** Caller must match the resolved operator. */
+  /** Caller must be the configured registry application (inner app call). */
   protected ensureCallerIsRegistry(): void {
     ensure(this.registryApp.value > 0, errRegistryMissing)
     ensure(Global.callerApplicationId === this.registryApp.value, errUnauthorized)
@@ -107,7 +107,6 @@ export class FracDelegationInstanceContract extends BaseContract {
     if (this.registryApp.value > 0 && Global.callerApplicationId === this.registryApp.value) return
     this.ensureCallerIsAdmin()
   }
-
 
   @abimethod({ readonly: true })
   public getAdmin(): Account {
