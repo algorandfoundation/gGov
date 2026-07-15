@@ -285,3 +285,19 @@ export type FracInstance = {
   numEscrows: uint64
   // forgetting one here
 }
+
+/**
+ * A Frac Instance's synced snapshot of one gGov committee, written by `syncCommittee`.
+ *
+ * `escrowsVotes` is index-synced with the instance's `escrows` box: `escrowsVotes[i]` is the gGov
+ * voting power of `escrows[i]` in this committee, and is 0 for an escrow that is not a member.
+ * Because `escrows` is append-only, indexes stay stable across re-syncs.
+ */
+export type FracInstanceCommittee = {
+  /** Committee numeric ID, as assigned by the gGov registry */
+  committeeNumId: Uint16
+  /** gGov voting power per escrow, index-synced with the instance's `escrows` box */
+  escrowsVotes: Uint32[]
+  /** Sum of `escrowsVotes` */
+  totalVotes: Uint32
+}
