@@ -1,5 +1,5 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { GGovRegistryArgs, GGovRegistryComposer } from '../generated/GGovRegistryClient'
+import { GGovRegistryArgs } from '../generated/GGovRegistryClient'
 import { GGovPeriodArgs, GGovPeriodComposer } from '../generated/GGovPeriodClient'
 import { Network, SenderWithSigner } from '../types'
 
@@ -24,12 +24,6 @@ export type ReaderConstructorArgs = {
   concurrency?: number
   debug?: boolean
 } & ConstructorArgsOptions
-
-export interface CommonMethodBuilderArgs {
-  builder?: GGovRegistryComposer<any>
-  /** Optional transaction note. Useful for deduplicating otherwise-identical transactions. */
-  note?: string | Uint8Array
-}
 
 export interface PeriodMethodBuilderArgs {
   builder?: GGovPeriodComposer<any>
