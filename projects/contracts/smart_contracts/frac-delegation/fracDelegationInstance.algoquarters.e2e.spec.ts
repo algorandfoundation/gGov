@@ -1,7 +1,11 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
-import { generateAccount } from 'algosdk'
-import { MAX_ACCOUNTS_PER_INGEST_AQ, MAX_ACCOUNTS_PER_UNINGEST_AQ } from 'frac-delegation-sdk'
+import { generateAccount, getApplicationAddress, makeEmptyTransactionSigner } from 'algosdk'
+import {
+  MAX_ACCOUNTS_PER_INGEST_AQ,
+  MAX_ACCOUNTS_PER_UNINGEST_AQ,
+  FracDelegationInstanceClient,
+} from 'frac-delegation-sdk'
 import { GGovCommitteeFile } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -21,7 +25,7 @@ import {
 import {
   deployFracInstance,
   deployRegistryWithCommittee,
-  generateAccountWithFracInstanceSDK,
+  generateAccountWithFracSDK,
   transformedError,
 } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
@@ -56,16 +60,53 @@ const UNKNOWN_COMMITTEE_NUM_ID = 999
 const setupAq = async (localnet: AlgorandFixture) => {
   const { testAccount } = localnet.context
   const { sdk: ggovSdk, committeeId, govAccounts } = await deployRegistryWithCommittee(localnet)
-  const { registrySdk, sdk: instanceSdk, instanceId } = await deployFracInstance(localnet, testAccount)
-  await registrySdk.setGGovRegistryApp({ appId: ggovSdk.appId })
-  await registrySdk.registerEscrow({ instanceNumId: instanceId, account: govAccounts[0].toString() })
-  await instanceSdk.syncCommittee({ committeeId })
+  const { appId: instanceAppId, instanceId, sdk } = await deployFracInstance(localnet, testAccount)
+  await sdk.registry.setGGovRegistryApp({ appId: ggovSdk.appId })
+  await sdk.registry.registerEscrow({ instanceNumId: instanceId, account: govAccounts[0].toString() })
+  await sdk.syncCommittee({ instanceNumId: instanceId, committeeId })
 
-  await localnet.algorand.account.ensureFundedFromEnvironment(instanceSdk.readClient.appAddress, (5).algos())
-  await localnet.algorand.account.ensureFundedFromEnvironment(registrySdk.readClient.appAddress, (5).algos())
+  await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(instanceAppId), (5).algos())
+  await localnet.algorand.account.ensureFundedFromEnvironment(sdk.registryReadClient.appAddress, (5).algos())
 
-  const committeeNumId = (await instanceSdk.getCommittee(committeeId))!.committeeNumId
-  return { testAccount, ggovSdk, committeeId, committeeNumId, govAccounts, registrySdk, instanceSdk, instanceId }
+  const committeeNumId = (await sdk.getCommittee(instanceId, committeeId))!.committeeNumId
+
+  // The combined FracDelegationSDK addresses many instances by `instanceNumId`; the sibling
+  // committees/periods specs thread it inline. This spec makes so many AQ calls that we bind it once
+  // into a single-instance facade — the test bodies then read as plain per-instance calls. `readClient`
+  // is a raw instance client for the readonly getCommitteeAq(mustBeComplete) simulate assertions.
+  const readClient = new FracDelegationInstanceClient({
+    algorand: localnet.algorand,
+    appId: instanceAppId,
+    defaultSender: testAccount,
+    defaultSigner: makeEmptyTransactionSigner(),
+  })
+  const instanceSdk = {
+    startAqIngest: (args: { committeeId: Uint8Array | string; totalAq: number; note?: string }) =>
+      sdk.startAqIngest({ instanceNumId: instanceId, ...args }),
+    ingestAq: (args: { committeeNumId: number; accountAqs: [string, number][]; note?: string }) =>
+      sdk.ingestAq({ instanceNumId: instanceId, ...args }),
+    ingestAqAll: (args: { committeeNumId: number; accountAqs: [string, number][]; note?: string }) =>
+      sdk.ingestAqAll({ instanceNumId: instanceId, ...args }),
+    uningestAq: (args: { committeeNumId: number; accounts: string[]; note?: string }) =>
+      sdk.uningestAq({ instanceNumId: instanceId, ...args }),
+    uningestAqAll: (args: { committeeNumId: number; accounts: string[]; note?: string }) =>
+      sdk.uningestAqAll({ instanceNumId: instanceId, ...args }),
+    getCommitteeAq: (committeeNumId: number) => sdk.getCommitteeAq(instanceId, committeeNumId),
+    getAccountAq: (accountId: number, committeeNumId: number) =>
+      sdk.getAccountAq(instanceId, accountId, committeeNumId),
+    readClient,
+  }
+  return {
+    testAccount,
+    ggovSdk,
+    committeeId,
+    committeeNumId,
+    govAccounts,
+    registrySdk: sdk.registry,
+    sdk,
+    instanceSdk,
+    instanceId,
+  }
 }
 
 /** Register a second committee on the same gGov registry and sync it into the instance. */
@@ -79,8 +120,8 @@ const addSecondCommittee = async (ctx: Awaited<ReturnType<typeof setupAq>>, tota
     registryId: 0,
     govs: [{ address: ctx.govAccounts[0].toString(), votes: totalVotes }],
   } as GGovCommitteeFile)
-  await ctx.instanceSdk.syncCommittee({ committeeId: secondCommitteeId })
-  const secondNumId = (await ctx.instanceSdk.getCommittee(secondCommitteeId))!.committeeNumId
+  await ctx.sdk.syncCommittee({ instanceNumId: ctx.instanceId, committeeId: secondCommitteeId })
+  const secondNumId = (await ctx.sdk.getCommittee(ctx.instanceId, secondCommitteeId))!.committeeNumId
   return { secondCommitteeId, secondNumId }
 }
 
@@ -130,12 +171,12 @@ describe('FracDelegationInstance algoquarters', () => {
 
   describe('startAqIngest rejections', () => {
     test('a non-operator cannot start', async () => {
-      const { committeeId, instanceSdk } = await setupAq(localnet)
-      const { sdk: nonOperatorSdk } = await generateAccountWithFracInstanceSDK(localnet, instanceSdk.appId, (3).algos())
+      const { committeeId, sdk, instanceId } = await setupAq(localnet)
+      const { sdk: nonOperatorSdk } = await generateAccountWithFracSDK(localnet, sdk.appId, (3).algos())
 
-      await expect(nonOperatorSdk.startAqIngest({ committeeId, totalAq: 1000 })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(
+        nonOperatorSdk.startAqIngest({ instanceNumId: instanceId, committeeId, totalAq: 1000 }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('rejects a zero total', async () => {
@@ -293,12 +334,12 @@ describe('FracDelegationInstance algoquarters', () => {
 
   describe('ingestAq rejections', () => {
     test('a non-operator cannot ingest', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
+      const { committeeId, committeeNumId, instanceSdk, sdk, instanceId } = await setupAq(localnet)
       await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
-      const { sdk: nonOperatorSdk } = await generateAccountWithFracInstanceSDK(localnet, instanceSdk.appId, (3).algos())
+      const { sdk: nonOperatorSdk } = await generateAccountWithFracSDK(localnet, sdk.appId, (3).algos())
 
       await expect(
-        nonOperatorSdk.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) }),
+        nonOperatorSdk.ingestAq({ instanceNumId: instanceId, committeeNumId, accountAqs: rows(freshAccounts(1), 100) }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
@@ -463,15 +504,15 @@ describe('FracDelegationInstance algoquarters', () => {
 
   describe('uningestAq rejections', () => {
     test('a non-operator cannot uningest', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
+      const { committeeId, committeeNumId, instanceSdk, sdk, instanceId } = await setupAq(localnet)
       await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
       const account = freshAccounts(1)[0]
       await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
-      const { sdk: nonOperatorSdk } = await generateAccountWithFracInstanceSDK(localnet, instanceSdk.appId, (3).algos())
+      const { sdk: nonOperatorSdk } = await generateAccountWithFracSDK(localnet, sdk.appId, (3).algos())
 
-      await expect(nonOperatorSdk.uningestAq({ committeeNumId, accounts: [account] })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(
+        nonOperatorSdk.uningestAq({ instanceNumId: instanceId, committeeNumId, accounts: [account] }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('rejects when the ledger was never started', async () => {

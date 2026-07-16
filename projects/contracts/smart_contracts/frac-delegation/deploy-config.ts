@@ -8,7 +8,7 @@ export async function deploy() {
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
   const writerAccount = { sender: deployer.addr, signer: deployer.signer }
 
-  const { sdk: registrySdk } = await FracDelegationRegistrySDK.createRegistry({
+  const { appClient } = await FracDelegationRegistrySDK.createRegistry({
     algorand,
     deployer: writerAccount,
     defaultOperatorAccount: deployer.addr.toString(),
@@ -16,23 +16,24 @@ export async function deploy() {
     initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
     update: true,
   })
+  // Combined SDK for instance ops; registry ops go through sdk.registry.
+  const sdk = new FracDelegationSDK({
+    algorand,
+    registryAppId: appClient.appId,
+    writerAccount,
+  })
 
   // If the registry already has instances, update each one's on-chain app code to the
   // latest FracDelegationInstance bytecode bundled with this fractional-delegation-sdk
   // build (createRegistry only refreshed the bytecode stored on the registry, not the
   // already-deployed instance apps).
-  const instances = await registrySdk.getExistingInstances()
+  const instances = await sdk.registry.getExistingInstances()
   if (instances.size === 0) {
     console.log('Registry has no instances to update')
   } else {
     console.log(`Updating ${instances.size} instance app(s) to the latest FracDelegationInstance build`)
     for (const [id, instance] of instances) {
-      const instanceSdk = new FracDelegationSDK({
-        algorand,
-        instanceAppId: instance.appId,
-        writerAccount,
-      })
-      await instanceSdk.updateInstanceApp({})
+      await sdk.updateInstanceApp({ instanceNumId: id })
       console.log(`Updated instance app ${instance.appId} (instanceId ${id})`)
     }
   }
