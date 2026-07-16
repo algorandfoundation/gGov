@@ -57,18 +57,18 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * empty-group factory to that client, then runs the standard executeTxns flow (which also
    * auto-increases opcode budget via getIncreaseBudgetBuilder).
    */
-  private makeInstanceTxnExecutor = <T extends (...args: any) => any, R = SendResult>({
+  private makeInstanceTxnExecutor = <A extends { instanceNumId: bigint | number }, R = SendResult>({
     maker,
     returnTransformer,
     sendParams,
   }: {
-    maker: T
+    maker: (args: A) => any
     returnTransformer?: (result: SendResult) => R
     sendParams?: SendParams
   }) => {
-    return async (args: Omit<Parameters<T>[0], 'builder' | 'client'>): Promise<R> => {
+    return async (args: Omit<A, 'builder' | 'client'>): Promise<R> => {
       if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
-      const client = await this.getInstanceWriteClient((args as any).instanceNumId)
+      const client = await this.getInstanceWriteClient(args.instanceNumId)
       const result = await wrapErrorsInternal(
         executeTxns({
           txnBuilder: (a: any) => (maker as any).call(this, { ...a, client }),
