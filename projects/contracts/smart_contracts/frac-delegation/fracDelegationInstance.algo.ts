@@ -449,7 +449,10 @@ export class FracDelegationInstanceContract extends BaseContract {
   @abimethod({ readonly: true })
   public getCommitteeAq(committeeNumId: Uint16, mustBeComplete: boolean): FracCommitteeAq {
     const aqBox = this.committeeAq(committeeNumId)
-    if (!aqBox.exists) return getEmptyFracCommitteeAq()
+    if (!aqBox.exists) {
+      ensure(!mustBeComplete, errAqNotStarted)
+      return getEmptyFracCommitteeAq()
+    }
     const committeeAq = clone(aqBox.value)
     // The guard internal voting will need: weight is split against `totalAq`, so a half-ingested
     // ledger would hand early voters an inflated share. Same role as the `mustBeComplete` flag
