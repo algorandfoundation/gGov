@@ -61,6 +61,15 @@ export class FracDelegationReaderSDK {
     return this.registry.readClient
   }
 
+  // ── Registry passthroughs (end-user escrow read) ──────────────────
+  // An escrow account self-services its own assignment, so this is forwarded for ergonomics (no
+  // `.registry`). Admin/config/analytics reads (getAdmin, getInstances, getAccounts, …) stay on
+  // `.registry`.
+
+  /** "Which instance is my account an escrow of?" */
+  getEscrowInstance = (...args: Parameters<FracDelegationRegistryReaderSDK['getEscrowInstance']>) =>
+    this.registry.getEscrowInstance(...args)
+
   // ── Instance app resolution ──────────────────────────────────────
 
   /** Resolve the on-chain app ID for an instanceNumId. Throws if the instance is unknown. */

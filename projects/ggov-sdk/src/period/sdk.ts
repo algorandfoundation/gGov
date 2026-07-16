@@ -106,7 +106,7 @@ export class GGovSDK extends GGovReaderSDK {
     }
   }
 
-  // ── Registry passthrough (end-user delegation write) ─────────────
+  // ── Registry passthroughs (end-user delegation write) ─────────────
   // setVotingAccount is the one registry write an end user performs — delegating or clearing
   // their OWN voting power — so it's forwarded for ergonomics. Admin/operator/bootstrap writes
   // (setOperator, setAdmin, addPeriod, committee ingest, withdrawALGO, uploadPeriodApprovalProgram,

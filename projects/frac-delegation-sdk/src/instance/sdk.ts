@@ -83,6 +83,13 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     }
   }
 
+  // ── Registry passthroughs (end-user writes) ───────────────────────
+  // The frac registry has no end-user writes today: every registry write is admin/bootstrap,
+  // so nothing is forwarded here and they all stay on `this.registry`. Mirrors ggov, where
+  // only the end-user setVotingAccount is forwarded; if a registry write an end user self-services
+  // ever lands, forward it here the same way. The end-user READs are forwarded on FracDelegationReaderSDK
+  // and inherited here.
+
   // ── Admin: roles + config ────────────────────────────────────────
 
   @requireWriter()

@@ -26,14 +26,14 @@ describe('FracDelegationRegistry escrows', () => {
       const escrow = newEscrow()
 
       // Before: nothing assigned, empty list, zero counter.
-      expect(await sdk.registry.getEscrowInstance(escrow)).toBeUndefined()
+      expect(await sdk.getEscrowInstance(escrow)).toBeUndefined()
       expect(await sdk.getEscrows(instanceId)).toEqual([])
       expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(0n)
 
       await sdk.registry.registerEscrow({ instanceNumId: instanceId, account: escrow })
 
       // Registry recorded the escrow -> instance assignment.
-      expect(await sdk.registry.getEscrowInstance(escrow)).toBe(Number(instanceId))
+      expect(await sdk.getEscrowInstance(escrow)).toBe(Number(instanceId))
       // Instance counter mirrors the list length.
       expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(1n)
       // Instance appended the escrow to its own box list.
@@ -52,7 +52,7 @@ describe('FracDelegationRegistry escrows', () => {
       expect(await sdk.getEscrows(instanceId)).toEqual(escrows)
       expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(BigInt(escrows.length))
       for (const account of escrows) {
-        expect(await sdk.registry.getEscrowInstance(account)).toBe(Number(instanceId))
+        expect(await sdk.getEscrowInstance(account)).toBe(Number(instanceId))
       }
     })
 
@@ -84,7 +84,7 @@ describe('FracDelegationRegistry escrows', () => {
         transformedError(errEscrowAssigned),
       )
       // The original assignment is unchanged.
-      expect(await sdk.registry.getEscrowInstance(escrow)).toBe(Number(firstInstanceId))
+      expect(await sdk.getEscrowInstance(escrow)).toBe(Number(firstInstanceId))
     })
 
     test('rejects registration against a non-existent instance', async () => {
@@ -118,7 +118,7 @@ describe('FracDelegationRegistry escrows', () => {
 
       expect(await sdk.getEscrows(instanceId)).toEqual([escrow])
       // The registry was not involved, so its assignment map and counter are untouched.
-      expect(await sdk.registry.getEscrowInstance(escrow)).toBeUndefined()
+      expect(await sdk.getEscrowInstance(escrow)).toBeUndefined()
       expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(0n)
     })
 
