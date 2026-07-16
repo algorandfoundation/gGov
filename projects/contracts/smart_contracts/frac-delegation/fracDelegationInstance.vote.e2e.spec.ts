@@ -1,6 +1,7 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
-import { generateAccount } from 'algosdk'
+import { generateAccount, getApplicationAddress } from 'algosdk'
+import { FracDelegationSDK } from 'frac-delegation-sdk'
 import { GGovCommitteeFile, GGovSDK } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -21,14 +22,14 @@ import {
   createSDK,
   deployFracInstance,
   deployRegistry,
-  generateAccountWithFracInstanceSDK,
+  generateAccountWithFracSDK,
   transformedError,
 } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 
-// E2E only, no unit spec: vote() inner-calls the frac registry's getAccount and the gGov period's
-// vote(), which algorand-typescript-testing 1.1.0 cannot exercise (see the note in
-// fracDelegationInstance.algoquarters.e2e.spec.ts).
+// The primary coverage for vote(): everything past its first gate inner-calls the frac registry's
+// getAccount and the gGov period's vote(), which algorand-typescript-testing 1.1.0 cannot exercise.
+// The one unit-reachable gate plus the unit-test plan live in fracDelegationInstance.vote.algo.spec.ts.
 
 /**
  * Create a period on `ggovSdk`, add `topicOptionsList` as topics, pull the voting window into the
@@ -88,7 +89,8 @@ const setupVoting = async (
   })
   await ggovSdk.registry.setOperator({ account: testAccount.toString() })
 
-  const { registrySdk, sdk: instanceSdk, instanceId } = await deployFracInstance(localnet, testAccount)
+  const { appId: instanceAppId, instanceId, sdk } = await deployFracInstance(localnet, testAccount)
+  const registrySdk = sdk.registry
   await registrySdk.setGGovRegistryApp({ appId: ggovRegistrySdk.appId })
   // A powerless escrow is one that is not a committee member: it snapshots 0 votes. Registered
   // first so the greedy spread has to step over it at index 0, not just past the end.
@@ -99,13 +101,13 @@ const setupVoting = async (
   for (const account of escrowAccounts) {
     await registrySdk.registerEscrow({ instanceNumId: instanceId, account: account.toString() })
   }
-  await instanceSdk.syncCommittee({ committeeId })
+  await sdk.syncCommittee({ instanceNumId: instanceId, committeeId })
 
   // The instance pays votingRecords + periodEscrowVotes box MBR; the frac registry pays per-account
   // MBR when ingestAq first sees a voter. No funding path between them, so top up both.
-  const instanceAppAddress = instanceSdk.readClient.appAddress.toString()
+  const instanceAppAddress = getApplicationAddress(instanceAppId).toString()
   await localnet.algorand.account.ensureFundedFromEnvironment(instanceAppAddress, (10).algos())
-  await localnet.algorand.account.ensureFundedFromEnvironment(registrySdk.readClient.appAddress, (5).algos())
+  await localnet.algorand.account.ensureFundedFromEnvironment(sdk.registryReadClient.appAddress, (5).algos())
 
   // Every escrow delegates its gGov voting power to the instance app account — the mechanism that
   // lets the instance's inner vote() calls pass the period's delegation check.
@@ -117,10 +119,25 @@ const setupVoting = async (
 
   const periodId = await createReadyPeriod(ggovSdk, committeeId, topics)
   const periodAppId = await ggovSdk.getPeriodAppId(periodId)
-  await instanceSdk.syncPeriod({ periodApp: periodAppId })
-  const committeeNumId = (await instanceSdk.getCommittee(committeeId))!.committeeNumId
+  await sdk.syncPeriod({ instanceNumId: instanceId, periodApp: periodAppId })
+  const committeeNumId = (await sdk.getCommittee(instanceId, committeeId))!.committeeNumId
   if (startIngest) {
-    await instanceSdk.startAqIngest({ committeeId, totalAq })
+    await sdk.startAqIngest({ instanceNumId: instanceId, committeeId, totalAq })
+  }
+
+  // The combined FracDelegationSDK addresses many instances by `instanceNumId`; like the
+  // AlgoQuarters spec, this one makes enough instance calls that we bind the fixture's instance
+  // into a single-instance facade so the test bodies read as plain per-instance calls.
+  const instanceSdk = {
+    ingestAq: (args: { committeeNumId: number; accountAqs: [string, number][]; note?: string }) =>
+      sdk.ingestAq({ instanceNumId: instanceId, ...args }),
+    uningestAq: (args: { committeeNumId: number; accounts: string[]; note?: string }) =>
+      sdk.uningestAq({ instanceNumId: instanceId, ...args }),
+    getPeriodVoteCache: (periodId: bigint | number) => sdk.getPeriodVoteCache(instanceId, periodId),
+    getPeriodEscrowVotes: (periodId: bigint | number, escrowIndex: bigint | number) =>
+      sdk.getPeriodEscrowVotes(instanceId, periodId, escrowIndex),
+    getVotingRecord: (periodId: bigint | number, accountId: bigint | number) =>
+      sdk.getVotingRecord(instanceId, periodId, accountId),
   }
 
   return {
@@ -131,6 +148,7 @@ const setupVoting = async (
     committeeNumId,
     escrowAccounts,
     registrySdk,
+    sdk,
     instanceSdk,
     instanceId,
     periodId,
@@ -142,11 +160,16 @@ const setupVoting = async (
 
 type VotingCtx = Awaited<ReturnType<typeof setupVoting>>
 
-/** A funded account with `aq` AlgoQuarters ingested, and an instance SDK writing as it. */
+/** The end-user voting surface of a combined SDK, bound to the fixture's instance. */
+const bindVote = (sdk: FracDelegationSDK, instanceNumId: bigint | number) => ({
+  vote: (args: Omit<Parameters<FracDelegationSDK['vote']>[0], 'instanceNumId'>) => sdk.vote({ instanceNumId, ...args }),
+})
+
+/** A funded account with `aq` AlgoQuarters ingested, and a vote() signing as it. */
 const addVoter = async (localnet: AlgorandFixture, ctx: VotingCtx, aq: number) => {
-  const { account, sdk } = await generateAccountWithFracInstanceSDK(localnet, ctx.instanceSdk.appId, (2).algos())
+  const { account, sdk } = await generateAccountWithFracSDK(localnet, ctx.sdk.appId, (2).algos())
   await ctx.instanceSdk.ingestAq({ committeeNumId: ctx.committeeNumId, accountAqs: [[account.toString(), aq]] })
-  return { account, sdk }
+  return { account, sdk: bindVote(sdk, ctx.instanceId) }
 }
 
 /** Ingest `aq` AlgoQuarters for a fresh address that never votes (and never signs). */
@@ -367,11 +390,8 @@ describe('FracDelegationInstance vote', () => {
     test('a sender the frac registry has never seen', async () => {
       const ctx = await setupVoting(localnet)
       await ingestNonVoter(ctx, 100) // completes the ledger so the gate before account resolution passes
-      const { sdk: strangerSdk } = await generateAccountWithFracInstanceSDK(
-        localnet,
-        ctx.instanceSdk.appId,
-        (2).algos(),
-      )
+      const { sdk: strangerRawSdk } = await generateAccountWithFracSDK(localnet, ctx.sdk.appId, (2).algos())
+      const strangerSdk = bindVote(strangerRawSdk, ctx.instanceId)
 
       await expect(strangerSdk.vote({ periodId: ctx.periodId, topicVotes: [[100, 0, 0]] })).rejects.toThrow(
         transformedError(errAccountNotExists),
@@ -393,7 +413,8 @@ describe('FracDelegationInstance vote', () => {
 
     test('an AQ ledger that was never opened', async () => {
       const ctx = await setupVoting(localnet, { startIngest: false })
-      const { sdk: voterSdk } = await generateAccountWithFracInstanceSDK(localnet, ctx.instanceSdk.appId, (2).algos())
+      const { sdk: rawSdk } = await generateAccountWithFracSDK(localnet, ctx.sdk.appId, (2).algos())
+      const voterSdk = bindVote(rawSdk, ctx.instanceId)
 
       await expect(voterSdk.vote({ periodId: ctx.periodId, topicVotes: [[100, 0, 0]] })).rejects.toThrow(
         transformedError(errAqNotStarted),

@@ -151,9 +151,11 @@ self-voted, …) — those fail the whole group; nothing is partially written.
 
 ## SDK
 
-`FracDelegationSDK` (`frac-delegation-sdk/src/instance/sdk.ts`): `vote({ periodId, topicVotes })` —
-simulates to discover changed escrows, sets `extraFee`, pads the group past 5 escrows, populates
-resources. No pre-resolution needed; address→ID is on-chain.
+`FracDelegationSDK` (`frac-delegation-sdk/src/instance/sdk.ts`):
+`vote({ instanceNumId, periodId, topicVotes })` — like every instance-side method on the combined
+SDK it is keyed by `instanceNumId` (PR #78 restructure); sets worst-case `extraFee`, pads the group
+past 5 escrows, populates resources. No pre-resolution needed; address→ID is on-chain. Reader:
+`getVotingRecord(instanceNumId, periodId, accountId)`.
 
 ## Unblocked follow-ups (not in this change)
 

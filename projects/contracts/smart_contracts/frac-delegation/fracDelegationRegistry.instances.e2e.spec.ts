@@ -2,7 +2,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { FracDelegationInstanceFactory, FracDelegationRegistryFactory } from 'frac-delegation-sdk'
 import { errInstanceAppNotConfigured, errUnauthorized } from '../base/errors.algo'
-import { Address } from 'algosdk'
+import { Address, getApplicationAddress } from 'algosdk'
 import {
   createFracRegistrySDK,
   deployFracInstance,
@@ -46,17 +46,17 @@ describe('FracDelegationRegistry instances', () => {
   describe('createInstance', () => {
     test('admin can create an instance', async () => {
       const { testAccount } = localnet.context
-      const { registrySdk, sdk: instanceSDK, appId, instanceId } = await deployFracInstance(localnet, testAccount)
+      const { sdk, appId, instanceId } = await deployFracInstance(localnet, testAccount)
       expect(instanceId).toBeGreaterThan(0n)
 
       const appInfo = await localnet.algorand.app.getById(appId)
       expect(appInfo.extraProgramPages).toBe(3)
 
-      expect(await instanceSDK.getRegistryApp()).toBe(registrySdk.appId)
-      expect(await instanceSDK.getAdmin()).toBe(testAccount.toString())
+      expect(await sdk.getInstanceRegistryApp(instanceId)).toBe(sdk.appId)
+      expect(await sdk.getInstanceAdmin(instanceId)).toBe(testAccount.toString())
 
       // The paired MBR payment was forwarded in full to the spawned instance app account.
-      const instanceAccount = await localnet.algorand.account.getInformation(instanceSDK.readClient.appAddress)
+      const instanceAccount = await localnet.algorand.account.getInformation(getApplicationAddress(appId))
       expect(instanceAccount.balance.microAlgo).toBe((1).algos().microAlgo)
     })
 

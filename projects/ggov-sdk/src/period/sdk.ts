@@ -80,18 +80,18 @@ export class GGovSDK extends GGovReaderSDK {
    * empty-group factory to that client, then runs the standard executeTxns flow (which also
    * auto-increases opcode budget via getIncreaseBudgetBuilder).
    */
-  private makePeriodTxnExecutor = <T extends (...args: any) => any, R = SendResult>({
+  private makePeriodTxnExecutor = <A extends { periodId: bigint | number }, R = SendResult>({
     maker,
     returnTransformer,
     sendParams,
   }: {
-    maker: T
+    maker: (args: A) => any
     returnTransformer?: (result: SendResult) => R
     sendParams?: SendParams
   }) => {
-    return async (args: Omit<Parameters<T>[0], 'builder' | 'client'>): Promise<R> => {
+    return async (args: Omit<A, 'builder' | 'client'>): Promise<R> => {
       if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
-      const client = await this.getPeriodWriteClient((args as any).periodId)
+      const client = await this.getPeriodWriteClient(args.periodId)
       const result = await wrapErrorsInternal(
         executeTxns({
           txnBuilder: (a: any) => (maker as any).call(this, { ...a, client }),
@@ -106,7 +106,7 @@ export class GGovSDK extends GGovReaderSDK {
     }
   }
 
-  // ── Registry passthrough (end-user delegation write) ─────────────
+  // ── Registry passthroughs (end-user delegation write) ─────────────
   // setVotingAccount is the one registry write an end user performs — delegating or clearing
   // their OWN voting power — so it's forwarded for ergonomics. Admin/operator/bootstrap writes
   // (setOperator, setAdmin, addPeriod, committee ingest, withdrawALGO, uploadPeriodApprovalProgram,
@@ -170,7 +170,7 @@ export class GGovSDK extends GGovReaderSDK {
     })
   }
 
-  addTopic = this.makePeriodTxnExecutor<typeof this.makeAddTopicTxns, bigint>({
+  addTopic = this.makePeriodTxnExecutor<Parameters<typeof this.makeAddTopicTxns>[0], bigint>({
     maker: this.makeAddTopicTxns,
     returnTransformer: (result) => {
       const returns = (result as any).returns ?? []
