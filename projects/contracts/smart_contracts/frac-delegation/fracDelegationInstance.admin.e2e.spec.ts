@@ -1,15 +1,9 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
-import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
+import { ALGORAND_ZERO_ADDRESS_STRING, getApplicationAddress } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { FracDelegationInstanceFactory, FracDelegationSDK } from 'frac-delegation-sdk'
+import { FracDelegationInstanceFactory, FracDelegationSDK, SIMULATE_PARAMS } from 'frac-delegation-sdk'
 import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
-import {
-  createFracInstanceSDK,
-  deployFracInstance,
-  deployFracRegistry,
-  generateAccountWithFracInstanceSDK,
-  transformedError,
-} from '../common-tests'
+import { deployFracInstance, deployFracRegistry, generateAccountWithFracSDK, transformedError } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 
 describe('FracDelegationInstance admin', () => {
@@ -20,23 +14,23 @@ describe('FracDelegationInstance admin', () => {
 
   // Role resolution: reads from registry's global state
   describe('resolved roles', () => {
-    test('getAdmin resolves through the registry, reflecting live changes to the registry admin', async () => {
+    test('getInstanceAdmin resolves through the registry, reflecting live changes to the registry admin', async () => {
       const { testAccount } = localnet.context
-      const { registrySdk, sdk } = await deployFracInstance(localnet, testAccount)
-      expect(await sdk.getAdmin()).toBe(testAccount.toString())
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+      expect(await sdk.getInstanceAdmin(instanceId)).toBe(testAccount.toString())
 
       const newAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await registrySdk.setAdmin({ newAdmin: newAdmin.toString() })
-      expect(await sdk.getAdmin()).toBe(newAdmin.toString())
+      await sdk.registry.setAdmin({ newAdmin: newAdmin.toString() })
+      expect(await sdk.getInstanceAdmin(instanceId)).toBe(newAdmin.toString())
     })
 
-    test('getOperator falls back to the registry defaultOperator when no local override is set', async () => {
+    test('getInstanceOperator falls back to the registry defaultOperator when no local override is set', async () => {
       const { testAccount } = localnet.context
       const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const { sdk } = await deployFracInstance(localnet, testAccount, { defaultOperator: operator })
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount, { defaultOperator: operator })
 
-      expect(await sdk.readClient.state.global.operator()).toBe(ALGORAND_ZERO_ADDRESS_STRING)
-      expect(await sdk.getOperator()).toBe(operator.toString())
+      expect((await sdk.getInstanceGlobalState(instanceId)).operator).toBe(ALGORAND_ZERO_ADDRESS_STRING)
+      expect(await sdk.getInstanceOperator(instanceId)).toBe(operator.toString())
     })
   })
 
@@ -44,39 +38,39 @@ describe('FracDelegationInstance admin', () => {
   describe('setOperator', () => {
     test('admin can set an instance local operator and clear it back to the registry fallback', async () => {
       const { testAccount } = localnet.context
-      const { registrySdk, sdk } = await deployFracInstance(localnet, testAccount)
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
       const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
-      await sdk.setOperator({ newOperator: operator.toString() })
-      expect(await sdk.readClient.state.global.operator()).toBe(operator.toString())
-      expect(await sdk.getOperator()).toBe(operator.toString())
+      await sdk.setOperator({ instanceNumId: instanceId, newOperator: operator.toString() })
+      expect((await sdk.getInstanceGlobalState(instanceId)).operator).toBe(operator.toString())
+      expect(await sdk.getInstanceOperator(instanceId)).toBe(operator.toString())
 
       // The zero address clears the override, falling back to the registry default again.
-      await sdk.setOperator({ newOperator: ALGORAND_ZERO_ADDRESS_STRING })
-      expect(await sdk.readClient.state.global.operator()).toBe(ALGORAND_ZERO_ADDRESS_STRING)
-      expect(await sdk.getOperator()).toBe(await registrySdk.getDefaultOperator())
+      await sdk.setOperator({ instanceNumId: instanceId, newOperator: ALGORAND_ZERO_ADDRESS_STRING })
+      expect((await sdk.getInstanceGlobalState(instanceId)).operator).toBe(ALGORAND_ZERO_ADDRESS_STRING)
+      expect(await sdk.getInstanceOperator(instanceId)).toBe(await sdk.registry.getDefaultOperator())
     })
   })
 
   describe('setRegistryApp', () => {
     test('the registry admin can rebind to a second registry, and roles follow it', async () => {
       const { testAccount: creator } = localnet.context
-      const { registrySdk, sdk } = await deployFracInstance(localnet, creator)
+      const { sdk, instanceId } = await deployFracInstance(localnet, creator)
       // Move the registry admin to a distinct account so the rebind is exercised by an admin
       // that is neither the deployer nor the instance creator (the spawning registry app).
-      const { account: admin, sdk: adminSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId)
-      await registrySdk.setAdmin({ newAdmin: admin.toString() })
+      const { account: admin, sdk: adminSDK } = await generateAccountWithFracSDK(localnet, sdk.appId)
+      await sdk.registry.setAdmin({ newAdmin: admin.toString() })
 
       const secondRegistryCreator = await localnet.context.generateAccount({ initialFunds: (10).algos() })
       const { sdk: secondRegistrySdk } = await deployFracRegistry(localnet, secondRegistryCreator)
 
-      await adminSDK.setRegistryApp({ appId: secondRegistrySdk.appId })
-      expect(await sdk.getRegistryApp()).toBe(secondRegistrySdk.appId)
-      expect(await sdk.getAdmin()).toBe(secondRegistryCreator.toString())
-      expect(await sdk.getOperator()).toBe(secondRegistryCreator.toString())
+      await adminSDK.setRegistryApp({ instanceNumId: instanceId, appId: secondRegistrySdk.appId })
+      expect(await sdk.getInstanceRegistryApp(instanceId)).toBe(secondRegistrySdk.appId)
+      expect(await sdk.getInstanceAdmin(instanceId)).toBe(secondRegistryCreator.toString())
+      expect(await sdk.getInstanceOperator(instanceId)).toBe(secondRegistryCreator.toString())
 
       // the first registry's admin lost admin over the instance
-      await expect(adminSDK.setOperator({ newOperator: admin.toString() })).rejects.toThrow(
+      await expect(adminSDK.setOperator({ instanceNumId: instanceId, newOperator: admin.toString() })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
@@ -85,12 +79,12 @@ describe('FracDelegationInstance admin', () => {
   describe('lifecycle', () => {
     test('resolved admin can update, then delete the instance app', async () => {
       const { testAccount } = localnet.context
-      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const { sdk, instanceId, appId } = await deployFracInstance(localnet, testAccount)
 
-      await expect(sdk.updateInstanceApp({})).resolves.toBeDefined()
+      await expect(sdk.updateInstanceApp({ instanceNumId: instanceId })).resolves.toBeDefined()
 
-      await sdk.deleteInstanceApp({})
-      await expect(localnet.algorand.app.getById(sdk.appId)).rejects.toThrow()
+      await sdk.deleteInstanceApp({ instanceNumId: instanceId })
+      await expect(localnet.algorand.app.getById(appId)).rejects.toThrow()
     })
 
     // TODO: unskip once FracDelegationInstanceContract.deleteApplication() actually cleans the
@@ -98,43 +92,44 @@ describe('FracDelegationInstance admin', () => {
     // closeRemainderTo on the contract method).
     test.skip('delete sends the whole app balance to the caller', async () => {
       const { testAccount } = localnet.context
-      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const { sdk, instanceId, appId } = await deployFracInstance(localnet, testAccount)
+      const instanceAddress = getApplicationAddress(appId)
       // Fund the instance well above its base MBR so there's real escrow to recover.
       await localnet.algorand.send.payment({
         sender: testAccount,
-        receiver: sdk.readClient.appAddress,
+        receiver: instanceAddress,
         amount: (2).algos(),
       })
 
       // TODO: add boxes as well
 
-      const appBalanceBeforeDelete = (await localnet.algorand.account.getInformation(sdk.readClient.appAddress)).balance
-        .microAlgo
+      const appBalanceBeforeDelete = (await localnet.algorand.account.getInformation(instanceAddress)).balance.microAlgo
       const adminBefore = await localnet.algorand.account.getInformation(testAccount)
 
-      await sdk.deleteInstanceApp({})
+      await sdk.deleteInstanceApp({ instanceNumId: instanceId })
 
       const adminAfter = await localnet.algorand.account.getInformation(testAccount)
       expect(adminAfter.balance.microAlgo).toBe(adminBefore.balance.microAlgo + appBalanceBeforeDelete - 2000n)
-      await expect(localnet.algorand.app.getById(sdk.appId)).rejects.toThrow()
+      await expect(localnet.algorand.app.getById(appId)).rejects.toThrow()
     })
   })
 
-  describe('withdrawALGO', () => {
+  describe('withdrawInstanceALGO', () => {
     test('admin can withdraw ALGO to a receiver', async () => {
       const { testAccount } = localnet.context
       // The instance's starting balance is the 1 ALGO MBR payment forwarded by createInstance
-      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const { sdk, instanceId, appId } = await deployFracInstance(localnet, testAccount)
+      const instanceAddress = getApplicationAddress(appId)
       const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const before = await localnet.algorand.account.getInformation(receiver)
-      const instanceBefore = await localnet.algorand.account.getInformation(sdk.readClient.appAddress)
+      const instanceBefore = await localnet.algorand.account.getInformation(instanceAddress)
       const amount = (0.5).algos().microAlgo
 
-      await sdk.withdrawALGO({ receiver: receiver.toString(), amount })
+      await sdk.withdrawInstanceALGO({ instanceNumId: instanceId, receiver: receiver.toString(), amount })
 
       const after = await localnet.algorand.account.getInformation(receiver)
-      const instanceAfter = await localnet.algorand.account.getInformation(sdk.readClient.appAddress)
+      const instanceAfter = await localnet.algorand.account.getInformation(instanceAddress)
       // Receiver does not pay the fees (sender/admin does), so it gains exactly `amount`.
       expect(after.balance.microAlgo).toBe(before.balance.microAlgo + amount)
       // Instance loses `amount` (the inner-payment fee is paid by the outer txn sender).
@@ -143,59 +138,79 @@ describe('FracDelegationInstance admin', () => {
 
     test('withdrawing more than the available balance fails (min balance protected by AVM)', async () => {
       const { testAccount } = localnet.context
-      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
       const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       // App holds ~1 ALGO; ask for far more than the balance minus min balance.
       await expect(
-        sdk.withdrawALGO({ receiver: receiver.toString(), amount: (100).algos().microAlgo }),
+        sdk.withdrawInstanceALGO({
+          instanceNumId: instanceId,
+          receiver: receiver.toString(),
+          amount: (100).algos().microAlgo,
+        }),
       ).rejects.toThrow()
     })
   })
 
   // Auth
   describe('admin auth', () => {
-    let sdk: FracDelegationSDK
+    let instanceId: bigint
     let nonAdmin: Awaited<ReturnType<typeof localnet.context.generateAccount>>
     let nonAdminSDK: FracDelegationSDK
 
     beforeAll(async () => {
       await localnet.newScope()
       const { testAccount } = localnet.context
-      ;({ sdk } = await deployFracInstance(localnet, testAccount))
-      ;({ account: nonAdmin, sdk: nonAdminSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId))
+      const { sdk, instanceId: id } = await deployFracInstance(localnet, testAccount)
+      instanceId = id
+      ;({ account: nonAdmin, sdk: nonAdminSDK } = await generateAccountWithFracSDK(localnet, sdk.appId))
     })
 
     test('non-admin cannot setOperator', async () => {
-      await expect(nonAdminSDK.setOperator({ newOperator: nonAdmin.toString() })).rejects.toThrow(
+      await expect(
+        nonAdminSDK.setOperator({ instanceNumId: instanceId, newOperator: nonAdmin.toString() }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot set registry app ID', async () => {
+      await expect(nonAdminSDK.setRegistryApp({ instanceNumId: instanceId, appId: 12345n })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
 
-    test('non-admin cannot set registry app ID', async () => {
-      await expect(nonAdminSDK.setRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
-    })
-
     test('non-admin cannot withdraw ALGO', async () => {
       await expect(
-        nonAdminSDK.withdrawALGO({ receiver: nonAdmin.toString(), amount: (1).algos().microAlgo }),
+        nonAdminSDK.withdrawInstanceALGO({
+          instanceNumId: instanceId,
+          receiver: nonAdmin.toString(),
+          amount: (1).algos().microAlgo,
+        }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot update the instance app', async () => {
-      await expect(nonAdminSDK.updateInstanceApp({})).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.updateInstanceApp({ instanceNumId: instanceId })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
     })
 
     test('non-admin cannot delete the instance app', async () => {
-      await expect(nonAdminSDK.deleteInstanceApp({})).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.deleteInstanceApp({ instanceNumId: instanceId })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
     })
   })
 
   describe('creator escape-hatch', () => {
     test('exercises the creator auth branch and registry setter on instances', async () => {
-      // Deploy an unbounded instance
       const { testAccount: creator } = localnet.context
       await localnet.algorand.account.ensureFundedFromEnvironment(creator, (10).algos())
 
+      // Deploy a registry (its SDK also registers the error transformer used by the asserts below)
+      const { sdk: registrySdk } = await deployFracRegistry(localnet, creator)
+
+      // Deploy an unbounded instance. It is recorded in no registry's instances box, so the
+      // combined SDK cannot resolve it by instanceNumId — this scenario drives the instance app
+      // through its generated client directly.
       const factory = localnet.algorand.client.getTypedAppFactory(FracDelegationInstanceFactory, {
         defaultSender: creator,
         defaultSigner: localnet.algorand.account.getSigner(creator),
@@ -213,36 +228,38 @@ describe('FracDelegationInstance admin', () => {
         amount: (1).algo(),
       })
 
-      const sdk = createFracInstanceSDK(localnet, appClient.appId, creator)
-      expect(await sdk.getRegistryApp()).toBe(0n)
-      await expect(sdk.getAdmin()).rejects.toThrow(transformedError(errRegistryMissing))
+      const getRegistryApp = async () => BigInt((await appClient.state.global.registryApp())!)
+      const getAdmin = async () =>
+        (await appClient.newGroup().getAdmin({ args: {} }).simulate(SIMULATE_PARAMS)).returns[0]
 
-      // Deploy a registry
-      const { sdk: registrySdk } = await deployFracRegistry(localnet, creator)
+      expect(await getRegistryApp()).toBe(0n)
+      await expect(getAdmin()).rejects.toThrow(transformedError(errRegistryMissing))
 
-      const { sdk: nonCreatorSDK } = await generateAccountWithFracInstanceSDK(localnet, sdk.appId)
-      await expect(nonCreatorSDK.setRegistryApp({ appId: registrySdk.appId })).rejects.toThrow(
-        transformedError(errRegistryMissing),
-      )
+      const nonCreator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        appClient.send.setRegistryApp({ args: { appId: registrySdk.appId }, sender: nonCreator }),
+      ).rejects.toThrow(transformedError(errRegistryMissing))
 
       // Bound new registry to the instance
-      await sdk.setRegistryApp({ appId: registrySdk.appId })
-      expect(await sdk.getRegistryApp()).toBe(registrySdk.appId)
+      await appClient.send.setRegistryApp({ args: { appId: registrySdk.appId } })
+      expect(await getRegistryApp()).toBe(registrySdk.appId)
 
       // Cannot set an invalid registry (not `admin` key)
-      await expect(sdk.setRegistryApp({ appId: sdk.appId })).rejects.toThrow(transformedError(errRegistryMissing))
+      await expect(appClient.send.setRegistryApp({ args: { appId: appClient.appId } })).rejects.toThrow(
+        transformedError(errRegistryMissing),
+      )
 
       // Brick: deleting the bound registry kills role resolution (getEx on a nonexistent app
       // panics) - the scenario behind the registry deleteApplication WARNING.
       await registrySdk.deleteApplication({})
-      await expect(sdk.getAdmin()).rejects.toThrow()
+      await expect(getAdmin()).rejects.toThrow()
 
       // Hatch: only the creator branch of ensureCallerIsAdmin can still pass;
       // the creator rebinds to a fresh registry and roles resolve again.
       const recoveryCreator = await localnet.context.generateAccount({ initialFunds: (10).algos() })
       const { sdk: recoveryRegistrySdk } = await deployFracRegistry(localnet, recoveryCreator)
-      await sdk.setRegistryApp({ appId: recoveryRegistrySdk.appId })
-      expect(await sdk.getAdmin()).toBe(recoveryCreator.toString())
+      await appClient.send.setRegistryApp({ args: { appId: recoveryRegistrySdk.appId } })
+      expect(await getAdmin()).toBe(recoveryCreator.toString())
     })
   })
 })

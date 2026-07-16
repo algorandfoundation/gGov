@@ -53,7 +53,8 @@ describe('FracDelegationRegistry readers', () => {
     count: number,
   ): Promise<{ registrySdk: FracDelegationRegistrySDK; instanceId: bigint; accounts: string[]; ids: number[] }> => {
     const { testAccount } = localnet.context
-    const { registrySdk, instanceId } = await deployFracInstance(localnet, testAccount)
+    const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+    const registrySdk = sdk.registry
     const accounts = await freshAddresses(count)
     const ids = await registerAccounts(registrySdk, instanceId, accounts)
     return { registrySdk, instanceId, accounts, ids }
@@ -131,8 +132,8 @@ describe('FracDelegationRegistry readers', () => {
 
     test('rejects registration by a caller that is neither the instance app nor the admin', async () => {
       const { testAccount } = localnet.context
-      const { registrySdk, instanceId } = await deployFracInstance(localnet, testAccount)
-      const { sdk: strangerSdk } = await generateAccountWithFracRegSDK(localnet, registrySdk.appId, (1).algos())
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+      const { sdk: strangerSdk } = await generateAccountWithFracRegSDK(localnet, sdk.appId, (1).algos())
       const [target] = await freshAddresses(1)
 
       await expect(
@@ -144,7 +145,8 @@ describe('FracDelegationRegistry readers', () => {
 
     test('an account registered with two instances lists both instance ids', async () => {
       const { testAccount } = localnet.context
-      const { registrySdk, instanceId: instanceId1 } = await deployFracInstance(localnet, testAccount)
+      const { sdk, instanceId: instanceId1 } = await deployFracInstance(localnet, testAccount)
+      const registrySdk = sdk.registry
       const { instanceId: instanceId2 } = await deployFracInstance(localnet, testAccount, { registrySdk })
       const [account] = await freshAddresses(1)
 
