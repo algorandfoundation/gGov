@@ -1,15 +1,16 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { FracDelegationRegistrySDK, FracDelegationSDK } from 'frac-delegation-sdk'
 import type { Address } from 'algosdk'
+import { appIdFromEnv } from '../deploy-utils'
 
 // Resolve the gGov registry app id: GGOV_REGISTRY_APP_ID env var takes precedence,
 // otherwise look up the GGovRegistry app deployed by the same DEPLOYER account
 // (ggov-registry deploys before frac-delegation per DEPLOY_ORDER in index.ts).
 async function resolveGGovRegistryAppId(algorand: AlgorandClient, creator: Address): Promise<bigint | undefined> {
-  const override = process.env.GGOV_REGISTRY_APP_ID
-  if (override) {
+  const override = appIdFromEnv('GGOV_REGISTRY_APP_ID')
+  if (override !== undefined) {
     console.log(`Using gGov registry app id ${override} from GGOV_REGISTRY_APP_ID`)
-    return BigInt(override)
+    return override
   }
   const lookup = await algorand.appDeployer.getCreatorAppsByName(creator)
   const gGovRegistry = lookup.apps['GGovRegistry']

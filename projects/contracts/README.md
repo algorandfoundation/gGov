@@ -30,7 +30,7 @@ gGov is two cooperating smart contracts:
 `smart_contracts/index.ts` runs every `smart_contracts/*/deploy-config.ts`, with `ggov-registry` always before `frac-delegation` (`DEPLOY_ORDER`) and the rest alphabetically.
 
 ```sh
-algokit project deploy localnet|testnet|mainnet   # full bundle (runs pnpm run deploy:ci)
+algokit project deploy <network>   # full bundle (runs pnpm run deploy:ci)
 algokit project deploy localnet -- ggov-registry  # single contract, by directory name
 pnpm run deploy:ci [contract-dir-name]            # same, without algokit (env from .env only)
 pnpm run deploy [contract-dir-name]               # watch mode: redeploys on file save (localnet iteration)
@@ -40,7 +40,7 @@ Environment: `algokit project deploy <network>` loads `.env` then `.env.<network
 
 Upstream registry ids, both optional and re-settable on redeploy:
 
-- `XGOV_REGISTRY_APP_ID` — wired into `GGovRegistry.xGovRegistryApp`; left unconfigured (with a warning) if unset.
+- `XGOV_REGISTRY_APP_ID` — wired into `GGovRegistry.xGovRegistryApp`; left unconfigured if unset.
 - `GGOV_REGISTRY_APP_ID` — wired into `FracDelegationRegistry.gGovRegistryApp`; if unset, the frac deploy falls back to looking up the `GGovRegistry` app created by the same `DEPLOYER`, so a fresh full-bundle deploy couples the two automatically.
 
 <a id="ggovregistry"></a>

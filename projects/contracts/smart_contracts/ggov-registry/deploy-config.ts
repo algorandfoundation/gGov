@@ -1,5 +1,6 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { GGovSDK, GGovRegistrySDK } from 'ggov-sdk'
+import { appIdFromEnv } from '../deploy-utils'
 
 export async function deploy() {
   console.log('=== Deploying GGovRegistry ===')
@@ -7,7 +8,7 @@ export async function deploy() {
   const algorand = AlgorandClient.fromEnvironment()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 
-  const xGovRegistryAppId = process.env.XGOV_REGISTRY_APP_ID ? BigInt(process.env.XGOV_REGISTRY_APP_ID) : undefined
+  const xGovRegistryAppId = appIdFromEnv('XGOV_REGISTRY_APP_ID')
   if (xGovRegistryAppId === undefined) {
     console.warn(
       'XGOV_REGISTRY_APP_ID is not set: xGovRegistryApp will be left unconfigured. ' +
