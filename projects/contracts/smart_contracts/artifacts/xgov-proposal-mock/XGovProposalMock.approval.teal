@@ -339,16 +339,16 @@ ensureCallerIsProposer:
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz ensureCallerIsProposer_after_if_else@3
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:78
     // ensure(caller === this.proposer.value, 'ERR:AUTH')
     pushbytes "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 

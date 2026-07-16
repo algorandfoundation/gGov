@@ -369,10 +369,10 @@ dynamic_array_replace_dynamic_element_after_for@5:
 
 // smart_contracts/base/utils.algo.ts::u32(v: uint64) -> bytes:
 u32:
-    // smart_contracts/base/utils.algo.ts:8
+    // smart_contracts/base/utils.algo.ts:12
     // export function u32(v: uint64) {
     proto 1 1
-    // smart_contracts/base/utils.algo.ts:9
+    // smart_contracts/base/utils.algo.ts:13
     // return new Uint32(v)
     frame_dig -1
     itob
@@ -430,16 +430,16 @@ init:
     // ensure(this.registryApp.value === 0, errAlreadyInit)
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz init_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:106
     // ensure(this.registryApp.value === 0, errAlreadyInit)
     pushbytes "ERR:AI"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -449,16 +449,16 @@ init_after_if_else@3:
     txn Sender
     global CreatorAddress
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz init_after_if_else@7
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:107
     // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
     bytec 17 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -580,16 +580,16 @@ editPeriod:
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:166
     // ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
     <
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz editPeriod_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:166
     // ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
     pushbytes "ERR:PE_LT"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -694,17 +694,17 @@ addTopic_after_for@4:
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:175
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     dig 4
     bnz addTopic_after_if_else@11
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:176
     // ensure(options.length > 0, errGGovNoOptions)
     bytec 19 // "ERR:GT_NO"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -922,17 +922,17 @@ editTopic_after_for@4:
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:197
     // this.ensureEditable()
     callsub ensureEditable
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     dig 4
     bnz editTopic_after_if_else@11
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:198
     // ensure(options.length > 0, errGGovNoOptions)
     bytec 19 // "ERR:GT_NO"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -966,16 +966,16 @@ editTopic_after_if_else@11:
     btoi
     dig 7
     >
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz editTopic_after_if_else@15
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:201
     // ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     bytec 21 // "ERR:GT_OB"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1138,16 +1138,16 @@ removeTopic:
     box_extract
     btoi
     <
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz removeTopic_after_if_else@9
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:219
     // ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     bytec 21 // "ERR:GT_OB"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1411,16 +1411,16 @@ setReady_after_while@5:
     dig 1
     pushint 1024 // 1024
     <=
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz setReady_after_if_else@13
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:250
     // ensure(logSize <= 1024, errGGovUnvotable)
     pushbytes "ERR:GP_UV"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1543,16 +1543,16 @@ setReady_while_top@9:
     intc_3 // 4
     box_extract
     btoi
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz setReady_after_if_else@16
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:256
     // ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
     pushbytes "ERR:GP_VE"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1903,16 +1903,16 @@ vote_after_for@4:
     // ensure(this.ready.value, errGGovNotReady)
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@55
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:328
     // ensure(this.ready.value, errGGovNotReady)
     pushbytes "ERR:GP_NR"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1929,16 +1929,16 @@ vote_after_if_else@55:
     app_global_get_ex
     assert // check GlobalState exists
     >=
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@59
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:329
     // ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     pushbytes "ERR:GP_NS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1955,16 +1955,16 @@ vote_after_if_else@59:
     app_global_get_ex
     assert // check GlobalState exists
     <
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@63
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:330
     // ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
     pushbytes "ERR:GP_EN"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2029,16 +2029,16 @@ vote_after_if_else@63:
     // ensure(expectedDelegatee === Txn.sender, errGGovNoDelegation)
     txn Sender
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@51
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:341
     // ensure(expectedDelegatee === Txn.sender, errGGovNoDelegation)
     pushbytes "ERR:GD_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2055,16 +2055,16 @@ vote_after_if_else@51:
     intc_2 // 1
 
 vote_bool_merge@11:
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@47
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:345
     // ensure(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
     pushbytes "ERR:GD_NR"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2156,16 +2156,16 @@ vote_after_if_else@12:
     // ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
     dig 5
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@43
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:357
     // ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
     bytec 23 // "ERR:GV_MM"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2482,16 +2482,16 @@ vote_while_top@25:
     intc_0 // 0
     extract_uint16 // on error: invalid array length header
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@39
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:382
     // ensure(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
     bytec 23 // "ERR:GV_MM"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -2568,16 +2568,16 @@ vote_after_while@29:
     btoi
     dig 8
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz vote_after_if_else@35
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:390
     // ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
     pushbytes "ERR:GV_VP"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -3942,16 +3942,16 @@ ensureCallerIsOperator:
     assert // invalid number of bytes for arc4.bool
     intc_0 // 0
     getbit
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz ensureCallerIsOperator_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:125
     // ensure(ok, errUnauthorized)
     bytec 17 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -4011,16 +4011,16 @@ checkAdminCaller:
     assert // invalid number of bytes for arc4.bool
     intc_0 // 0
     getbit
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz checkAdminCaller_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:134
     // ensure(ok, errUnauthorized)
     bytec 17 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -4154,16 +4154,16 @@ ensureEditable:
     // ensure(!this.ready.value, errGGovReady)
     app_global_get_ex
     assert // check GlobalState exists
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz ensureEditable_after_if_else@3
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:153
     // ensure(!this.ready.value, errGGovReady)
     pushbytes "ERR:GP_RD"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 

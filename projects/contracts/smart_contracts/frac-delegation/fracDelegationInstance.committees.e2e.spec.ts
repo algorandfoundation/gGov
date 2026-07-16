@@ -134,6 +134,27 @@ describe('FracDelegationInstance committees', () => {
       // The same escrow can hold voting power in more than one committee.
       expect(second.totalVotes).toBe(25)
     })
+
+    test('syncs an escrow count that outgrows one txn worth of reference slots', async () => {
+      // The gGov registry reads a box per escrow to resolve its voting power, so the group needs
+      // roughly one reference slot per escrow against a cap of 8 per app call. At 9 escrows it needs
+      // 16, which no single app call can carry: makeSyncCommitteeTxns has to pad the group with
+      // extra app calls or resource population fails with "No more transactions below reference
+      // limit". 9 is the smallest count that fails unpadded.
+      const numEscrows = 9
+      const { committeeId, govAccounts, registrySdk, instanceSdk, instanceId } = await setupSync(localnet, {
+        numGovs: numEscrows,
+      })
+      for (const account of govAccounts.map((a) => a.toString())) {
+        await registrySdk.registerEscrow({ instanceNumId: instanceId, account })
+      }
+
+      await instanceSdk.syncCommittee({ committeeId })
+
+      const committee = (await instanceSdk.getCommittee(committeeId))!
+      expect(committee.escrowsVotes).toEqual(Array.from({ length: numEscrows }, () => 10))
+      expect(committee.totalVotes).toBe(numEscrows * 10)
+    })
   })
 
   describe('syncCommittee rejections', () => {

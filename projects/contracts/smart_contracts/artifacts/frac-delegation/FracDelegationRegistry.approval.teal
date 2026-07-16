@@ -96,10 +96,10 @@ main___algots__.defaultCreate@21:
 
 // smart_contracts/base/utils.algo.ts::u32(v: uint64) -> bytes:
 u32:
-    // smart_contracts/base/utils.algo.ts:8
+    // smart_contracts/base/utils.algo.ts:12
     // export function u32(v: uint64) {
     proto 1 1
-    // smart_contracts/base/utils.algo.ts:9
+    // smart_contracts/base/utils.algo.ts:13
     // return new Uint32(v)
     frame_dig -1
     itob
@@ -129,16 +129,16 @@ setAdmin:
     // ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
     global ZeroAddress
     !=
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz setAdmin_after_if_else@3
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
     // ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
     bytec_2 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -358,16 +358,16 @@ createInstance:
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz createInstance_after_if_else@7
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:174
     // ensure(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     bytec_2 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -379,16 +379,16 @@ createInstance_after_if_else@7:
     // ensure(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz createInstance_after_if_else@11
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:175
     // ensure(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
     pushbytes "ERR:FI_NC"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -449,7 +449,7 @@ createInstance_ternary_merge@4:
     // this.lastInstanceNumId.value++
     dig 1
     app_global_put
-    // smart_contracts/base/utils.algo.ts:5
+    // smart_contracts/base/utils.algo.ts:9
     // return new Uint16(v)
     itob
     dup
@@ -754,16 +754,16 @@ getOrCreateAccountWithInstance:
     // ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz getOrCreateAccountWithInstance_after_if_else@23
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:285
     // ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     bytec 9 // "ERR:FI_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -796,16 +796,16 @@ getOrCreateAccountWithInstance_bool_true@3:
     intc_1 // 1
 
 getOrCreateAccountWithInstance_bool_merge@5:
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz getOrCreateAccountWithInstance_after_if_else@19
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:289
     // ensure(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
     bytec_2 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1026,16 +1026,16 @@ registerEscrow:
     // ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz registerEscrow_after_if_else@3
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:330
     // ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     bytec 9 // "ERR:FI_NX"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1051,16 +1051,16 @@ registerEscrow_after_if_else@3:
     // ensure(!this.escrows(account).exists, errEscrowAssigned)
     box_len
     bury 1
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bz registerEscrow_after_if_else@7
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:331
     // ensure(!this.escrows(account).exists, errEscrowAssigned)
     pushbytes "ERR:FE_AS"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
@@ -1207,16 +1207,16 @@ ensureCallerIsAdmin:
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // smart_contracts/base/utils.algo.ts:33
+    // smart_contracts/base/utils.algo.ts:37
     // if (!cond) {
     bnz ensureCallerIsAdmin_after_if_else@3
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:80
     // ensure(Txn.sender === this.admin.value, errUnauthorized)
     bytec_2 // "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:34
+    // smart_contracts/base/utils.algo.ts:38
     // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:35
+    // smart_contracts/base/utils.algo.ts:39
     // err()
     err
 
