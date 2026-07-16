@@ -1,26 +1,28 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { FracDelegationInstanceArgs, FracDelegationInstanceComposer } from '../generated/FracDelegationInstanceClient'
-import { SenderWithSigner } from '../types'
+import { Network, SenderWithSigner } from '../types'
 
 // Re-export shared primitives so the public surface is unchanged.
 export type { Network, SenderWithSigner, SendResult } from '../types'
 
-export type InstanceReaderConstructorArgs = {
+export type ConstructorArgsOptions =
+  | {
+      network: Network
+    }
+  | {
+      registryAppId: number | bigint
+      readerAccount?: string
+    }
+
+export type ConstructorArgs = {
+  writerAccount?: SenderWithSigner
+} & ReaderConstructorArgs
+
+export type ReaderConstructorArgs = {
   algorand: AlgorandClient
-  /** Frac delegation instance app id. Instances are per-protocol; there is no network default. */
-  instanceAppId: number | bigint
-  /**
-   * Funded account used as the simulate sender for reads (never signs). Defaults to the
-   * testnet/localnet fee sink; pass the mainnet fee sink (or any funded account) on mainnet.
-   */
-  readerAccount?: string
   concurrency?: number
   debug?: boolean
-}
-
-export type InstanceConstructorArgs = {
-  writerAccount?: SenderWithSigner
-} & InstanceReaderConstructorArgs
+} & ConstructorArgsOptions
 
 export interface InstanceMethodBuilderArgs {
   builder?: FracDelegationInstanceComposer<any>

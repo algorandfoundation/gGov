@@ -5,11 +5,10 @@ import {
   FracDelegationRegistryComposer,
   FracDelegationRegistryFactory,
 } from '../generated/FracDelegationRegistryClient'
-import { APP_SPEC as INSTANCE_APP_SPEC } from '../generated/FracDelegationInstanceClient'
+import { FracDelegationInstanceClient, APP_SPEC as INSTANCE_APP_SPEC } from '../generated/FracDelegationInstanceClient'
 import { ConstructorArgs, SenderWithSigner, CommonMethodBuilderArgs, FracDelegationRegistryContractArgs } from './types'
 import { requireWriterWithClient } from '../util/requiresSender'
 import { FracDelegationRegistryReaderSDK } from './sdkReader'
-import { FracDelegationReaderSDK } from '../instance/sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 import { chunk } from '../util/chunk'
@@ -168,8 +167,8 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     const boundInstanceIds = (
       await Promise.all(
         [...existingInstances].map(async ([id, instance]) => {
-          const reader = new FracDelegationReaderSDK({ algorand: this.algorand, instanceAppId: instance.appId })
-          return (await reader.getRegistryApp()) === this.appId ? id : null
+          const client = new FracDelegationInstanceClient({ algorand: this.algorand, appId: BigInt(instance.appId) })
+          return BigInt((await client.state.global.registryApp())!) === this.appId ? id : null
         }),
       )
     ).filter((id) => id !== null)

@@ -28,14 +28,6 @@ export function transformedError(errCode: string) {
   return errCode.replace('ERR:', 'Error ')
 }
 
-// TODO(instances-box): once the registry registers instances (numeric id -> app id box), resolve
-// the spawned app id through the registry reader instead. Delete this helper if not needed anymore.
-const lastCreatedAppId = async (localnet: AlgorandFixture, creatorAddress: string): Promise<bigint> => {
-  const info = await localnet.algorand.client.algod.accountInformation(creatorAddress).do()
-  const created = info.createdApps ?? []
-  return BigInt(created[created.length - 1].id)
-}
-
 // --------------------------------------------------------------------
 // GGOV REGISTRY: create SDK, generate account with SDK
 // --------------------------------------------------------------------
@@ -178,23 +170,23 @@ export const deployFracRegistry = async (localnet: AlgorandFixture, account: Add
 }
 
 // --------------------------------------------------------------------
-// FRAC INSTANCE: create SDK, generate account with SDK
+// FRAC COMBINED SDK: create SDK, generate account with SDK
 // --------------------------------------------------------------------
 
-export const createFracInstanceSDK = (localnet: AlgorandFixture, instanceAppId: bigint, account: Address) =>
+export const createFracDelegationSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
   new FracDelegationSDK({
     algorand: localnet.algorand,
-    instanceAppId,
+    registryAppId,
     writerAccount: { sender: account, signer: localnet.algorand.account.getSigner(account) },
   })
 
-export const generateAccountWithFracInstanceSDK = async (
+export const generateAccountWithFracSDK = async (
   localnet: AlgorandFixture,
-  instanceAppId: bigint,
+  registryAppId: bigint,
   initialFunds = (1).algos(),
 ) => {
   const account = await localnet.context.generateAccount({ initialFunds })
-  return { account, sdk: createFracInstanceSDK(localnet, instanceAppId, account) }
+  return { account, sdk: createFracDelegationSDK(localnet, registryAppId, account) }
 }
 
 // --------------------------------------------------------------------
@@ -207,7 +199,7 @@ export const deployFracInstance = async (
   opts: {
     /** Instance label passed to addInstance */
     name?: string
-    /** Spawn from this registry instead of deploying a fresh one (its writer must be the registry admin) */
+    /** Spawn from this registry instead of deploying a fresh one (its writer must be the registry admin); the returned sdk still signs as `account`) */
     registrySdk?: FracDelegationRegistrySDK
     /** Set as the registry's defaultOperator before spawning */
     defaultOperator?: Address
@@ -220,13 +212,13 @@ export const deployFracInstance = async (
     await registrySdk.setDefaultOperator({ newDefaultOperator: defaultOperator.toString() })
   }
   const instanceId = await registrySdk.addInstance({ name })
-  const appId = await lastCreatedAppId(localnet, registrySdk.readClient.appAddress.toString())
+  const sdk = createFracDelegationSDK(localnet, registrySdk.appId, account)
+  const appId = await sdk.getInstanceAppId(instanceId)
 
   return {
-    registrySdk,
     appId,
     instanceId,
-    sdk: createFracInstanceSDK(localnet, appId, account),
+    sdk,
   }
 }
 

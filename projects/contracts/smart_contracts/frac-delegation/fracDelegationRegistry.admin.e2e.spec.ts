@@ -155,11 +155,11 @@ describe('FracDelegationRegistry admin', () => {
     test('delete refuses while an instance it created is still bound to it, then succeeds once deleted', async () => {
       const { testAccount } = localnet.context
       const { sdk: registrySdk } = await deployFracRegistry(localnet, testAccount)
-      const { sdk: instanceSdk } = await deployFracInstance(localnet, testAccount, { registrySdk })
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount, { registrySdk })
 
       await expect(registrySdk.deleteApplication({})).rejects.toThrow(/still bound/)
 
-      await instanceSdk.deleteInstanceApp({})
+      await sdk.deleteInstanceApp({ instanceNumId: instanceId })
       await expect(registrySdk.deleteApplication({})).resolves.toBeDefined()
     })
   })

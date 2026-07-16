@@ -1,14 +1,15 @@
+import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
+import { FracDelegationRegistrySDK, SendResult, executeTxns } from '../registry'
 import { FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient'
 import {
-  InstanceConstructorArgs,
+  ConstructorArgs,
   SenderWithSigner,
   InstanceMethodBuilderArgs,
   FracDelegationInstanceContractArgs,
 } from './types'
-import { requireWriterWithClient } from '../util/requiresSender'
+import { requireWriter } from '../util/requiresSender'
 import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { createTxnExecutor } from '../util/txnExecutor'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { MAX_GROUP_SIZE, REF_SLOTS_PER_APP_CALL } from '../constants'
 
@@ -17,77 +18,140 @@ const noteNonce = () => Math.floor(Math.random() * 100_000_000)
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
-  public writeClient?: FracDelegationInstanceClient
+  /** Composed registry SDK (writer-enabled). Reach registry writes/reads via `sdk.registry.X`. */
+  declare public registry: FracDelegationRegistrySDK
+  /** instanceNumId → cached writer client. */
+  protected instanceWriteClientCache: Map<bigint, FracDelegationInstanceClient> = new Map()
 
-  constructor({ writerAccount, ...rest }: InstanceConstructorArgs) {
+  constructor({ writerAccount, ...rest }: ConstructorArgs) {
     super(rest)
-    if (writerAccount) {
-      this.writerAccount = writerAccount
-      this.writeClient = new FracDelegationInstanceClient({
-        algorand: this.algorand,
-        appId: this.appId,
-        defaultSender: writerAccount?.sender,
-        defaultSigner: writerAccount?.signer,
-      })
+    this.writerAccount = writerAccount
+    this.registry = new FracDelegationRegistrySDK({
+      writerAccount,
+      ...rest,
+    })
+  }
+
+  // ── Instance client cache ────────────────────────────────────────
+
+  protected async getInstanceWriteClient(instanceNumId: bigint | number): Promise<FracDelegationInstanceClient> {
+    if (!this.writerAccount) throw new Error('writerAccount required')
+    const id = BigInt(instanceNumId)
+    const cached = this.instanceWriteClientCache.get(id)
+    if (cached) return cached
+    const appId = await this.getInstanceAppId(id)
+    const client = new FracDelegationInstanceClient({
+      algorand: this.algorand,
+      appId,
+      defaultSender: this.writerAccount.sender,
+      defaultSigner: this.writerAccount.signer,
+    })
+    this.instanceWriteClientCache.set(id, client)
+    return client
+  }
+
+  // ── Executor factory ─────────────────────────────────────────────
+
+  /**
+   * Instance-side executor factory. Resolves the per-instance client at call time, binds the
+   * empty-group factory to that client, then runs the standard executeTxns flow (which also
+   * auto-increases opcode budget via getIncreaseBudgetBuilder).
+   */
+  private makeInstanceTxnExecutor = <A extends { instanceNumId: bigint | number }, R = SendResult>({
+    maker,
+    returnTransformer,
+    sendParams,
+  }: {
+    maker: (args: A) => any
+    returnTransformer?: (result: SendResult) => R
+    sendParams?: SendParams
+  }) => {
+    return async (args: Omit<A, 'builder' | 'client'>): Promise<R> => {
+      if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
+      const client = await this.getInstanceWriteClient(args.instanceNumId)
+      const result = await wrapErrorsInternal(
+        executeTxns({
+          txnBuilder: (a: any) => (maker as any).call(this, { ...a, client }),
+          txnBuilderArgs: { ...(args as object) } as any,
+          emptyGroupBuilder: () => client.newGroup(),
+          sendParams,
+          writerAccount: this.writerAccount,
+          algod: this.algorand.client.algod,
+        }),
+      )
+      return returnTransformer ? returnTransformer(result) : (result as R)
     }
   }
 
-  private makeTxnExecutor = createTxnExecutor(
-    this,
-    () => this.writeClient!.newGroup(),
-    wrapErrorsInternal,
-    () => this.writerAccount,
-    () => this.algorand.client.algod,
-  )
+  // ── Registry passthroughs (end-user writes) ───────────────────────
+  // The frac registry has no end-user writes today: every registry write is admin/bootstrap,
+  // so nothing is forwarded here and they all stay on `this.registry`. Mirrors ggov, where
+  // only the end-user setVotingAccount is forwarded; if a registry write an end user self-services
+  // ever lands, forward it here the same way. The end-user READs are forwarded on FracDelegationReaderSDK
+  // and inherited here.
 
   // ── Admin: roles + config ────────────────────────────────────────
 
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
   makeSetOperatorTxns({
+    instanceNumId: _instanceNumId,
     newOperator,
+    note,
+    client,
     builder,
-  }: FracDelegationInstanceContractArgs['setOperator(address)void'] & InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.setOperator({ args: { newOperator } })
-    return builder
+  }: FracDelegationInstanceContractArgs['setOperator(address)void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    return builder.setOperator({ args: { newOperator }, note })
   }
 
-  setOperator = this.makeTxnExecutor({
-    maker: this.makeSetOperatorTxns,
-  })
+  setOperator = this.makeInstanceTxnExecutor({ maker: this.makeSetOperatorTxns })
 
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
   makeSetRegistryAppTxns({
+    instanceNumId: _instanceNumId,
     appId,
+    note,
+    client,
     builder,
-  }: FracDelegationInstanceContractArgs['setRegistryApp(uint64)void'] & InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.setRegistryApp({ args: { appId } })
-    return builder
+  }: FracDelegationInstanceContractArgs['setRegistryApp(uint64)void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    return builder.setRegistryApp({ args: { appId }, note })
   }
 
-  setRegistryApp = this.makeTxnExecutor({
-    maker: this.makeSetRegistryAppTxns,
-  })
+  setRegistryApp = this.makeInstanceTxnExecutor({ maker: this.makeSetRegistryAppTxns })
 
-  @requireWriterWithClient()
+  /**
+   * Withdraw `amount` µAlgo from the instance app account to `receiver`. Admin only. Exposed as
+   * `withdrawInstanceALGO` to avoid colliding with the registry's `withdrawALGO` on this SDK;
+   * the on-chain method is `withdrawALGO`.
+   */
+  @requireWriter()
   @wrapErrors()
-  makeWithdrawALGOTxns({
+  makeWithdrawInstanceALGOTxns({
+    instanceNumId: _instanceNumId,
     receiver,
     amount,
+    note,
+    client,
     builder,
-  }: FracDelegationInstanceContractArgs['withdrawALGO(address,uint64)void'] & InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
+  }: FracDelegationInstanceContractArgs['withdrawALGO(address,uint64)void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
     // extraFee covers the single inner payment
-    builder = builder.withdrawAlgo({ args: { receiver, amount }, extraFee: (1000).microAlgo() })
-    return builder
+    return builder.withdrawAlgo({ args: { receiver, amount }, note, extraFee: (1000).microAlgo() })
   }
 
-  withdrawALGO = this.makeTxnExecutor({
-    maker: this.makeWithdrawALGOTxns,
-  })
+  withdrawInstanceALGO = this.makeInstanceTxnExecutor({ maker: this.makeWithdrawInstanceALGOTxns })
 
   // ── Escrows ──────────────────────────────────────────────────────
 
@@ -95,21 +159,26 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * Append `account` to the instance's escrows list. Normally driven by the registry via
    * `FracDelegationRegistrySDK.registerEscrow` (which also enforces unique assignment and keeps
    * its counter in sync); calling this directly is the admin escape hatch and bypasses both.
+   * Exposed as `registerInstanceEscrow` to avoid colliding with the registry's `registerEscrow`
+   * on this SDK; both on-chain methods registry and instance are `registerEscrow`.
    */
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
-  makeRegisterEscrowTxns({
+  makeRegisterInstanceEscrowTxns({
+    instanceNumId: _instanceNumId,
     account,
+    note,
+    client,
     builder,
-  }: FracDelegationInstanceContractArgs['registerEscrow(address)void'] & InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.registerEscrow({ args: { account } })
-    return builder
+  }: FracDelegationInstanceContractArgs['registerEscrow(address)void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    return builder.registerEscrow({ args: { account }, note })
   }
 
-  registerEscrow = this.makeTxnExecutor({
-    maker: this.makeRegisterEscrowTxns,
-  })
+  registerInstanceEscrow = this.makeInstanceTxnExecutor({ maker: this.makeRegisterInstanceEscrowTxns })
 
   // ── Reference-slot padding ───────────────────────────────────────
 
@@ -120,8 +189,8 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * is append-only and the snapshot is rebuilt from it, so `escrowsVotes.length <= escrows.length`
    * always holds. Over-padding costs one min fee per spare txn; under-padding fails the group.
    */
-  private async escrowCountUpperBound() {
-    return (await this.getEscrows()).length
+  private async escrowCountUpperBound(instanceNumId: bigint | number) {
+    return (await this.getEscrows(instanceNumId)).length
   }
 
   /**
@@ -169,18 +238,22 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * The group is padded with no-op app calls to carry the per-escrow references — see
    * `padForRefSlots`.
    */
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
   async makeSyncCommitteeTxns({
+    instanceNumId,
     committeeId,
     note,
+    client,
     builder,
   }: Omit<FracDelegationInstanceContractArgs['syncCommittee(byte[32])(uint16,uint32[],uint32)'], 'committeeId'> & {
+    instanceNumId: bigint | number
     /** 32-byte committee ID, raw bytes or base64 */
     committeeId: Uint8Array | string
+    client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
-    const numEscrows = await this.escrowCountUpperBound()
+    builder = builder ?? client.newGroup()
+    const numEscrows = await this.escrowCountUpperBound(instanceNumId)
     // Slots: the gGov registry reads one box per escrow to resolve its voting power, plus a fixed
     // 5 boxes (this instance's escrows + committees, the registry's committee metadata and its
     // account-id map) and 2 app refs (the gGov registry, and registryApp which resolveOperator
@@ -196,9 +269,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     })
   }
 
-  syncCommittee = this.makeTxnExecutor({
-    maker: this.makeSyncCommitteeTxns,
-  })
+  syncCommittee = this.makeInstanceTxnExecutor({ maker: this.makeSyncCommitteeTxns })
 
   // ── Periods ──────────────────────────────────────────────────────
 
@@ -218,26 +289,28 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * The group is padded with no-op app calls when the escrow count needs more reference slots than
    * one transaction carries — see `syncPeriodRefSlots`.
    */
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
   async makeSyncPeriodTxns({
+    instanceNumId,
     periodApp,
     note,
+    client,
     builder,
-  }: FracDelegationInstanceContractArgs['syncPeriod(uint64)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)'] &
-    InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
+  }: FracDelegationInstanceContractArgs['syncPeriod(uint64)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
     // Slots: N escrow boxes + periods + periodVoteCache + committees + the period app's
     // topicOptionsArr box (read by the getPeriodShort inner call) + 2 app refs (periodApp, and
     // registryApp which resolveOperator reads). Measured against simulate: N=6 -> 12, N=8 -> 14.
-    builder = this.padForRefSlots(builder, (await this.escrowCountUpperBound()) + 6, 'syncPeriod')
+    builder = this.padForRefSlots(builder, (await this.escrowCountUpperBound(instanceNumId)) + 6, 'syncPeriod')
     // extraFee covers the single inner call to the period app: getPeriodShort.
     return builder.syncPeriod({ args: { periodApp }, note, extraFee: (1000).microAlgo() })
   }
 
-  syncPeriod = this.makeTxnExecutor({
-    maker: this.makeSyncPeriodTxns,
-  })
+  syncPeriod = this.makeInstanceTxnExecutor({ maker: this.makeSyncPeriodTxns })
 
   // ── Admin: lifecycle ────────────────────────────────────────────
 
@@ -247,30 +320,41 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * programs from its embedded app spec, so the on-chain code is replaced with the version bundled
    * here. Admin-only (the resolved admin, i.e. the registry's `admin`).
    */
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
-  makeUpdateInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
-    builder = builder ?? this.writeClient!.newGroup()
+  makeUpdateInstanceAppTxns({
+    instanceNumId: _instanceNumId,
+    note,
+    client,
+    builder,
+  }: {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
     return builder.update.bare({ note })
   }
 
-  updateInstanceApp = this.makeTxnExecutor({
-    maker: this.makeUpdateInstanceAppTxns,
-  })
+  updateInstanceApp = this.makeInstanceTxnExecutor({ maker: this.makeUpdateInstanceAppTxns })
 
   /** Delete the `FracDelegationInstance` app. Admin-only. */
-  @requireWriterWithClient()
+  @requireWriter()
   @wrapErrors()
-  makeDeleteInstanceAppTxns({ note, builder }: InstanceMethodBuilderArgs) {
+  makeDeleteInstanceAppTxns({
+    instanceNumId: _instanceNumId,
+    note,
+    client,
+    builder,
+  }: {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
     // TODO: recover MBR and clean up boxes once the contract supports it — see the TODO on the
     // contract's deleteApplication baremethod. Reference: GGovSDK.deletePeriodApp() in
     // ggov-sdk/src/period/sdk.ts (enumerates boxes, deletes them in pages, then closes out).
-    builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({ note })
-    return builder
+    builder = builder ?? client.newGroup()
+    return builder.delete.bare({ note })
   }
 
-  deleteInstanceApp = this.makeTxnExecutor({
-    maker: this.makeDeleteInstanceAppTxns,
-  })
+  deleteInstanceApp = this.makeInstanceTxnExecutor({ maker: this.makeDeleteInstanceAppTxns })
 }
