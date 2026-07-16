@@ -393,3 +393,42 @@ export function getEmptyFracCommitteeAq(): FracCommitteeAq {
     numAccounts: u32(0),
   }
 }
+
+/**
+ * `votingRecords` box key: [gGov period ID, frac registry account ID].
+ *
+ * Keyed by the registry's numeric account ID for the same reason `FracAccountAqKey` is: 4 bytes
+ * instead of 32 of address, and `vote` resolves the sender through the registry anyway.
+ */
+export type FracPeriodAccountKey = [Uint32, Uint32]
+
+/**
+ * One account's internal vote for one gGov period, written by `vote`. The stored rows are exactly
+ * what the account submitted - [topic][option] AlgoQuarters, each topic summing to the account's
+ * full `accountAq` weight - so a re-vote can subtract them from `FracPeriodVoteCache.internal`
+ * before the new rows are added, mirroring `GGovVoteRecord`.
+ */
+export type FracVotingRecord = {
+  /** [topic][option] internal votes, in AlgoQuarters */
+  topicVotes: Uint32[][]
+}
+
+/**
+ * ARC-28 event emitted by `FracDelegationInstance.vote`, mirroring `GGovVoteCast`.
+ *
+ * Encoded size is `49 + Σ(4 + 4·options)` bytes - a smaller fixed head than `GGovVoteCast`'s 81,
+ * whose payload `GGovPeriod.setReady` already caps at 943, so this event always fits the 1024-byte
+ * log limit for any period that is votable at all.
+ */
+export type FracVoteCast = {
+  /** The voting account (`Txn.sender`) */
+  voter: Account
+  /** The voter's frac registry numeric account ID */
+  accountId: Uint32
+  /** The voter's AlgoQuarters weight in the period's committee */
+  userAq: Uint32
+  /** Whether this vote overwrote an earlier one */
+  updateVote: boolean
+  /** [topic][option] internal votes, in AlgoQuarters */
+  topicVotes: Uint32[][]
+}

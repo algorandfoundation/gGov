@@ -62,7 +62,9 @@ describe('FracDelegationRegistry admin', () => {
       const { testAccount: admin } = localnet.context
       await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
       const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const initialFundingAlgos = 2
+      // Must cover the registry's min balance through the bytecode uploads inside createRegistry —
+      // the Iap box MBR grows with the instance approval program (vote() pushed it past 2 ALGO).
+      const initialFundingAlgos = 3
       const gGovRegistryAppId = 12345n
 
       const { sdk, appClient } = await FracDelegationRegistrySDK.createRegistry({

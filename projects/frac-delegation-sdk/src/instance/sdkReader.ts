@@ -9,6 +9,7 @@ import {
   FracInstanceCommittee,
   FracInstancePeriod,
   FracPeriodVoteCache,
+  FracVotingRecord,
 } from '../generated/FracDelegationInstanceClient'
 import { defaultReaderAccount } from '../networkConfig'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
@@ -114,6 +115,16 @@ export class FracDelegationReaderSDK {
    */
   async getPeriodVoteCache(periodId: bigint | number): Promise<FracPeriodVoteCache | undefined> {
     return undefinedIfBoxMissing(() => this.readClient.state.box.periodVoteCache.value(BigInt(periodId)))
+  }
+
+  /**
+   * An account's internal vote for a gGov period ([topic][option] AlgoQuarters, exactly as
+   * submitted), or undefined if it has not voted. `accountId` is the frac registry numeric ID.
+   */
+  async getVotingRecord(periodId: bigint | number, accountId: bigint | number): Promise<FracVotingRecord | undefined> {
+    return undefinedIfBoxMissing(() =>
+      this.readClient.state.box.votingRecords.value([BigInt(periodId), BigInt(accountId)]),
+    )
   }
 
   /**
