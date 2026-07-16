@@ -166,13 +166,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: registry
+          - name: ggov-registry
             args: smart_contracts/ggov-registry --exclude '**/ggovRegistry.reader*'
-          - name: registry reader
+          - name: ggov-registry reader
             args: ggovRegistry.reader
-          - name: period
+          - name: ggov-period
             args: smart_contracts/ggov-period
-          - name: fractional delegation
+          - name: frac-delegation
             args: smart_contracts/frac-delegation
           - name: remaining contracts
             args: --exclude='smart_contracts/ggov-registry/**' --exclude='smart_contracts/ggov-period/**' --exclude='smart_contracts/frac-delegation/**'
