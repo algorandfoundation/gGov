@@ -10,7 +10,8 @@ import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 import { committeeIdToRaw } from '../util/comitteeId'
-import { MAX_GROUP_SIZE, REF_SLOTS_PER_APP_CALL } from '../constants'
+import { chunk } from '../util/chunk'
+import { MAX_ACCOUNTS_PER_INGEST_AQ, MAX_GROUP_SIZE, REF_SLOTS_PER_APP_CALL } from '../constants'
 
 /** Keeps otherwise-identical padding app calls from colliding into one duplicate txn ID. */
 const noteNonce = () => Math.floor(Math.random() * 100_000_000)
@@ -199,6 +200,100 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   syncCommittee = this.makeTxnExecutor({
     maker: this.makeSyncCommitteeTxns,
   })
+
+  // ── AlgoQuarters ─────────────────────────────────────────────────
+
+  /**
+   * Open (or re-open) the AlgoQuarters ledger for gGov committee `committeeId`. Operator only.
+   *
+   * `totalAq` is the off-chain pipeline's declared total for the committee's period
+   * (`AlgoQuartersData.totalAlgoQuarters`); `ingestAq` accumulates towards it and may never pass it.
+   * The committee must already be synced (`syncCommittee`) — that snapshot is what supplies the
+   * `committeeNumId` every later call keys by.
+   *
+   * Re-runnable only while nothing has been ingested; afterwards the total is frozen. Returns the
+   * opened ledger, whose `committeeNumId` counterpart is on `getCommittee(committeeId)`.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeStartAqIngestTxns({
+    committeeId,
+    totalAq,
+    note,
+    builder,
+  }: Omit<FracDelegationInstanceContractArgs['startAqIngest(byte[32],uint32)(uint32,uint32,uint32)'], 'committeeId'> & {
+    /** 32-byte committee ID, raw bytes or base64 */
+    committeeId: Uint8Array | string
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    return builder.startAqIngest({ args: { committeeId: committeeIdToRaw(committeeId), totalAq }, note })
+  }
+
+  startAqIngest = this.makeTxnExecutor({
+    maker: this.makeStartAqIngestTxns,
+  })
+
+  /**
+   * Ingest one batch of accounts' AlgoQuarters into committee `committeeNumId`. Operator only.
+   *
+   * Append-only per account: re-sending an account already ingested for this committee fails rather
+   * than overwriting, so a replayed batch cannot double-count. Order does not matter.
+   *
+   * One group per call — use {@link ingestAqAll} to push a whole file. Both app accounts must be
+   * funded first: the instance pays `AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS` of box MBR per account,
+   * and the registry `AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS` per account it has never seen (see
+   * `constants.ts`). There is no funding path from the instance to the registry.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeIngestAqTxns({
+    committeeNumId,
+    accountAqs,
+    note,
+    builder,
+  }: FracDelegationInstanceContractArgs['ingestAq(uint16,(address,uint32)[])void'] & InstanceMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    if (accountAqs.length === 0) throw new Error('ingestAq: no accounts to ingest')
+    if (accountAqs.length > MAX_ACCOUNTS_PER_INGEST_AQ) {
+      throw new Error(
+        `ingestAq: ${accountAqs.length} accounts exceeds the ${MAX_ACCOUNTS_PER_INGEST_AQ} per call — ` +
+          `chunk them, or use ingestAqAll.`,
+      )
+    }
+    // Slots: 2 per account (this instance's accountAq box, and the registry's accounts box that
+    // getOrCreateAccountWithInstance reads/writes), plus a fixed 3 — the registryApp ref (also what
+    // resolveOperator reads), the registry's instances box, and this instance's committeeAq box.
+    builder = this.padForRefSlots(builder, accountAqs.length * 2 + 3, 'ingestAq')
+    // extraFee covers one getOrCreateAccountWithInstance inner call per account. Those inner calls
+    // each add 700 to the opcode pool, so the loop largely funds its own compute.
+    return builder.ingestAq({
+      args: { committeeNumId, accountAqs },
+      note,
+      extraFee: (accountAqs.length * 1000).microAlgo(),
+    })
+  }
+
+  ingestAq = this.makeTxnExecutor({
+    maker: this.makeIngestAqTxns,
+  })
+
+  /**
+   * Ingest every entry of `accountAqs` into committee `committeeNumId`, one group per
+   * {@link MAX_ACCOUNTS_PER_INGEST_AQ} accounts. Sequential: each group is atomic on its own, so a
+   * failure part-way leaves earlier batches ingested — re-run with the remainder, which is safe
+   * because an already-ingested account is rejected rather than double-counted.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async ingestAqAll({
+    committeeNumId,
+    accountAqs,
+    note,
+  }: FracDelegationInstanceContractArgs['ingestAq(uint16,(address,uint32)[])void'] & { note?: string }) {
+    for (const batch of chunk(accountAqs, MAX_ACCOUNTS_PER_INGEST_AQ)) {
+      await this.ingestAq({ committeeNumId, accountAqs: batch, note })
+    }
+  }
 
   // ── Periods ──────────────────────────────────────────────────────
 
