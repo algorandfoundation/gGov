@@ -340,6 +340,24 @@ describe('FracDelegationInstance vote', () => {
       expect(await ggovTallies(ctx)).toEqual([[25, 15, 10]])
     })
 
+    test('casts across the production maximum of six escrows with uneven powers', async () => {
+      // Six escrows is the most an instance will run in production; uneven powers make the greedy
+      // spread land mid-escrow on both option seams, unlike the uniform 8-escrow scale test below.
+      const powers = [10, 20, 5, 25, 15, 25] // T = 100
+      const ctx = await setupVoting(localnet, { powers, totalAq: 60 })
+      const voter = await addVoter(localnet, ctx, 60)
+
+      const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[25, 15, 20]] })
+
+      // floor(25*100/60) = 41, floor(15*100/60) = 25, Abstain takes 100 - 66 = 34.
+      expect(await ggovTallies(ctx)).toEqual([[41, 25, 34]])
+      expect(voteInnerTxnCount(result)).toBe(7)
+      const rows = [[[10, 0, 0]], [[20, 0, 0]], [[5, 0, 0]], [[6, 19, 0]], [[0, 6, 9]], [[0, 0, 25]]]
+      for (const [i, votes] of rows.entries()) {
+        expect((await ctx.instanceSdk.getPeriodEscrowVotes(ctx.periodId, i))!.votes).toEqual(votes)
+      }
+    })
+
     test('casts through an escrow count that outgrows one txn of references', async () => {
       // 8 escrows x 3 inner calls each + the registry resolve = 25 inner txns, and ~48 reference
       // slots — both past what a bare app call carries, so makeVoteTxns' padding is load-bearing.
