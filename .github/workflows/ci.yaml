@@ -172,8 +172,10 @@ jobs:
             args: ggovRegistry.reader
           - name: period
             args: smart_contracts/ggov-period
+          - name: fractional delegation
+            args: smart_contracts/frac-delegation
           - name: remaining contracts
-            args: --exclude='smart_contracts/ggov-registry/**' --exclude='smart_contracts/ggov-period/**'
+            args: --exclude='smart_contracts/ggov-registry/**' --exclude='smart_contracts/ggov-period/**' --exclude='smart_contracts/frac-delegation/**'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
