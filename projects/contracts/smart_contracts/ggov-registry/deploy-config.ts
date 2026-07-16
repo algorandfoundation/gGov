@@ -1,21 +1,31 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { GGovSDK, GGovRegistrySDK } from 'ggov-sdk'
 
-// Below is a showcase of various deployment options you can use in TypeScript Client
 export async function deploy() {
   console.log('=== Deploying GGovRegistry ===')
 
   const algorand = AlgorandClient.fromEnvironment()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
 
+  const xGovRegistryAppId = process.env.XGOV_REGISTRY_APP_ID ? BigInt(process.env.XGOV_REGISTRY_APP_ID) : undefined
+  if (xGovRegistryAppId === undefined) {
+    console.warn(
+      'XGOV_REGISTRY_APP_ID is not set: xGovRegistryApp will be left unconfigured. ' +
+        'Set it and redeploy, or call setXGovRegistryApp directly.',
+    )
+  } else {
+    console.log(`Using xGov registry app id ${xGovRegistryAppId} from XGOV_REGISTRY_APP_ID`)
+  }
+
   const { appClient } = await GGovRegistrySDK.createRegistry({
     algorand,
     deployer: { sender: deployer.addr, signer: deployer.signer },
     operatorAccount: deployer.addr.toString(),
-    // xGovRegistryAppId: 1234n, // optional: pre-configure the xGov registry app id
+    xGovRegistryAppId,
     initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
     update: true,
   })
+  console.log(`GGovRegistry app id ${appClient.appId} (${appClient.appAddress})`)
   // Combined SDK for period ops; registry ops go through sdk.registry.
   const sdk = new GGovSDK({
     algorand,

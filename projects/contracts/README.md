@@ -25,6 +25,24 @@ gGov is two cooperating smart contracts:
 
 > **Note on naming**: the "Committee Oracle" referenced in earlier docs is now folded into the **`GGovRegistry`** contract (see [historical note](#xgov-committee-oracle-historical-name)). The repo's `xgov-delegator` name is a holdover from an earlier `Delegator` contract experiment (since removed); the frac-delegation registry/instance contracts that succeeded it trace their design back to the [`xgov-delegator`](https://github.com/d13co/xgov-delegator) prototype.
 
+# Deployment
+
+`smart_contracts/index.ts` runs every `smart_contracts/*/deploy-config.ts`, with `ggov-registry` always before `frac-delegation` (`DEPLOY_ORDER`) and the rest alphabetically.
+
+```sh
+algokit project deploy localnet|testnet|mainnet   # full bundle (runs pnpm run deploy:ci)
+algokit project deploy localnet -- ggov-registry  # single contract, by directory name
+pnpm run deploy:ci [contract-dir-name]            # same, without algokit (env from .env only)
+pnpm run deploy [contract-dir-name]               # watch mode: redeploys on file save (localnet iteration)
+```
+
+Environment: `algokit project deploy <network>` loads `.env` then `.env.<network>` on top (see `.env.template`; all real `.env*` files are gitignored). Algod/indexer endpoints default per network. TestNet/MainNet deploys expect `DEPLOYER_MNEMONIC` and `DISPENSER_MNEMONIC`.
+
+Upstream registry ids, both optional and re-settable on redeploy:
+
+- `XGOV_REGISTRY_APP_ID` — wired into `GGovRegistry.xGovRegistryApp`; left unconfigured (with a warning) if unset.
+- `GGOV_REGISTRY_APP_ID` — wired into `FracDelegationRegistry.gGovRegistryApp`; if unset, the frac deploy falls back to looking up the `GGovRegistry` app created by the same `DEPLOYER`, so a fresh full-bundle deploy couples the two automatically.
+
 <a id="ggovregistry"></a>
 
 # GGovRegistry
