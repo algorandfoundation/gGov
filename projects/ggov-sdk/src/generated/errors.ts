@@ -70,6 +70,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:FI_NX": "Instance does not exist",
   "ERR:FE_AS": "Escrow account is already assigned to an instance",
   "ERR:FE_NX": "Instance has no registered escrows",
+  "ERR:FE_NA": "Escrow account is not assigned to any instance",
   "ERR:FP_MM": "Period app does not match the synced period record",
   "ERR:FA_TZ": "Total AlgoQuarters must be greater than zero",
   "ERR:FA_Z": "Account AlgoQuarters must be greater than zero",

@@ -237,6 +237,14 @@ export type FracInstance = {
   // forgetting one here
 }
 
+/** An escrow's resolved instance assignment, returned by `FracDelegationRegistry.getEscrow`. */
+export type FracEscrowInstance = {
+  /** Numeric ID of the instance the escrow is registered to */
+  instanceNumId: Uint16
+  /** App ID of that instance */
+  instanceAppId: uint64
+}
+
 /**
  * A Frac Instance's synced snapshot of one gGov committee, written by `syncCommittee`.
  *

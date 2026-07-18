@@ -87,6 +87,7 @@ export const errInstanceAppNotConfigured = 'ERR:FI_NC' // Instance approval prog
 export const errInstanceAppNotExists = 'ERR:FI_NX' // Instance does not exist
 export const errEscrowAssigned = 'ERR:FE_AS' // Escrow account is already assigned to an instance
 export const errNoEscrows = 'ERR:FE_NX' // Instance has no registered escrows
+export const errEscrowNotAssigned = 'ERR:FE_NA' // Escrow account is not assigned to any instance
 export const errPeriodAppMismatch = 'ERR:FP_MM' // Period app does not match the synced period record
 
 // Frac AlgoQuarters (AQ) ingestion

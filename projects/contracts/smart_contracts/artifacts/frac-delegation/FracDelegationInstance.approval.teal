@@ -1334,19 +1334,19 @@ getCommitteeAq:
     err
 
 getCommitteeAq_after_if_else@13:
-    // smart_contracts/base/types.algo.ts:391
+    // smart_contracts/base/types.algo.ts:399
     // totalAq: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:392
+    // smart_contracts/base/types.algo.ts:400
     // ingestedAq: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:393
+    // smart_contracts/base/types.algo.ts:401
     // numAccounts: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:390-394
+    // smart_contracts/base/types.algo.ts:398-402
     // return {
     //   totalAq: u32(0),
     //   ingestedAq: u32(0),

@@ -29,11 +29,12 @@ import {
 import { BaseContract } from '../base/base.algo'
 import {
   errEscrowAssigned,
+  errEscrowNotAssigned,
   errInstanceAppNotConfigured,
   errInstanceAppNotExists,
   errUnauthorized,
 } from '../base/errors.algo'
-import { FracInstance, FracRegAccount } from '../base/types.algo'
+import { FracEscrowInstance, FracInstance, FracRegAccount } from '../base/types.algo'
 import { ensure, u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 
@@ -344,5 +345,27 @@ export class FracDelegationRegistryContract extends BaseContract {
 
     instance.numEscrows++
     this.instances(instanceNumId).value = clone(instance)
+  }
+
+  // ── Escrow reads ──────────────────────────────────────────────────
+
+  /**
+   * Resolve an escrow registration by returning the instance numeric ID it is registered to plus
+   * that instance's app ID. Throws if the escrow is not registered on any instance.
+   *
+   * Called via readonly inner txn by `GGovRegistry.importFracDelegation` (cross-app box reads are
+   * impossible on the AVM, so this is the read surface). Callers are meant to be admin-driven with
+   * explicit escrows lists, so a typo must fail loudly, not skip silently.
+   * @param account Escrow account to resolve
+   * @returns FracEscrowInstance with the instance numeric ID and app ID
+   */
+  @abimethod({ readonly: true })
+  public getEscrow(account: Account): FracEscrowInstance {
+    const escrowBox = this.escrows(account)
+    ensure(escrowBox.exists, errEscrowNotAssigned)
+    const instanceNumId = escrowBox.value
+    const instanceBox = this.instances(instanceNumId)
+    ensure(instanceBox.exists, errInstanceAppNotExists) // invariant: registerEscrow only writes against live instances
+    return { instanceNumId, instanceAppId: instanceBox.value.appId.id }
   }
 }
