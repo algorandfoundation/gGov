@@ -377,6 +377,8 @@ export type FracCommitteeAq = {
   totalAq: Uint32
   /** Sum of every ingested account's AlgoQuarters. Never exceeds `totalAq`. */
   ingestedAq: Uint32
+  /** Total number of accounts expected for the committee's period. Greater than zero. */
+  totalAccounts: Uint32
   /**
    * Number of `accountAq` boxes standing for this committee. Progress and MBR accounting only -
    * nothing asserts it against a declared count, as there is no `totalMembers` analogue here. Since
@@ -390,6 +392,7 @@ export function getEmptyFracCommitteeAq(): FracCommitteeAq {
   return {
     totalAq: u32(0),
     ingestedAq: u32(0),
+    totalAccounts: u32(0),
     numAccounts: u32(0),
   }
 }

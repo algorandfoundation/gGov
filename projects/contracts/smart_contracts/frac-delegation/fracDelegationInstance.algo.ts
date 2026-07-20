@@ -32,6 +32,7 @@ import {
   errRegistryMissing,
   errTotalAqExceeded,
   errTotalAqZero,
+  errTotalGovsExceeded,
   errUnauthorized,
   errZeroAq,
 } from '../base/errors.algo'
@@ -343,31 +344,31 @@ export class FracDelegationInstanceContract extends BaseContract {
    * @param totalAq Total AlgoQuarters for the committee's period. Must be greater than zero.
    * @returns The opened ledger
    */
-  public startAqIngest(committeeId: CommitteeId, totalAq: Uint32): FracCommitteeAq {
+  public startAqIngest(committeeId: CommitteeId, totalAq: Uint32, totalAccounts: Uint32): FracCommitteeAq {
     this.ensureCallerIsOperator()
-    // Cheapest check first. A zero total would also make the record indistinguishable from the
-    // "no ledger" sentinel `getCommitteeAq` returns.
+    // Must have nonzero total AQ
     ensure(totalAq.asUint64() > 0, errTotalAqZero)
 
     const committeeBox = this.committees(committeeId)
+    // committee must exist locally
     ensure(committeeBox.exists, errCommitteeNotExists)
-    // Head field at offset 0 - read directly rather than cloning the whole record, whose
-    // escrowsVotes array is irrelevant here.
+    
     const committeeNumId = committeeBox.value.committeeNumId
-
-    const aqBox = this.committeeAq(committeeNumId)
-    // Only a pristine ledger may have its total re-set. `ingestAq` rejects zero-AQ accounts, so a
-    // zero `ingestedAq` also implies zero `numAccounts` - nothing is lost by rebuilding from scratch.
-    if (aqBox.exists) {
-      ensure(aqBox.value.ingestedAq.asUint64() === 0, errIngestedAqNotZero)
+    const committeeAqBox = this.committeeAq(committeeNumId)
+    
+    if (committeeAqBox.exists) {
+      // Only a pristine ledger may have its total re-set. `ingestAq` rejects zero-AQ accounts, so a
+      // zero `ingestedAq` also implies zero `numAccounts` - nothing is lost by rebuilding from scratch.
+      ensure(committeeAqBox.value.ingestedAq.asUint64() === 0, errIngestedAqNotZero)
     }
 
     const committeeAq: FracCommitteeAq = {
       totalAq,
+      totalAccounts,
       ingestedAq: u32(0),
       numAccounts: u32(0),
     }
-    aqBox.value = clone(committeeAq)
+    committeeAqBox.value = clone(committeeAq)
     return committeeAq
   }
 
@@ -397,31 +398,24 @@ export class FracDelegationInstanceContract extends BaseContract {
     this.ensureCallerIsOperator()
     const registryApp = this.resolveRegistryApp()
 
-    // Checked before the first inner call, so the most likely operator mistake (a wrong
-    // committeeNumId) fails for free rather than after minting account IDs for the whole batch.
+    // ensure aq import has started
     const aqBox = this.committeeAq(committeeNumId)
     ensure(aqBox.exists, errAqNotStarted)
     const committeeAq = clone(aqBox.value)
 
     let sumAq: uint64 = 0
     for (const accountAq of clone(accountAqs)) {
-      // Rejected before this account's inner call, mirroring the gGov registry's zero-vote guard: a
-      // zero-AQ account carries no weight, would still cost a box's MBR, and the pipeline already
-      // floors sub-1-AQ accounts out of its output - so a zero here means bad input.
+      // zero account AQ is not valid
       ensure(accountAq.aq.asUint64() > 0, errZeroAq)
 
-      // Inlined, NOT hoisted into a `const` above the loop: the frac registry compiles this
-      // instance (createInstance), so hoisting materialises its whole program here and puya rejects
-      // the cycle. Called inline against an explicit appId, only the method selector is needed and
-      // no program reference is created - the same shape `GGovPeriod` uses to call back into the
-      // gGov registry, which is cyclical in exactly the same way.
+      // get account ID, creating it if this is the first sighting of the account
+      // also associates account with this instance on the frac registry
       const registryAccount = compileArc4(FracDelegationRegistryContract).call.getOrCreateAccountWithInstance({
         appId: registryApp,
         args: [accountAq.account, this.instanceNumId.value],
       }).returnValue
 
-      // Only checkable after the inner call - the account ID is what the box is keyed by. Logs the
-      // offending address, as `uningestGovs` does, so one bad row in a batch of dozens is findable.
+      // if box exists, the account has already been ingested for this committee
       const box = this.accountAq([registryAccount.accountId, committeeNumId])
       ensureExtra(!box.exists, errAccountAqExists, accountAq.account.bytes)
       box.value = accountAq.aq
@@ -429,13 +423,17 @@ export class FracDelegationInstanceContract extends BaseContract {
       sumAq += accountAq.aq.asUint64()
     }
 
-    // Accumulated in uint64 and bounded before narrowing, exactly as `ingestGovs` does: `totalAq` is
-    // itself a Uint32, so any sum passing this check is by construction safe to `u32()`.
+    // tally of ingested AQ updated with this run's AQ sum
     const ingestedAq: uint64 = committeeAq.ingestedAq.asUint64() + sumAq
+    // ensure we do not exceed the stated total AQ
     ensure(ingestedAq <= committeeAq.totalAq.asUint64(), errTotalAqExceeded)
+    // ensure we do not exceed the stated total accounts
+    const nextNumAccounts: uint64 = committeeAq.numAccounts.asUint64() + accountAqs.length
+    ensure(nextNumAccounts <= committeeAq.totalAccounts.asUint64(), errTotalGovsExceeded)
 
     committeeAq.ingestedAq = u32(ingestedAq)
-    committeeAq.numAccounts = u32(committeeAq.numAccounts.asUint64() + accountAqs.length)
+    committeeAq.totalAccounts = u32(committeeAq.totalAccounts.asUint64())
+    committeeAq.numAccounts = u32(nextNumAccounts)
     aqBox.value = clone(committeeAq)
   }
 
@@ -459,6 +457,7 @@ export class FracDelegationInstanceContract extends BaseContract {
     // `syncCommittee` passes into the gGov registry one level up.
     if (mustBeComplete) {
       ensure(committeeAq.ingestedAq === committeeAq.totalAq, errAqIncomplete)
+      ensure(committeeAq.numAccounts === committeeAq.totalAccounts, errAqIncomplete)
     }
     return committeeAq
   }
