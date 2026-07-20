@@ -30,6 +30,7 @@ import {
   errCommitteeIdOverflow,
   errCommitteeIncomplete,
   errCommitteeNotExists,
+  errEscrowNotAssigned,
   errGGovDelegationExists,
   errGGovPeriodNotExists,
   errGGovSelfDelegate,
@@ -269,7 +270,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * Set the Frac Delegation Registry Application ID
    * @param appId Frac Delegation Registry Application ID
    */
-  public setFdRegistryApp(appId: Application): void {
+  public setFracRegistryApp(appId: Application): void {
     this.ensureCallerIsAdmin()
     this.fracRegistryApp.value = appId
   }
@@ -405,6 +406,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
         appId: this.fracRegistryApp.value,
         args: [escrow],
       }).returnValue
+
+      // getEscrow returns the zero sentinel (instanceNumId 0) instead of throwing for an unregistered escrow
+      ensureExtra(escrowInstance.instanceNumId.asUint64() !== 0, errEscrowNotAssigned, escrow.bytes)
 
       this.addDelegation(escrow, Application(escrowInstance.instanceAppId).address)
     }

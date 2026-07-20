@@ -29,7 +29,6 @@ import {
 import { BaseContract } from '../base/base.algo'
 import {
   errEscrowAssigned,
-  errEscrowNotAssigned,
   errInstanceAppNotConfigured,
   errInstanceAppNotExists,
   errUnauthorized,
@@ -350,19 +349,21 @@ export class FracDelegationRegistryContract extends BaseContract {
   // ── Escrow reads ──────────────────────────────────────────────────
 
   /**
-   * Resolve an escrow registration by returning the instance numeric ID it is registered to plus
-   * that instance's app ID. Throws if the escrow is not registered on any instance.
+   * Escrow on-chain getter. Resolve an escrow registration by returning its instance numeric ID
+   * and app ID. Cross-app box reads are impossible on the AVM, so this is the read surface.
+   * Mostly called via readonly inner txn by `GGovRegistry.importFracDelegation`.
    *
-   * Called via readonly inner txn by `GGovRegistry.importFracDelegation` (cross-app box reads are
-   * impossible on the AVM, so this is the read surface). Callers are meant to be admin-driven with
-   * explicit escrows lists, so a typo must fail loudly, not skip silently.
+   * If the escrow is not registered to any instance, returns the zero sentinel so this stays a
+   * plain read. Callers that must fail on an unassigned escrow enforce that themselves.
    * @param account Escrow account to resolve
-   * @returns FracEscrowInstance with the instance numeric ID and app ID
+   * @returns FracEscrowInstance with the instance numeric ID and app ID, or the zero sentinel if unassigned
    */
   @abimethod({ readonly: true })
   public getEscrow(account: Account): FracEscrowInstance {
     const escrowBox = this.escrows(account)
-    ensure(escrowBox.exists, errEscrowNotAssigned)
+    if (!escrowBox.exists) {
+      return { instanceNumId: u16(0), instanceAppId: 0 }
+    }
     const instanceNumId = escrowBox.value
     const instanceBox = this.instances(instanceNumId)
     ensure(instanceBox.exists, errInstanceAppNotExists) // invariant: registerEscrow only writes against live instances
