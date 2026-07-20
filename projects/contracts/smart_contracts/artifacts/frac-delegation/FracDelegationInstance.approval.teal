@@ -1513,7 +1513,7 @@ uningestAq_for_header@2:
     dup
     bury 11
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:531
-    // ensureExtra(box.exists, errAccountNotExists, account.bytes)
+    // ensureExtra(box.exists, errAccountAqNotExists, account.bytes)
     box_len
     bury 1
     // smart_contracts/base/utils.algo.ts:44
@@ -1524,8 +1524,8 @@ uningestAq_for_header@2:
     dig 7
     log
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:531
-    // ensureExtra(box.exists, errAccountNotExists, account.bytes)
-    pushbytes "ERR:A_NX"
+    // ensureExtra(box.exists, errAccountAqNotExists, account.bytes)
+    pushbytes "ERR:FA_NX"
     // smart_contracts/base/utils.algo.ts:46
     // log(code)
     log

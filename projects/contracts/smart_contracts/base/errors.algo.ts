@@ -98,3 +98,4 @@ export const errIngestedAqNotZero = 'ERR:FA_NZ' // Cannot re-set total AlgoQuart
 export const errAccountAqExists = 'ERR:FA_EX' // Account AlgoQuarters already ingested for this committee
 export const errTotalAqExceeded = 'ERR:FA_XC' // Ingested AlgoQuarters exceed the committee total
 export const errAqIncomplete = 'ERR:FA_NC' // AlgoQuarters ingest is incomplete - not all AlgoQuarters have been ingested
+export const errAccountAqNotExists = 'ERR:FA_NX' // Account AlgoQuarters not ingested for this committee

@@ -20,7 +20,7 @@ import { compileArc4, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/alg
 import { BaseContract } from '../base/base.algo'
 import {
   errAccountAqExists,
-  errAccountNotExists,
+  errAccountAqNotExists,
   errAqIncomplete,
   errAqNotStarted,
   errCommitteeNotExists,
@@ -528,7 +528,7 @@ export class FracDelegationInstanceContract extends BaseContract {
       }).returnValue
 
       const box = this.accountAq([registryAccount.accountId, committeeNumId])
-      ensureExtra(box.exists, errAccountNotExists, account.bytes)
+      ensureExtra(box.exists, errAccountAqNotExists, account.bytes)
       removedAq += box.value.asUint64()
       box.delete()
     }

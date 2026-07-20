@@ -137,16 +137,16 @@ describe('FracDelegationInstance uningestAq — pre-inner-call guards', () => {
  *      way (BoxMap deletes by key — no offset, no ordering rule).
  *
  *  - resolves addresses via the registry's readonly getAccount, rejecting an
- *    account the registry has never seen (ERR:A_NX)
+ *    account the registry has never seen (ERR:FA_NX)
  *      a fresh address resolves to account ID 0, whose accountAq box never
  *      exists.
  *
  *  - rejects an account registered but not ingested into THIS committee
- *    (ERR:A_NX)
+ *    (ERR:FA_NX)
  *      getAccount returns a real id, but accountAq[id, thisCommittee] is absent.
  *
  *  - rejects a duplicate account within one batch, reverting the whole group
- *    (ERR:A_NX)
+ *    (ERR:FA_NX)
  *      the second pass finds the box already deleted; the group is atomic, so
  *      nothing is removed.
  *
