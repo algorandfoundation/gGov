@@ -27,7 +27,7 @@ async function importDeployerIfExists(dir: string) {
   return null
 }
 
-// Listed contracts deploy first in this order; all others follow alphabetically.
+// listed contracts deploy first in this order; all others follow alphabetically.
 const DEPLOY_ORDER = ['ggov-registry', 'frac-delegation']
 
 // get a list of all deployers from the subdirectories
