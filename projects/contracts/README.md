@@ -2,6 +2,8 @@
 
 General governance voting for Algorand, built around xGov committees and gGov vote delegation.
 
+> **Note:** gGov is under heavy development. The latest work may live on the `develop` branch, and this documentation can lag behind the current code.
+
 gGov is two cooperating smart contracts:
 
 - **[`GGovRegistry`](#ggovregistry)** — a durable factory and trust root. It holds committees (xGov members + voting power), an `admin` and an `operator`, gGov delegations, and a `periodId → GGovPeriodSummary` index. It spawns one `GGovPeriod` app per voting period via inner transaction.
