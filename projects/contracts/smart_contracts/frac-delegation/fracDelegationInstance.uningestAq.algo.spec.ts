@@ -110,7 +110,12 @@ describe('FracDelegationInstance uningestAq — pre-inner-call guards', () => {
   it('rejects a batch larger than the ingested account count (ERR:FA_AC)', () => {
     const { contract } = makeAuthorisedInstance(ctx)
     // A ledger holding a single ingested account.
-    contract.committeeAq(u16(1)).value = { totalAq: u32(100), ingestedAq: u32(100), numAccounts: u32(1) }
+    contract.committeeAq(u16(1)).value = {
+      totalAq: u32(100),
+      ingestedAq: u32(100),
+      totalAccounts: u32(1),
+      numAccounts: u32(1),
+    }
 
     // Two accounts against numAccounts === 1.
     expectArc65Error(

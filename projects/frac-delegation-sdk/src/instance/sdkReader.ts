@@ -152,7 +152,7 @@ export class FracDelegationReaderSDK {
    *
    * Keyed by the committee's gGov *numeric* ID, not its 32-byte ID — `getCommittee(instanceNumId,
    * committeeId)` resolves that (`committeeNumId`), and `startAqIngest` returns it. Ingestion is
-   * complete when `ingestedAq === totalAq`.
+   * complete when both `ingestedAq === totalAq` and `numAccounts === totalAccounts`.
    */
   async getCommitteeAq(
     instanceNumId: bigint | number,

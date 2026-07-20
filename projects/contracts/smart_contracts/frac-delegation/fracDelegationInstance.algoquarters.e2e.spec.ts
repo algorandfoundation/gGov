@@ -482,32 +482,33 @@ describe('FracDelegationInstance algoquarters', () => {
 
   describe('uningestAq', () => {
     test('removes accounts and rolls back ingestedAq / numAccounts', async () => {
-      const { committeeId, committeeNumId, instanceSdk, registrySdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper, registrySdk } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(3)
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
-      await instanceSdk.uningestAq({ committeeNumId, accounts: accounts.slice(0, 2) })
+      await sdkWrapper.uningestAq({ committeeNumId, accounts: accounts.slice(0, 2) })
 
-      expect(await instanceSdk.getCommitteeAq(committeeNumId)).toEqual({
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: 1000,
         ingestedAq: 100,
+        totalAccounts: 10,
         numAccounts: 1,
       })
       const ids = await registrySdk.getAccountIdMap(accounts)
-      expect(await instanceSdk.getAccountAq(ids.get(accounts[0])!, committeeNumId)).toBe(0) // removed
-      expect(await instanceSdk.getAccountAq(ids.get(accounts[2])!, committeeNumId)).toBe(100) // kept
+      expect(await sdkWrapper.getAccountAq(ids.get(accounts[0])!, committeeNumId)).toBe(0) // removed
+      expect(await sdkWrapper.getAccountAq(ids.get(accounts[2])!, committeeNumId)).toBe(100) // kept
     })
 
     test('frees the instance box MBR it locked', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(3)
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
-      const appAddress = instanceSdk.readClient.appAddress
+      const appAddress = sdkWrapper.readClient.appAddress
       const before = (await localnet.algorand.account.getInformation(appAddress)).minBalance.microAlgo
-      await instanceSdk.uningestAq({ committeeNumId, accounts })
+      await sdkWrapper.uningestAq({ committeeNumId, accounts })
       const after = (await localnet.algorand.account.getInformation(appAddress)).minBalance.microAlgo
 
       // Deleting a box lowers the app account's minimum balance by that box's MBR. Each accountAq box
@@ -517,31 +518,31 @@ describe('FracDelegationInstance algoquarters', () => {
     })
 
     test('draining to zero re-opens startAqIngest for a corrected total', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(2)
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
       // Frozen while any AQ are ingested.
-      await expect(instanceSdk.startAqIngest({ committeeId, totalAq: 5000 })).rejects.toThrow(
+      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 5000, totalAccounts: 10 })).rejects.toThrow(
         transformedError(errIngestedAqNotZero),
       )
 
-      await instanceSdk.uningestAq({ committeeNumId, accounts })
-      expect((await instanceSdk.getCommitteeAq(committeeNumId))!.ingestedAq).toBe(0)
+      await sdkWrapper.uningestAq({ committeeNumId, accounts })
+      expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.ingestedAq).toBe(0)
 
       // Unfrozen: a fresh total can now be committed.
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 5000 })
-      expect((await instanceSdk.getCommitteeAq(committeeNumId))!.totalAq).toBe(5000)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 5000, totalAccounts: 10 })
+      expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.totalAq).toBe(5000)
     })
 
     test('leaves the registry account record and instance association intact', async () => {
-      const { committeeId, committeeNumId, instanceSdk, registrySdk, instanceId } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper, registrySdk, instanceId } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(2)
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
-      await instanceSdk.uningestAq({ committeeNumId, accounts })
+      await sdkWrapper.uningestAq({ committeeNumId, accounts })
 
       // Account IDs are permanent and the account->instance link stays - uningest only deletes the
       // instance's own accountAq boxes, never touching the registry.
@@ -554,17 +555,18 @@ describe('FracDelegationInstance algoquarters', () => {
     })
 
     test('is order-independent', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(4)
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(accounts, 25) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 25) })
 
       // Remove in a different order than ingested - a BoxMap deletes by key, no offset to keep.
-      await instanceSdk.uningestAq({ committeeNumId, accounts: [...accounts].reverse() })
+      await sdkWrapper.uningestAq({ committeeNumId, accounts: [...accounts].reverse() })
 
-      expect(await instanceSdk.getCommitteeAq(committeeNumId)).toEqual({
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: 1000,
         ingestedAq: 0,
+        totalAccounts: 10,
         numAccounts: 0,
       })
     })
@@ -572,10 +574,10 @@ describe('FracDelegationInstance algoquarters', () => {
 
   describe('uningestAq rejections', () => {
     test('a non-operator cannot uningest', async () => {
-      const { committeeId, committeeNumId, instanceSdk, sdk, instanceId } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper, sdk, instanceId } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const account = freshAccounts(1)[0]
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
       const { sdk: nonOperatorSdk } = await generateAccountWithFracSDK(localnet, sdk.appId, (3).algos())
 
       await expect(
@@ -584,65 +586,65 @@ describe('FracDelegationInstance algoquarters', () => {
     })
 
     test('rejects when the ledger was never started', async () => {
-      const { committeeNumId, instanceSdk } = await setupAq(localnet)
+      const { committeeNumId, sdkWrapper } = await setupAq(localnet)
 
-      await expect(instanceSdk.uningestAq({ committeeNumId, accounts: freshAccounts(1) })).rejects.toThrow(
+      await expect(sdkWrapper.uningestAq({ committeeNumId, accounts: freshAccounts(1) })).rejects.toThrow(
         transformedError(errAqNotStarted),
       )
     })
 
     test('rejects an account the registry has never seen', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
 
       // A fresh address resolves to account ID 0, whose box never exists.
-      await expect(instanceSdk.uningestAq({ committeeNumId, accounts: freshAccounts(1) })).rejects.toThrow(
+      await expect(sdkWrapper.uningestAq({ committeeNumId, accounts: freshAccounts(1) })).rejects.toThrow(
         transformedError(errAccountAqNotExists),
       )
-      expect((await instanceSdk.getCommitteeAq(committeeNumId))!.numAccounts).toBe(1)
+      expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.numAccounts).toBe(1)
     })
 
     test('rejects an account registered but not ingested into this committee', async () => {
       const ctx = await setupAq(localnet)
-      const { committeeId, committeeNumId, instanceSdk } = ctx
+      const { committeeId, committeeNumId, sdkWrapper } = ctx
       const account = freshAccounts(1)[0]
       // Registered by ingesting into the first committee.
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
 
       // The second committee knows the account's ID but holds no box for it. Ingest a filler so its
       // numAccounts is 1 - otherwise the cheap count guard (errNumAccountsExceeded) fires first,
       // before the per-account box-exists check this test is exercising.
       const { secondCommitteeId, secondNumId } = await addSecondCommittee(ctx)
-      await instanceSdk.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000 })
-      await instanceSdk.ingestAq({ committeeNumId: secondNumId, accountAqs: rows(freshAccounts(1), 50) })
+      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.ingestAq({ committeeNumId: secondNumId, accountAqs: rows(freshAccounts(1), 50) })
 
-      await expect(instanceSdk.uningestAq({ committeeNumId: secondNumId, accounts: [account] })).rejects.toThrow(
+      await expect(sdkWrapper.uningestAq({ committeeNumId: secondNumId, accounts: [account] })).rejects.toThrow(
         transformedError(errAccountAqNotExists),
       )
     })
 
     test('rejects a duplicate account within one batch, reverting the whole group', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(2)
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
       // length 2 <= numAccounts 2 clears the count guard; the second pass finds the box already gone.
-      await expect(instanceSdk.uningestAq({ committeeNumId, accounts: [accounts[0], accounts[0]] })).rejects.toThrow(
+      await expect(sdkWrapper.uningestAq({ committeeNumId, accounts: [accounts[0], accounts[0]] })).rejects.toThrow(
         transformedError(errAccountAqNotExists),
       )
       // Atomic: nothing was removed.
-      expect((await instanceSdk.getCommitteeAq(committeeNumId))!.numAccounts).toBe(2)
+      expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.numAccounts).toBe(2)
     })
 
     test('rejects a batch larger than the ingested account count', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
 
-      await expect(instanceSdk.uningestAq({ committeeNumId, accounts: freshAccounts(2) })).rejects.toThrow(
+      await expect(sdkWrapper.uningestAq({ committeeNumId, accounts: freshAccounts(2) })).rejects.toThrow(
         transformedError(errNumAccountsExceeded),
       )
     })
@@ -713,38 +715,39 @@ describe('FracDelegationInstance algoquarters', () => {
     test('a full MAX_ACCOUNTS_PER_UNINGEST_AQ uningest lands in one group', async () => {
       // Reference-slot regression net for the reverse path: N accounts need 2N+2 slots, so a full
       // batch only sends if makeUningestAqTxns pads the group correctly.
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
       const n = MAX_ACCOUNTS_PER_UNINGEST_AQ
-      await instanceSdk.startAqIngest({ committeeId, totalAq: n * 10 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: n * 10, totalAccounts: n })
       const accounts = freshAccounts(n)
-      await instanceSdk.ingestAqAll({ committeeNumId, accountAqs: rows(accounts, 10) })
+      await sdkWrapper.ingestAqAll({ committeeNumId, accountAqs: rows(accounts, 10) })
 
-      await instanceSdk.uningestAq({ committeeNumId, accounts })
+      await sdkWrapper.uningestAq({ committeeNumId, accounts })
 
-      expect(await instanceSdk.getCommitteeAq(committeeNumId)).toEqual({
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: n * 10,
         ingestedAq: 0,
+        totalAccounts: n,
         numAccounts: 0,
       })
     })
 
     test('uningestAqAll chunks past the per-call limit into multiple groups', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
       const n = MAX_ACCOUNTS_PER_UNINGEST_AQ + 5
-      await instanceSdk.startAqIngest({ committeeId, totalAq: n * 10 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: n * 10, totalAccounts: n })
       const accounts = freshAccounts(n)
-      await instanceSdk.ingestAqAll({ committeeNumId, accountAqs: rows(accounts, 10) })
+      await sdkWrapper.ingestAqAll({ committeeNumId, accountAqs: rows(accounts, 10) })
 
-      await instanceSdk.uningestAqAll({ committeeNumId, accounts })
+      await sdkWrapper.uningestAqAll({ committeeNumId, accounts })
 
-      expect((await instanceSdk.getCommitteeAq(committeeNumId))!.numAccounts).toBe(0)
+      expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.numAccounts).toBe(0)
     })
 
     test('uningestAq rejects a batch over the per-call limit rather than failing on-chain', async () => {
-      const { committeeNumId, instanceSdk } = await setupAq(localnet)
+      const { committeeNumId, sdkWrapper } = await setupAq(localnet)
 
       await expect(
-        instanceSdk.uningestAq({ committeeNumId, accounts: freshAccounts(MAX_ACCOUNTS_PER_UNINGEST_AQ + 1) }),
+        sdkWrapper.uningestAq({ committeeNumId, accounts: freshAccounts(MAX_ACCOUNTS_PER_UNINGEST_AQ + 1) }),
       ).rejects.toThrow(/exceeds the .* per call/)
     })
   })
