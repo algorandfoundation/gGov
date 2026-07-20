@@ -2,21 +2,20 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { generateAccount, getApplicationAddress, makeEmptyTransactionSigner } from 'algosdk'
 import {
+  FracDelegationInstanceClient,
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
-  FracDelegationInstanceClient,
 } from 'frac-delegation-sdk'
 import { GGovCommitteeFile } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import committeeTemplate from '../../../common/committee-files/template.json'
 import {
   errAccountAqExists,
-  errAccountAqNotExists,
+  errAccountNotExists,
   errAqIncomplete,
   errAqNotStarted,
   errCommitteeNotExists,
   errIngestedAqNotZero,
-  errNumAccountsExceeded,
   errTotalAqExceeded,
   errTotalAqZero,
   errUnauthorized,
@@ -530,7 +529,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
       // A fresh address resolves to account ID 0, whose box never exists.
       await expect(instanceSdk.uningestAq({ committeeNumId, accounts: freshAccounts(1) })).rejects.toThrow(
-        transformedError(errAccountAqNotExists),
+        transformedError(errAccountNotExists),
       )
       expect((await instanceSdk.getCommitteeAq(committeeNumId))!.numAccounts).toBe(1)
     })
@@ -543,15 +542,13 @@ describe('FracDelegationInstance algoquarters', () => {
       await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
       await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
 
-      // The second committee knows the account's ID but holds no box for it. Ingest a filler so its
-      // numAccounts is 1 - otherwise the cheap count guard (errNumAccountsExceeded) fires first,
-      // before the per-account box-exists check this test is exercising.
+      // The second committee knows the account's ID (IDs are registry-wide) but holds no box for it,
+      // so the per-account box-exists check rejects it.
       const { secondCommitteeId, secondNumId } = await addSecondCommittee(ctx)
       await instanceSdk.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000 })
-      await instanceSdk.ingestAq({ committeeNumId: secondNumId, accountAqs: rows(freshAccounts(1), 50) })
 
       await expect(instanceSdk.uningestAq({ committeeNumId: secondNumId, accounts: [account] })).rejects.toThrow(
-        transformedError(errAccountAqNotExists),
+        transformedError(errAccountNotExists),
       )
     })
 
@@ -563,20 +560,10 @@ describe('FracDelegationInstance algoquarters', () => {
 
       // length 2 <= numAccounts 2 clears the count guard; the second pass finds the box already gone.
       await expect(instanceSdk.uningestAq({ committeeNumId, accounts: [accounts[0], accounts[0]] })).rejects.toThrow(
-        transformedError(errAccountAqNotExists),
+        transformedError(errAccountNotExists),
       )
       // Atomic: nothing was removed.
       expect((await instanceSdk.getCommitteeAq(committeeNumId))!.numAccounts).toBe(2)
-    })
-
-    test('rejects a batch larger than the ingested account count', async () => {
-      const { committeeId, committeeNumId, instanceSdk } = await setupAq(localnet)
-      await instanceSdk.startAqIngest({ committeeId, totalAq: 1000 })
-      await instanceSdk.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
-
-      await expect(instanceSdk.uningestAq({ committeeNumId, accounts: freshAccounts(2) })).rejects.toThrow(
-        transformedError(errNumAccountsExceeded),
-      )
     })
   })
 
