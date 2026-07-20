@@ -11,8 +11,10 @@ import {
   errAqNotStarted,
   errCommitteeNotExists,
   errIngestedAqNotZero,
+  errTotalAccountsZero,
   errTotalAqExceeded,
   errTotalAqZero,
+  errTotalGovsExceeded,
   errUnauthorized,
   errZeroAq,
 } from '../base/errors.algo'
@@ -75,8 +77,12 @@ const setupAq = async (localnet: AlgorandFixture) => {
     defaultSigner: makeEmptyTransactionSigner(),
   })
   const sdkWrapper = {
-    startAqIngest: (args: { committeeId: Uint8Array | string; totalAq: number; note?: string }) =>
-      sdk.startAqIngest({ instanceNumId: instanceId, ...args }),
+    startAqIngest: (args: {
+      committeeId: Uint8Array | string
+      totalAq: number
+      totalAccounts: number
+      note?: string
+    }) => sdk.startAqIngest({ instanceNumId: instanceId, ...args }),
     ingestAq: (args: { committeeNumId: number; accountAqs: [string, number][]; note?: string }) =>
       sdk.ingestAq({ instanceNumId: instanceId, ...args }),
     ingestAqAll: (args: { committeeNumId: number; accountAqs: [string, number][]; note?: string }) =>
@@ -127,22 +133,26 @@ describe('FracDelegationInstance algoquarters', () => {
 
       expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toBeUndefined()
 
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
 
+      // Both declared totals are stored up front; ingestedAq/numAccounts start at zero.
       expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: 1000,
         ingestedAq: 0,
+        totalAccounts: 10,
         numAccounts: 0,
       })
     })
 
-    test('re-runs to correct totalAq while the ledger is pristine', async () => {
+    test('re-runs to correct both totals while the ledger is pristine', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
 
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 2500 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 2500, totalAccounts: 25 })
 
-      expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.totalAq).toBe(2500)
+      const ledger = (await sdkWrapper.getCommitteeAq(committeeNumId))!
+      expect(ledger.totalAq).toBe(2500)
+      expect(ledger.totalAccounts).toBe(25)
     })
 
     test('keeps a separate ledger per committee', async () => {
@@ -150,8 +160,8 @@ describe('FracDelegationInstance algoquarters', () => {
       const { committeeId, committeeNumId, sdkWrapper } = ctx
       const { secondCommitteeId, secondNumId } = await addSecondCommittee(ctx)
 
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
-      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 7000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 7000, totalAccounts: 70 })
 
       expect(secondNumId).not.toBe(committeeNumId)
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.totalAq).toBe(1000)
@@ -165,16 +175,27 @@ describe('FracDelegationInstance algoquarters', () => {
       const { sdk: nonOperatorSdk } = await generateAccountWithFracSDK(localnet, sdk.appId, (3).algos())
 
       await expect(
-        nonOperatorSdk.startAqIngest({ instanceNumId: instanceId, committeeId, totalAq: 1000 }),
+        nonOperatorSdk.startAqIngest({ instanceNumId: instanceId, committeeId, totalAq: 1000, totalAccounts: 10 }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('rejects a zero total', async () => {
+    test('rejects a zero total AQ', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
 
       // A zero total would be indistinguishable from the "no ledger" sentinel.
-      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 0 })).rejects.toThrow(
+      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 0, totalAccounts: 10 })).rejects.toThrow(
         transformedError(errTotalAqZero),
+      )
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toBeUndefined()
+    })
+
+    test('rejects a zero total accounts', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+
+      // Mirrors the totalAq guard: a ledger that expects zero accounts could never complete, since
+      // ingestAq rejects any batch that would push numAccounts past totalAccounts.
+      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 0 })).rejects.toThrow(
+        transformedError(errTotalAccountsZero),
       )
       expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toBeUndefined()
     })
@@ -183,17 +204,17 @@ describe('FracDelegationInstance algoquarters', () => {
       const { sdkWrapper } = await setupAq(localnet)
 
       await expect(
-        sdkWrapper.startAqIngest({ committeeId: new Uint8Array(32).fill(7), totalAq: 1000 }),
+        sdkWrapper.startAqIngest({ committeeId: new Uint8Array(32).fill(7), totalAq: 1000, totalAccounts: 10 }),
       ).rejects.toThrow(transformedError(errCommitteeNotExists))
     })
 
-    test('rejects a totalAq re-set once AlgoQuarters have been ingested', async () => {
+    test('rejects a totals re-set once AlgoQuarters have been ingested', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
 
-      // The total is load-bearing for the rows already written, so it freezes on first ingest.
-      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 2000 })).rejects.toThrow(
+      // The totals are load-bearing for the rows already written, so they freeze on first ingest.
+      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 2000, totalAccounts: 20 })).rejects.toThrow(
         transformedError(errIngestedAqNotZero),
       )
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.totalAq).toBe(1000)
@@ -203,7 +224,7 @@ describe('FracDelegationInstance algoquarters', () => {
   describe('ingestAq', () => {
     test('writes one box per account and accumulates the ledger', async () => {
       const { committeeId, committeeNumId, sdkWrapper, registrySdk } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(3)
 
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
@@ -211,6 +232,7 @@ describe('FracDelegationInstance algoquarters', () => {
       expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: 1000,
         ingestedAq: 300,
+        totalAccounts: 10,
         numAccounts: 3,
       })
       const accountIds = await registrySdk.getAccountIdMap(accounts)
@@ -221,7 +243,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('mints a registry account ID and links every account to the instance', async () => {
       const { committeeId, committeeNumId, sdkWrapper, registrySdk, instanceId } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const accounts = freshAccounts(2)
 
       // Unknown to the registry until ingest resolves them: accountId 0 is the "not registered"
@@ -247,13 +269,13 @@ describe('FracDelegationInstance algoquarters', () => {
       const { committeeId, committeeNumId, sdkWrapper, registrySdk, instanceId } = ctx
       const account = freshAccounts(1)[0]
 
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
       const firstId = (await registrySdk.getAccountIdMap([account])).get(account)!
 
       // A second committee, ingesting the same address again.
       const { secondCommitteeId, secondNumId } = await addSecondCommittee(ctx)
-      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId: secondNumId, accountAqs: rows([account], 400) })
 
       // Same ID minted once; getOrCreateAccountWithInstance is idempotent in both dimensions, so the
@@ -270,7 +292,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('accumulates across batches', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
 
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(2), 100) })
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.ingestedAq).toBe(200)
@@ -280,6 +302,7 @@ describe('FracDelegationInstance algoquarters', () => {
       expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: 1000,
         ingestedAq: 350,
+        totalAccounts: 10,
         numAccounts: 5,
       })
     })
@@ -290,7 +313,7 @@ describe('FracDelegationInstance algoquarters', () => {
       const accounts = freshAccounts(4)
 
       // Ingesting in order mints IDs 1..4 against these addresses.
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 10) })
       const ids = await registrySdk.getAccountIdMap(accounts)
       expect(accounts.map((a) => ids.get(a)!)).toEqual([1, 2, 3, 4])
@@ -302,7 +325,7 @@ describe('FracDelegationInstance algoquarters', () => {
       // right ID — with uniform weights a scrambled ID->AQ mapping would pass unnoticed.
       const weightOf = new Map(accounts.map((a, i) => [a, (i + 1) * 10])) // a0=10, a1=20, a2=30, a3=40
       const { secondCommitteeId, secondNumId } = await addSecondCommittee(ctx)
-      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({
         committeeNumId: secondNumId,
         accountAqs: [...accounts].reverse().map((a): [string, number] => [a, weightOf.get(a)!]),
@@ -315,26 +338,43 @@ describe('FracDelegationInstance algoquarters', () => {
       }
     })
 
-    test('completes when ingestedAq reaches totalAq', async () => {
+    test('completes when both ingestedAq and numAccounts reach their totals', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 300 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 300, totalAccounts: 3 })
 
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(3), 100) })
 
       const ledger = (await sdkWrapper.getCommitteeAq(committeeNumId))!
       expect(ledger.ingestedAq).toBe(ledger.totalAq)
-      // The guard internal voting will use: a complete ledger passes mustBeComplete.
+      expect(ledger.numAccounts).toBe(ledger.totalAccounts)
+      // The guard internal voting will use: a ledger with BOTH totals reached passes mustBeComplete.
       const { return: complete } = await sdkWrapper.readClient.send.getCommitteeAq({
         args: { committeeNumId, mustBeComplete: true },
       })
       expect(complete!.ingestedAq).toBe(300)
+      expect(complete!.numAccounts).toBe(3)
+    })
+
+    test('mustBeComplete rejects when the AQ total is met but accounts are short', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      // 3 accounts x 100 hits totalAq exactly, but the ledger declares a 4th account still to come.
+      // AQ-complete is not enough; the account count must also be reached.
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 300, totalAccounts: 4 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(3), 100) })
+
+      const ledger = (await sdkWrapper.getCommitteeAq(committeeNumId))!
+      expect(ledger.ingestedAq).toBe(ledger.totalAq)
+      expect(ledger.numAccounts).not.toBe(ledger.totalAccounts)
+      await expect(
+        sdkWrapper.readClient.send.getCommitteeAq({ args: { committeeNumId, mustBeComplete: true } }),
+      ).rejects.toThrow(transformedError(errAqIncomplete))
     })
   })
 
   describe('ingestAq rejections', () => {
     test('a non-operator cannot ingest', async () => {
       const { committeeId, committeeNumId, sdkWrapper, sdk, instanceId } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const { sdk: nonOperatorSdk } = await generateAccountWithFracSDK(localnet, sdk.appId, (3).algos())
 
       await expect(
@@ -358,7 +398,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('rejects an unknown committee numeric ID', async () => {
       const { committeeId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
 
       await expect(
         sdkWrapper.ingestAq({ committeeNumId: UNKNOWN_COMMITTEE_NUM_ID, accountAqs: rows(freshAccounts(1), 100) }),
@@ -367,7 +407,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('rejects a zero-AQ account', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
 
       // The pipeline floors sub-1-AQ accounts out of its output, so a zero here means bad input.
       await expect(sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 0) })).rejects.toThrow(
@@ -378,7 +418,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('rejects a duplicate account within one batch', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const account = freshAccounts(1)[0]
 
       await expect(sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account, account], 100) })).rejects.toThrow(
@@ -388,7 +428,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('rejects an account ingested in an earlier batch, without double-counting', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       const account = freshAccounts(1)[0]
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
 
@@ -401,13 +441,32 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('rejects a batch that would exceed totalAq, leaving the ledger untouched', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 250 })
+      // totalAccounts is generous so the AQ guard is the one that fires, not the account-count guard.
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 250, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(2), 100) })
 
       await expect(sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })).rejects.toThrow(
         transformedError(errTotalAqExceeded),
       )
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.ingestedAq).toBe(200)
+    })
+
+    test('rejects a batch that would exceed totalAccounts, leaving the ledger untouched', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      // totalAq is generous so the account-count guard is the one that fires: a 3rd account overflows
+      // the declared 2, even though its AQ still fits comfortably under totalAq.
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 2 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(2), 10) })
+
+      await expect(sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 10) })).rejects.toThrow(
+        transformedError(errTotalGovsExceeded),
+      )
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
+        totalAq: 1000,
+        ingestedAq: 20,
+        totalAccounts: 2,
+        numAccounts: 2,
+      })
     })
   })
 
@@ -421,7 +480,7 @@ describe('FracDelegationInstance algoquarters', () => {
 
     test('getCommitteeAq(mustBeComplete) rejects a half-ingested ledger', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
 
       // Internal voting splits weight against totalAq, so a moving denominator must not be votable.
@@ -438,13 +497,14 @@ describe('FracDelegationInstance algoquarters', () => {
       // "No more transactions below reference limit".
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
       const n = MAX_ACCOUNTS_PER_INGEST_AQ
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: n * 10 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: n * 10, totalAccounts: n })
 
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(n), 10) })
 
       expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual({
         totalAq: n * 10,
         ingestedAq: n * 10,
+        totalAccounts: n,
         numAccounts: n,
       })
     })
@@ -452,7 +512,7 @@ describe('FracDelegationInstance algoquarters', () => {
     test('ingestAqAll chunks past the per-call limit into multiple groups', async () => {
       const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
       const n = MAX_ACCOUNTS_PER_INGEST_AQ + 5
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: n * 10 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: n * 10, totalAccounts: n })
 
       await sdkWrapper.ingestAqAll({ committeeNumId, accountAqs: rows(freshAccounts(n), 10) })
 

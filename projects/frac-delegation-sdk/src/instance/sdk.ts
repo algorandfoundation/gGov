@@ -277,12 +277,13 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   /**
    * Open (or re-open) the AlgoQuarters ledger for gGov committee `committeeId`. Operator only.
    *
-   * `totalAq` is the off-chain pipeline's declared total for the committee's period
-   * (`AlgoQuartersData.totalAlgoQuarters`); `ingestAq` accumulates towards it and may never pass it.
-   * The committee must already be synced (`syncCommittee`) — that snapshot is what supplies the
-   * `committeeNumId` every later call keys by.
+   * `totalAq` and `totalAccounts` are the off-chain pipeline's declared totals for the committee's
+   * period (`AlgoQuartersData.totalAlgoQuarters` and its account count); `ingestAq` accumulates
+   * towards both and may never pass either, and the ledger only counts as complete once both are
+   * reached. Both must be greater than zero. The committee must already be synced (`syncCommittee`) —
+   * that snapshot is what supplies the `committeeNumId` every later call keys by.
    *
-   * Re-runnable only while nothing has been ingested; afterwards the total is frozen. Returns the
+   * Re-runnable only while nothing has been ingested; afterwards the totals are frozen. Returns the
    * opened ledger, whose `committeeNumId` counterpart is on `getCommittee(committeeId)`.
    */
   @requireWriter()
@@ -291,17 +292,24 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     instanceNumId: _instanceNumId,
     committeeId,
     totalAq,
+    totalAccounts,
     note,
     client,
     builder,
-  }: Omit<FracDelegationInstanceContractArgs['startAqIngest(byte[32],uint32)(uint32,uint32,uint32)'], 'committeeId'> & {
+  }: Omit<
+    FracDelegationInstanceContractArgs['startAqIngest(byte[32],uint32,uint32)(uint32,uint32,uint32,uint32)'],
+    'committeeId'
+  > & {
     instanceNumId: bigint | number
     /** 32-byte committee ID, raw bytes or base64 */
     committeeId: Uint8Array | string
     client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
-    return builder.startAqIngest({ args: { committeeId: committeeIdToRaw(committeeId), totalAq }, note })
+    return builder.startAqIngest({
+      args: { committeeId: committeeIdToRaw(committeeId), totalAq, totalAccounts },
+      note,
+    })
   }
 
   startAqIngest = this.makeInstanceTxnExecutor({ maker: this.makeStartAqIngestTxns })

@@ -7,6 +7,7 @@ import {
   errAqNotStarted,
   errRegistryMissing,
   errTotalAqExceeded,
+  errTotalGovsExceeded,
   errUnauthorized,
   errZeroAq,
 } from '../base/errors.algo'
@@ -31,8 +32,9 @@ import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 //          b. registry.getOrCreateAccountWithInstance() — INNER CALL → accountId
 //          c. ensure(!accountAq[id,numId].exists)       — write-once per account     [errAccountAqExists]
 //          d. write box, sumAq += row.aq }
-//     5. ensure(ingestedAq + sumAq <= totalAq)          — overflow guard             [errTotalAqExceeded]
-//     6. write ingestedAq / numAccounts back
+//     5. ensure(ingestedAq + sumAq <= totalAq)          — AQ overflow guard          [errTotalAqExceeded]
+//     6. ensure(numAccounts + rows <= totalAccounts)    — account-count guard        [errTotalGovsExceeded]
+//     7. write ingestedAq / numAccounts back
 //
 // UNIT-TESTABILITY BOUNDARY (why this file is split into runnable + skipped)
 //   The pinned stable testing lib (@algorandfoundation/algorand-typescript-testing@1.1.0) cannot
@@ -74,8 +76,13 @@ const setup = (ctx: TestExecutionContext, opts: { registryApp?: number } = {}) =
 }
 
 /** Open a pristine ledger for NUM by seeding the box directly (FracCommitteeAq is all arc4). */
-const seedLedger = (contract: FracDelegationInstanceContract, totalAq = 1000): void => {
-  contract.committeeAq(NUM).value = { totalAq: u32(totalAq), ingestedAq: u32(0), numAccounts: u32(0) }
+const seedLedger = (contract: FracDelegationInstanceContract, totalAq = 1000, totalAccounts = 1000): void => {
+  contract.committeeAq(NUM).value = {
+    totalAq: u32(totalAq),
+    ingestedAq: u32(0),
+    totalAccounts: u32(totalAccounts),
+    numAccounts: u32(0),
+  }
 }
 
 describe('FracDelegationInstance.ingestAq', () => {
@@ -118,13 +125,16 @@ describe('FracDelegationInstance.ingestAq', () => {
     // (The SDK's ingestAq rejects empty batches client-side; this reaches the contract directly.)
     it('accepts an empty batch as a no-op, leaving the ledger unchanged', () => {
       const { contract } = setup(ctx)
-      seedLedger(contract, 1000)
+      seedLedger(contract, 1000, 500)
 
       contract.ingestAq(NUM, [])
 
       const ledger = contract.committeeAq(NUM).value
       expect(ledger.totalAq.asUint64()).toEqual(u32(1000).asUint64())
       expect(ledger.ingestedAq.asUint64()).toEqual(u32(0).asUint64())
+      // An empty batch (rows == 0) passes the account-count guard (0 <= totalAccounts) and leaves
+      // both the declared total and the running tally untouched.
+      expect(ledger.totalAccounts.asUint64()).toEqual(u32(500).asUint64())
       expect(ledger.numAccounts.asUint64()).toEqual(u32(0).asUint64())
     })
   })
@@ -166,10 +176,17 @@ describe('FracDelegationInstance.ingestAq', () => {
       void errAccountAqExists
     })
 
-    // Scenario: the overflow guard (step 5). A batch whose Σ aq would push ingestedAq past totalAq is
-    //   rejected whole, leaving the ledger untouched. Expected error: errTotalAqExceeded.
+    // Scenario: the AQ overflow guard (step 5). A batch whose Σ aq would push ingestedAq past totalAq
+    //   is rejected whole, leaving the ledger untouched. Expected error: errTotalAqExceeded.
     it('rejects a batch that would exceed totalAq with errTotalAqExceeded', () => {
       void errTotalAqExceeded
+    })
+
+    // Scenario: the account-count guard (step 6). A batch whose row count would push numAccounts past
+    //   the declared totalAccounts is rejected whole, even when its Σ aq still fits under totalAq —
+    //   the two totals are checked independently. Expected error: errTotalGovsExceeded.
+    it('rejects a batch that would exceed totalAccounts with errTotalGovsExceeded', () => {
+      void errTotalGovsExceeded
     })
 
     // Scenario: successive batches accumulate — ingestedAq/numAccounts sum across calls, and the

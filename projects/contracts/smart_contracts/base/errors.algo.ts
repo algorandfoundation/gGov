@@ -91,6 +91,7 @@ export const errPeriodAppMismatch = 'ERR:FP_MM' // Period app does not match the
 
 // Frac AlgoQuarters (AQ) ingestion
 export const errTotalAqZero = 'ERR:FA_TZ' // Total AlgoQuarters must be greater than zero
+export const errTotalAccountsZero = 'ERR:FA_AZ' // Total accounts must be greater than zero
 export const errZeroAq = 'ERR:FA_Z' // Account AlgoQuarters must be greater than zero
 export const errAqNotStarted = 'ERR:FA_NS' // AlgoQuarters ingest has not been started for this committee
 export const errIngestedAqNotZero = 'ERR:FA_NZ' // Cannot re-set total AlgoQuarters: AlgoQuarters have already been ingested

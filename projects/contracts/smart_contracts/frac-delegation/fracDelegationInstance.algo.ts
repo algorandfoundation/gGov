@@ -30,6 +30,7 @@ import {
   errNoEscrows,
   errPeriodAppMismatch,
   errRegistryMissing,
+  errTotalAccountsZero,
   errTotalAqExceeded,
   errTotalAqZero,
   errTotalGovsExceeded,
@@ -329,7 +330,9 @@ export class FracDelegationInstanceContract extends BaseContract {
    *
    * `totalAq` is the off-chain pipeline's declared AQ total for the committee's period; `ingestAq`
    * accumulates towards it and may never pass it, so a miscounted total surfaces as a failed ingest
-   * rather than a silently wrong voting denominator.
+   * rather than a silently wrong voting denominator. `totalAccounts` is the parallel declared count of
+   * accounts, checked the same way - both must be reached for the ledger to count as complete, mirroring
+   * the gGov registry's `totalMembers`/`totalVotes` pair.
    *
    * Requires the committee to be synced locally (`syncCommittee`). That snapshot supplies the
    * `committeeNumId` every later call keys by, and it is the only thing binding this ledger to a real
@@ -342,20 +345,24 @@ export class FracDelegationInstanceContract extends BaseContract {
    * be reset.
    * @param committeeId 32-byte gGov committee ID, as synced by `syncCommittee`
    * @param totalAq Total AlgoQuarters for the committee's period. Must be greater than zero.
+   * @param totalAccounts Total number of accounts expected for the committee's period. Must be greater than zero.
    * @returns The opened ledger
    */
   public startAqIngest(committeeId: CommitteeId, totalAq: Uint32, totalAccounts: Uint32): FracCommitteeAq {
     this.ensureCallerIsOperator()
-    // Must have nonzero total AQ
+    // Must have nonzero totals. A zero total would also make the record indistinguishable from the
+    // "no ledger" sentinel `getCommitteeAq` returns. Mirrors the gGov registry's totalVotes/totalMembers
+    // guards.
     ensure(totalAq.asUint64() > 0, errTotalAqZero)
+    ensure(totalAccounts.asUint64() > 0, errTotalAccountsZero)
 
     const committeeBox = this.committees(committeeId)
     // committee must exist locally
     ensure(committeeBox.exists, errCommitteeNotExists)
-    
+
     const committeeNumId = committeeBox.value.committeeNumId
     const committeeAqBox = this.committeeAq(committeeNumId)
-    
+
     if (committeeAqBox.exists) {
       // Only a pristine ledger may have its total re-set. `ingestAq` rejects zero-AQ accounts, so a
       // zero `ingestedAq` also implies zero `numAccounts` - nothing is lost by rebuilding from scratch.
@@ -432,7 +439,6 @@ export class FracDelegationInstanceContract extends BaseContract {
     ensure(nextNumAccounts <= committeeAq.totalAccounts.asUint64(), errTotalGovsExceeded)
 
     committeeAq.ingestedAq = u32(ingestedAq)
-    committeeAq.totalAccounts = u32(committeeAq.totalAccounts.asUint64())
     committeeAq.numAccounts = u32(nextNumAccounts)
     aqBox.value = clone(committeeAq)
   }
