@@ -332,3 +332,69 @@ export type FracEscrowVotes = {
   /** [topic][option] external gGov votes cast by this escrow */
   votes: Uint32[][]
 }
+
+/**
+ * Input representation of an account's AlgoQuarters for a committee, as emitted by the off-chain
+ * AlgoQuarters pipeline (`AlgoQuartersData.accounts`). Mirrors `AccountWithVotes`: the address-keyed
+ * input form that `FracDelegationInstance.ingestAq` resolves into the account-ID-keyed stored form.
+ */
+export type AccountWithAq = {
+  account: Account
+  /** AlgoQuarters earned by the account over the committee's period. Must be greater than zero. */
+  aq: Uint32
+}
+
+/**
+ * `accountAq` box key: [frac registry account ID, gGov committee numeric ID].
+ *
+ * Keyed by the registry's numeric `accountId` rather than the 32-byte address: 4 bytes instead of 32
+ * saves 11,200 microALGO of box MBR per entry, and `ingestAq` must call the registry anyway to
+ * associate the account with the instance, so the ID costs nothing extra to obtain.
+ */
+export type FracAccountAqKey = [Uint32, Uint16]
+
+/**
+ * A Frac Instance's AlgoQuarters ledger for one gGov committee, opened by `startAqIngest` and
+ * accumulated by `ingestAq`. Keyed by the committee's gGov numeric ID, copied out of the instance's
+ * `committees` snapshot - so a ledger's existence already implies the committee was synced.
+ *
+ * `totalAq` is the off-chain pipeline's declared total for the committee's period
+ * (`AlgoQuartersData.totalAlgoQuarters`); `ingestedAq` sums every `accountAq` box written so far.
+ * `totalAccounts` is the parallel declared account count and `numAccounts` its running tally.
+ * Ingestion is complete - and the committee votable - when BOTH `ingestedAq === totalAq` and
+ * `numAccounts === totalAccounts`
+ *
+ * `totalAq` 0 is never written (`startAqIngest` rejects a zero total), so it doubles as a "no ledger
+ * for this committee" sentinel
+ *
+ * `Uint32` is forced from both ends: the off-chain pipeline already asserts it per account
+ * (`assertAlgoQuartersFitUint32`), and `FracPeriodVoteCache.internal` - the tally AQ votes land in -
+ * is `Uint32[][]`. A tally is bounded by `totalAq`, so the two must share a width. Headroom is
+ * thinner here than for the gGov vote totals this mirrors: realistic AQ totals run ~1e8-1e9 against
+ * the 4.29e9 ceiling, not ~3e6.
+ */
+export type FracCommitteeAq = {
+  /** Total AlgoQuarters declared for the committee's period. Greater than zero. */
+  totalAq: Uint32
+  /** Sum of every ingested account's AlgoQuarters. Never exceeds `totalAq`. */
+  ingestedAq: Uint32
+  /** Total number of accounts expected for the committee's period. Greater than zero. */
+  totalAccounts: Uint32
+  /**
+   * Number of `accountAq` boxes standing for this committee. Accumulated by `ingestAq` and checked
+   * against `totalAccounts`: a batch may never push it past the declared total, and
+   * `getCommitteeAq(mustBeComplete)` requires the two to be equal.
+   * `ingestedAq === 0` implies `numAccounts === 0`.
+   */
+  numAccounts: Uint32
+}
+
+/** Empty/"not found" AlgoQuarters ledger. `totalAq` 0 is never written by `startAqIngest`. */
+export function getEmptyFracCommitteeAq(): FracCommitteeAq {
+  return {
+    totalAq: u32(0),
+    ingestedAq: u32(0),
+    totalAccounts: u32(0),
+    numAccounts: u32(0),
+  }
+}

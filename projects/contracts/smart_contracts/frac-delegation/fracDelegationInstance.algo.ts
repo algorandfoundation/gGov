@@ -19,26 +19,40 @@ import {
 import { compileArc4, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
 import {
+  errAccountAqExists,
+  errAqIncomplete,
+  errAqNotStarted,
   errCommitteeNotExists,
   errGGovHasVotes,
   errGGovNotReady,
   errGGovPeriodNotExists,
+  errIngestedAqNotZero,
   errNoEscrows,
   errPeriodAppMismatch,
   errRegistryMissing,
+  errTotalAccountsZero,
+  errTotalAqExceeded,
+  errTotalAqZero,
+  errTotalGovsExceeded,
   errUnauthorized,
+  errZeroAq,
 } from '../base/errors.algo'
 import {
+  AccountWithAq,
   CommitteeId,
+  FracAccountAqKey,
+  FracCommitteeAq,
   FracEscrowVotes,
   FracInstanceCommittee,
   FracInstancePeriod,
   FracPeriodEscrowKey,
   FracPeriodVoteCache,
+  getEmptyFracCommitteeAq,
 } from '../base/types.algo'
-import { ensure, u32, u8 } from '../base/utils.algo'
+import { ensure, ensureExtra, u32, u8 } from '../base/utils.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
+import { FracDelegationRegistryContract } from './fracDelegationRegistry.algo'
 
 /**
  * Fractional Delegation Instance: per-protocol delegation contract.
@@ -82,6 +96,20 @@ export class FracDelegationInstanceContract extends BaseContract {
    * `syncPeriod`, one box per escrow of the committee snapshot the period is bound to.
    */
   periodEscrowVotes = BoxMap<FracPeriodEscrowKey, FracEscrowVotes>({ keyPrefix: 'E' })
+  /**
+   * Per-committee AlgoQuarters ledger, opened by `startAqIngest` and accumulated by `ingestAq`.
+   * Keyed by the committee's gGov numeric ID as recorded in the `committees` snapshot, NOT by the
+   * 32-byte committee ID: `ingestAq` then needs neither a 32-byte argument nor a `committees` box
+   * reference, and a reference slot is the scarcest thing that call has.
+   */
+  committeeAq = BoxMap<Uint16, FracCommitteeAq>({ keyPrefix: 'A' })
+  /**
+   * Per-[account, committee] ingested AlgoQuarters, written by `ingestAq`. Keyed by the frac
+   * registry's numeric account ID, which is what makes an account's own weight a single O(1) box
+   * read at internal-vote time - the reason this is a BoxMap and not a packed superbox like the gGov
+   * registry's committee members, which can only be read back via an offset hint.
+   */
+  accountAq = BoxMap<FracAccountAqKey, Uint32>({ keyPrefix: 'q' })
 
   // ── Create ────────────────────────────────────────────────────────
 
@@ -143,6 +171,16 @@ export class FracDelegationInstanceContract extends BaseContract {
     const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, Bytes`gGovRegistryApp`)
     ensure(exists && appId > 0, errRegistryMissing)
     return Application(appId)
+  }
+
+  /**
+   * The bound frac registry, as an `Application` for inner ABI calls. Unlike `resolveAdmin` and
+   * friends - which peek at the registry's global state - `ingestAq` has to actually call it, so it
+   * needs the app rather than a field out of it.
+   */
+  protected resolveRegistryApp(): Application {
+    ensure(this.registryApp.value > 0, errRegistryMissing)
+    return Application(this.registryApp.value)
   }
 
   /** Caller must be the configured registry application (inner app call). */
@@ -283,6 +321,165 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
     this.committees(committeeId).value = clone(committee)
     return committee
+  }
+
+  // ── AlgoQuarters ──────────────────────────────────────────────────
+
+  /**
+   * Open (or re-open) the AlgoQuarters ledger for gGov committee `committeeId`. Operator only.
+   *
+   * `totalAq` is the off-chain pipeline's declared AQ total for the committee's period; `ingestAq`
+   * accumulates towards it and may never pass it, so a miscounted total surfaces as a failed ingest
+   * rather than a silently wrong voting denominator. `totalAccounts` is the parallel declared count of
+   * accounts, checked the same way - both must be reached for the ledger to count as complete, mirroring
+   * the gGov registry's `totalMembers`/`totalVotes` pair.
+   *
+   * Requires the committee to be synced locally (`syncCommittee`). That snapshot supplies the
+   * `committeeNumId` every later call keys by, and it is the only thing binding this ledger to a real
+   * gGov committee - `syncCommittee` reads the committee with `mustBeComplete`, so a ledger can never
+   * be opened against a half-ingested member set.
+   *
+   * Re-runnable, but only while the ledger is pristine: once any AQ have been ingested the total is
+   * frozen, because moving it would silently redefine completeness under the accounts already
+   * written. There is no un-ingest path yet, so a ledger filled against a bad total cannot currently
+   * be reset.
+   * @param committeeId 32-byte gGov committee ID, as synced by `syncCommittee`
+   * @param totalAq Total AlgoQuarters for the committee's period. Must be greater than zero.
+   * @param totalAccounts Total number of accounts expected for the committee's period. Must be greater than zero.
+   * @returns The opened ledger
+   */
+  public startAqIngest(committeeId: CommitteeId, totalAq: Uint32, totalAccounts: Uint32): FracCommitteeAq {
+    this.ensureCallerIsOperator()
+    // Must have nonzero totals. A zero total would also make the record indistinguishable from the
+    // "no ledger" sentinel `getCommitteeAq` returns. Mirrors the gGov registry's totalVotes/totalMembers
+    // guards.
+    ensure(totalAq.asUint64() > 0, errTotalAqZero)
+    ensure(totalAccounts.asUint64() > 0, errTotalAccountsZero)
+
+    const committeeBox = this.committees(committeeId)
+    // committee must exist locally
+    ensure(committeeBox.exists, errCommitteeNotExists)
+
+    const committeeNumId = committeeBox.value.committeeNumId
+    const committeeAqBox = this.committeeAq(committeeNumId)
+
+    if (committeeAqBox.exists) {
+      // Only a pristine ledger may have its total re-set. `ingestAq` rejects zero-AQ accounts, so a
+      // zero `ingestedAq` also implies zero `numAccounts` - nothing is lost by rebuilding from scratch.
+      ensure(committeeAqBox.value.ingestedAq.asUint64() === 0, errIngestedAqNotZero)
+    }
+
+    const committeeAq: FracCommitteeAq = {
+      totalAq,
+      totalAccounts,
+      ingestedAq: u32(0),
+      numAccounts: u32(0),
+    }
+    committeeAqBox.value = clone(committeeAq)
+    return committeeAq
+  }
+
+  /**
+   * Ingest a batch of accounts' AlgoQuarters into committee `committeeNumId`'s ledger. Operator only.
+   *
+   * Each account is resolved to its frac-registry numeric ID by an inner call to the registry's
+   * `getOrCreateAccountWithInstance`, which mints an ID on first sight and associates the account
+   * with this instance. That is one inner call per account - which is why no account-ID hint is
+   * needed, and why an account that exists but was never linked here gets linked as a side effect.
+   * Costly in fees (the SDK must cover them via `extraFee`), but every inner app call adds 700 to the
+   * group's opcode pool, so the loop largely pays for its own execution.
+   *
+   * Append-only per account: an account already ingested for this committee is rejected rather than
+   * overwritten, so a replayed batch fails loudly instead of double-counting `ingestedAq`. Batches
+   * are otherwise unordered and independent - unlike the gGov registry's packed superbox this is a
+   * BoxMap, so there is no offset to maintain and no ascending-account-ID rule to honour.
+   *
+   * The instance app account pays ~6,900 microALGO of box MBR per account, and the REGISTRY app
+   * account pays ~19,700 microALGO for every account it has never seen before. Keep both funded:
+   * there is no funding path from here, the group fails atomically if either is short, and an
+   * underfunded registry also breaks the client-side simulate that populates box references.
+   * @param committeeNumId gGov committee numeric ID, from `startAqIngest`
+   * @param accountAqs Accounts and their AlgoQuarters. Any order; no duplicates within or across batches.
+   */
+  public ingestAq(committeeNumId: Uint16, accountAqs: AccountWithAq[]): void {
+    this.ensureCallerIsOperator()
+    const registryApp = this.resolveRegistryApp()
+
+    // ensure aq import has started
+    const aqBox = this.committeeAq(committeeNumId)
+    ensure(aqBox.exists, errAqNotStarted)
+    const committeeAq = clone(aqBox.value)
+
+    let sumAq: uint64 = 0
+    for (const accountAq of clone(accountAqs)) {
+      // zero account AQ is not valid
+      ensure(accountAq.aq.asUint64() > 0, errZeroAq)
+
+      // get account ID, creating it if this is the first sighting of the account
+      // also associates account with this instance on the frac registry
+      const registryAccount = compileArc4(FracDelegationRegistryContract).call.getOrCreateAccountWithInstance({
+        appId: registryApp,
+        args: [accountAq.account, this.instanceNumId.value],
+      }).returnValue
+
+      // if box exists, the account has already been ingested for this committee
+      const box = this.accountAq([registryAccount.accountId, committeeNumId])
+      ensureExtra(!box.exists, errAccountAqExists, accountAq.account.bytes)
+      box.value = accountAq.aq
+
+      sumAq += accountAq.aq.asUint64()
+    }
+
+    // tally of ingested AQ updated with this run's AQ sum
+    const ingestedAq: uint64 = committeeAq.ingestedAq.asUint64() + sumAq
+    // ensure we do not exceed the stated total AQ
+    ensure(ingestedAq <= committeeAq.totalAq.asUint64(), errTotalAqExceeded)
+    // ensure we do not exceed the stated total accounts
+    const nextNumAccounts: uint64 = committeeAq.numAccounts.asUint64() + accountAqs.length
+    ensure(nextNumAccounts <= committeeAq.totalAccounts.asUint64(), errTotalGovsExceeded)
+
+    committeeAq.ingestedAq = u32(ingestedAq)
+    committeeAq.numAccounts = u32(nextNumAccounts)
+    aqBox.value = clone(committeeAq)
+  }
+
+  /**
+   * This instance's AlgoQuarters ledger for committee `committeeNumId`, or an empty record if
+   * `startAqIngest` never opened one - `totalAq` 0 is the "no ledger" sentinel, since a real ledger
+   * always has a non-zero total. Mirrors `GGovRegistry.getCommitteeMetadata`, sentinel and all.
+   * @param committeeNumId gGov committee numeric ID
+   * @param mustBeComplete Whether to require that every declared AlgoQuarter has been ingested
+   */
+  @abimethod({ readonly: true })
+  public getCommitteeAq(committeeNumId: Uint16, mustBeComplete: boolean): FracCommitteeAq {
+    const aqBox = this.committeeAq(committeeNumId)
+    if (!aqBox.exists) {
+      ensure(!mustBeComplete, errAqNotStarted)
+      return getEmptyFracCommitteeAq()
+    }
+    const committeeAq = clone(aqBox.value)
+    // The guard internal voting will need: weight is split against `totalAq`, so a half-ingested
+    // ledger would hand early voters an inflated share. Same role as the `mustBeComplete` flag
+    // `syncCommittee` passes into the gGov registry one level up.
+    if (mustBeComplete) {
+      ensure(committeeAq.ingestedAq === committeeAq.totalAq, errAqIncomplete)
+      ensure(committeeAq.numAccounts === committeeAq.totalAccounts, errAqIncomplete)
+    }
+    return committeeAq
+  }
+
+  /**
+   * `accountId`'s ingested AlgoQuarters in committee `committeeNumId`, or 0 if it has none.
+   * Non-throwing, like the gGov registry's `tryGetGovVotingPower`: an account with no AlgoQuarters
+   * simply has no weight, which is not an error at the point of asking.
+   * @param accountId Frac registry numeric account ID
+   * @param committeeNumId gGov committee numeric ID
+   */
+  @abimethod({ readonly: true })
+  public tryGetAccountAq(accountId: Uint32, committeeNumId: Uint16): Uint32 {
+    const box = this.accountAq([accountId, committeeNumId])
+    if (!box.exists) return u32(0)
+    return box.value
   }
 
   // ── Periods ───────────────────────────────────────────────────────

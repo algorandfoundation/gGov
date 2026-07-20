@@ -15,6 +15,34 @@ export const REF_SLOTS_PER_APP_CALL = 8
 export const BODY_CHUNK_BYTES = 2000
 
 /**
+ * Accounts per `ingestAq` call.
+ *
+ * The hard ceiling is the 2048-byte app-arg cap, not references: one entry encodes to 36 bytes
+ * (32-byte address + uint32), so `4 selector + 2 committeeNumId + 2 array length + 36N <= 2048`
+ * permits 56. Held well below that because references are what shape the group: N accounts need
+ * `2N + 3` reference slots (see `makeIngestAqTxns`), and at 40 that is 83 slots = 11 app calls,
+ * leaving room for the opcode-budget `increaseBudget` txn on top without passing the 16-txn limit.
+ */
+export const MAX_ACCOUNTS_PER_INGEST_AQ = 40
+
+/**
+ * Box MBR (µAlgo) the INSTANCE app account pays per ingested account: an `accountAq` box of
+ * `2500 + 400 * (7-byte name + 4-byte value)`. Charged once per (account, committee).
+ */
+export const AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS = 6_900n
+
+/**
+ * Box MBR (µAlgo) the REGISTRY app account pays per account it has never seen: an `accounts` box of
+ * `2500 + 400 * (33-byte name + ~10-byte value)`. Charged once per account across the whole frac
+ * system, so a committee whose accounts are all already known costs nothing here.
+ *
+ * `ingestAq` has no funding path to the registry - top the registry app account up out of band
+ * before a large ingest, or its box writes fail the group (and, before that, fail the simulate that
+ * populates box references, which surfaces as an opaque resource error).
+ */
+export const AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS = 19_700n
+
+/**
  * Default MBR (µAlgo) sent from admin to registry per createInstance call.
  * Covers the spawned instance app's account MBR: 100k base + X*28.5k global ints +
  * Y*50k global bytes + Z*100k extra pages ≈ ????. 1 ALGO buys a healthy buffer

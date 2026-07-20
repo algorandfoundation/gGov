@@ -6,7 +6,7 @@ export const errCommitteeExists = 'ERR:C_EX' // Committee already exists
 export const errCommitteeNotExists = 'ERR:C_NX' // Committee does not exist
 export const errPeriodEndLessThanStart = 'ERR:PE_LT' // Period end must be greater than period start
 export const errIngestedVotesNotZero = 'ERR:IV_NZ' // Cannot unregister committee with ingested votes (votes must be zero)
-export const errTotalGovsExceeded = 'ERR:TX_XC' // Total govs exceeded
+export const errTotalGovsExceeded = 'ERR:TX_XC' // Total accounts exceeded
 export const errTotalVotesExceeded = 'ERR:TV_XC' // Total votes exceeded
 export const errZeroVotes = 'ERR:V_Z' // Gov votes must be greater than zero
 export const errTotalVotesMismatch = 'ERR:TV_MM' // Total votes mismatch - ingested votes must equal total votes when finished
@@ -88,3 +88,13 @@ export const errInstanceAppNotExists = 'ERR:FI_NX' // Instance does not exist
 export const errEscrowAssigned = 'ERR:FE_AS' // Escrow account is already assigned to an instance
 export const errNoEscrows = 'ERR:FE_NX' // Instance has no registered escrows
 export const errPeriodAppMismatch = 'ERR:FP_MM' // Period app does not match the synced period record
+
+// Frac AlgoQuarters (AQ) ingestion
+export const errTotalAqZero = 'ERR:FA_TZ' // Total AlgoQuarters must be greater than zero
+export const errTotalAccountsZero = 'ERR:FA_AZ' // Total accounts must be greater than zero
+export const errZeroAq = 'ERR:FA_Z' // Account AlgoQuarters must be greater than zero
+export const errAqNotStarted = 'ERR:FA_NS' // AlgoQuarters ingest has not been started for this committee
+export const errIngestedAqNotZero = 'ERR:FA_NZ' // Cannot re-set total AlgoQuarters: AlgoQuarters have already been ingested
+export const errAccountAqExists = 'ERR:FA_EX' // Account AlgoQuarters already ingested for this committee
+export const errTotalAqExceeded = 'ERR:FA_XC' // Ingested AlgoQuarters exceed the committee total
+export const errAqIncomplete = 'ERR:FA_NC' // AlgoQuarters ingest is incomplete - not all AlgoQuarters have been ingested

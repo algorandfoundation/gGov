@@ -6,6 +6,7 @@ import { FracDelegationRegistryClient } from '../generated/FracDelegationRegistr
 import {
   FracDelegationInstanceClient,
   APP_SPEC as INSTANCE_APP_SPEC,
+  FracCommitteeAq,
   FracEscrowVotes,
   FracInstanceCommittee,
   FracInstancePeriod,
@@ -142,6 +143,39 @@ export class FracDelegationReaderSDK {
   ): Promise<FracInstanceCommittee | undefined> {
     const client = await this.getInstanceReadClient(instanceNumId)
     return undefinedIfBoxMissing(() => client.state.box.committees.value(committeeIdToRaw(committeeId)))
+  }
+
+  /**
+   * This instance's AlgoQuarters ledger for a committee, or undefined if `startAqIngest` has never
+   * opened one for it.
+   *
+   * Keyed by the committee's gGov *numeric* ID, not its 32-byte ID — `getCommittee(instanceNumId,
+   * committeeId)` resolves that (`committeeNumId`), and `startAqIngest` returns it. Ingestion is
+   * complete when `ingestedAq === totalAq`.
+   */
+  async getCommitteeAq(
+    instanceNumId: bigint | number,
+    committeeNumId: bigint | number,
+  ): Promise<FracCommitteeAq | undefined> {
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return undefinedIfBoxMissing(() => client.state.box.committeeAq.value(BigInt(committeeNumId)))
+  }
+
+  /**
+   * `accountId`'s ingested AlgoQuarters in a committee, or 0 if it has none — mirroring the
+   * contract's non-throwing `tryGetAccountAq`, since an account with no AlgoQuarters simply has no
+   * weight. Account IDs come from the frac registry (`FracDelegationRegistrySDK.getAccountIdMap`).
+   */
+  async getAccountAq(
+    instanceNumId: bigint | number,
+    accountId: bigint | number,
+    committeeNumId: bigint | number,
+  ): Promise<number> {
+    const client = await this.getInstanceReadClient(instanceNumId)
+    const aq = await undefinedIfBoxMissing(() =>
+      client.state.box.accountAq.value([BigInt(accountId), BigInt(committeeNumId)]),
+    )
+    return aq ?? 0
   }
 
   /**
