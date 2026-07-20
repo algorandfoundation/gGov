@@ -184,6 +184,21 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriterWithClient()
   @wrapErrors()
+  makeSetFracRegistryAppTxns({
+    appId,
+    builder,
+  }: GGovRegistryContractArgs['setFracRegistryApp(uint64)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.setFracRegistryApp({ args: { appId } })
+    return builder
+  }
+
+  setFracRegistryApp = this.makeTxnExecutor({
+    maker: this.makeSetFracRegistryAppTxns,
+  })
+
+  @requireWriterWithClient()
+  @wrapErrors()
   makeSetOperatorTxns({
     account,
     builder,
@@ -504,8 +519,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   /**
    * Deploy a fresh `GGovRegistry` app, seed its MBR, upload the GGovPeriod approval bytecode
-   * into the registry's approval box, and optionally configure the xGov registry app id and
-   * operator account. Returns the writer-enabled registry SDK bound to the new app.
+   * into the registry's approval box, and optionally configure the xGov registry app id, the
+   * frac-delegation registry app id, and the operator account. Returns the writer-enabled
+   * registry SDK bound to the new app.
    *
    * The period approval bytecode comes from the generated `GGovPeriodClient` app spec
    * (`PERIOD_APP_SPEC.byteCode.approval`), so the version uploaded matches this build.
@@ -515,6 +531,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     deployer,
     operatorAccount,
     xGovRegistryAppId,
+    fracRegistryAppId,
     initialFundingAlgos,
     firstPeriodId,
     update = false,
@@ -523,6 +540,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     deployer: SenderWithSigner
     operatorAccount?: string | Address
     xGovRegistryAppId?: bigint | number
+    fracRegistryAppId?: bigint | number
     initialFundingAlgos?: bigint | number
     /**
      * Id to assign to the first period created on this registry. Use to continue numbering
@@ -576,6 +594,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
     if (xGovRegistryAppId !== undefined) {
       await sdk.setXGovRegistryApp({ appId: BigInt(xGovRegistryAppId) })
+    }
+    if (fracRegistryAppId !== undefined) {
+      await sdk.setFracRegistryApp({ appId: BigInt(fracRegistryAppId) })
     }
     if (operatorAccount !== undefined) {
       const op = typeof operatorAccount === 'string' ? operatorAccount : operatorAccount.toString()

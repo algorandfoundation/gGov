@@ -5,6 +5,7 @@ import pMap from 'p-map'
 import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
+  FracEscrowInstance,
   FracInstance,
   FracRegAccount,
   APP_SPEC,
@@ -68,6 +69,16 @@ export class FracDelegationRegistryReaderSDK {
   /** Instance numeric ID an escrow account is assigned to, or undefined if unassigned. */
   async getEscrowInstance(account: string): Promise<number | undefined> {
     return undefinedIfBoxMissing(() => this.readClient.state.box.escrows.value(account))
+  }
+
+  /**
+   * Richer resolution of an escrow's assignment, returning the full `FracEscrowInstance` record,
+   * or undefined if the escrow is unassigned. Unlike `getEscrowInstance` (a direct box read of
+   * just the numeric ID), this also resolves the instance app ID, in one simulate call.
+   */
+  async getEscrow(account: string): Promise<FracEscrowInstance | undefined> {
+    const { return: result } = await this.readClient.send.getEscrow({ args: { account } })
+    return result!.instanceNumId === 0 ? undefined : result!
   }
 
   /** Read all registry global state, plus the current network round. */

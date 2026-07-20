@@ -33,6 +33,25 @@ describe('GGovRegistry admin', () => {
       expect(appInfo.extraProgramPages).toBe(3)
       expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
     })
+
+    test('createRegistry applies optional configuration', async () => {
+      // note: normally frac registry will be deployed after ggov registry, but this test exercises the config
+      const { testAccount: admin } = localnet.context
+      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
+      const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const { sdk } = await GGovRegistrySDK.createRegistry({
+        algorand: localnet.algorand,
+        deployer: { sender: admin, signer: localnet.algorand.account.getSigner(admin) },
+        operatorAccount: operator,
+        xGovRegistryAppId: 12345n,
+        fracRegistryAppId: 67890n,
+      })
+
+      expect(await sdk.readClient.state.global.operator()).toBe(operator.toString())
+      expect(await sdk.readClient.state.global.xGovRegistryApp()).toBe(12345n)
+      expect(await sdk.readClient.state.global.fracRegistryApp()).toBe(67890n)
+    })
   })
 
   // Admin configs and management
@@ -52,6 +71,18 @@ describe('GGovRegistry admin', () => {
       const { sdk } = await deployRegistry(localnet, testAccount)
       await sdk.setXGovRegistryApp({ appId: 12345n })
       expect(await sdk.readClient.state.global.xGovRegistryApp()).toBe(12345n)
+    })
+  })
+
+  describe('setFracRegistryApp', () => {
+    test('admin can set the frac-delegation registry app id', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      // Key is never written on deploy, so it reads back undefined until the admin sets it.
+      expect(await sdk.readClient.state.global.fracRegistryApp()).toBeUndefined()
+
+      await sdk.setFracRegistryApp({ appId: 12345n })
+      expect(await sdk.readClient.state.global.fracRegistryApp()).toBe(12345n)
     })
   })
 
@@ -219,6 +250,10 @@ describe('GGovRegistry admin', () => {
 
     test('non-admin cannot set the xGov registry app id', async () => {
       await expect(nonAdminSDK.setXGovRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot set the frac-delegation registry app id', async () => {
+      await expect(nonAdminSDK.setFracRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot setOperator', async () => {
