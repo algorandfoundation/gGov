@@ -234,7 +234,6 @@ export type FracInstance = {
   name: string
   numAccounts: uint64
   numEscrows: uint64
-  // forgetting one here
 }
 
 /**

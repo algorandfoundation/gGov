@@ -5,6 +5,7 @@ import { FracDelegationRegistryReaderSDK, SIMULATE_PARAMS } from '../registry'
 import { FracDelegationRegistryClient } from '../generated/FracDelegationRegistryClient'
 import {
   FracDelegationInstanceClient,
+  FracDelegationInstanceComposer,
   APP_SPEC as INSTANCE_APP_SPEC,
   FracCommitteeAq,
   FracEscrowVotes,
@@ -15,6 +16,8 @@ import {
 import { getConstructorConfig } from '../networkConfig'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors'
 import { undefinedIfBoxMissing } from '../util/boxes'
+import { chunk } from '../util/chunk'
+import { chunked } from '../util/chunked'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { ReaderConstructorArgs } from './types'
 
@@ -176,6 +179,64 @@ export class FracDelegationReaderSDK {
       client.state.box.accountAq.value([BigInt(accountId), BigInt(committeeNumId)]),
     )
     return aq ?? 0
+  }
+
+  /**
+   * Batch `getAccountAq` via `logAccountAqs`: index-aligned with `accountIds`, 0 for an account
+   * with no AQ in the committee. Account IDs come from `registry.getAccountIdMap`.
+   */
+  async getAccountAqs(
+    instanceNumId: bigint | number,
+    committeeNumId: bigint | number,
+    accountIds: (bigint | number)[],
+  ): Promise<number[]> {
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return this._getAccountAqsChunked(accountIds, client, committeeNumId)
+  }
+
+  /**
+   * Each simulate group packs up to two 63-id `logAccountAqs` calls: every id is one `accountAq`
+   * box reference, and even with `allowUnnamedResources` a simulate group carries at most 128
+   * unnamed refs (8 per txn x the 16-txn group capacity). The decorator fans out larger requests
+   * concurrently. 126 used vs 128 possible as the additional app call for only 2 accounts is
+   * not worth the overhead.
+   */
+  @chunked(126)
+  private async _getAccountAqsChunked(
+    accountIds: (bigint | number)[],
+    client: FracDelegationInstanceClient,
+    committeeNumId: bigint | number,
+  ): Promise<number[]> {
+    if (accountIds.length === 0) return []
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    for (const ids of chunk(accountIds, 63)) {
+      builder = builder.logAccountAqs({ args: { committeeNumId, accountIds: ids.map(BigInt) } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map((log) => Number(getABIDecodedValue(new Uint8Array(log!), 'uint32', client.appSpec.structs)))
+  }
+
+  /**
+   * Map each account address to its ingested AQ in the committee: 0 if unregistered on the frac
+   * registry or not ingested. Defaults to every registered account when `accounts` is omitted.
+   */
+  async getAccountAqMap(
+    instanceNumId: bigint | number,
+    committeeNumId: bigint | number,
+    accounts?: string[],
+  ): Promise<Map<string, number>> {
+    accounts = accounts ?? (await this.registry.getAccounts())
+    const idMap = await this.registry.getAccountIdMap(accounts)
+    const registered = accounts.filter((account) => (idMap.get(account) ?? 0) > 0)
+    const aqs = await this.getAccountAqs(
+      instanceNumId,
+      committeeNumId,
+      registered.map((account) => idMap.get(account)!),
+    )
+    const map = new Map<string, number>(accounts.map((account) => [account, 0]))
+    registered.forEach((account, index) => map.set(account, aqs[index]))
+    return map
   }
 
   /**

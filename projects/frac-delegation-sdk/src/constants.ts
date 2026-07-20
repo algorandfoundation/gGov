@@ -28,6 +28,8 @@ export const MAX_ACCOUNTS_PER_INGEST_AQ = 40
 /**
  * Box MBR (µAlgo) the INSTANCE app account pays per ingested account: an `accountAq` box of
  * `2500 + 400 * (7-byte name + 4-byte value)`. Charged once per (account, committee).
+ *
+ * TODO? Calculate these vs real contracts with simulate?
  */
 export const AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS = 6_900n
 
@@ -39,6 +41,8 @@ export const AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS = 6_900n
  * `ingestAq` has no funding path to the registry - top the registry app account up out of band
  * before a large ingest, or its box writes fail the group (and, before that, fail the simulate that
  * populates box references, which surfaces as an opaque resource error).
+ *
+ * TODO? Calculate these vs real contracts with simulate?
  */
 export const AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS = 19_700n
 

@@ -139,6 +139,40 @@ describe('FracDelegationInstance.ingestAq', () => {
     })
   })
 
+  // logAccountAqs takes only arc4 value types (Uint16, Uint32[]), so unlike the ingestion loop it
+  // clears the 1.1.0 reference-type barrier and is fully unit-testable with directly seeded boxes.
+  describe('logAccountAqs', () => {
+    /** Decode the 4-byte big-endian Uint32 log lines of the last executed group's first txn. */
+    const loggedUint32s = (): number[] => {
+      const { appLogs } = ctx.txn.lastGroup.transactions[0] as unknown as { appLogs?: { bytes: string }[] }
+      return (appLogs ?? []).map((entry) => Buffer.from(entry.bytes, 'hex').readUInt32BE(0))
+    }
+
+    it('logs each account AQ in input order, 0 for accounts without an entry', () => {
+      const { contract } = setup(ctx)
+      // Routed (readonly) methods refuse to run while the app is still "creating".
+      contract.createApplication(u16(1), 'test')
+      contract.accountAq([u32(1), NUM]).value = u32(100)
+      contract.accountAq([u32(3), NUM]).value = u32(250)
+      // Same account in another committee must not leak into this committee's lines.
+      contract.accountAq([u32(2), u16(9)]).value = u32(999)
+
+      contract.logAccountAqs(NUM, [u32(1), u32(2), u32(3), u32(7)])
+
+      expect(loggedUint32s()).toEqual([100, 0, 250, 0])
+    })
+
+    it('logs nothing for an empty id list', () => {
+      const { contract } = setup(ctx)
+      contract.createApplication(u16(1), 'test')
+      contract.accountAq([u32(1), NUM]).value = u32(100)
+
+      contract.logAccountAqs(NUM, [])
+
+      expect(loggedUint32s()).toEqual([])
+    })
+  })
+
   // ───────────────────────────────────────────────────────────────────────────
   // Ingestion path — everything that needs a NON-EMPTY batch (steps 4a-6). BLOCKED on the pinned
   // toolchain: `clone(accountAqs)` fails on the Account reference field, and step 4b additionally

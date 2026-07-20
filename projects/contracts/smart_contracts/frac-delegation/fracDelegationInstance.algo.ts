@@ -482,6 +482,23 @@ export class FracDelegationInstanceContract extends BaseContract {
     return box.value
   }
 
+  /**
+   * Log each account's ingested AlgoQuarters in committee `committeeNumId`, one Uint32 line per
+   * entry of `accountIds`, in input order. 0 for an account with no entry - unambiguous, since
+   * `ingestAq` rejects zero-AQ accounts. Readonly - meant to be simulated with `allowMoreLogging`.
+   * Batch shape like the registry's `logAccounts`: the accountAq box key puts the committee in the
+   * suffix, so callers supply the account IDs to probe.
+   * @param committeeNumId gGov committee numeric ID
+   * @param accountIds Frac registry numeric account IDs
+   */
+  @abimethod({ readonly: true })
+  public logAccountAqs(committeeNumId: Uint16, accountIds: Uint32[]): void {
+    for (const accountId of accountIds) {
+      const box = this.accountAq([accountId, committeeNumId])
+      log(encodeArc4(box.exists ? box.value : u32(0)))
+    }
+  }
+
   // ── Periods ───────────────────────────────────────────────────────
 
   /**
