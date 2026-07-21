@@ -54,14 +54,16 @@ const createReadyPeriod = async (ggovSdk: GGovSDK, committeeId: Uint8Array, topi
  * The full voting fixture: a gGov committee whose members are the instance's escrows (with the
  * given per-escrow powers), every escrow delegated to the instance app account, a ready + synced
  * period shaped to `topics` (last option of each topic is Abstain by convention), and an open AQ
- * ledger of `totalAq`. Tests ingest their own voters — the ledger must reach exactly `totalAq`
- * before `vote` passes its completeness gate.
+ * ledger of `totalAq`/`totalAccounts`. Tests ingest their own voters — the ledger must reach both
+ * exactly (`ingestedAq === totalAq` AND `numAccounts === totalAccounts`) before `vote` passes its
+ * completeness gate, so `totalAccounts` must match the account count each test ingests (default 1).
  */
 const setupVoting = async (
   localnet: AlgorandFixture,
   {
     powers = [15, 15, 20],
     totalAq = 100,
+    totalAccounts = 1,
     topics = [['A', 'B', 'Abstain']],
     startIngest = true,
     delegate = true,
@@ -122,7 +124,7 @@ const setupVoting = async (
   await sdk.syncPeriod({ instanceNumId: instanceId, periodApp: periodAppId })
   const committeeNumId = (await sdk.getCommittee(instanceId, committeeId))!.committeeNumId
   if (startIngest) {
-    await sdk.startAqIngest({ instanceNumId: instanceId, committeeId, totalAq })
+    await sdk.startAqIngest({ instanceNumId: instanceId, committeeId, totalAq, totalAccounts })
   }
 
   // The combined FracDelegationSDK addresses many instances by `instanceNumId`; like the
@@ -227,7 +229,7 @@ describe('FracDelegationInstance vote', () => {
     })
 
     test('AQ that never votes implicitly counts for the last option', async () => {
-      const ctx = await setupVoting(localnet, { totalAq: 1000 })
+      const ctx = await setupVoting(localnet, { totalAq: 1000, totalAccounts: 2 })
       await ingestNonVoter(ctx, 900)
       const voter = await addVoter(localnet, ctx, 100)
 
@@ -250,7 +252,7 @@ describe('FracDelegationInstance vote', () => {
     })
 
     test('votes from multiple accounts accumulate', async () => {
-      const ctx = await setupVoting(localnet)
+      const ctx = await setupVoting(localnet, { totalAccounts: 2 })
       const [v1, v2] = [await addVoter(localnet, ctx, 60), await addVoter(localnet, ctx, 40)]
 
       await v1.sdk.vote({ periodId: ctx.periodId, topicVotes: [[60, 0, 0]] })

@@ -1,16 +1,14 @@
 # gov-fixtures
 
-JSON fixtures captured from the **old governance API** (read-only Cloudflare
-replacement for the legacy Django platform), mirroring the **last voting
+JSON fixtures captured from the **governance API**, mirroring the **last voting
 period**:
 
 - Period: `governance-period-15` — "Governance Period 15"
 - Voting session: `period-15-voting-session-1` — _xGov Council Election 2025_
   (22 candidate topics, each with Yes / No / Abstain options)
 
-Source API: `https://governance.algorand.foundation/api`
-(repo: `cloudflare-gov-api`). Captured 2026-06-08. Data is frozen, so these
-responses are stable.
+Source API: `https://governance.algorand.foundation/api`. Captured 2026-06-08.
+Data is frozen, so these responses are stable.
 
 ## Files → endpoint
 

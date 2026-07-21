@@ -368,11 +368,12 @@ export type FracAccountAqKey = [Uint32, Uint16]
  *
  * `totalAq` is the off-chain pipeline's declared total for the committee's period
  * (`AlgoQuartersData.totalAlgoQuarters`); `ingestedAq` sums every `accountAq` box written so far.
- * Ingestion is complete - and the committee votable - when the two are equal, mirroring the gGov
- * registry's `ingestedVotes === totalVotes` rule.
+ * `totalAccounts` is the parallel declared account count and `numAccounts` its running tally.
+ * Ingestion is complete - and the committee votable - when BOTH `ingestedAq === totalAq` and
+ * `numAccounts === totalAccounts`
  *
  * `totalAq` 0 is never written (`startAqIngest` rejects a zero total), so it doubles as a "no ledger
- * for this committee" sentinel, exactly as `CommitteeMetadata.numericId` 0 does on the gGov side.
+ * for this committee" sentinel
  *
  * `Uint32` is forced from both ends: the off-chain pipeline already asserts it per account
  * (`assertAlgoQuartersFitUint32`), and `FracPeriodVoteCache.internal` - the tally AQ votes land in -
@@ -385,10 +386,13 @@ export type FracCommitteeAq = {
   totalAq: Uint32
   /** Sum of every ingested account's AlgoQuarters. Never exceeds `totalAq`. */
   ingestedAq: Uint32
+  /** Total number of accounts expected for the committee's period. Greater than zero. */
+  totalAccounts: Uint32
   /**
-   * Number of `accountAq` boxes standing for this committee. Progress and MBR accounting only -
-   * nothing asserts it against a declared count, as there is no `totalMembers` analogue here. Since
-   * `ingestAq` rejects zero-AQ accounts, `ingestedAq === 0` implies `numAccounts === 0`.
+   * Number of `accountAq` boxes standing for this committee. Accumulated by `ingestAq` and checked
+   * against `totalAccounts`: a batch may never push it past the declared total, and
+   * `getCommitteeAq(mustBeComplete)` requires the two to be equal.
+   * `ingestedAq === 0` implies `numAccounts === 0`.
    */
   numAccounts: Uint32
 }
@@ -398,6 +402,7 @@ export function getEmptyFracCommitteeAq(): FracCommitteeAq {
   return {
     totalAq: u32(0),
     ingestedAq: u32(0),
+    totalAccounts: u32(0),
     numAccounts: u32(0),
   }
 }

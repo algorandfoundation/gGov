@@ -48,7 +48,7 @@ describe('FracDelegationInstanceContract vote', () => {
     //   contract.committees(committeeId).value = {
     //     committeeNumId: u16(1), escrowsVotes: [u32(15), u32(15), u32(20)], totalVotes: u32(50),
     //   }
-    //   contract.committeeAq(u16(1)).value = { totalAq: u32(100), ingestedAq: u32(100), numAccounts: u32(1) }
+    //   contract.committeeAq(u16(1)).value = { totalAq: u32(100), ingestedAq: u32(100), totalAccounts: u32(1), numAccounts: u32(1) }
     //   contract.accountAq([u32(1), u16(1)]).value = u32(100)
     //   contract.periodEscrowVotes([u32(1), u8(i)]).value = { votes: [zeros] }
     //   contract.escrows.value = [escrow0, escrow1, escrow2]
