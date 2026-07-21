@@ -1,7 +1,21 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
+import { generateAccount, getApplicationAddress } from 'algosdk'
+import { MAX_ESCROWS_PER_FD_IMPORT } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { errAccountNotExists, errGGovDelegationExists, errUnauthorized } from '../base/errors.algo'
-import { createSDK, deployRegistryWithCommittee, deployXGovMocksAndRegistry, transformedError } from '../common-tests'
+import {
+  errAccountNotExists,
+  errEscrowNotAssigned,
+  errGGovDelegationExists,
+  errUnauthorized,
+} from '../base/errors.algo'
+import {
+  createSDK,
+  deployFracInstanceWithEscrows,
+  deployFracRegistry,
+  deployRegistryWithCommittee,
+  deployXGovMocksAndRegistry,
+  transformedError,
+} from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 
 describe('GGovRegistry delegation', () => {
@@ -179,5 +193,212 @@ describe('GGovRegistry delegation', () => {
       const delegation = await ggovRegistrySDK.getDelegation(delegator.toString())
       expect(delegation.exists).toBe(false)
     })
+  })
+
+  describe('importFracDelegation', () => {
+    test('rejects a batch containing an account that is not a gGov account', async () => {
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = 3
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 10)
+      const escrows = govAccounts.slice(0, numEscrows).map((a) => a.addr.toString())
+
+      const { sdk: fracSdk } = await deployFracInstanceWithEscrows(localnet, escrows, deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+      const outsider = generateAccount().addr.toString()
+
+      await expect(sdk.importFracDelegation({ escrowAccounts: [...escrows, outsider] })).rejects.toThrow(
+        transformedError(errAccountNotExists),
+      )
+      // Fail-loud batch: the valid escrows in the same call did not land either.
+      expect((await sdk.getDelegation(escrows[0])).exists).toBe(false)
+      expect((await sdk.getDelegation(escrows[1])).exists).toBe(false)
+    })
+
+    test('rejects a batch containing an escrow not registered to any instance', async () => {
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = 3
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 10)
+      const escrows = govAccounts.slice(0, numEscrows).map((a) => a.addr.toString())
+      const { sdk: fracSdk } = await deployFracInstanceWithEscrows(localnet, escrows, deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+
+      // A real ingested gGov account that was left off the frac instance, so it clears the accounts
+      // check and fails on the frac side's zero sentinel instead.
+      const unregistered = govAccounts[numEscrows].addr.toString()
+
+      await expect(sdk.importFracDelegation({ escrowAccounts: [...escrows, unregistered] })).rejects.toThrow(
+        transformedError(errEscrowNotAssigned),
+      )
+      // Fail-loud batch: the valid escrows in the same call did not land either.
+      expect((await sdk.getDelegation(escrows[0])).exists).toBe(false)
+      expect((await sdk.getDelegation(escrows[1])).exists).toBe(false)
+    })
+
+    test('SDK refuses a batch over the per-group cap', async () => {
+      const { sdk } = await deployRegistryWithCommittee(localnet, 1)
+      // The guard is client-side and fires before anything is built, so these addresses never need
+      // to exist on either registry — no frac scaffolding required.
+      const tooMany = Array.from({ length: MAX_ESCROWS_PER_FD_IMPORT + 1 }, () => generateAccount().addr.toString())
+
+      await expect(sdk.importFracDelegation({ escrowAccounts: tooMany })).rejects.toThrow(
+        `Too many escrows to import in one transaction group`,
+      )
+    })
+
+    test('delegates every escrow to its instance app address', async () => {
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = 3
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 10)
+      const escrows1 = govAccounts.slice(0, numEscrows).map((a) => a.addr.toString())
+      const escrows2 = govAccounts.slice(numEscrows, numEscrows * 2).map((a) => a.addr.toString())
+      const { sdk: fracSdk, appId: instanceAppId1 } = await deployFracInstanceWithEscrows(localnet, escrows1, deployer)
+      const { appId: instanceAppId2 } = await deployFracInstanceWithEscrows(localnet, escrows2, deployer, {
+        registrySdk: fracSdk.registry,
+      })
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+
+      // import call
+      await sdk.importFracDelegation({ escrowAccounts: escrows1.concat(escrows2) })
+
+      for (const escrow of escrows1) {
+        const delegation = await sdk.getDelegation(escrow)
+        expect(delegation.exists).toBe(true)
+        expect(delegation.delegatee).toBe(getApplicationAddress(instanceAppId1).toString())
+      }
+      for (const escrow of escrows2) {
+        const delegation = await sdk.getDelegation(escrow)
+        expect(delegation.exists).toBe(true)
+        expect(delegation.delegatee).toBe(getApplicationAddress(instanceAppId2).toString())
+      }
+      // Each instance's reverse index lists exactly its own escrows, in import order and with no
+      // bleed between them — addReverseDelegation appends, so the order is part of the contract.
+      expect(await sdk.getDelegators(getApplicationAddress(instanceAppId1).toString())).toEqual(escrows1)
+      expect(await sdk.getDelegators(getApplicationAddress(instanceAppId2).toString())).toEqual(escrows2)
+    })
+
+    test('delegates correctly when every escrow sits on its own instance', async () => {
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = 6
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 10)
+      const escrows = govAccounts.slice(0, numEscrows).map((a) => a.addr.toString())
+      const instanceAppIds: bigint[] = []
+      const { sdk: fracRegistrySdk } = await deployFracRegistry(localnet, deployer)
+      await sdk.setFracRegistryApp({ appId: fracRegistrySdk.appId })
+      for (const [i, escrow] of escrows.entries()) {
+        const { appId } = await deployFracInstanceWithEscrows(localnet, [escrow], deployer, {
+          registrySdk: fracRegistrySdk,
+          name: `frac-instance-${i}`,
+        })
+        instanceAppIds.push(appId)
+      }
+
+      await sdk.importFracDelegation({ escrowAccounts: escrows })
+
+      const delegatees = instanceAppIds.map((appId) => getApplicationAddress(appId).toString())
+      for (const [i, escrow] of escrows.entries()) {
+        expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatees[i])
+        expect(await sdk.getDelegators(delegatees[i])).toEqual([escrow])
+      }
+    })
+
+    test('re-importing an unchanged delegation is a no-op', async () => {
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = 2
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, numEscrows)
+      const escrows = govAccounts.slice(0, numEscrows).map((a) => a.toString())
+      const { appId, sdk: fracSdk } = await deployFracInstanceWithEscrows(localnet, escrows, deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+      const delegatee = getApplicationAddress(appId).toString()
+
+      await sdk.importFracDelegation({ escrowAccounts: escrows })
+      await sdk.importFracDelegation({ escrowAccounts: escrows })
+
+      for (const escrow of escrows) {
+        expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatee)
+      }
+      // The reverse index did not gain duplicate entries on the second pass.
+      expect(await sdk.getDelegators(delegatee)).toEqual(escrows)
+    })
+
+    // Contrast with 'refuses to overwrite an existing delegation' above: the two admin delegation
+    // writers differ here on purpose.
+    test('overwrites an existing delegation, unlike mirrorXGovDelegation', async () => {
+      const { testAccount: deployer } = localnet.context
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 1)
+      const [escrowAccount] = govAccounts
+      const escrow = escrowAccount.toString()
+      const { appId, sdk: fracSdk } = await deployFracInstanceWithEscrows(localnet, [escrow], deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+      const previous = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      // The escrow delegates somewhere else first, through the normal user-facing path.
+      await createSDK(localnet, sdk.appId, escrowAccount).setVotingAccount({
+        votingAddress: previous.toString(),
+      })
+      expect((await sdk.getDelegation(escrow)).delegatee).toBe(previous.toString())
+
+      await sdk.importFracDelegation({ escrowAccounts: [escrow] })
+
+      expect((await sdk.getDelegation(escrow)).delegatee).toBe(getApplicationAddress(appId).toString())
+      // The previous delegatee's reverse list was unlinked, not left stale.
+      expect(await sdk.getDelegators(previous.toString())).toEqual([])
+    })
+
+    test('batch-size limit: the log budget, not references, is what caps the batch', async () => {
+      const makeRawImportGroup = (appCalls: number) => {
+        const builder = sdk.writeClient!.newGroup().importFracDelegation({
+          args: { escrowAccounts: escrows },
+          extraFee: (escrows.length * 1000).microAlgo(),
+        })
+        for (let i = 1; i < appCalls; i++) {
+          builder.increaseBudget({ args: { itxns: 0 }, note: `raw-import-${appCalls}-${i}` })
+        }
+        return builder
+      }
+
+      // Each escrow emits one GGovDelegationSet: 4-byte ARC-28 selector + 3 addresses = 100 bytes,
+      // against the AVM's 1024-byte per-app-call log budget. That budget is per app call, so the
+      // ref padding cannot buy more of it - every emit runs inside the one importFracDelegation
+      // call. floor(1024/100) = 10, which is where the constant comes from.
+      expect(MAX_ESCROWS_PER_FD_IMPORT).toBe(10)
+
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = MAX_ESCROWS_PER_FD_IMPORT + 1
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, numEscrows)
+      const escrows = govAccounts.slice(0, numEscrows).map((a) => a.toString())
+      const { appId, sdk: fracSdk } = await deployFracInstanceWithEscrows(localnet, escrows, deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+      const delegatee = getApplicationAddress(appId).toString()
+
+      // One over the cap, built raw so the SDK's own guard doesn't pre-empt the chain, and padded
+      // to a full group so references are demonstrably not what fails. It still dies on the 11th
+      // emit.
+      await expect(makeRawImportGroup(15).send()).rejects.toThrow('program logs too large')
+
+      // Exactly at the cap fits.
+      await sdk.importFracDelegation({ escrowAccounts: escrows.slice(0, MAX_ESCROWS_PER_FD_IMPORT) })
+      for (const escrow of escrows.slice(0, MAX_ESCROWS_PER_FD_IMPORT)) {
+        expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatee)
+      }
+    }, 300_000)
+  })
+
+  describe('importFracDelegations (chunking wrapper)', () => {
+    test('splits a list over the cap across groups and lands every escrow', async () => {
+      const { testAccount: deployer } = localnet.context
+      const numEscrows = MAX_ESCROWS_PER_FD_IMPORT + 3
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, numEscrows)
+      const escrows = govAccounts.slice(0, numEscrows).map((a) => a.toString())
+      const { appId, sdk: fracSdk } = await deployFracInstanceWithEscrows(localnet, escrows, deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+      const delegatee = getApplicationAddress(appId).toString()
+
+      await sdk.importFracDelegations({ escrowAccounts: escrows })
+
+      for (const escrow of escrows) {
+        expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatee)
+      }
+      expect((await sdk.getDelegators(delegatee)).length).toBe(numEscrows)
+    }, 300_000)
   })
 })

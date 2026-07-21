@@ -170,7 +170,7 @@ export const deployFracRegistry = async (localnet: AlgorandFixture, account: Add
 }
 
 // --------------------------------------------------------------------
-// FRAC COMBINED SDK: create SDK, generate account with SDK
+// FRAC COMPOSED: create SDK, generate account with SDK
 // --------------------------------------------------------------------
 
 export const createFracDelegationSDK = (localnet: AlgorandFixture, registryAppId: bigint, account: Address) =>
@@ -215,11 +215,29 @@ export const deployFracInstance = async (
   const sdk = createFracDelegationSDK(localnet, registrySdk.appId, account)
   const appId = await sdk.getInstanceAppId(instanceId)
 
-  return {
-    appId,
-    instanceId,
-    sdk,
+  return { appId, instanceId, sdk }
+}
+
+export const deployFracInstanceWithEscrows = async (
+  localnet: AlgorandFixture,
+  escrows: string[],
+  account?: Address,
+  opts: {
+    /** Instance label passed to addInstance */
+    name?: string
+    /** Spawn from this registry instead of deploying a fresh one (its writer must be the registry admin); the returned sdk still signs as `account`) */
+    registrySdk?: FracDelegationRegistrySDK
+    /** Set as the registry's defaultOperator before spawning */
+    defaultOperator?: Address
+  } = {},
+) => {
+  const testAccount = account ?? localnet.context.testAccount
+  const { sdk, instanceId, appId } = await deployFracInstance(localnet, testAccount, opts)
+  for (const escrow of escrows) {
+    await sdk.registry.registerEscrow({ instanceNumId: instanceId, account: escrow })
   }
+
+  return { appId, instanceId, sdk }
 }
 
 // --------------------------------------------------------------------
