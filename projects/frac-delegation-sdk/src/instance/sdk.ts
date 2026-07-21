@@ -12,7 +12,12 @@ import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { chunk } from '../util/chunk'
-import { MAX_ACCOUNTS_PER_INGEST_AQ, MAX_GROUP_SIZE, REF_SLOTS_PER_APP_CALL } from '../constants'
+import {
+  MAX_ACCOUNTS_PER_INGEST_AQ,
+  MAX_ACCOUNTS_PER_UNINGEST_AQ,
+  MAX_GROUP_SIZE,
+  REF_SLOTS_PER_APP_CALL,
+} from '../constants'
 
 /** Keeps otherwise-identical padding app calls from colliding into one duplicate txn ID. */
 const noteNonce = () => Math.floor(Math.random() * 100_000_000)
@@ -380,6 +385,74 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   }) {
     for (const batch of chunk(accountAqs, MAX_ACCOUNTS_PER_INGEST_AQ)) {
       await this.ingestAq({ instanceNumId, committeeNumId, accountAqs: batch, note })
+    }
+  }
+
+  /**
+   * Remove one batch of accounts' AlgoQuarters from committee `committeeNumId`. Operator only.
+   *
+   * The correction and MBR-reclaim path: deleting each account's box lowers the instance app
+   * account's minimum balance, so drain a settled committee and sweep the freed ALGO with
+   * `withdrawALGO`. Draining a ledger to `ingestedAq === 0` re-opens `startAqIngest` for a new total.
+   *
+   * Takes addresses (like `ingestAq`); the contract resolves each to its account ID via a readonly
+   * registry read, so an account never ingested for this committee is rejected rather than removed.
+   * Order-independent; no duplicates. One group per call — use {@link uningestAqAll} for a whole set.
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeUningestAqTxns({
+    instanceNumId: _instanceNumId,
+    committeeNumId,
+    accounts,
+    note,
+    client,
+    builder,
+  }: FracDelegationInstanceContractArgs['uningestAq(uint16,address[])void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    if (accounts.length === 0) throw new Error('uningestAq: no accounts to uningest')
+    if (accounts.length > MAX_ACCOUNTS_PER_UNINGEST_AQ) {
+      throw new Error(
+        `uningestAq: ${accounts.length} accounts exceeds the ${MAX_ACCOUNTS_PER_UNINGEST_AQ} per call — ` +
+          `chunk them, or use uningestAqAll.`,
+      )
+    }
+    // Slots: 2 per account (the registry's accounts box read by getAccount + this instance's
+    // accountAq box), plus the registryApp ref and this instance's committeeAq box. No registry
+    // instances box — getAccount, unlike getOrCreateAccountWithInstance, doesn't touch it.
+    builder = this.padForRefSlots(builder, accounts.length * 2 + 2, 'uningestAq')
+    // extraFee covers one getAccount inner call per account.
+    return builder.uningestAq({
+      args: { committeeNumId, accounts },
+      note,
+      extraFee: (accounts.length * 1000).microAlgo(),
+    })
+  }
+
+  uningestAq = this.makeInstanceTxnExecutor({ maker: this.makeUningestAqTxns })
+
+  /**
+   * Remove every entry of `accounts` from committee `committeeNumId`, one group per
+   * {@link MAX_ACCOUNTS_PER_UNINGEST_AQ} accounts. Sequential and atomic per group, so a failure
+   * part-way leaves earlier batches removed — re-run with the remainder, which is safe because an
+   * account already removed is rejected rather than double-counted.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async uningestAqAll({
+    instanceNumId,
+    committeeNumId,
+    accounts,
+    note,
+  }: FracDelegationInstanceContractArgs['uningestAq(uint16,address[])void'] & {
+    instanceNumId: bigint | number
+    note?: string
+  }) {
+    for (const batch of chunk(accounts, MAX_ACCOUNTS_PER_UNINGEST_AQ)) {
+      await this.uningestAq({ instanceNumId, committeeNumId, accounts: batch, note })
     }
   }
 

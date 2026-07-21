@@ -20,6 +20,7 @@ import { compileArc4, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/alg
 import { BaseContract } from '../base/base.algo'
 import {
   errAccountAqExists,
+  errAccountAqNotExists,
   errAqIncomplete,
   errAqNotStarted,
   errCommitteeNotExists,
@@ -480,6 +481,65 @@ export class FracDelegationInstanceContract extends BaseContract {
     const box = this.accountAq([accountId, committeeNumId])
     if (!box.exists) return u32(0)
     return box.value
+  }
+
+  /**
+   * Remove accounts' AlgoQuarters from committee `committeeNumId`'s ledger. Operator only.
+   *
+   * The correction-and-lifecycle counterpart to `ingestAq`: it walks back a batch ingested from bad
+   * pipeline output, and - because a committee is per-period and each period opens a fresh ledger -
+   * it is how a settled committee's ~6,900 microALGO-per-account box MBR is handed back. Deleting the
+   * boxes lowers the instance app account's minimum balance; recover the freed ALGO with `withdrawALGO`.
+   *
+   * Each address is resolved to its frac-registry account ID by an inner call to the registry's
+   * readonly `getAccount` - a read, NOT get-or-create: an unregistered account resolves to ID 0,
+   * whose box never exists, so it is rejected as "not ingested" rather than minting anything.
+   *
+   * Append-only in reverse: an account with no box for this committee is rejected, so a duplicate
+   * within a batch fails on its second pass (its box is already gone) and a replayed batch fails
+   * whole. Order-independent - a BoxMap deletes by key, with none of `uningestGovs`' descending rule.
+   *
+   * Draining a ledger all the way to `ingestedAq === 0` re-opens it for a fresh `startAqIngest`.
+   *
+   * Deliberately does NOT touch the registry: account IDs are permanent and the account -> instance
+   * association `ingestAq` created stays true (the account may hold AlgoQuarters in this instance's
+   * other committees). The registry's per-instance `numAccounts` therefore counts accounts ever
+   * associated with the instance, not accounts currently ingested.
+   *
+   * NOTE: once internal voting exists, this will need a guard refusing to drain a committee any
+   * period has live votes against (mirroring `syncPeriod`'s `cacheHasVotes`) - removing an account's
+   * weight after it voted would corrupt the tally denominator. Nothing reads AQ during voting yet.
+   * @param committeeNumId gGov committee numeric ID
+   * @param accounts Accounts to remove. Any order; no duplicates.
+   */
+  public uningestAq(committeeNumId: Uint16, accounts: Account[]): void {
+    this.ensureCallerIsOperator()
+    const registryApp = this.resolveRegistryApp()
+
+    const aqBox = this.committeeAq(committeeNumId)
+    ensure(aqBox.exists, errAqNotStarted)
+    const committeeAq = clone(aqBox.value)
+
+    let removedAq: uint64 = 0
+    for (const account of clone(accounts)) {
+      const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
+        appId: registryApp,
+        args: [account],
+      }).returnValue
+
+      const box = this.accountAq([registryAccount.accountId, committeeNumId])
+      ensureExtra(box.exists, errAccountAqNotExists, account.bytes)
+      removedAq += box.value.asUint64()
+      box.delete()
+    }
+
+    // Both subtractions are underflow-safe by construction: every removed box's AQ was added to
+    // ingestedAq and counted in numAccounts by the ingestAq that wrote it (and the AVM rejects an
+    // underflow regardless). numAccounts uses accounts.length because each removed box is distinct -
+    // a repeat fails the box.exists check above before reaching here.
+    committeeAq.ingestedAq = u32(committeeAq.ingestedAq.asUint64() - removedAq)
+    committeeAq.numAccounts = u32(committeeAq.numAccounts.asUint64() - accounts.length)
+    aqBox.value = clone(committeeAq)
   }
 
   // ── Periods ───────────────────────────────────────────────────────
