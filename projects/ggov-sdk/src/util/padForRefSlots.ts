@@ -1,3 +1,4 @@
+/** Verbatim copy of frac-delegation-sdk/src/util/padForRefSlots.ts */
 import { MAX_APP_CALL_FOREIGN_REFERENCES } from '@algorandfoundation/algokit-utils'
 import { MAX_GROUP_SIZE } from '../constants'
 import { noteNonce } from './noteNonce'
