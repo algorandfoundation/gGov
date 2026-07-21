@@ -3,7 +3,8 @@
  * with this `ggov-sdk` version. The period write client recompiles the approval/clear
  * programs from its embedded app spec, so `updatePeriodApp` replaces the running code
  * with the version exported here. This is admin-only — the contract's updateApplication
- * baremethod inner-calls registry.verifyAdmin, so DEPLOYER must be the registry admin.
+ * baremethod resolves the admin from the registry's `admin` global state, so DEPLOYER must be
+ * the registry admin.
  *
  * The target period is located by its body title (e.g. "Entertainment") rather than a
  * raw periodId, since titles are what operators recognise.

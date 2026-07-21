@@ -287,12 +287,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     itxn.payment({ receiver, amount }).submit()
   }
 
-  /** Whether `account` is the admin. Called by period contracts via inner txn. */
-  @abimethod({ readonly: true })
-  public verifyAdmin(account: Account): boolean {
-    return account === this.admin.value
-  }
-
   /** App updatable by admin */
   @baremethod({ allowActions: ['UpdateApplication'] })
   public updateApplication(): void {
@@ -319,12 +313,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   public setOperator(account: Account): void {
     this.ensureCallerIsAdmin()
     this.operator.value = account
-  }
-
-  /** Whether `account` is the registered operator. Called by period contracts via inner txn. */
-  @abimethod({ readonly: true })
-  public verifyOperator(account: Account): boolean {
-    return account === this.operator.value
   }
 
   /**

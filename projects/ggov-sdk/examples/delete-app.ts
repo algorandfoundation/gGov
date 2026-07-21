@@ -1,8 +1,8 @@
 /**
  * Delete a GGov contract — either the GGovRegistry app itself or one of its deployed
  * GGovPeriod apps. Both deletions are admin-only: the registry's `deleteApplication` checks
- * the caller is the admin directly, and a period's `deleteApplication` inner-calls
- * registry.verifyAdmin, so the DEPLOYER environment account must be the registry admin.
+ * the caller is the admin directly, and a period's `deleteApplication` resolves the admin from
+ * the registry's `admin` global state, so the DEPLOYER environment account must be the registry admin.
  *
  * SAFETY GUARD: deleting an app closes its account and sweeps the residual ALGO to the
  * deleting sender. To avoid accidentally tearing down an app that still escrows meaningful

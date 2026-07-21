@@ -252,37 +252,4 @@ describe('GGovRegistry admin', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
   })
-
-  describe('verifyAdmin / verifyOperator', () => {
-    let sdk: GGovRegistrySDK
-    let admin: string
-    let operator: string
-    let other: string
-
-    beforeAll(async () => {
-      await localnet.newScope()
-      const { testAccount } = localnet.context
-      admin = testAccount.toString()
-      ;({ sdk } = await deployRegistry(localnet, testAccount))
-      const operatorAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const otherAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      operator = operatorAccount.toString()
-      other = otherAccount.toString()
-      await sdk.setOperator({ account: operator })
-    })
-
-    test('verifyAdmin returns true for the admin and false for any other account', async () => {
-      const { return: isAdmin } = await sdk.readClient.send.verifyAdmin({ args: { account: admin } })
-      expect(isAdmin).toBe(true)
-      const { return: isAdminOther } = await sdk.readClient.send.verifyAdmin({ args: { account: other } })
-      expect(isAdminOther).toBe(false)
-    })
-
-    test('verifyOperator returns true for the operator and false for any other account', async () => {
-      const { return: isOperator } = await sdk.readClient.send.verifyOperator({ args: { account: operator } })
-      expect(isOperator).toBe(true)
-      const { return: isOperatorOther } = await sdk.readClient.send.verifyOperator({ args: { account: other } })
-      expect(isOperatorOther).toBe(false)
-    })
-  })
 })
