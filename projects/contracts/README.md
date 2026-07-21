@@ -38,10 +38,19 @@ pnpm run deploy [contract-dir-name]               # watch mode: redeploys on fil
 
 Environment: `algokit project deploy <network>` loads `.env` then `.env.<network>` on top (see `.env.template`; all real `.env*` files are gitignored). Algod/indexer endpoints default per network. TestNet/MainNet deploys expect `DEPLOYER_MNEMONIC` and `DISPENSER_MNEMONIC`.
 
-Upstream registry ids, both optional and re-settable on redeploy:
+## Registry wiring
 
-- `XGOV_REGISTRY_APP_ID` — wired into `GGovRegistry.xGovRegistryApp`; left unconfigured if unset.
-- `GGOV_REGISTRY_APP_ID` — wired into `FracDelegationRegistry.gGovRegistryApp`; if unset, the frac deploy falls back to looking up the `GGovRegistry` app created by the same `DEPLOYER`, so a fresh full-bundle deploy couples the two automatically.
+Each `deploy-config.ts` deploys only its own app. The cross-app links live in `smart_contracts/wire-registries.ts`, which `index.ts` runs once after every deploy config:
+
+| Link                                     | Set to                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `GGovRegistry.xGovRegistryApp`           | `XGOV_REGISTRY_APP_ID` (env only — this repo never deploys an xGov registry) |
+| `GGovRegistry.fracRegistryApp`           | the frac delegation registry                                                 |
+| `FracDelegationRegistry.gGovRegistryApp` | the gGov registry                                                            |
+
+Each app id is resolved in this order: **deployed by the current run** → `GGOV_REGISTRY_APP_ID` / `FRAC_REGISTRY_APP_ID` → the app of that name created by the same `DEPLOYER`. So a full-bundle deploy couples the registries with no configuration, and a standalone deploy (`deploy:ci ggov-registry`) wires against whatever already exists. The env vars are only needed to point at an app the `DEPLOYER` did not create.
+
+Every link is idempotent (skipped when already set) and never fails the deploy: if the target app can't be read, or its admin isn't the `DEPLOYER`, wiring warns and moves on.
 
 <a id="ggovregistry"></a>
 
@@ -76,6 +85,7 @@ Max delegations per delegatee: ~1024. At the moment we store reverse delegation 
 - `admin`: Account (default: creator) - admin address, rotatable via `setAdmin`
 - `operator`: Account - operator address; manages periods on spawned `GGovPeriod` apps
 - `xGovRegistryApp`: Application (key: `xGovRegistryApp`) - xGov registry application ID
+- `fracRegistryApp`: Application (key: `fdRegistryApp`) - fractional delegation registry application ID; read by `importFracDelegations` to resolve escrows
 - `lastCommitteeId`: uint64 (0) - incrementing committee numeric ID; also the committee superbox prefix counter
 - `lastPeriodId`: uint64 (0) - incrementing period ID counter
 - `lastAccountId`: uint64 (0) - incrementing account numeric ID counter
