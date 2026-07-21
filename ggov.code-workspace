@@ -14,6 +14,9 @@
       "path": "./projects/ggov-sdk",
     },
     {
+      "path": "./projects/frac-delegation-sdk",
+    },
+    {
       "path": "./projects/common",
     },
   ],

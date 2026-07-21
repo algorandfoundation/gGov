@@ -26,6 +26,18 @@ export const BODY_CHUNK_BYTES = 2000
 export const MAX_ACCOUNTS_PER_INGEST_AQ = 40
 
 /**
+ * Accounts per `uningestAq` call.
+ *
+ * Same cost profile as ingest: `uningestAq` takes addresses too and inner-calls the registry's
+ * readonly `getAccount` once per account to resolve its ID, so N accounts need `2N + 2` reference
+ * slots (registry `accounts` box + instance `accountAq` box per account, plus the registry app ref
+ * and the `committeeAq` box; no registry `instances` box, unlike ingest). Held at 40 for parity with
+ * {@link MAX_ACCOUNTS_PER_INGEST_AQ} and headroom under the 16-txn group limit; the arg cap
+ * (`8 + 32N <= 2048`) and ref cap both allow ~63. Tunable up once confirmed by a localnet simulate.
+ */
+export const MAX_ACCOUNTS_PER_UNINGEST_AQ = 40
+
+/**
  * Box MBR (µAlgo) the INSTANCE app account pays per ingested account: an `accountAq` box of
  * `2500 + 400 * (7-byte name + 4-byte value)`. Charged once per (account, committee).
  *

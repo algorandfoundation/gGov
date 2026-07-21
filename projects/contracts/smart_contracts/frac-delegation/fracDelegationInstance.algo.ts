@@ -8,6 +8,7 @@ import {
   Bytes,
   clone,
   contract,
+  emit,
   Global,
   GlobalState,
   itxn,
@@ -20,12 +21,18 @@ import { compileArc4, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/alg
 import { BaseContract } from '../base/base.algo'
 import {
   errAccountAqExists,
+  errAccountAqNotExists,
+  errAccountNotExists,
   errAqIncomplete,
   errAqNotStarted,
   errCommitteeNotExists,
   errGGovHasVotes,
   errGGovNotReady,
   errGGovPeriodNotExists,
+  errGGovVoteMismatch,
+  errGGovVotePowerMismatch,
+  errGGovVotingEnded,
+  errGGovVotingNotStarted,
   errIngestedAqNotZero,
   errNoEscrows,
   errPeriodAppMismatch,
@@ -45,8 +52,11 @@ import {
   FracEscrowVotes,
   FracInstanceCommittee,
   FracInstancePeriod,
+  FracPeriodAccountKey,
   FracPeriodEscrowKey,
   FracPeriodVoteCache,
+  FracVoteCast,
+  FracVotingRecord,
   getEmptyFracCommitteeAq,
 } from '../base/types.algo'
 import { ensure, ensureExtra, u32, u8 } from '../base/utils.algo'
@@ -110,6 +120,13 @@ export class FracDelegationInstanceContract extends BaseContract {
    * registry's committee members, which can only be read back via an offset hint.
    */
   accountAq = BoxMap<FracAccountAqKey, Uint32>({ keyPrefix: 'q' })
+  /**
+   * Per-[period, account] internal vote record, written by `vote`. Keyed by the frac registry's
+   * numeric account ID (like `accountAq`), and holding exactly the rows the account submitted so a
+   * re-vote can subtract them from the aggregate tally. The instance app account pays the box MBR -
+   * size it off `committeeAq.numAccounts` and keep it funded, as `GGovPeriod.voteRecords` does.
+   */
+  votingRecords = BoxMap<FracPeriodAccountKey, FracVotingRecord>({ keyPrefix: 'r' })
 
   // ── Create ────────────────────────────────────────────────────────
 
@@ -499,6 +516,66 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
   }
 
+  /**
+   * Remove accounts' AlgoQuarters from committee `committeeNumId`'s ledger. Operator only.
+   *
+   * The correction-and-lifecycle counterpart to `ingestAq`: it walks back a batch ingested from bad
+   * pipeline output, and - because a committee is per-period and each period opens a fresh ledger -
+   * it is how a settled committee's ~6,900 microALGO-per-account box MBR is handed back. Deleting the
+   * boxes lowers the instance app account's minimum balance; recover the freed ALGO with `withdrawALGO`.
+   *
+   * Each address is resolved to its frac-registry account ID by an inner call to the registry's
+   * readonly `getAccount` - a read, NOT get-or-create: an unregistered account resolves to ID 0,
+   * whose box never exists, so it is rejected as "not ingested" rather than minting anything.
+   *
+   * Append-only in reverse: an account with no box for this committee is rejected, so a duplicate
+   * within a batch fails on its second pass (its box is already gone) and a replayed batch fails
+   * whole. Order-independent - a BoxMap deletes by key, with none of `uningestGovs`' descending rule.
+   *
+   * Draining a ledger all the way to `ingestedAq === 0` re-opens it for a fresh `startAqIngest`.
+   *
+   * Deliberately does NOT touch the registry: account IDs are permanent and the account -> instance
+   * association `ingestAq` created stays true (the account may hold AlgoQuarters in this instance's
+   * other committees). The registry's per-instance `numAccounts` therefore counts accounts ever
+   * associated with the instance, not accounts currently ingested.
+   *
+   * NOTE: internal voting (`vote`) now reads AQ, so this still needs a guard refusing to drain a
+   * committee any period has live votes against (mirroring `syncPeriod`'s `cacheHasVotes`) -
+   * removing an account's weight after it voted would corrupt the tally denominator. Until that
+   * guard lands, operators must not uningest a committee with an open, voted-on period.
+   * @param committeeNumId gGov committee numeric ID
+   * @param accounts Accounts to remove. Any order; no duplicates.
+   */
+  public uningestAq(committeeNumId: Uint16, accounts: Account[]): void {
+    this.ensureCallerIsOperator()
+    const registryApp = this.resolveRegistryApp()
+
+    const aqBox = this.committeeAq(committeeNumId)
+    ensure(aqBox.exists, errAqNotStarted)
+    const committeeAq = clone(aqBox.value)
+
+    let removedAq: uint64 = 0
+    for (const account of clone(accounts)) {
+      const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
+        appId: registryApp,
+        args: [account],
+      }).returnValue
+
+      const box = this.accountAq([registryAccount.accountId, committeeNumId])
+      ensureExtra(box.exists, errAccountAqNotExists, account.bytes)
+      removedAq += box.value.asUint64()
+      box.delete()
+    }
+
+    // Both subtractions are underflow-safe by construction: every removed box's AQ was added to
+    // ingestedAq and counted in numAccounts by the ingestAq that wrote it (and the AVM rejects an
+    // underflow regardless). numAccounts uses accounts.length because each removed box is distinct -
+    // a repeat fails the box.exists check above before reaching here.
+    committeeAq.ingestedAq = u32(committeeAq.ingestedAq.asUint64() - removedAq)
+    committeeAq.numAccounts = u32(committeeAq.numAccounts.asUint64() - accounts.length)
+    aqBox.value = clone(committeeAq)
+  }
+
   // ── Periods ───────────────────────────────────────────────────────
 
   /**
@@ -612,6 +689,207 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
 
     return period
+  }
+
+  // ── Voting ────────────────────────────────────────────────────────
+
+  /** `escrows[index]`, read straight out of the box: 2-byte ARC-4 length prefix, 32 bytes each. */
+  private escrowAt(index: uint64): Account {
+    return Account(op.Box.extract(Bytes`escrows`, 2 + index * 32, 32))
+  }
+
+  /**
+   * Internal vote on gGov period `periodId`, open to any account with ingested AlgoQuarters in the
+   * period's committee.
+   *
+   * The vote is tallied into `periodVoteCache.internal` in AlgoQuarters, then mapped onto the
+   * committee's total escrow gGov power against the `totalAq` denominator - so AQ that never votes
+   * implicitly counts for each topic's LAST option, which by operator convention must be Abstain.
+   * Whenever that mapping moves, the delta is cast externally: the target is spread across the
+   * escrows greedily (options consume escrow capacity in escrow order, so every escrow row sums to
+   * its full power, as `GGovPeriod.vote` requires) and each escrow whose rows changed re-votes via
+   * an inner call. gGov demands an account's full power on every topic, so the first internal vote -
+   * however small - casts ALL escrows on ALL topics, mostly onto Abstain; that also makes the gGov
+   * tallies non-zero, which permanently locks the period app against `setReady(false)`/`editPeriod`.
+   *
+   * `ready`, the voting window and the committee binding are re-read live off the period app rather
+   * than trusted from the `syncPeriod` snapshot: until our first cast lands, the period app's gGov
+   * tallies are still all zero, so its operator could still un-ready and edit it out from under the
+   * snapshot.
+   *
+   * Re-votes overwrite: the account's previous rows are subtracted from the tally before the new
+   * ones are added, mirroring `GGovPeriod.vote`. Escrows must be gGov accounts that delegated to
+   * this instance's app address and must NEVER vote directly - a direct vote is unoverridable
+   * (`errGGovCannotOverride`) and would brick external casting for the period.
+   *
+   * The instance app account pays the `votingRecords` box MBR on an account's first vote; fees for
+   * the inner calls (1 registry resolve + 3 per re-cast escrow) come from the outer group's pool.
+   * @param periodId gGov period ID, as synced by `syncPeriod`
+   * @param topicVotes [topic][option] AlgoQuarters, parallel to the period's topics/options. Every
+   *   topic's row must sum to the sender's full `accountAq` weight; abstain explicitly via the last
+   *   option.
+   */
+  public vote(periodId: Uint32, topicVotes: Uint32[][]): void {
+    const periodBox = this.periods(periodId)
+    ensure(periodBox.exists, errGGovPeriodNotExists)
+    const period = clone(periodBox.value)
+
+    // Live period-app state, cheapest gates first (no inner call - getEx* like resolveAdmin).
+    const [ready, _hasReady] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`ready`)
+    ensure(ready > 0, errGGovNotReady)
+    const [votingStart, _hasStart] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`votingStart`)
+    ensure(Global.latestTimestamp >= votingStart, errGGovVotingNotStarted)
+    const [votingEnd, _hasEnd] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`votingEnd`)
+    ensure(Global.latestTimestamp < votingEnd, errGGovVotingEnded)
+    const [liveCommitteeId, _hasCommittee] = op.AppGlobal.getExBytes(period.periodAppId, Bytes`committeeId`)
+    ensure(liveCommitteeId === period.committeeId.bytes, errPeriodAppMismatch)
+
+    // The AQ ledger must be complete: weight is split against totalAq, so a half-ingested ledger
+    // would hand early voters an inflated share (see getCommitteeAq).
+    const aqBox = this.committeeAq(period.committeeNumId)
+    ensure(aqBox.exists, errAqNotStarted)
+    ensure(aqBox.value.ingestedAq === aqBox.value.totalAq, errAqIncomplete)
+    const totalAq: uint64 = aqBox.value.totalAq.asUint64()
+
+    // Resolve the sender's weight: readonly registry resolve (inlined - hoisting materialises the
+    // registry program and puya rejects the cycle, see ingestAq), then one O(1) box read.
+    const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
+      appId: this.resolveRegistryApp(),
+      args: [Txn.sender],
+    }).returnValue
+    ensure(registryAccount.accountId.asUint64() > 0, errAccountNotExists)
+    const accountAqBox = this.accountAq([registryAccount.accountId, period.committeeNumId])
+    ensure(accountAqBox.exists, errAccountAqNotExists)
+    const userAq: uint64 = accountAqBox.value.asUint64()
+
+    const cache = clone(this.periodVoteCache(periodId).value)
+    const newVotes = clone(topicVotes)
+    ensure(newVotes.length === cache.internal.length, errGGovVoteMismatch)
+
+    // Re-vote: subtract the previous rows from the tally before adding the new ones. Underflow-safe
+    // by construction - every stored row was added by the vote that wrote it.
+    const userVoteRecordBox = this.votingRecords([periodId, registryAccount.accountId])
+    const isRevote = userVoteRecordBox.exists
+    if (isRevote) {
+      const existing = clone(userVoteRecordBox.value)
+      for (let t: uint64 = 0; t < existing.topicVotes.length; t++) {
+        const oldRow = clone(existing.topicVotes[t])
+        const tally = clone(cache.internal[t])
+        const next: Uint32[] = []
+        for (let o: uint64 = 0; o < oldRow.length; o++) {
+          next.push(u32(tally[o].asUint64() - oldRow[o].asUint64()))
+        }
+        cache.internal[t] = clone(next)
+      }
+    }
+
+    // Validate and tally in one pass, as GGovPeriod.vote does. Every topic's row must spend the
+    // sender's exact full weight - that cap is also what bounds each tally cell by totalAq, keeping
+    // the mapping's u32*u32 product inside uint64 and its last-option remainder non-negative.
+    for (let t: uint64 = 0; t < newVotes.length; t++) {
+      const row = clone(newVotes[t])
+      const tally = clone(cache.internal[t])
+      ensure(row.length === tally.length, errGGovVoteMismatch)
+      let rowSum: uint64 = 0
+      const next: Uint32[] = []
+      for (let o: uint64 = 0; o < row.length; o++) {
+        next.push(u32(tally[o].asUint64() + row[o].asUint64()))
+        rowSum += row[o].asUint64()
+      }
+      ensure(rowSum === userAq, errGGovVotePowerMismatch)
+      cache.internal[t] = clone(next)
+    }
+
+    // Map the internal tally onto the committee's escrow power. Powers come from the first
+    // numEscrows snapshot entries and their sum - NOT committee.totalVotes, which a mid-period
+    // syncCommittee may have grown past the escrow boxes this period actually has.
+    const committee = clone(this.committees(period.committeeId).value)
+    const numEscrows: uint64 = period.numEscrows.asUint64()
+    let totalVotes: uint64 = 0
+    for (let i: uint64 = 0; i < numEscrows; i++) {
+      totalVotes += committee.escrowsVotes[i].asUint64()
+    }
+
+    // Non-last options floor-divide; the last option takes the remainder, folding together its own
+    // mapped share, all AQ that never voted, and the rounding dust.
+    const ggovVotes: Uint32[][] = []
+    let ggovChanged = false
+    for (let t: uint64 = 0; t < cache.internal.length; t++) {
+      const tally = clone(cache.internal[t])
+      const cachedRow = clone(cache.ggovTotals[t])
+      const row: Uint32[] = []
+      let allocated: uint64 = 0
+      for (let o: uint64 = 0; o < tally.length; o++) {
+        let mapped: uint64
+        if (o === tally.length - 1) {
+          mapped = totalVotes - allocated
+        } else {
+          mapped = (tally[o].asUint64() * totalVotes) / totalAq
+          allocated += mapped
+        }
+        row.push(u32(mapped))
+        if (mapped !== cachedRow[o].asUint64()) ggovChanged = true
+      }
+      ggovVotes.push(clone(row))
+    }
+
+    if (ggovChanged) {
+      // Spread the target across escrows: per topic, options consume escrow capacity in escrow
+      // order. Computed per escrow as the overlap of its cumulative power range with each option's
+      // cumulative demand range - exact packing, no division, every row sums to the escrow's power.
+      let escrowStart: uint64 = 0
+      for (let i: uint64 = 0; i < numEscrows; i++) {
+        const power: uint64 = committee.escrowsVotes[i].asUint64()
+        // A powerless escrow owns an empty range: its rows are all zero, matching its zero-filled
+        // box, so there is never anything to cast for it.
+        if (power === 0) continue
+        const escrowEnd: uint64 = escrowStart + power
+        const escrowBox = this.periodEscrowVotes([periodId, u8(i)])
+        const cachedVotes = clone(escrowBox.value.votes)
+        const rows: Uint32[][] = []
+        let escrowChanged = false
+        for (let t: uint64 = 0; t < ggovVotes.length; t++) {
+          const demand = clone(ggovVotes[t])
+          const cachedRow = clone(cachedVotes[t])
+          const row: Uint32[] = []
+          let optStart: uint64 = 0
+          for (let o: uint64 = 0; o < demand.length; o++) {
+            const optEnd: uint64 = optStart + demand[o].asUint64()
+            const lo: uint64 = optStart > escrowStart ? optStart : escrowStart
+            const hi: uint64 = optEnd < escrowEnd ? optEnd : escrowEnd
+            const overlap: uint64 = hi > lo ? hi - lo : 0
+            row.push(u32(overlap))
+            if (overlap !== cachedRow[o].asUint64()) escrowChanged = true
+            optStart = optEnd
+          }
+          rows.push(clone(row))
+        }
+        if (escrowChanged) {
+          // Delegated external vote: the escrow is the voter, this app account the delegatee.
+          // GGovPeriod.vote requires the voter at the inner call's Txn.accounts(1).
+          const escrow = this.escrowAt(i)
+          compileArc4(GGovPeriodContract).call.vote({
+            appId: Application(period.periodAppId),
+            args: [escrow, clone(rows)],
+            accounts: [escrow],
+          })
+          escrowBox.value = { votes: clone(rows) }
+        }
+        escrowStart = escrowEnd
+      }
+      cache.ggovTotals = clone(ggovVotes)
+    }
+
+    emit<FracVoteCast>({
+      voter: Txn.sender,
+      accountId: registryAccount.accountId,
+      userAq: u32(userAq),
+      updateVote: isRevote,
+      topicVotes: clone(newVotes),
+    })
+
+    userVoteRecordBox.value = { topicVotes: clone(newVotes) }
+    this.periodVoteCache(periodId).value = clone(cache)
   }
 
   /**

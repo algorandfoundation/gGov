@@ -6,7 +6,7 @@
     },
     "vibekit-mcp": {
       "type": "stdio",
-      "command": "/home/bit/.local/bin/vibekit",
+      "command": "vibekit",
       "args": ["mcp"],
       "env": {
         "ALGORAND_NETWORK": "localnet",

@@ -9,7 +9,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:C_NX": "Committee does not exist",
   "ERR:PE_LT": "Period end must be greater than period start",
   "ERR:IV_NZ": "Cannot unregister committee with ingested votes (votes must be zero)",
-  "ERR:TX_XC": "Total govs exceeded",
+  "ERR:TX_XC": "Total accounts exceeded",
   "ERR:TV_XC": "Total votes exceeded",
   "ERR:V_Z": "Gov votes must be greater than zero",
   "ERR:TV_MM": "Total votes mismatch - ingested votes must equal total votes when finished",
@@ -78,5 +78,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:FA_NZ": "Cannot re-set total AlgoQuarters: AlgoQuarters have already been ingested",
   "ERR:FA_EX": "Account AlgoQuarters already ingested for this committee",
   "ERR:FA_XC": "Ingested AlgoQuarters exceed the committee total",
-  "ERR:FA_NC": "AlgoQuarters ingest is incomplete - not all AlgoQuarters have been ingested"
+  "ERR:FA_NC": "AlgoQuarters ingest is incomplete - not all AlgoQuarters have been ingested",
+  "ERR:FA_NX": "Account AlgoQuarters not ingested for this committee"
 };

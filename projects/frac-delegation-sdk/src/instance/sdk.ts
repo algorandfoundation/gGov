@@ -16,16 +16,15 @@ import { parseAqFile } from '../util/aqFile'
 import { getSpendableBalance } from '../util/spendable'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { chunk } from '../util/chunk'
+import { noteNonce } from '../util/noteNonce'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
   AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS,
   MAX_ACCOUNTS_PER_INGEST_AQ,
+  MAX_ACCOUNTS_PER_UNINGEST_AQ,
   MAX_GROUP_SIZE,
   REF_SLOTS_PER_APP_CALL,
 } from '../constants'
-
-/** Keeps otherwise-identical padding app calls from colliding into one duplicate txn ID. */
-const noteNonce = () => Math.floor(Math.random() * 100_000_000)
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -570,6 +569,74 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     return { committeeNumId, committeeAq }
   }
 
+  /**
+   * Remove one batch of accounts' AlgoQuarters from committee `committeeNumId`. Operator only.
+   *
+   * The correction and MBR-reclaim path: deleting each account's box lowers the instance app
+   * account's minimum balance, so drain a settled committee and sweep the freed ALGO with
+   * `withdrawALGO`. Draining a ledger to `ingestedAq === 0` re-opens `startAqIngest` for a new total.
+   *
+   * Takes addresses (like `ingestAq`); the contract resolves each to its account ID via a readonly
+   * registry read, so an account never ingested for this committee is rejected rather than removed.
+   * Order-independent; no duplicates. One group per call — use {@link uningestAqAll} for a whole set.
+   */
+  @requireWriter()
+  @wrapErrors()
+  makeUningestAqTxns({
+    instanceNumId: _instanceNumId,
+    committeeNumId,
+    accounts,
+    note,
+    client,
+    builder,
+  }: FracDelegationInstanceContractArgs['uningestAq(uint16,address[])void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    if (accounts.length === 0) throw new Error('uningestAq: no accounts to uningest')
+    if (accounts.length > MAX_ACCOUNTS_PER_UNINGEST_AQ) {
+      throw new Error(
+        `uningestAq: ${accounts.length} accounts exceeds the ${MAX_ACCOUNTS_PER_UNINGEST_AQ} per call — ` +
+          `chunk them, or use uningestAqAll.`,
+      )
+    }
+    // Slots: 2 per account (the registry's accounts box read by getAccount + this instance's
+    // accountAq box), plus the registryApp ref and this instance's committeeAq box. No registry
+    // instances box — getAccount, unlike getOrCreateAccountWithInstance, doesn't touch it.
+    builder = this.padForRefSlots(builder, accounts.length * 2 + 2, 'uningestAq')
+    // extraFee covers one getAccount inner call per account.
+    return builder.uningestAq({
+      args: { committeeNumId, accounts },
+      note,
+      extraFee: (accounts.length * 1000).microAlgo(),
+    })
+  }
+
+  uningestAq = this.makeInstanceTxnExecutor({ maker: this.makeUningestAqTxns })
+
+  /**
+   * Remove every entry of `accounts` from committee `committeeNumId`, one group per
+   * {@link MAX_ACCOUNTS_PER_UNINGEST_AQ} accounts. Sequential and atomic per group, so a failure
+   * part-way leaves earlier batches removed — re-run with the remainder, which is safe because an
+   * account already removed is rejected rather than double-counted.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async uningestAqAll({
+    instanceNumId,
+    committeeNumId,
+    accounts,
+    note,
+  }: FracDelegationInstanceContractArgs['uningestAq(uint16,address[])void'] & {
+    instanceNumId: bigint | number
+    note?: string
+  }) {
+    for (const batch of chunk(accounts, MAX_ACCOUNTS_PER_UNINGEST_AQ)) {
+      await this.uningestAq({ instanceNumId, committeeNumId, accounts: batch, note })
+    }
+  }
+
   // ── Periods ──────────────────────────────────────────────────────
 
   /**
@@ -610,6 +677,59 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   }
 
   syncPeriod = this.makeInstanceTxnExecutor({ maker: this.makeSyncPeriodTxns })
+
+  // ── Voting ───────────────────────────────────────────────────────
+
+  /**
+   * Internal vote on gGov period `periodId`, callable by any account with ingested AlgoQuarters in
+   * the period's committee. `topicVotes` is [topic][option] AlgoQuarters, parallel to the period's
+   * topics; every topic's row must sum to the sender's full AQ weight (abstain explicitly via each
+   * topic's last option). Re-votes overwrite.
+   *
+   * Whenever the vote moves the instance's mapped gGov target, the contract re-casts the delta
+   * externally through its escrows inside this same group — the first vote on a period always
+   * re-casts every escrow on every topic. Fees and reference padding are therefore provisioned for
+   * the worst case up front (a no-op re-vote still pays them: extraFee is spent, not refunded).
+   *
+   * The instance app account pays the `votingRecords` box MBR on an account's first vote — keep it
+   * funded, sized by `committeeAq.numAccounts`.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async makeVoteTxns({
+    instanceNumId,
+    periodId,
+    topicVotes,
+    note,
+    client,
+    builder,
+  }: FracDelegationInstanceContractArgs['vote(uint32,uint32[][])void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    const numEscrows = await this.escrowCountUpperBound(instanceNumId)
+    // Worst-case inner calls: 1 registry getAccount, plus per re-cast escrow the period vote() and
+    // the two registry reads it makes itself (getDelegate + getGovVotingPower).
+    const innerCalls = 1 + numEscrows * 3
+    // Slots, worst case (every escrow re-cast): 5 per escrow (the escrow's account ref — the inner
+    // vote() passes it in its foreign-accounts array, so it must be available to the group — plus
+    // this instance's periodEscrowVotes box, the period app's per-escrow vote record, and the gGov
+    // registry's delegations + accounts boxes), plus a fixed ~20 (3 app refs: period app, frac
+    // registry, gGov registry; this instance's periods/periodVoteCache/committees/committeeAq/
+    // accountAq/votingRecords/escrows boxes; the frac registry's accounts box; the period's tallies
+    // box; the gGov registry's committee metadata + member superbox). Each pad also adds 16
+    // inner-txn allowance and 700 opcodes, both of which the ref demand dominates. Validated
+    // against simulate in the e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
+    builder = this.padForRefSlots(builder, numEscrows * 5 + 20, 'vote')
+    return builder.vote({
+      args: { periodId, topicVotes },
+      note,
+      extraFee: (innerCalls * 1000).microAlgo(),
+    })
+  }
+
+  vote = this.makeInstanceTxnExecutor({ maker: this.makeVoteTxns })
 
   // ── Admin: lifecycle ────────────────────────────────────────────
 
