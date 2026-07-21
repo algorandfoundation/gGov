@@ -1,6 +1,6 @@
 import { Account, Application, uint64 } from '@algorandfoundation/algorand-typescript'
 import { StaticBytes, Uint16, Uint32, Uint8 } from '@algorandfoundation/algorand-typescript/arc4'
-import { u16, u32 } from './utils.algo'
+import { u16, u32, u8 } from './utils.algo'
 
 export type CommitteeId = StaticBytes<32>
 
@@ -252,6 +252,15 @@ export type FracInstanceCommittee = {
   totalVotes: Uint32
 }
 
+/** Empty/"not synced" committee snapshot. `committeeNumId` 0 is never assigned by the gGov registry. */
+export function getEmptyFracInstanceCommittee(): FracInstanceCommittee {
+  return {
+    committeeNumId: u16(0),
+    escrowsVotes: [] as Uint32[],
+    totalVotes: u32(0),
+  }
+}
+
 /**
  * A Frac Instance's synced snapshot of one gGov period, written by `syncPeriod`.
  *
@@ -283,6 +292,19 @@ export type FracInstancePeriod = {
   numEscrows: Uint8
 }
 
+/** Empty/"not synced" period snapshot. `periodAppId` 0 is never written by `syncPeriod`. */
+export function getEmptyFracInstancePeriod(): FracInstancePeriod {
+  return {
+    periodAppId: 0,
+    committeeId: new StaticBytes<32>(),
+    committeeNumId: u16(0),
+    votingStart: u32(0),
+    votingEnd: u32(0),
+    topicOptionLengths: [] as Uint32[],
+    numEscrows: u8(0),
+  }
+}
+
 /**
  * A Frac Instance's aggregate vote tallies for one gGov period, zero-filled to the period's topic
  * shape by `syncPeriod`. Per-escrow detail lives in `FracEscrowVotes`, one box per escrow.
@@ -301,6 +323,17 @@ export type FracPeriodVoteCache = {
   internal: Uint32[][]
   /** [topic][option] cached total of external gGov votes cast by this instance's escrows */
   ggovTotals: Uint32[][]
+}
+
+/**
+ * Empty/"not synced" vote cache. A synced period fills `internal` to its topic shape (>= 1 topic),
+ * so the empty top-level arrays are unambiguous as a "no period" sentinel for readers.
+ */
+export function getEmptyFracPeriodVoteCache(): FracPeriodVoteCache {
+  return {
+    internal: [] as Uint32[][],
+    ggovTotals: [] as Uint32[][],
+  }
 }
 
 /**
@@ -330,6 +363,16 @@ export type FracPeriodEscrowKey = [Uint32, Uint8]
 export type FracEscrowVotes = {
   /** [topic][option] external gGov votes cast by this escrow */
   votes: Uint32[][]
+}
+
+/**
+ * Empty/"no box" escrow votes. A synced period stands up one box per escrow filled to its topic
+ * shape (>= 1 topic), so empty `votes` is unambiguous as a "no box" sentinel for readers.
+ */
+export function getEmptyFracEscrowVotes(): FracEscrowVotes {
+  return {
+    votes: [] as Uint32[][],
+  }
 }
 
 /**
@@ -415,6 +458,42 @@ export type FracPeriodAccountKey = [Uint32, Uint32]
 export type FracVotingRecord = {
   /** [topic][option] internal votes, in AlgoQuarters */
   topicVotes: Uint32[][]
+}
+
+/**
+ * Empty/"has not voted" record. A cast vote has one row per topic (>= 1 topic), so empty
+ * `topicVotes` is unambiguous as a "no vote" sentinel for readers.
+ */
+export function getEmptyFracVotingRecord(): FracVotingRecord {
+  return {
+    topicVotes: [] as Uint32[][],
+  }
+}
+
+/**
+ * Bundled read of one account's AlgoQuarters standing in one committee of a frac instance, returned
+ * by `FracDelegationInstance.getAccountCommitteeAq`. Joins the instance's identity, the committee's
+ * identity, and the account's own weight against the committee total in a single readonly call so a
+ * caller (e.g. a wallet showing "your voting weight here") needs no follow-up lookups.
+ *
+ * `committeeNumId` 0 means the committee is not synced on this instance; `userAq`/`totalAq` are then
+ * both 0. `committeeId` echoes the caller's input.
+ */
+export type FracAccountCommitteeAq = {
+  /** Registry-assigned numeric ID of the instance */
+  instanceNumId: Uint16
+  /** On-chain app ID of the instance */
+  instanceAppId: uint64
+  /** Committee numeric ID as synced locally, or 0 if the committee is not synced */
+  committeeNumId: Uint16
+  /** 32-byte gGov committee ID (echoes the input) */
+  committeeId: CommitteeId
+  /** Human-readable instance label */
+  instanceName: string
+  /** The account's ingested AlgoQuarters in the committee, 0 if none */
+  userAq: Uint32
+  /** The committee's declared total AlgoQuarters, 0 if no ledger is open */
+  totalAq: Uint32
 }
 
 /**
