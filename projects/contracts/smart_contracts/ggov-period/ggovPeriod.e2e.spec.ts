@@ -1687,9 +1687,7 @@ describe('GGovPeriod contract', () => {
       const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, nonAdmin)
-      await expect(client.send.update.bare({})).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(client.send.update.bare({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('After admin rotation, new admin can update; old admin cannot', async () => {
@@ -1708,9 +1706,7 @@ describe('GGovPeriod contract', () => {
 
       // Old admin (test creator) is no longer admin
       const oldClient = makePeriodClient(localnet, periodAppId, admin)
-      await expect(oldClient.send.update.bare({})).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(oldClient.send.update.bare({})).rejects.toThrow(transformedError(errUnauthorized))
 
       // New admin can update
       const newClient = makePeriodClient(localnet, periodAppId, newAdmin)
