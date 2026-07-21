@@ -46,7 +46,7 @@ identity lives only on the registry — no per-period copies to keep in sync.
 
 | Action | Admin | Operator | Anyone |
 | --- | :---: | :---: | :---: |
-| `registerCommittee` / `unregisterCommittee` / `ingest`/`uningestGovs` | ✓ | | |
+| `registerCommittee` / `unregisterCommittee` / `ingestGovs` / `uningestGovs` | ✓ | | |
 | `setOperator`, `setAdmin`, `setXGovRegistryApp`, `setLastPeriodId` | ✓ | | |
 | `uploadPeriodApprovalPartial` (period bytecode), `withdrawALGO`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) | ✓ | | |
 | `mirrorXGovDelegation` | ✓ | | |
