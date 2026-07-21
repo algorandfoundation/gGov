@@ -50,12 +50,10 @@ instances resolve the same admin by reading that global.
 | **Registry (as caller)** | The instance's bound `registryApp` global | Instance: `Global.callerApplicationId === registryApp` (used by `registerEscrow`, `getOrCreateAccountWithInstance`). |
 | **Voter** | Ingested AlgoQuarters in the period's committee (`accountAq` box) | Instance `vote`: `Txn.sender` resolves to a frac account with non-zero AQ. |
 
-> **Direct global-state reads.** Unlike gGov (whose period contracts inner-call `verifyAdmin` /
-> `verifyOperator`), frac instances resolve roles by reading the registry app's global state
+> **Direct global-state reads.** Like gGov’s period contracts, frac instances resolve roles by reading the registry app’s global state
 > (`op.AppGlobal.getEx*` on `admin` / `defaultOperator` / `gGovRegistryApp`) — no cross-contract
 > call, no extra transaction. `vote` reads the gGov period app's live globals (`ready`, window,
-> `committeeId`) the same way. This is the pattern the gGov `ARCHITECTURE.md` flags as its planned
-> change; the frac contracts already use it.
+> `committeeId`) the same way.
 
 The **creator escape hatch** is permanent: the spawning registry is the instance's `creatorAddress`,
 so it always passes `ensureCallerIsAdmin`. This is a safety net if an instance is rebound to an
