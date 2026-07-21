@@ -35,7 +35,6 @@ import {
   errGGovVotingNotStarted,
   errIngestedAqNotZero,
   errNoEscrows,
-  errNumAccountsExceeded,
   errPeriodAppMismatch,
   errRegistryMissing,
   errTotalAccountsZero,
@@ -537,15 +536,9 @@ export class FracDelegationInstanceContract extends BaseContract {
     const aqBox = this.committeeAq(committeeNumId)
     ensure(aqBox.exists, errAqNotStarted)
     const committeeAq = clone(aqBox.value)
-    // Cheap arithmetic guard before any box is touched, mirroring uningestGovs' errNumGovsExceeded.
-    ensure(accounts.length <= committeeAq.numAccounts.asUint64(), errNumAccountsExceeded)
 
     let removedAq: uint64 = 0
     for (const account of clone(accounts)) {
-      // Read-only resolve (getAccount), NOT getOrCreateAccountWithInstance: uningest must never mint
-      // an ID. An unregistered account resolves to ID 0, whose accountAq box never exists, so it is
-      // rejected below rather than silently no-op'd. Inlined for the same cyclical-import reason as
-      // ingestAq (hoisting to a const materialises the registry program and puya rejects the cycle).
       const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
         appId: registryApp,
         args: [account],

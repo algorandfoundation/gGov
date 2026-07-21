@@ -32,7 +32,7 @@ export const MAX_ACCOUNTS_PER_INGEST_AQ = 40
  * readonly `getAccount` once per account to resolve its ID, so N accounts need `2N + 2` reference
  * slots (registry `accounts` box + instance `accountAq` box per account, plus the registry app ref
  * and the `committeeAq` box; no registry `instances` box, unlike ingest). Held at 40 for parity with
- * {@link MAX_ACCOUNTS_PER_INGEST_AQ} and header room under the 16-txn group limit; the arg cap
+ * {@link MAX_ACCOUNTS_PER_INGEST_AQ} and headroom under the 16-txn group limit; the arg cap
  * (`8 + 32N <= 2048`) and ref cap both allow ~63. Tunable up once confirmed by a localnet simulate.
  */
 export const MAX_ACCOUNTS_PER_UNINGEST_AQ = 40

@@ -2,9 +2,9 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { generateAccount, getApplicationAddress, makeEmptyTransactionSigner } from 'algosdk'
 import {
+  FracDelegationInstanceClient,
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
-  FracDelegationInstanceClient,
 } from 'frac-delegation-sdk'
 import { GGovCommitteeFile } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
@@ -16,7 +16,6 @@ import {
   errAqNotStarted,
   errCommitteeNotExists,
   errIngestedAqNotZero,
-  errNumAccountsExceeded,
   errTotalAccountsZero,
   errTotalAqExceeded,
   errTotalAqZero,
@@ -524,7 +523,7 @@ describe('FracDelegationInstance algoquarters', () => {
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
       // Frozen while any AQ are ingested.
-      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 5000, totalAccounts: 10 })).rejects.toThrow(
+      await expect(sdkWrapper.startAqIngest({ committeeId, totalAq: 5000, totalAccounts: 50 })).rejects.toThrow(
         transformedError(errIngestedAqNotZero),
       )
 
@@ -532,7 +531,7 @@ describe('FracDelegationInstance algoquarters', () => {
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.ingestedAq).toBe(0)
 
       // Unfrozen: a fresh total can now be committed.
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 5000, totalAccounts: 10 })
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 5000, totalAccounts: 50 })
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.totalAq).toBe(5000)
     })
 
@@ -613,12 +612,10 @@ describe('FracDelegationInstance algoquarters', () => {
       await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
 
-      // The second committee knows the account's ID but holds no box for it. Ingest a filler so its
-      // numAccounts is 1 - otherwise the cheap count guard (errNumAccountsExceeded) fires first,
-      // before the per-account box-exists check this test is exercising.
+      // The second committee knows the account's ID (IDs are registry-wide) but holds no box for it,
+      // so the per-account box-exists check rejects it.
       const { secondCommitteeId, secondNumId } = await addSecondCommittee(ctx)
       await sdkWrapper.startAqIngest({ committeeId: secondCommitteeId, totalAq: 1000, totalAccounts: 10 })
-      await sdkWrapper.ingestAq({ committeeNumId: secondNumId, accountAqs: rows(freshAccounts(1), 50) })
 
       await expect(sdkWrapper.uningestAq({ committeeNumId: secondNumId, accounts: [account] })).rejects.toThrow(
         transformedError(errAccountAqNotExists),
@@ -631,22 +628,12 @@ describe('FracDelegationInstance algoquarters', () => {
       const accounts = freshAccounts(2)
       await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(accounts, 100) })
 
-      // length 2 <= numAccounts 2 clears the count guard; the second pass finds the box already gone.
+      // The second pass finds the box already gone, so the whole group reverts.
       await expect(sdkWrapper.uningestAq({ committeeNumId, accounts: [accounts[0], accounts[0]] })).rejects.toThrow(
         transformedError(errAccountAqNotExists),
       )
       // Atomic: nothing was removed.
       expect((await sdkWrapper.getCommitteeAq(committeeNumId))!.numAccounts).toBe(2)
-    })
-
-    test('rejects a batch larger than the ingested account count', async () => {
-      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
-      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
-      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows(freshAccounts(1), 100) })
-
-      await expect(sdkWrapper.uningestAq({ committeeNumId, accounts: freshAccounts(2) })).rejects.toThrow(
-        transformedError(errNumAccountsExceeded),
-      )
     })
   })
 

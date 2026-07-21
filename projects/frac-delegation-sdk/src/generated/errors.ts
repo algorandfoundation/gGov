@@ -79,6 +79,5 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:FA_EX": "Account AlgoQuarters already ingested for this committee",
   "ERR:FA_XC": "Ingested AlgoQuarters exceed the committee total",
   "ERR:FA_NC": "AlgoQuarters ingest is incomplete - not all AlgoQuarters have been ingested",
-  "ERR:FA_NX": "Account AlgoQuarters not ingested for this committee",
-  "ERR:FA_AC": "Number of accounts to uningest exceeds ingested accounts"
+  "ERR:FA_NX": "Account AlgoQuarters not ingested for this committee"
 };
