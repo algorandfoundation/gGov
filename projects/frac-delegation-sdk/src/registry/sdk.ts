@@ -12,6 +12,7 @@ import { FracDelegationRegistryReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 import { chunk } from '../util/chunk'
+import { noteNonce } from '../util/noteNonce'
 import { BODY_CHUNK_BYTES, DEFAULT_INSTANCE_MBR_MICROALGOS, MAX_GROUP_SIZE } from '../constants'
 
 export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
@@ -215,6 +216,10 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     bytecode: Uint8Array
     note?: string | Uint8Array
   }): Promise<void> {
+    // Distinct default note per call: re-uploading bytecode already uploaded (a redeploy, or a
+    // test restoring the real program) otherwise reproduces byte-identical chunk txns, which the
+    // node rejects as already-in-ledger while the earlier ones are inside their validity window.
+    note = note ?? `iap-upload-${noteNonce()}`
     const chunks = chunk(Array.from(bytecode), BODY_CHUNK_BYTES)
     const groups = chunk(
       chunks.map((c, i) => ({ index: i, data: c })),

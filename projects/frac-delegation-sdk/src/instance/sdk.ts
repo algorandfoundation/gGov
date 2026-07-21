@@ -12,15 +12,13 @@ import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { chunk } from '../util/chunk'
+import { noteNonce } from '../util/noteNonce'
 import {
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
   MAX_GROUP_SIZE,
   REF_SLOTS_PER_APP_CALL,
 } from '../constants'
-
-/** Keeps otherwise-identical padding app calls from colliding into one duplicate txn ID. */
-const noteNonce = () => Math.floor(Math.random() * 100_000_000)
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -496,6 +494,59 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   }
 
   syncPeriod = this.makeInstanceTxnExecutor({ maker: this.makeSyncPeriodTxns })
+
+  // ── Voting ───────────────────────────────────────────────────────
+
+  /**
+   * Internal vote on gGov period `periodId`, callable by any account with ingested AlgoQuarters in
+   * the period's committee. `topicVotes` is [topic][option] AlgoQuarters, parallel to the period's
+   * topics; every topic's row must sum to the sender's full AQ weight (abstain explicitly via each
+   * topic's last option). Re-votes overwrite.
+   *
+   * Whenever the vote moves the instance's mapped gGov target, the contract re-casts the delta
+   * externally through its escrows inside this same group — the first vote on a period always
+   * re-casts every escrow on every topic. Fees and reference padding are therefore provisioned for
+   * the worst case up front (a no-op re-vote still pays them: extraFee is spent, not refunded).
+   *
+   * The instance app account pays the `votingRecords` box MBR on an account's first vote — keep it
+   * funded, sized by `committeeAq.numAccounts`.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async makeVoteTxns({
+    instanceNumId,
+    periodId,
+    topicVotes,
+    note,
+    client,
+    builder,
+  }: FracDelegationInstanceContractArgs['vote(uint32,uint32[][])void'] & {
+    instanceNumId: bigint | number
+    client: FracDelegationInstanceClient
+  } & InstanceMethodBuilderArgs) {
+    builder = builder ?? client.newGroup()
+    const numEscrows = await this.escrowCountUpperBound(instanceNumId)
+    // Worst-case inner calls: 1 registry getAccount, plus per re-cast escrow the period vote() and
+    // the two registry reads it makes itself (getDelegate + getGovVotingPower).
+    const innerCalls = 1 + numEscrows * 3
+    // Slots, worst case (every escrow re-cast): 5 per escrow (the escrow's account ref — the inner
+    // vote() passes it in its foreign-accounts array, so it must be available to the group — plus
+    // this instance's periodEscrowVotes box, the period app's per-escrow vote record, and the gGov
+    // registry's delegations + accounts boxes), plus a fixed ~20 (3 app refs: period app, frac
+    // registry, gGov registry; this instance's periods/periodVoteCache/committees/committeeAq/
+    // accountAq/votingRecords/escrows boxes; the frac registry's accounts box; the period's tallies
+    // box; the gGov registry's committee metadata + member superbox). Each pad also adds 16
+    // inner-txn allowance and 700 opcodes, both of which the ref demand dominates. Validated
+    // against simulate in the e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
+    builder = this.padForRefSlots(builder, numEscrows * 5 + 20, 'vote')
+    return builder.vote({
+      args: { periodId, topicVotes },
+      note,
+      extraFee: (innerCalls * 1000).microAlgo(),
+    })
+  }
+
+  vote = this.makeInstanceTxnExecutor({ maker: this.makeVoteTxns })
 
   // ── Admin: lifecycle ────────────────────────────────────────────
 

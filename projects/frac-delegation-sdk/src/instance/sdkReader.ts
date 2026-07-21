@@ -11,6 +11,7 @@ import {
   FracInstanceCommittee,
   FracInstancePeriod,
   FracPeriodVoteCache,
+  FracVotingRecord,
 } from '../generated/FracDelegationInstanceClient'
 import { getConstructorConfig } from '../networkConfig'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors'
@@ -151,7 +152,7 @@ export class FracDelegationReaderSDK {
    *
    * Keyed by the committee's gGov *numeric* ID, not its 32-byte ID — `getCommittee(instanceNumId,
    * committeeId)` resolves that (`committeeNumId`), and `startAqIngest` returns it. Ingestion is
-   * complete when `ingestedAq === totalAq`.
+   * complete when both `ingestedAq === totalAq` and `numAccounts === totalAccounts`.
    */
   async getCommitteeAq(
     instanceNumId: bigint | number,
@@ -197,6 +198,19 @@ export class FracDelegationReaderSDK {
   ): Promise<FracPeriodVoteCache | undefined> {
     const client = await this.getInstanceReadClient(instanceNumId)
     return undefinedIfBoxMissing(() => client.state.box.periodVoteCache.value(BigInt(periodId)))
+  }
+
+  /**
+   * An account's internal vote for a gGov period ([topic][option] AlgoQuarters, exactly as
+   * submitted), or undefined if it has not voted. `accountId` is the frac registry numeric ID.
+   */
+  async getVotingRecord(
+    instanceNumId: bigint | number,
+    periodId: bigint | number,
+    accountId: bigint | number,
+  ): Promise<FracVotingRecord | undefined> {
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return undefinedIfBoxMissing(() => client.state.box.votingRecords.value([BigInt(periodId), BigInt(accountId)]))
   }
 
   /**
