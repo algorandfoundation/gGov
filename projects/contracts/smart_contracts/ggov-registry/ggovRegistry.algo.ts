@@ -393,7 +393,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * not registered to any frac instance (`errEscrowNotAssigned`) rejects the whole call.
    * @param escrowAccounts Escrow accounts registered to an instance, tracked by frac-delegation registry
    */
-  public importFracDelegation(escrowAccounts: Account[]): void {
+  public importFracDelegations(escrowAccounts: Account[]): void {
     this.ensureCallerIsAdmin()
     for (const escrow of escrowAccounts) {
       // Checked before the inner call so the likely admin mistake fails cheaply

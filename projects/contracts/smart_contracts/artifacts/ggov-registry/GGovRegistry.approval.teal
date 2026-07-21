@@ -39,9 +39,9 @@ main_after_if_else@2:
     assert // OnCompletion must be NoOp
     txn ApplicationID
     assert
-    pushbytess 0xd50bc43d 0xf30cf84d 0x4604c77d 0x9d94f5dc 0x89b1e876 0x93e6c337 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0x5a4f2056 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x179c9135 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0x43b85a6c 0x488d2290 0xc60713f2 0xa220b9f9 0x4118ecbf // method "registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void", method "unregisterCommittee(byte[32])void", method "ingestGovs(byte[32],(address,uint32)[])void", method "uningestGovs(byte[32],address[])void", method "setXGovRegistryApp(uint64)void", method "setFracRegistryApp(uint64)void", method "setAdmin(address)void", method "withdrawALGO(address,uint64)void", method "verifyAdmin(address)bool", method "setOperator(address)void", method "verifyOperator(address)bool", method "set_voting_account(address,address)void", method "mirrorXGovDelegation(address)void", method "importFracDelegation(address[])void", method "getDelegation(address)(address,bool)", method "getDelegate(address)address", method "logDelegators(address)void", method "logDelegations(address[])void", method "uploadPeriodApprovalPartial(uint64,byte[])void", method "createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)", method "setLastPeriodId(uint64)void", method "updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void", method "removePeriodSummary(uint32)void", method "getPeriodApp(uint64)uint64", method "getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)", method "logPeriodSummaries(uint64[])void", method "getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)", method "logCommitteeMetadata(byte[32][])void", method "logCommitteePages(byte[32],bool,uint64,uint64)void", method "getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)", method "getGovVotingPower(byte[32],address)uint32", method "tryGetGovVotingPower(byte[32],address)uint32", method "getAccount(address)(uint32,(uint16,uint16)[])", method "logAccounts(address[])void", method "increaseBudget(uint64)void"
+    pushbytess 0xd50bc43d 0xf30cf84d 0x4604c77d 0x9d94f5dc 0x89b1e876 0x93e6c337 0x17866912 0x928ddc5e 0x3eb3af21 0x440d953b 0x4d5a75d7 0x0da27885 0xe5259752 0xdd01cf83 0xeb8d93c9 0xc8d461ab 0x3bbba456 0x97a96d67 0x179c9135 0xc326bb9b 0xbde99036 0xecb70c0e 0x99296b25 0xce50197a 0xe67e3ba1 0x11290439 0x378b2b51 0x6d983f10 0x05286ea1 0x36bd15f2 0x43b85a6c 0x488d2290 0xc60713f2 0xa220b9f9 0x4118ecbf // method "registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void", method "unregisterCommittee(byte[32])void", method "ingestGovs(byte[32],(address,uint32)[])void", method "uningestGovs(byte[32],address[])void", method "setXGovRegistryApp(uint64)void", method "setFracRegistryApp(uint64)void", method "setAdmin(address)void", method "withdrawALGO(address,uint64)void", method "verifyAdmin(address)bool", method "setOperator(address)void", method "verifyOperator(address)bool", method "set_voting_account(address,address)void", method "mirrorXGovDelegation(address)void", method "importFracDelegations(address[])void", method "getDelegation(address)(address,bool)", method "getDelegate(address)address", method "logDelegators(address)void", method "logDelegations(address[])void", method "uploadPeriodApprovalPartial(uint64,byte[])void", method "createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)", method "setLastPeriodId(uint64)void", method "updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void", method "removePeriodSummary(uint32)void", method "getPeriodApp(uint64)uint64", method "getPeriodSummary(uint64)(uint64,uint32,uint32,uint32,bool)", method "logPeriodSummaries(uint64[])void", method "getCommitteeMetadata(byte[32],bool)(uint16,uint32,uint32,uint32,uint32,uint64,uint32)", method "logCommitteeMetadata(byte[32][])void", method "logCommitteePages(byte[32],bool,uint64,uint64)void", method "getCommitteeSuperboxMeta(byte[32])(uint16[],uint64,uint64,uint64,string)", method "getGovVotingPower(byte[32],address)uint32", method "tryGetGovVotingPower(byte[32],address)uint32", method "getAccount(address)(uint32,(uint16,uint16)[])", method "logAccounts(address[])void", method "increaseBudget(uint64)void"
     txna ApplicationArgs 0
-    match registerCommittee unregisterCommittee ingestGovs uningestGovs setXGovRegistryApp setFracRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation importFracDelegation getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod setLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getGovVotingPower tryGetGovVotingPower getAccount logAccounts increaseBudget
+    match registerCommittee unregisterCommittee ingestGovs uningestGovs setXGovRegistryApp setFracRegistryApp setAdmin withdrawALGO verifyAdmin setOperator verifyOperator setVotingAccount mirrorXGovDelegation importFracDelegations getDelegation getDelegate logDelegators logDelegations uploadPeriodApprovalPartial createPeriod setLastPeriodId updatePeriodSummary removePeriodSummary getPeriodApp getPeriodSummary logPeriodSummaries getCommitteeMetadata logCommitteeMetadata logCommitteePages getCommitteeSuperboxMeta getGovVotingPower tryGetGovVotingPower getAccount logAccounts increaseBudget
 
 main_after_if_else@49:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:80-81
@@ -2795,12 +2795,12 @@ mirrorXGovDelegation_after_if_else@6:
     return
 
 
-// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.importFracDelegation[routing]() -> void:
-importFracDelegation:
+// smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.importFracDelegations[routing]() -> void:
+importFracDelegations:
     intc_0 // 0
     dup
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:396
-    // public importFracDelegation(escrowAccounts: Account[]): void {
+    // public importFracDelegations(escrowAccounts: Account[]): void {
     txna ApplicationArgs 1
     dupn 2
     intc_0 // 0
@@ -2820,13 +2820,13 @@ importFracDelegation:
     callsub ensureCallerIsAdmin
     intc_0 // 0
 
-importFracDelegation_for_header@2:
+importFracDelegations_for_header@2:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:398
     // for (const escrow of escrowAccounts) {
     dup
     dig 2
     <
-    bz importFracDelegation_after_for@6
+    bz importFracDelegations_after_for@6
     dig 2
     extract 2 0
     dig 1
@@ -2847,7 +2847,7 @@ importFracDelegation_for_header@2:
     bury 1
     // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
-    bnz importFracDelegation_after_if_else@9
+    bnz importFracDelegations_after_if_else@9
     // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 3
@@ -2862,7 +2862,7 @@ importFracDelegation_for_header@2:
     // err()
     err
 
-importFracDelegation_after_if_else@9:
+importFracDelegations_after_if_else@9:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:405-408
     // const escrowInstance = compileArc4(FracDelegationRegistryContract).call.getEscrow({
     //   appId: this.fracRegistryApp.value,
@@ -2916,7 +2916,7 @@ importFracDelegation_after_if_else@9:
     extract_uint16
     // smart_contracts/base/utils.algo.ts:44
     // if (!cond) {
-    bnz importFracDelegation_after_if_else@13
+    bnz importFracDelegations_after_if_else@13
     // smart_contracts/base/utils.algo.ts:45
     // log(extra)
     dig 3
@@ -2931,7 +2931,7 @@ importFracDelegation_after_if_else@9:
     // err()
     err
 
-importFracDelegation_after_if_else@13:
+importFracDelegations_after_if_else@13:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:413
     // this.addDelegation(escrow, Application(escrowInstance.instanceAppId).address)
     dig 4
@@ -2946,11 +2946,11 @@ importFracDelegation_after_if_else@13:
     intc_1 // 1
     +
     bury 1
-    b importFracDelegation_for_header@2
+    b importFracDelegations_for_header@2
 
-importFracDelegation_after_for@6:
+importFracDelegations_after_for@6:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:396
-    // public importFracDelegation(escrowAccounts: Account[]): void {
+    // public importFracDelegations(escrowAccounts: Account[]): void {
     intc_1 // 1
     return
 

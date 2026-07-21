@@ -398,7 +398,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    * instance, rejects the whole call. Unlike `mirrorXGovDelegation` this OVERWRITES an existing
    * delegation; re-importing an unchanged delegation is a contract-level no-op.
    *
-   * One group per call — use {@link importFracDelegations} to import more than {@link MAX_ESCROWS_PER_FD_IMPORT}
+   * One group per call — use {@link importFracDelegationsAll} to import more than {@link MAX_ESCROWS_PER_FD_IMPORT}
    * escrow delegations.
    *
    * The registry app account pays the delegation box MBR and no payment is attached — fund it
@@ -406,14 +406,14 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    */
   @requireWriterWithClient()
   @wrapErrors()
-  makeImportFracDelegationTxns({
+  makeImportFracDelegationsTxns({
     escrowAccounts,
     note,
     builder,
-  }: GGovRegistryContractArgs['importFracDelegation(address[])void'] & CommonMethodBuilderArgs) {
+  }: GGovRegistryContractArgs['importFracDelegations(address[])void'] & CommonMethodBuilderArgs) {
     if (escrowAccounts.length > MAX_ESCROWS_PER_FD_IMPORT) {
       throw new Error(
-        `Too many escrows to import in one transaction group: ${escrowAccounts.length} (max ${MAX_ESCROWS_PER_FD_IMPORT}). Use \`importFracDelegations\` method.`,
+        `Too many escrows to import in one transaction group: ${escrowAccounts.length} (max ${MAX_ESCROWS_PER_FD_IMPORT}). Use \`importFracDelegationsAll\` method.`,
       )
     }
     builder = builder ?? this.writeClient!.newGroup()
@@ -423,16 +423,16 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     // delegatee, so a re-delegation touches two entries); the frac registry's `escrows` (5) + `instances` (6) boxes
     // read by the inner `getEscrow`, and the instance app ref (`Application(id).address` needs the app available).
     // Plus a fixed 1 for the frac registry app ref, which the whole batch shares.
-    builder = padForRefSlots(builder, escrowAccounts.length * 7 + 1, 'importFracDelegation')
+    builder = padForRefSlots(builder, escrowAccounts.length * 7 + 1, 'importFracDelegations')
     // extraFee covers one inner getEscrow call per escrow sent as argument
-    return builder.importFracDelegation({
+    return builder.importFracDelegations({
       args: { escrowAccounts },
       note,
       extraFee: (escrowAccounts.length * 1000).microAlgo(),
     })
   }
 
-  importFracDelegation = this.makeTxnExecutor({ maker: this.makeImportFracDelegationTxns })
+  importFracDelegations = this.makeTxnExecutor({ maker: this.makeImportFracDelegationsTxns })
 
   /**
    * Import any number of frac escrows delegations, one transaction group per {@link MAX_ESCROWS_PER_FD_IMPORT}
@@ -444,14 +444,14 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    */
   @requireWriterWithClient()
   @wrapErrors()
-  async importFracDelegations({
+  async importFracDelegationsAll({
     escrowAccounts,
     note,
-  }: GGovRegistryContractArgs['importFracDelegation(address[])void'] & {
+  }: GGovRegistryContractArgs['importFracDelegations(address[])void'] & {
     note?: string | Uint8Array
   }): Promise<void> {
     for (const escrowsChunk of chunk(escrowAccounts, MAX_ESCROWS_PER_FD_IMPORT)) {
-      const { txIds } = await this.importFracDelegation({ escrowAccounts: escrowsChunk, note })
+      const { txIds } = await this.importFracDelegations({ escrowAccounts: escrowsChunk, note })
       if (this.debug) console.log('escrows imported ', escrowsChunk.length, txIds[txIds.length - 1])
     }
   }

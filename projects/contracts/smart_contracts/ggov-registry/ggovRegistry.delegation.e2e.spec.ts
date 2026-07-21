@@ -195,7 +195,7 @@ describe('GGovRegistry delegation', () => {
     })
   })
 
-  describe('importFracDelegation', () => {
+  describe('importFracDelegations', () => {
     test('rejects a batch containing an account that is not a gGov account', async () => {
       const { testAccount: deployer } = localnet.context
       const numEscrows = 3
@@ -206,7 +206,7 @@ describe('GGovRegistry delegation', () => {
       await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
       const outsider = generateAccount().addr.toString()
 
-      await expect(sdk.importFracDelegation({ escrowAccounts: [...escrows, outsider] })).rejects.toThrow(
+      await expect(sdk.importFracDelegations({ escrowAccounts: [...escrows, outsider] })).rejects.toThrow(
         transformedError(errAccountNotExists),
       )
       // Fail-loud batch: the valid escrows in the same call did not land either.
@@ -226,7 +226,7 @@ describe('GGovRegistry delegation', () => {
       // check and fails on the frac side's zero sentinel instead.
       const unregistered = govAccounts[numEscrows].addr.toString()
 
-      await expect(sdk.importFracDelegation({ escrowAccounts: [...escrows, unregistered] })).rejects.toThrow(
+      await expect(sdk.importFracDelegations({ escrowAccounts: [...escrows, unregistered] })).rejects.toThrow(
         transformedError(errEscrowNotAssigned),
       )
       // Fail-loud batch: the valid escrows in the same call did not land either.
@@ -240,7 +240,7 @@ describe('GGovRegistry delegation', () => {
       // to exist on either registry — no frac scaffolding required.
       const tooMany = Array.from({ length: MAX_ESCROWS_PER_FD_IMPORT + 1 }, () => generateAccount().addr.toString())
 
-      await expect(sdk.importFracDelegation({ escrowAccounts: tooMany })).rejects.toThrow(
+      await expect(sdk.importFracDelegations({ escrowAccounts: tooMany })).rejects.toThrow(
         `Too many escrows to import in one transaction group`,
       )
     })
@@ -258,7 +258,7 @@ describe('GGovRegistry delegation', () => {
       await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
 
       // import call
-      await sdk.importFracDelegation({ escrowAccounts: escrows1.concat(escrows2) })
+      await sdk.importFracDelegations({ escrowAccounts: escrows1.concat(escrows2) })
 
       for (const escrow of escrows1) {
         const delegation = await sdk.getDelegation(escrow)
@@ -292,7 +292,7 @@ describe('GGovRegistry delegation', () => {
         instanceAppIds.push(appId)
       }
 
-      await sdk.importFracDelegation({ escrowAccounts: escrows })
+      await sdk.importFracDelegations({ escrowAccounts: escrows })
 
       const delegatees = instanceAppIds.map((appId) => getApplicationAddress(appId).toString())
       for (const [i, escrow] of escrows.entries()) {
@@ -310,8 +310,8 @@ describe('GGovRegistry delegation', () => {
       await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
       const delegatee = getApplicationAddress(appId).toString()
 
-      await sdk.importFracDelegation({ escrowAccounts: escrows })
-      await sdk.importFracDelegation({ escrowAccounts: escrows })
+      await sdk.importFracDelegations({ escrowAccounts: escrows })
+      await sdk.importFracDelegations({ escrowAccounts: escrows })
 
       for (const escrow of escrows) {
         expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatee)
@@ -337,7 +337,7 @@ describe('GGovRegistry delegation', () => {
       })
       expect((await sdk.getDelegation(escrow)).delegatee).toBe(previous.toString())
 
-      await sdk.importFracDelegation({ escrowAccounts: [escrow] })
+      await sdk.importFracDelegations({ escrowAccounts: [escrow] })
 
       expect((await sdk.getDelegation(escrow)).delegatee).toBe(getApplicationAddress(appId).toString())
       // The previous delegatee's reverse list was unlinked, not left stale.
@@ -346,7 +346,7 @@ describe('GGovRegistry delegation', () => {
 
     test('batch-size limit: the log budget, not references, is what caps the batch', async () => {
       const makeRawImportGroup = (appCalls: number) => {
-        const builder = sdk.writeClient!.newGroup().importFracDelegation({
+        const builder = sdk.writeClient!.newGroup().importFracDelegations({
           args: { escrowAccounts: escrows },
           extraFee: (escrows.length * 1000).microAlgo(),
         })
@@ -358,7 +358,7 @@ describe('GGovRegistry delegation', () => {
 
       // Each escrow emits one GGovDelegationSet: 4-byte ARC-28 selector + 3 addresses = 100 bytes,
       // against the AVM's 1024-byte per-app-call log budget. That budget is per app call, so the
-      // ref padding cannot buy more of it - every emit runs inside the one importFracDelegation
+      // ref padding cannot buy more of it - every emit runs inside the one importFracDelegations
       // call. floor(1024/100) = 10, which is where the constant comes from.
       expect(MAX_ESCROWS_PER_FD_IMPORT).toBe(10)
 
@@ -376,14 +376,14 @@ describe('GGovRegistry delegation', () => {
       await expect(makeRawImportGroup(15).send()).rejects.toThrow('program logs too large')
 
       // Exactly at the cap fits.
-      await sdk.importFracDelegation({ escrowAccounts: escrows.slice(0, MAX_ESCROWS_PER_FD_IMPORT) })
+      await sdk.importFracDelegations({ escrowAccounts: escrows.slice(0, MAX_ESCROWS_PER_FD_IMPORT) })
       for (const escrow of escrows.slice(0, MAX_ESCROWS_PER_FD_IMPORT)) {
         expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatee)
       }
     }, 300_000)
   })
 
-  describe('importFracDelegations (chunking wrapper)', () => {
+  describe('importFracDelegationsAll (chunking wrapper)', () => {
     test('splits a list over the cap across groups and lands every escrow', async () => {
       const { testAccount: deployer } = localnet.context
       const numEscrows = MAX_ESCROWS_PER_FD_IMPORT + 3
@@ -393,7 +393,7 @@ describe('GGovRegistry delegation', () => {
       await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
       const delegatee = getApplicationAddress(appId).toString()
 
-      await sdk.importFracDelegations({ escrowAccounts: escrows })
+      await sdk.importFracDelegationsAll({ escrowAccounts: escrows })
 
       for (const escrow of escrows) {
         expect((await sdk.getDelegation(escrow)).delegatee).toBe(delegatee)

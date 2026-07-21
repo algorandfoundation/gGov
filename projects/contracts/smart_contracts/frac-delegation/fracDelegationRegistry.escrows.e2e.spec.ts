@@ -139,7 +139,7 @@ describe('FracDelegationRegistry escrows', () => {
       const { sdk } = await deployFracInstance(localnet, testAccount)
       const escrow = newEscrow()
 
-      // Raw readonly: the contract must answer with a sentinel, not a failure — importFracDelegation
+      // Raw readonly: the contract must answer with a sentinel, not a failure — importFracDelegations
       // relies on this staying a plain read and enforces "assigned" itself.
       const { return: raw } = await sdk.registry.readClient.send.getEscrow({ args: { account: escrow } })
       expect(raw!.instanceNumId).toBe(0)

@@ -236,8 +236,8 @@ describe('GGovRegistry admin', () => {
       )
     })
 
-    test('non-admin cannot importFracDelegation', async () => {
-      await expect(nonAdminSDK.importFracDelegation({ escrowAccounts: [nonAdmin.toString()] })).rejects.toThrow(
+    test('non-admin cannot importFracDelegations', async () => {
+      await expect(nonAdminSDK.importFracDelegations({ escrowAccounts: [nonAdmin.toString()] })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })

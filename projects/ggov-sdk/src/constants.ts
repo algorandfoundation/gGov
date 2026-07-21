@@ -36,7 +36,7 @@ export const DEFAULT_PERIOD_MBR_MICROALGOS = 1_000_000n
  * delegatee (29_300).
  *
  * Charged on every delegation path — `setVotingAccount`, `mirrorXGovDelegation` and
- * `importFracDelegation` alike — and none of them carries a payment, so the registry pays out of
+ * `importFracDelegations` alike — and none of them carries a payment, so the registry pays out of
  * its own balance. Keep it funded ahead of a large import or the box writes fail the group.
  * Fully reclaimed when the delegation is cleared.
  */
@@ -52,7 +52,7 @@ export const DELEGATION_MBR_EXISTING_DELEGATEE_MICROALGOS = 41_300n
 // ── Import Fractional Delegations ──────────────────────────---------
 
 /**
- * Escrows per `importFracDelegation` call — bounded by the AVM's 1024-byte log budget, NOT by
+ * Escrows per `importFracDelegations` call — bounded by the AVM's 1024-byte log budget, NOT by
  * references. Each escrow emits one 100-byte ARC-28 `GGovDelegationSet`, and the budget is per app
  * call, so padding cannot buy more of it: `floor(1024 / 100)` = 10.
  */
