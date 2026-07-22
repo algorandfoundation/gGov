@@ -18,9 +18,9 @@ gGov is two cooperating smart contracts:
                  ▼       ▼       ▼       ▼       ▼
                  GGovPeriod apps — one per voting period
 
-  each GGovPeriod app owns its topics · tallies · vote records, and inner-calls
-  the registry for verifyOperator / verifyAdmin / getDelegate /
-  getGovVotingPower / updatePeriodSummary
+  each GGovPeriod app owns its topics · tallies · vote records, reads the
+  registry's admin / operator globals directly for auth, and inner-calls the
+  registry for getDelegate / getGovVotingPower / updatePeriodSummary
 ```
 
 > **Note on naming**: the "Committee Oracle" referenced in earlier docs is now folded into the **`GGovRegistry`** contract (see [historical note](#xgov-committee-oracle-historical-name)). The repo's `xgov-delegator` name is a holdover from an earlier `Delegator` contract experiment (since removed); the frac-delegation registry/instance contracts that succeeded it trace their design back to the [`xgov-delegator`](https://github.com/d13co/xgov-delegator) prototype.
@@ -38,10 +38,19 @@ pnpm run deploy [contract-dir-name]               # watch mode: redeploys on fil
 
 Environment: `algokit project deploy <network>` loads `.env` then `.env.<network>` on top (see `.env.template`; all real `.env*` files are gitignored). Algod/indexer endpoints default per network. TestNet/MainNet deploys expect `DEPLOYER_MNEMONIC` and `DISPENSER_MNEMONIC`.
 
-Upstream registry ids, both optional and re-settable on redeploy:
+## Registry wiring
 
-- `XGOV_REGISTRY_APP_ID` — wired into `GGovRegistry.xGovRegistryApp`; left unconfigured if unset.
-- `GGOV_REGISTRY_APP_ID` — wired into `FracDelegationRegistry.gGovRegistryApp`; if unset, the frac deploy falls back to looking up the `GGovRegistry` app created by the same `DEPLOYER`, so a fresh full-bundle deploy couples the two automatically.
+Each `deploy-config.ts` deploys only its own app. The cross-app links live in `smart_contracts/wire-registries.ts`, which `index.ts` runs once after every deploy config:
+
+| Link                                     | Set to                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `GGovRegistry.xGovRegistryApp`           | `XGOV_REGISTRY_APP_ID` (env only — this repo never deploys an xGov registry) |
+| `GGovRegistry.fracRegistryApp`           | the frac delegation registry                                                 |
+| `FracDelegationRegistry.gGovRegistryApp` | the gGov registry                                                            |
+
+Each app id is resolved in this order: **deployed by the current run** → `GGOV_REGISTRY_APP_ID` / `FRAC_REGISTRY_APP_ID` → the app of that name created by the same `DEPLOYER`. So a full-bundle deploy couples the registries with no configuration, and a standalone deploy (`deploy:ci ggov-registry`) wires against whatever already exists. The env vars are only needed to point at an app the `DEPLOYER` did not create.
+
+Every link is idempotent (skipped when already set) and never fails the deploy: if the target app can't be read, or its admin isn't the `DEPLOYER`, wiring warns and moves on.
 
 <a id="ggovregistry"></a>
 
@@ -76,6 +85,7 @@ Max delegations per delegatee: ~1024. At the moment we store reverse delegation 
 - `admin`: Account (default: creator) - admin address, rotatable via `setAdmin`
 - `operator`: Account - operator address; manages periods on spawned `GGovPeriod` apps
 - `xGovRegistryApp`: Application (key: `xGovRegistryApp`) - xGov registry application ID
+- `fracRegistryApp`: Application (key: `fracRegistryApp`) - fractional delegation registry application ID; read by `importFracDelegations` to resolve escrows
 - `lastCommitteeId`: uint64 (0) - incrementing committee numeric ID; also the committee superbox prefix counter
 - `lastPeriodId`: uint64 (0) - incrementing period ID counter
 - `lastAccountId`: uint64 (0) - incrementing account numeric ID counter
@@ -199,8 +209,6 @@ store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false
 
 ### Read Methods
 
-- `verifyAdmin(account)` -> boolean - Whether account is the admin (called by period contracts via inner txn)
-- `verifyOperator(account)` -> boolean - Whether account is the operator (called by period contracts via inner txn)
 - `getDelegation(account)` -> [Account, boolean] - Delegatee and whether a delegation exists
 - `getDelegate(account)` -> Account - Delegatee address, or zero address if none (called by period contracts)
 - `logDelegators(delegatee)` - Log the addresses that have delegated to `delegatee` (reverse lookup), one per log line
@@ -274,12 +282,12 @@ value: GGovVoteRecord struct
 ### Lifecycle Methods
 
 - `init(registryApp, periodId, committeeId, votingStart, votingEnd)` - Initialise the period. Called once, as an inner ARC-4 call from the registry's `createPeriod` (sender must be the creator/registry app account)
-- `updateApplication()` - App updatable by the registry admin (verified via inner call to `registry.verifyAdmin`)
-- `deleteApplication()` - App deletable by the registry admin (verified via inner call to `registry.verifyAdmin`)
+- `updateApplication()` - App updatable by the registry admin (resolved from the registry's `admin` global state; the creator/registry app account is a permanent escape hatch)
+- `deleteApplication()` - App deletable by the registry admin (resolved from the registry's `admin` global state; the creator/registry app account is a permanent escape hatch)
 
 ### Operator Methods
 
-Operator status is verified via inner call to `registry.verifyOperator`. All of these require the period to be editable (`ready === false`).
+Operator status is resolved from the registry's `operator` global state (read directly, no inner call). All of these require the period to be editable (`ready === false`).
 
 - `editPeriod(committeeId, votingStart, votingEnd)` - Edit committee + voting window; syncs summary to registry
 - `addTopic(options: string[])` -> topicIndex uint64 - Append a topic with zeroed tallies; syncs summary

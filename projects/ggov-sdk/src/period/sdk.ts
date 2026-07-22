@@ -139,8 +139,8 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.editPeriod({
       args: { committeeId: committeeIdToRaw(committeeId), votingStart, votingEnd },
       note,
-      // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
-      extraFee: (2000).microAlgo(),
+      // 1 inner updatePeriodSummary
+      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -165,8 +165,8 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.addTopic({
       args: { options },
       note,
-      // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
-      extraFee: (2000).microAlgo(),
+      // 1 inner updatePeriodSummary
+      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -199,8 +199,6 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.editTopic({
       args: { topicIndex, options },
       note,
-      // 1 inner verifyOperator (no summary change)
-      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -227,7 +225,6 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.uploadPeriodBodyPartial({
       args: { startOffset, data },
       note,
-      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -256,7 +253,6 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.uploadTopicBodyPartial({
       args: { topicIndex, startOffset, data },
       note,
-      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -359,14 +355,12 @@ export class GGovSDK extends GGovReaderSDK {
     client: GGovPeriodClient
   } & PeriodMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
-    // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
-    builder = builder.addTopic({ args: { options }, note, extraFee: (2000).microAlgo() })
+    // 1 inner updatePeriodSummary
+    builder = builder.addTopic({ args: { options }, note, extraFee: (1000).microAlgo() })
     for (const { startOffset, data } of chunks) {
-      // each uploadTopicBodyPartial: 1 inner verifyOperator
       builder = builder.uploadTopicBodyPartial({
         args: { topicIndex, startOffset, data },
         note,
-        extraFee: (1000).microAlgo(),
       })
     }
     return builder
@@ -469,8 +463,8 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.removeTopic({
       args: { topicIndex },
       note,
-      // 1 inner verifyOperator + 1 inner updatePeriodSummary = 2 inner fees
-      extraFee: (2000).microAlgo(),
+      // 1 inner updatePeriodSummary
+      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -495,8 +489,8 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.setReady({
       args: { ready },
       note,
-      // 1 inner verifyOperator + 1 inner updatePeriodSummary
-      extraFee: (2000).microAlgo(),
+      // 1 inner updatePeriodSummary
+      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -547,8 +541,8 @@ export class GGovSDK extends GGovReaderSDK {
    * Update a deployed period app's program to the GGovPeriod build exported by this
    * `ggov-sdk` version. The period write client compiles the current approval/clear
    * programs from its embedded app spec, so the on-chain code is replaced with the
-   * version bundled here. Admin-only (the contract's updateApplication baremethod
-   * inner-calls registry.verifyAdmin).
+   * version bundled here. Admin-only (the contract's updateApplication baremethod resolves the
+   * admin from the registry's `admin` global state).
    */
   @requireWriter()
   @wrapErrors()
@@ -564,8 +558,6 @@ export class GGovSDK extends GGovReaderSDK {
     builder = builder ?? client.newGroup()
     return builder.update.bare({
       note,
-      // 1 inner verifyAdmin (checkAdminCaller)
-      extraFee: (1000).microAlgo(),
     })
   }
 
@@ -575,8 +567,8 @@ export class GGovSDK extends GGovReaderSDK {
 
   /**
    * Delete a deployed period app and reclaim ALL of its box min-balance. Admin-only and only while
-   * the period is not ready (the contract's deleteApplication baremethod inner-calls
-   * registry.verifyAdmin, then enforces !ready).
+   * the period is not ready (the contract's deleteApplication baremethod resolves the admin from the
+   * registry's `admin` global state, then enforces !ready).
    *
    * Deleting an app does NOT delete its boxes — the box MBR would be locked forever — so this first
    * clears every per-topic body box ('T'+index) in batches of {@link MAX_BOX_REFS_PER_TXN} (the AVM
@@ -617,8 +609,6 @@ export class GGovSDK extends GGovReaderSDK {
           args: { topicIndexes: indexes.map((i) => BigInt(i)) },
           boxReferences: indexes.map(topicBodyBoxName),
           note,
-          // 1 inner verifyAdmin (checkAdminCaller)
-          extraFee: (1000).microAlgo(),
         })
       }
       await builder.send()
@@ -631,19 +621,19 @@ export class GGovSDK extends GGovReaderSDK {
       .delete.bare({
         note,
         boxReferences: [asciiBoxName('o'), asciiBoxName('t'), asciiBoxName('P')],
-        // 1 inner verifyAdmin (checkAdminCaller) + 1 inner removePeriodSummary + 1 inner sweep payment
-        extraFee: (3000).microAlgo(),
+        // 1 inner removePeriodSummary + 1 inner sweep payment
+        extraFee: (2000).microAlgo(),
       })
       .send()
   }
 
-  // ── Period: withdrawALGO (admin-only, via registry C2C verifyAdmin) ──
+  // ── Period: withdrawALGO (admin-only) ──
 
   /**
    * Withdraw `amount` µAlgo from the period app account to `receiver`. Registry admin only
-   * (the contract's withdrawALGO inner-calls registry.verifyAdmin). Exposed as
-   * `withdrawPeriodALGO` to avoid colliding with the registry's `withdrawALGO` on this SDK;
-   * the on-chain method is `withdrawALGO`.
+   * (the contract's withdrawALGO resolves the admin from the registry's `admin` global state).
+   * Exposed as `withdrawPeriodALGO` to avoid colliding with the registry's `withdrawALGO` on this
+   * SDK; the on-chain method is `withdrawALGO`.
    */
   @requireWriter()
   @wrapErrors()
@@ -664,8 +654,8 @@ export class GGovSDK extends GGovReaderSDK {
     return builder.withdrawAlgo({
       args: { receiver: receiver.toString(), amount },
       note,
-      // 1 inner verifyAdmin + 1 inner payment
-      extraFee: (2000).microAlgo(),
+      // 1 inner payment
+      extraFee: (1000).microAlgo(),
     })
   }
 

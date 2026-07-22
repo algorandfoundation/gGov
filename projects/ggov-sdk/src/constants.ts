@@ -20,6 +20,8 @@ export const BODY_CHUNK_BYTES = 2000
  */
 export const MAX_BODY_BYTES = MAX_GROUP_SIZE * BODY_CHUNK_BYTES
 
+// ── MBRs ──────────────────────────----------------------------------
+
 /**
  * Default MBR (µAlgo) sent from operator to registry per createPeriod call.
  * Covers the spawned period app's account MBR: 100k base + 7*28.5k global ints +
@@ -27,3 +29,31 @@ export const MAX_BODY_BYTES = MAX_GROUP_SIZE * BODY_CHUNK_BYTES
  * and keeps the math stable if the period schema grows into its reserved slots.
  */
 export const DEFAULT_PERIOD_MBR_MICROALGOS = 1_000_000n
+
+/**
+ * Box MBR (µAlgo) the registry app account pays for a delegation whose delegatee has no delegators
+ * yet: the delegator's `delegations` box (28_500) plus a fresh `reverseDelegations` box for the
+ * delegatee (29_300).
+ *
+ * Charged on every delegation path — `setVotingAccount`, `mirrorXGovDelegation` and
+ * `importFracDelegations` alike — and none of them carries a payment, so the registry pays out of
+ * its own balance. Keep it funded ahead of a large import or the box writes fail the group.
+ * Fully reclaimed when the delegation is cleared.
+ */
+export const DELEGATION_MBR_NEW_DELEGATEE_MICROALGOS = 57_800n
+
+/**
+ * Box MBR (µAlgo) for a delegation to a delegatee that already has delegators: the delegator's
+ * `delegations` box (28_500) plus the growth of the delegatee's existing `reverseDelegations` box
+ * by one address (12_800).
+ */
+export const DELEGATION_MBR_EXISTING_DELEGATEE_MICROALGOS = 41_300n
+
+// ── Import Fractional Delegations ──────────────────────────---------
+
+/**
+ * Escrows per `importFracDelegations` call — bounded by the AVM's 1024-byte log budget, NOT by
+ * references. Each escrow emits one 100-byte ARC-28 `GGovDelegationSet`, and the budget is per app
+ * call, so padding cannot buy more of it: `floor(1024 / 100)` = 10.
+ */
+export const MAX_ESCROWS_PER_FD_IMPORT = 10

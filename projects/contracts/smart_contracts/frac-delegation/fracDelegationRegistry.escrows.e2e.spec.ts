@@ -132,4 +132,35 @@ describe('FracDelegationRegistry escrows', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
   })
+
+  describe('registry getEscrow', () => {
+    test('an unassigned escrow reads back as the zero sentinel, surfaced as undefined', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const escrow = newEscrow()
+
+      // Raw readonly: the contract must answer with a sentinel, not a failure — importFracDelegations
+      // relies on this staying a plain read and enforces "assigned" itself.
+      const { return: raw } = await sdk.registry.readClient.send.getEscrow({ args: { account: escrow } })
+      expect(raw!.instanceNumId).toBe(0)
+      expect(raw!.instanceAppId).toBe(0n)
+
+      expect(await sdk.registry.getEscrow(escrow)).toBeUndefined()
+    })
+
+    test('a registered escrow resolves to its instance numeric id and app id', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId, appId } = await deployFracInstance(localnet, testAccount)
+      const escrow = newEscrow()
+
+      await sdk.registry.registerEscrow({ instanceNumId: instanceId, account: escrow })
+
+      expect(await sdk.registry.getEscrow(escrow)).toEqual({
+        instanceNumId: Number(instanceId),
+        instanceAppId: appId,
+      })
+      // Agrees with the plain box read, which resolves the numeric id only.
+      expect(await sdk.getEscrowInstance(escrow)).toBe(Number(instanceId))
+    })
+  })
 })

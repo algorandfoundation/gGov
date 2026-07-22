@@ -33,9 +33,11 @@ import {
   errInstanceAppNotExists,
   errUnauthorized,
 } from '../base/errors.algo'
-import { FracInstance, FracRegAccount } from '../base/types.algo'
+import { FracEscrowInstance, FracInstance, FracRegAccount } from '../base/types.algo'
 import { ensure, u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
+
+export const fracRegistryGGovKey = Bytes`gGovRegistryApp`
 
 /**
  * Fractional Delegation Registry: global singleton, instance deployer.
@@ -50,7 +52,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   /** Fallback operator for frac instances; defaults to creator */
   defaultOperator = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** gGov registry application ID */
-  gGovRegistryApp = GlobalState<Application>()
+  gGovRegistryApp = GlobalState<Application>({ key: fracRegistryGGovKey, initialValue: Application(0) })
   /** Last account numeric ID */
   lastAccountId = GlobalState<uint64>({ initialValue: 0 })
   /** Account registry; account ID + frac instance (numeric) IDs  */
@@ -344,5 +346,29 @@ export class FracDelegationRegistryContract extends BaseContract {
 
     instance.numEscrows++
     this.instances(instanceNumId).value = clone(instance)
+  }
+
+  // ── Escrow reads ──────────────────────────────────────────────────
+
+  /**
+   * Escrow on-chain getter. Resolve an escrow registration by returning its instance numeric ID
+   * and app ID. Cross-app box reads are impossible on the AVM, so this is the read surface.
+   * Mostly called via readonly inner txn by `GGovRegistry.importFracDelegation`.
+   *
+   * If the escrow is not registered to any instance, returns the zero sentinel so this stays a
+   * plain read. Callers that must fail on an unassigned escrow enforce that themselves.
+   * @param account Escrow account to resolve
+   * @returns FracEscrowInstance with the instance numeric ID and app ID, or the zero sentinel if unassigned
+   */
+  @abimethod({ readonly: true })
+  public getEscrow(account: Account): FracEscrowInstance {
+    const escrowBox = this.escrows(account)
+    if (!escrowBox.exists) {
+      return { instanceNumId: u16(0), instanceAppId: 0 }
+    }
+    const instanceNumId = escrowBox.value
+    const instanceBox = this.instances(instanceNumId)
+    ensure(instanceBox.exists, errInstanceAppNotExists) // invariant: registerEscrow only writes against live instances
+    return { instanceNumId, instanceAppId: instanceBox.value.appId.id }
   }
 }

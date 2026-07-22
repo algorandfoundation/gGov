@@ -20,6 +20,7 @@ import {
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
+  errRegistryMissing,
   errUnauthorized,
 } from '../base/errors.algo'
 import { transformedError } from '../common-tests'
@@ -452,7 +453,8 @@ describe('GGovPeriod contract', () => {
       // so topic-body cleanup spans multiple batches (>8 box refs per txn is impossible).
       const NUM_TOPICS = 9
       for (let i = 0; i < NUM_TOPICS; i++) {
-        await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
+        // Unique note per call so otherwise-identical addTopic txns get distinct txids.
+        await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'], note: `addTopic-${i}` })
       }
       await sdk.uploadPeriodBody({ periodId, body: { title: 'Period', body: 'Period description body.' } })
       for (let i = 0; i < NUM_TOPICS; i++) {
@@ -1648,7 +1650,7 @@ describe('GGovPeriod contract', () => {
     })
   })
 
-  // ── update/delete period (admin via registry c2c) ────────────────
+  // ── update/delete period (admin resolved from registry global state) ─
 
   describe('updateApplication / deleteApplication', () => {
     const makePeriodClient = (localnet: ReturnType<typeof algorandFixture>, appId: bigint, sender: Address) =>
@@ -1670,7 +1672,7 @@ describe('GGovPeriod contract', () => {
       })
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, admin)
-      await expect(client.send.update.bare({ extraFee: (1000).microAlgo() })).resolves.toBeDefined()
+      await expect(client.send.update.bare({})).resolves.toBeDefined()
     })
 
     test('Non-admin cannot update a period app', async () => {
@@ -1685,9 +1687,7 @@ describe('GGovPeriod contract', () => {
       const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, nonAdmin)
-      await expect(client.send.update.bare({ extraFee: (1000).microAlgo() })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(client.send.update.bare({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('After admin rotation, new admin can update; old admin cannot', async () => {
@@ -1706,13 +1706,11 @@ describe('GGovPeriod contract', () => {
 
       // Old admin (test creator) is no longer admin
       const oldClient = makePeriodClient(localnet, periodAppId, admin)
-      await expect(oldClient.send.update.bare({ extraFee: (1000).microAlgo() })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(oldClient.send.update.bare({})).rejects.toThrow(transformedError(errUnauthorized))
 
       // New admin can update
       const newClient = makePeriodClient(localnet, periodAppId, newAdmin)
-      await expect(newClient.send.update.bare({ extraFee: (1000).microAlgo() })).resolves.toBeDefined()
+      await expect(newClient.send.update.bare({})).resolves.toBeDefined()
     })
 
     test('Non-admin cannot delete a period app', async () => {
@@ -1727,9 +1725,7 @@ describe('GGovPeriod contract', () => {
       const nonAdmin = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, nonAdmin)
-      await expect(client.send.delete.bare({ extraFee: (1000).microAlgo() })).rejects.toThrow(
-        transformedError(errUnauthorized),
-      )
+      await expect(client.send.delete.bare({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('Registry admin can delete a period app', async () => {
@@ -1744,14 +1740,13 @@ describe('GGovPeriod contract', () => {
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const client = makePeriodClient(localnet, periodAppId, admin)
       await expect(
-        // deletes 'o'/'t'/'P' boxes (must be referenced); 1 inner verifyAdmin + 1 inner
-        // removePeriodSummary + 1 inner sweep payment
-        client.send.delete.bare({ boxReferences: ['o', 't', 'P'], extraFee: (3000).microAlgo() }),
+        // deletes 'o'/'t'/'P' boxes (must be referenced); 1 inner removePeriodSummary + 1 inner sweep payment
+        client.send.delete.bare({ boxReferences: ['o', 't', 'P'], extraFee: (2000).microAlgo() }),
       ).resolves.toBeDefined()
     })
   })
 
-  // ── withdrawALGO (admin via registry c2c) ────────────────────────
+  // ── withdrawALGO (admin resolved from registry global state) ─────
 
   describe('withdrawALGO', () => {
     const makePeriodClient = (localnet: ReturnType<typeof algorandFixture>, appId: bigint, sender: Address) =>
@@ -1808,6 +1803,53 @@ describe('GGovPeriod contract', () => {
       await expect(
         sdk.withdrawPeriodALGO({ periodId, receiver: receiver.toString(), amount: (100).algos().microAlgo }),
       ).rejects.toThrow()
+    })
+  })
+
+  // ── creator escape hatch ─────────────────────────────────────────
+  describe('creator escape hatch', () => {
+    test('the creator passes ensureCallerIsAdmin even when the registry admin is unresolvable', async () => {
+      // Spin up a registry so its GGovSDK registers the ERR:-code error transformer on the shared
+      // algorand client (used by the asserts below). Its state is otherwise irrelevant here.
+      await deployWithCommittee(localnet)
+
+      // Deploy a STANDALONE period app — not spawned by a registry, and `init` is never called — so
+      // `registryApp` stays at the 0 sentinel and admin resolution has no registry global to read.
+      // The deployer is the app's creator.
+      const creator = await localnet.context.generateAccount({ initialFunds: (10).algos() })
+      const factory = localnet.algorand.client.getTypedAppFactory(GGovPeriodFactory, {
+        defaultSender: creator,
+        defaultSigner: localnet.algorand.account.getSigner(creator),
+      })
+      const { appClient } = await factory.send.create.bare({ extraProgramPages: 3 })
+
+      // 0 sentinel: resolveAdmin() has nothing to read, so it would revert with ERR:RM.
+      expect(BigInt((await appClient.state.global.registryApp())!)).toBe(0n)
+
+      // Fund the app so a withdrawal has a surplus above its min balance.
+      await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (5).algos())
+      const receiver = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      // A non-creator can't pass: the creator branch is skipped and resolveAdmin() reverts with ERR:RM.
+      const nonCreator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(
+        appClient.send.withdrawAlgo({
+          args: { receiver: receiver.toString(), amount: (1).algos().microAlgo },
+          sender: nonCreator,
+          extraFee: (1000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errRegistryMissing))
+
+      // The creator passes purely via the escape hatch (resolveAdmin would still revert with ERR:RM).
+      const before = await localnet.algorand.account.getInformation(receiver)
+      const amount = (1).algos().microAlgo
+      await appClient.send.withdrawAlgo({
+        args: { receiver: receiver.toString(), amount },
+        extraFee: (1000).microAlgo(),
+      })
+      const after = await localnet.algorand.account.getInformation(receiver)
+      // Receiver pays no fees, so it gains exactly `amount`.
+      expect(after.balance.microAlgo).toBe(before.balance.microAlgo + amount)
     })
   })
 

@@ -6,7 +6,7 @@
     "../../base/utils.algo.ts",
     "../../ggov-period/ggovPeriod.algo.ts"
   ],
-  "mappings": "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",
+  "mappings": "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",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -17,7 +17,7 @@
       "op": "intcblock 0 2 1 4"
     },
     "7": {
-      "op": "bytecblock \"t\" \"o\" \"registryApp\" \"\" 0x151f7c75 0x0000 \"votingStart\" \"votingEnd\" 0x0002 \"P\" \"committeeId\" 0x000000000000000000 \"ready\" \"v\" 0x00 \"firstVotingRound\" \"periodId\" \"ERR:AUTH\" \"lastVotingRound\" \"ERR:GT_NO\" 0x00020002 \"ERR:GT_OB\" 0xc8d461ab \"ERR:GV_MM\" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(C4EBQw==)"
+      "op": "bytecblock \"t\" \"o\" \"registryApp\" \"\" 0x0000 0x151f7c75 \"votingStart\" \"votingEnd\" 0x0002 \"P\" \"committeeId\" 0x000000000000000000 \"ready\" \"v\" 0x00 \"firstVotingRound\" \"periodId\" \"ERR:AUTH\" \"lastVotingRound\" \"ERR:GT_NO\" 0x00020002 \"ERR:GT_OB\" 0xc8d461ab \"ERR:GV_MM\" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(C4EBQw==)"
     },
     "233": {
       "op": "txn ApplicationID",
@@ -299,8 +299,8 @@
       "stack_out": []
     },
     "419": {
-      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkAdminCaller",
-      "op": "callsub checkAdminCaller"
+      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
     },
     "422": {
       "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureEditable",
@@ -657,8 +657,8 @@
       "stack_out": []
     },
     "502": {
-      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkAdminCaller",
-      "op": "callsub checkAdminCaller"
+      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
     },
     "505": {
       "op": "intc_2 // 1",
@@ -4311,7 +4311,7 @@
       ]
     },
     "895": {
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "\"o\"",
         "0x0000",
@@ -4393,7 +4393,7 @@
       ]
     },
     "902": {
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "stack_out": [
         "registryApp#0",
         "periodId#0",
@@ -5944,7 +5944,7 @@
         "array_data%0#0",
         "index%0#0"
       ],
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "votes#0"
       ],
@@ -7402,7 +7402,7 @@
       ]
     },
     "1190": {
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
         "aggregate%val_as_bytes%0#0",
@@ -9225,7 +9225,7 @@
         "array_data%0#0",
         "index%0#0"
       ],
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "votes#0"
       ],
@@ -11207,7 +11207,7 @@
         "optionsArr#0",
         "votesArr#0"
       ],
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "nextOptions#0"
       ],
@@ -11236,7 +11236,7 @@
       ]
     },
     "1480": {
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "nextOptions#0",
         "nextVotes#0"
@@ -17278,8 +17278,8 @@
       ]
     },
     "2084": {
-      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkAdminCaller",
-      "op": "callsub checkAdminCaller"
+      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
     },
     "2087": {
       "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureEditable",
@@ -21508,7 +21508,7 @@
       ]
     },
     "2335": {
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
         "expectedDelegatee#0",
@@ -23444,7 +23444,7 @@
       ]
     },
     "2449": {
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
         "tmp%19#0",
@@ -25301,7 +25301,7 @@
       ]
     },
     "2536": {
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "i#0",
         "subtractedVotes#0",
@@ -34360,7 +34360,7 @@
       ]
     },
     "2874": {
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "nextGlobalVotes#0",
         "voteSum#0"
@@ -39450,7 +39450,7 @@
         "senderAccount#0",
         "tmp%4#0"
       ],
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75"
       ],
@@ -40165,7 +40165,7 @@
       ]
     },
     "3216": {
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
         "delegate#0",
@@ -41041,7 +41041,7 @@
       ]
     },
     "3326": {
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
         "power#0",
@@ -41571,7 +41571,7 @@
         "i#0",
         "tmp%0#0"
       ],
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75"
       ],
@@ -41780,7 +41780,7 @@
       ]
     },
     "3406": {
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "optionsArr#0",
         "topics#0",
@@ -44242,7 +44242,7 @@
         "i#0",
         "tmp%0#0"
       ],
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75"
       ],
@@ -44308,7 +44308,7 @@
         "lengths#0",
         "i#0"
       ],
-      "op": "bytec 5 // 0x0000",
+      "op": "bytec 4 // 0x0000",
       "defined_out": [
         "lengths#0"
       ],
@@ -47577,7 +47577,7 @@
         "box#0",
         "tmp%2#0"
       ],
-      "op": "bytec 4 // 0x151f7c75",
+      "op": "bytec 5 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75"
       ],
@@ -49064,8 +49064,8 @@
       ]
     },
     "4126": {
-      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkAdminCaller",
-      "op": "callsub checkAdminCaller"
+      "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
+      "op": "callsub ensureCallerIsAdmin"
     },
     "4129": {
       "op": "itxn_begin"
@@ -49370,613 +49370,491 @@
       ]
     },
     "4186": {
-      "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsOperator",
+      "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
       "params": {},
-      "block": "ensureCallerIsOperator",
+      "block": "ensureCallerIsAdmin",
       "stack_in": [],
-      "op": "itxn_begin"
-    },
-    "4187": {
-      "op": "intc_0 // 0",
-      "defined_out": [
-        "0"
-      ],
-      "stack_out": [
-        "0"
-      ]
-    },
-    "4188": {
-      "op": "bytec_2 // \"registryApp\"",
-      "defined_out": [
-        "\"registryApp\"",
-        "0"
-      ],
-      "stack_out": [
-        "0",
-        "\"registryApp\""
-      ]
+      "op": "proto 0 0"
     },
     "4189": {
-      "op": "app_global_get_ex",
-      "defined_out": [
-        "maybe_exists%0#0",
-        "maybe_value%0#0"
-      ],
+      "op": "intc_0 // 0",
       "stack_out": [
-        "maybe_value%0#0",
-        "maybe_exists%0#0"
+        "tmp%3#0"
       ]
     },
     "4190": {
-      "error": "check GlobalState exists",
-      "op": "assert // check GlobalState exists",
+      "op": "dup",
       "stack_out": [
-        "maybe_value%0#0"
+        "tmp%3#0",
+        "value#0"
       ]
     },
     "4191": {
       "op": "txn Sender",
       "defined_out": [
-        "maybe_value%0#0",
         "tmp%0#0"
       ],
       "stack_out": [
-        "maybe_value%0#0",
+        "tmp%3#0",
+        "value#0",
         "tmp%0#0"
       ]
     },
     "4193": {
-      "op": "pushbytes 0x4d5a75d7 // method \"verifyOperator(address)bool\"",
+      "op": "global CreatorAddress",
       "defined_out": [
-        "Method(verifyOperator(address)bool)",
-        "maybe_value%0#0",
-        "tmp%0#0"
+        "tmp%0#0",
+        "tmp%1#0"
       ],
       "stack_out": [
-        "maybe_value%0#0",
+        "tmp%3#0",
+        "value#0",
         "tmp%0#0",
-        "Method(verifyOperator(address)bool)"
+        "tmp%1#0"
+      ]
+    },
+    "4195": {
+      "op": "==",
+      "defined_out": [
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "tmp%3#0",
+        "value#0",
+        "tmp%2#0"
+      ]
+    },
+    "4196": {
+      "op": "bz ensureCallerIsAdmin_after_if_else@2",
+      "stack_out": [
+        "tmp%3#0",
+        "value#0"
       ]
     },
     "4199": {
-      "op": "itxn_field ApplicationArgs",
+      "retsub": true,
+      "op": "retsub"
+    },
+    "4200": {
+      "block": "ensureCallerIsAdmin_after_if_else@2",
+      "stack_in": [
+        "tmp%3#0",
+        "value#0"
+      ],
+      "op": "txn Sender",
+      "defined_out": [
+        "tmp%3#0"
+      ],
       "stack_out": [
-        "maybe_value%0#0",
-        "tmp%0#0"
+        "tmp%3#0",
+        "value#0",
+        "tmp%3#0"
       ]
     },
-    "4201": {
-      "op": "itxn_field ApplicationArgs",
+    "4202": {
+      "op": "frame_bury 0",
+      "defined_out": [
+        "tmp%3#0"
+      ],
       "stack_out": [
-        "maybe_value%0#0"
-      ]
-    },
-    "4203": {
-      "op": "intc_0 // 0",
-      "stack_out": [
-        "maybe_value%0#0",
-        "0"
+        "tmp%3#0",
+        "value#0"
       ]
     },
     "4204": {
-      "op": "itxn_field OnCompletion",
+      "op": "intc_0 // 0",
       "stack_out": [
-        "maybe_value%0#0"
+        "tmp%3#0",
+        "value#0",
+        "0"
+      ]
+    },
+    "4205": {
+      "op": "bytec_2 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\"",
+        "0",
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "tmp%3#0",
+        "value#0",
+        "0",
+        "\"registryApp\""
       ]
     },
     "4206": {
-      "op": "itxn_field ApplicationID",
-      "stack_out": []
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "maybe_exists%0#0",
+        "maybe_value%0#0",
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "tmp%3#0",
+        "value#0",
+        "maybe_value%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "4207": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "tmp%3#0",
+        "value#0",
+        "maybe_value%0#0"
+      ]
     },
     "4208": {
-      "op": "pushint 6 // appl",
+      "op": "pushbytes \"admin\"",
       "defined_out": [
-        "appl"
+        "\"admin\"",
+        "maybe_value%0#0",
+        "tmp%3#0"
       ],
       "stack_out": [
-        "appl"
+        "tmp%3#0",
+        "value#0",
+        "maybe_value%0#0",
+        "\"admin\""
       ]
-    },
-    "4210": {
-      "op": "itxn_field TypeEnum",
-      "stack_out": []
-    },
-    "4212": {
-      "op": "intc_0 // 0",
-      "stack_out": [
-        "0"
-      ]
-    },
-    "4213": {
-      "op": "itxn_field Fee",
-      "stack_out": []
     },
     "4215": {
-      "op": "itxn_submit"
-    },
-    "4216": {
-      "op": "itxn LastLog",
+      "op": "app_global_get_ex",
       "defined_out": [
-        "awst_tmp%0#0"
+        "exists#0",
+        "tmp%3#0",
+        "value#0"
       ],
       "stack_out": [
-        "awst_tmp%0#0"
+        "tmp%3#0",
+        "value#0",
+        "value#0",
+        "exists#0"
       ]
     },
-    "4218": {
-      "op": "dup",
+    "4216": {
+      "op": "swap",
+      "stack_out": [
+        "tmp%3#0",
+        "value#0",
+        "exists#0",
+        "value#0"
+      ]
+    },
+    "4217": {
+      "op": "frame_bury 1",
       "defined_out": [
-        "awst_tmp%0#0",
-        "awst_tmp%0#0 (copy)"
+        "exists#0",
+        "tmp%3#0",
+        "value#0"
       ],
       "stack_out": [
-        "awst_tmp%0#0",
-        "awst_tmp%0#0 (copy)"
+        "tmp%3#0",
+        "value#0",
+        "exists#0"
       ]
     },
     "4219": {
-      "op": "extract 4 0",
-      "defined_out": [
-        "awst_tmp%0#0",
-        "tmp%2#0"
-      ],
+      "op": "bnz ensureCallerIsAdmin_after_if_else@5",
       "stack_out": [
-        "awst_tmp%0#0",
-        "tmp%2#0"
+        "tmp%3#0",
+        "value#0"
       ]
     },
     "4222": {
-      "op": "swap",
-      "stack_out": [
-        "tmp%2#0",
-        "awst_tmp%0#0"
-      ]
-    },
-    "4223": {
-      "op": "extract 0 4",
+      "op": "pushbytes \"ERR:RM\"",
       "defined_out": [
-        "tmp%2#0",
-        "tmp%3#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "tmp%3#0"
-      ]
-    },
-    "4226": {
-      "op": "bytec 4 // 0x151f7c75",
-      "defined_out": [
-        "0x151f7c75",
-        "tmp%2#0",
-        "tmp%3#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
+        "\"ERR:RM\"",
         "tmp%3#0",
-        "0x151f7c75"
-      ]
-    },
-    "4228": {
-      "op": "==",
-      "defined_out": [
-        "tmp%2#0",
-        "tmp%4#0"
+        "value#0"
       ],
       "stack_out": [
-        "tmp%2#0",
-        "tmp%4#0"
-      ]
-    },
-    "4229": {
-      "error": "Bytes has valid prefix",
-      "op": "assert // Bytes has valid prefix",
-      "stack_out": [
-        "tmp%2#0"
+        "tmp%3#0",
+        "value#0",
+        "\"ERR:RM\""
       ]
     },
     "4230": {
-      "op": "dup",
-      "defined_out": [
-        "tmp%2#0",
-        "tmp%2#0 (copy)"
-      ],
+      "op": "log",
       "stack_out": [
-        "tmp%2#0",
-        "tmp%2#0 (copy)"
+        "tmp%3#0",
+        "value#0"
       ]
     },
     "4231": {
-      "op": "len",
-      "defined_out": [
-        "len%0#0",
-        "tmp%2#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "len%0#0"
-      ]
+      "op": "err"
     },
     "4232": {
-      "op": "intc_2 // 1",
+      "block": "ensureCallerIsAdmin_after_if_else@5",
+      "stack_in": [
+        "tmp%3#0",
+        "value#0"
+      ],
+      "op": "frame_dig 0",
       "defined_out": [
-        "1",
-        "len%0#0",
-        "tmp%2#0"
+        "tmp%3#0"
       ],
       "stack_out": [
-        "tmp%2#0",
-        "len%0#0",
-        "1"
-      ]
-    },
-    "4233": {
-      "op": "==",
-      "defined_out": [
-        "eq%0#0",
-        "tmp%2#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "eq%0#0"
+        "tmp%3#0",
+        "value#0",
+        "tmp%3#0"
       ]
     },
     "4234": {
-      "error": "invalid number of bytes for arc4.bool",
-      "op": "assert // invalid number of bytes for arc4.bool",
+      "op": "frame_dig 1",
+      "defined_out": [
+        "tmp%3#0",
+        "value#0"
+      ],
       "stack_out": [
-        "tmp%2#0"
-      ]
-    },
-    "4235": {
-      "op": "intc_0 // 0",
-      "stack_out": [
-        "tmp%2#0",
-        "0"
+        "tmp%3#0",
+        "value#0",
+        "tmp%3#0",
+        "value#0"
       ]
     },
     "4236": {
-      "op": "getbit",
+      "op": "==",
       "defined_out": [
-        "ok#0"
+        "cond#1",
+        "tmp%3#0",
+        "value#0"
       ],
       "stack_out": [
-        "ok#0"
+        "tmp%3#0",
+        "value#0",
+        "cond#1"
       ]
     },
     "4237": {
-      "op": "bnz ensureCallerIsOperator_after_if_else@3",
-      "stack_out": []
+      "op": "bnz ensureCallerIsAdmin_after_if_else@9",
+      "stack_out": [
+        "tmp%3#0",
+        "value#0"
+      ]
     },
     "4240": {
       "op": "bytec 17 // \"ERR:AUTH\"",
       "defined_out": [
-        "\"ERR:AUTH\""
+        "\"ERR:AUTH\"",
+        "tmp%3#0",
+        "value#0"
       ],
       "stack_out": [
+        "tmp%3#0",
+        "value#0",
         "\"ERR:AUTH\""
       ]
     },
     "4242": {
       "op": "log",
-      "stack_out": []
+      "stack_out": [
+        "tmp%3#0",
+        "value#0"
+      ]
     },
     "4243": {
       "op": "err"
     },
     "4244": {
-      "block": "ensureCallerIsOperator_after_if_else@3",
-      "stack_in": [],
+      "block": "ensureCallerIsAdmin_after_if_else@9",
+      "stack_in": [
+        "tmp%3#0",
+        "value#0"
+      ],
       "retsub": true,
       "op": "retsub"
     },
     "4245": {
-      "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkAdminCaller",
+      "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsOperator",
       "params": {},
-      "block": "checkAdminCaller",
+      "block": "ensureCallerIsOperator",
       "stack_in": [],
-      "op": "itxn_begin"
+      "op": "proto 0 0"
     },
-    "4246": {
-      "op": "intc_0 // 0",
-      "defined_out": [
-        "0"
-      ],
-      "stack_out": [
-        "0"
-      ]
+    "4248": {
+      "op": "txn Sender"
     },
-    "4247": {
+    "4250": {
+      "op": "intc_0 // 0"
+    },
+    "4251": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
-        "0"
+        "0",
+        "tmp%0#0"
       ],
       "stack_out": [
+        "tmp%0#0",
         "0",
         "\"registryApp\""
       ]
     },
-    "4248": {
+    "4252": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
-        "maybe_value%0#0"
+        "maybe_value%0#0",
+        "tmp%0#0"
       ],
       "stack_out": [
+        "tmp%0#0",
         "maybe_value%0#0",
         "maybe_exists%0#0"
       ]
     },
-    "4249": {
+    "4253": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
-        "maybe_value%0#0"
-      ]
-    },
-    "4250": {
-      "op": "txn Sender",
-      "defined_out": [
-        "maybe_value%0#0",
-        "tmp%0#0"
-      ],
-      "stack_out": [
-        "maybe_value%0#0",
-        "tmp%0#0"
-      ]
-    },
-    "4252": {
-      "op": "pushbytes 0x3eb3af21 // method \"verifyAdmin(address)bool\"",
-      "defined_out": [
-        "Method(verifyAdmin(address)bool)",
-        "maybe_value%0#0",
-        "tmp%0#0"
-      ],
-      "stack_out": [
-        "maybe_value%0#0",
         "tmp%0#0",
-        "Method(verifyAdmin(address)bool)"
+        "maybe_value%0#0"
       ]
     },
-    "4258": {
-      "op": "itxn_field ApplicationArgs",
-      "stack_out": [
+    "4254": {
+      "op": "pushbytes \"operator\"",
+      "defined_out": [
+        "\"operator\"",
         "maybe_value%0#0",
         "tmp%0#0"
-      ]
-    },
-    "4260": {
-      "op": "itxn_field ApplicationArgs",
+      ],
       "stack_out": [
-        "maybe_value%0#0"
-      ]
-    },
-    "4262": {
-      "op": "intc_0 // 0",
-      "stack_out": [
+        "tmp%0#0",
         "maybe_value%0#0",
-        "0"
+        "\"operator\""
       ]
     },
-    "4263": {
-      "op": "itxn_field OnCompletion",
+    "4264": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "exists#0",
+        "tmp%0#0",
+        "value#0"
+      ],
       "stack_out": [
-        "maybe_value%0#0"
+        "tmp%0#0",
+        "value#0",
+        "exists#0"
       ]
     },
     "4265": {
-      "op": "itxn_field ApplicationID",
-      "stack_out": []
-    },
-    "4267": {
-      "op": "pushint 6 // appl",
-      "defined_out": [
-        "appl"
-      ],
+      "op": "bz ensureCallerIsOperator_ternary_false@3",
       "stack_out": [
-        "appl"
+        "tmp%0#0",
+        "value#0"
       ]
     },
-    "4269": {
-      "op": "itxn_field TypeEnum",
-      "stack_out": []
-    },
-    "4271": {
-      "op": "intc_0 // 0",
+    "4268": {
+      "op": "frame_dig 1",
+      "defined_out": [
+        "ternary_result%0#1",
+        "tmp%0#0",
+        "value#0"
+      ],
       "stack_out": [
-        "0"
+        "tmp%0#0",
+        "value#0",
+        "ternary_result%0#1"
+      ]
+    },
+    "4270": {
+      "block": "ensureCallerIsOperator_ternary_merge@4",
+      "stack_in": [
+        "tmp%0#0",
+        "value#0",
+        "ternary_result%0#1"
+      ],
+      "op": "frame_dig 0",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "value#0",
+        "ternary_result%0#1",
+        "tmp%0#0"
       ]
     },
     "4272": {
-      "op": "itxn_field Fee",
-      "stack_out": []
-    },
-    "4274": {
-      "op": "itxn_submit"
-    },
-    "4275": {
-      "op": "itxn LastLog",
+      "op": "==",
       "defined_out": [
-        "awst_tmp%0#0"
+        "cond#0",
+        "tmp%0#0"
       ],
       "stack_out": [
-        "awst_tmp%0#0"
+        "tmp%0#0",
+        "value#0",
+        "cond#0"
       ]
     },
-    "4277": {
-      "op": "dup",
+    "4273": {
+      "op": "bnz ensureCallerIsOperator_after_if_else@7",
+      "stack_out": [
+        "tmp%0#0",
+        "value#0"
+      ]
+    },
+    "4276": {
+      "op": "bytec 17 // \"ERR:AUTH\"",
       "defined_out": [
-        "awst_tmp%0#0",
-        "awst_tmp%0#0 (copy)"
+        "\"ERR:AUTH\"",
+        "tmp%0#0"
       ],
       "stack_out": [
-        "awst_tmp%0#0",
-        "awst_tmp%0#0 (copy)"
+        "tmp%0#0",
+        "value#0",
+        "\"ERR:AUTH\""
       ]
     },
     "4278": {
-      "op": "extract 4 0",
-      "defined_out": [
-        "awst_tmp%0#0",
-        "tmp%2#0"
-      ],
-      "stack_out": [
-        "awst_tmp%0#0",
-        "tmp%2#0"
-      ]
-    },
-    "4281": {
-      "op": "swap",
-      "stack_out": [
-        "tmp%2#0",
-        "awst_tmp%0#0"
-      ]
-    },
-    "4282": {
-      "op": "extract 0 4",
-      "defined_out": [
-        "tmp%2#0",
-        "tmp%3#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "tmp%3#0"
-      ]
-    },
-    "4285": {
-      "op": "bytec 4 // 0x151f7c75",
-      "defined_out": [
-        "0x151f7c75",
-        "tmp%2#0",
-        "tmp%3#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "tmp%3#0",
-        "0x151f7c75"
-      ]
-    },
-    "4287": {
-      "op": "==",
-      "defined_out": [
-        "tmp%2#0",
-        "tmp%4#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "tmp%4#0"
-      ]
-    },
-    "4288": {
-      "error": "Bytes has valid prefix",
-      "op": "assert // Bytes has valid prefix",
-      "stack_out": [
-        "tmp%2#0"
-      ]
-    },
-    "4289": {
-      "op": "dup",
-      "defined_out": [
-        "tmp%2#0",
-        "tmp%2#0 (copy)"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "tmp%2#0 (copy)"
-      ]
-    },
-    "4290": {
-      "op": "len",
-      "defined_out": [
-        "len%0#0",
-        "tmp%2#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "len%0#0"
-      ]
-    },
-    "4291": {
-      "op": "intc_2 // 1",
-      "defined_out": [
-        "1",
-        "len%0#0",
-        "tmp%2#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "len%0#0",
-        "1"
-      ]
-    },
-    "4292": {
-      "op": "==",
-      "defined_out": [
-        "eq%0#0",
-        "tmp%2#0"
-      ],
-      "stack_out": [
-        "tmp%2#0",
-        "eq%0#0"
-      ]
-    },
-    "4293": {
-      "error": "invalid number of bytes for arc4.bool",
-      "op": "assert // invalid number of bytes for arc4.bool",
-      "stack_out": [
-        "tmp%2#0"
-      ]
-    },
-    "4294": {
-      "op": "intc_0 // 0",
-      "stack_out": [
-        "tmp%2#0",
-        "0"
-      ]
-    },
-    "4295": {
-      "op": "getbit",
-      "defined_out": [
-        "ok#0"
-      ],
-      "stack_out": [
-        "ok#0"
-      ]
-    },
-    "4296": {
-      "op": "bnz checkAdminCaller_after_if_else@3",
-      "stack_out": []
-    },
-    "4299": {
-      "op": "bytec 17 // \"ERR:AUTH\"",
-      "defined_out": [
-        "\"ERR:AUTH\""
-      ],
-      "stack_out": [
-        "\"ERR:AUTH\""
-      ]
-    },
-    "4301": {
       "op": "log",
-      "stack_out": []
+      "stack_out": [
+        "tmp%0#0",
+        "value#0"
+      ]
     },
-    "4302": {
+    "4279": {
       "op": "err"
     },
-    "4303": {
-      "block": "checkAdminCaller_after_if_else@3",
-      "stack_in": [],
+    "4280": {
+      "block": "ensureCallerIsOperator_after_if_else@7",
+      "stack_in": [
+        "tmp%0#0",
+        "value#0"
+      ],
       "retsub": true,
       "op": "retsub"
     },
-    "4304": {
+    "4281": {
+      "block": "ensureCallerIsOperator_ternary_false@3",
+      "stack_in": [
+        "tmp%0#0",
+        "value#0"
+      ],
+      "op": "global ZeroAddress",
+      "defined_out": [
+        "ternary_result%0#1"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "value#0",
+        "ternary_result%0#1"
+      ]
+    },
+    "4283": {
+      "op": "b ensureCallerIsOperator_ternary_merge@4"
+    },
+    "4286": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.syncSummaryToRegistry",
       "params": {},
       "block": "syncSummaryToRegistry",
       "stack_in": [],
       "op": "itxn_begin"
     },
-    "4305": {
+    "4287": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -49985,7 +49863,7 @@
         "0"
       ]
     },
-    "4306": {
+    "4288": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -49996,7 +49874,7 @@
         "\"registryApp\""
       ]
     },
-    "4307": {
+    "4289": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -50007,21 +49885,21 @@
         "maybe_exists%0#0"
       ]
     },
-    "4308": {
+    "4290": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "4309": {
+    "4291": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
         "0"
       ]
     },
-    "4310": {
+    "4292": {
       "op": "bytec 16 // \"periodId\"",
       "defined_out": [
         "\"periodId\"",
@@ -50034,7 +49912,7 @@
         "\"periodId\""
       ]
     },
-    "4312": {
+    "4294": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -50047,7 +49925,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "4313": {
+    "4295": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -50055,7 +49933,7 @@
         "maybe_value%1#0"
       ]
     },
-    "4314": {
+    "4296": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -50067,7 +49945,7 @@
         "tmp%0#0"
       ]
     },
-    "4317": {
+    "4299": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
@@ -50075,7 +49953,7 @@
         "0"
       ]
     },
-    "4318": {
+    "4300": {
       "op": "bytec 6 // \"votingStart\"",
       "defined_out": [
         "\"votingStart\"",
@@ -50090,7 +49968,7 @@
         "\"votingStart\""
       ]
     },
-    "4320": {
+    "4302": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -50105,7 +49983,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "4321": {
+    "4303": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -50114,7 +49992,7 @@
         "maybe_value%2#0"
       ]
     },
-    "4322": {
+    "4304": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -50128,7 +50006,7 @@
         "tmp%1#0"
       ]
     },
-    "4325": {
+    "4307": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
@@ -50137,7 +50015,7 @@
         "0"
       ]
     },
-    "4326": {
+    "4308": {
       "op": "bytec 7 // \"votingEnd\"",
       "defined_out": [
         "\"votingEnd\"",
@@ -50154,7 +50032,7 @@
         "\"votingEnd\""
       ]
     },
-    "4328": {
+    "4310": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%3#0",
@@ -50171,7 +50049,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "4329": {
+    "4311": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -50181,7 +50059,7 @@
         "maybe_value%3#0"
       ]
     },
-    "4330": {
+    "4312": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -50197,7 +50075,7 @@
         "tmp%2#0"
       ]
     },
-    "4333": {
+    "4315": {
       "op": "bytec_1 // \"o\"",
       "defined_out": [
         "\"o\"",
@@ -50214,7 +50092,7 @@
         "\"o\""
       ]
     },
-    "4334": {
+    "4316": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
@@ -50225,7 +50103,7 @@
         "0"
       ]
     },
-    "4335": {
+    "4317": {
       "op": "intc_1 // 2",
       "defined_out": [
         "\"o\"",
@@ -50246,7 +50124,7 @@
         "2"
       ]
     },
-    "4336": {
+    "4318": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%0#0",
@@ -50263,7 +50141,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "4337": {
+    "4319": {
       "op": "btoi",
       "defined_out": [
         "box%array_length%0#0",
@@ -50280,7 +50158,7 @@
         "box%array_length%0#0"
       ]
     },
-    "4338": {
+    "4320": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -50298,7 +50176,7 @@
         "tmp%4#0"
       ]
     },
-    "4341": {
+    "4323": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
@@ -50309,7 +50187,7 @@
         "0"
       ]
     },
-    "4342": {
+    "4324": {
       "op": "bytec 12 // \"ready\"",
       "defined_out": [
         "\"ready\"",
@@ -50330,7 +50208,7 @@
         "\"ready\""
       ]
     },
-    "4344": {
+    "4326": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%4#0",
@@ -50351,7 +50229,7 @@
         "maybe_exists%4#0"
       ]
     },
-    "4345": {
+    "4327": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -50363,7 +50241,7 @@
         "maybe_value%4#0"
       ]
     },
-    "4346": {
+    "4328": {
       "op": "bytec 14 // 0x00",
       "defined_out": [
         "0x00",
@@ -50384,7 +50262,7 @@
         "0x00"
       ]
     },
-    "4348": {
+    "4330": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
@@ -50397,7 +50275,7 @@
         "0"
       ]
     },
-    "4349": {
+    "4331": {
       "op": "uncover 2",
       "stack_out": [
         "maybe_value%0#0",
@@ -50410,7 +50288,7 @@
         "maybe_value%4#0"
       ]
     },
-    "4351": {
+    "4333": {
       "op": "setbit",
       "defined_out": [
         "aggregate%encoded_bool%0#0",
@@ -50429,7 +50307,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "4352": {
+    "4334": {
       "op": "pushbytes 0xecb70c0e // method \"updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void\"",
       "defined_out": [
         "Method(updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void)",
@@ -50450,7 +50328,7 @@
         "Method(updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void)"
       ]
     },
-    "4358": {
+    "4340": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "maybe_value%0#0",
@@ -50461,7 +50339,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "4360": {
+    "4342": {
       "op": "uncover 4",
       "stack_out": [
         "maybe_value%0#0",
@@ -50472,7 +50350,7 @@
         "tmp%0#0"
       ]
     },
-    "4362": {
+    "4344": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "maybe_value%0#0",
@@ -50482,7 +50360,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "4364": {
+    "4346": {
       "op": "uncover 3",
       "stack_out": [
         "maybe_value%0#0",
@@ -50492,7 +50370,7 @@
         "tmp%1#0"
       ]
     },
-    "4366": {
+    "4348": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "maybe_value%0#0",
@@ -50501,7 +50379,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "4368": {
+    "4350": {
       "op": "uncover 2",
       "stack_out": [
         "maybe_value%0#0",
@@ -50510,7 +50388,7 @@
         "tmp%2#0"
       ]
     },
-    "4370": {
+    "4352": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "maybe_value%0#0",
@@ -50518,7 +50396,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "4372": {
+    "4354": {
       "op": "swap",
       "stack_out": [
         "maybe_value%0#0",
@@ -50526,37 +50404,37 @@
         "tmp%4#0"
       ]
     },
-    "4373": {
+    "4355": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "maybe_value%0#0",
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "4375": {
+    "4357": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "4377": {
+    "4359": {
       "op": "intc_0 // 0",
       "stack_out": [
         "maybe_value%0#0",
         "0"
       ]
     },
-    "4378": {
+    "4360": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "4380": {
+    "4362": {
       "op": "itxn_field ApplicationID",
       "stack_out": []
     },
-    "4382": {
+    "4364": {
       "op": "pushint 6 // appl",
       "defined_out": [
         "appl"
@@ -50565,28 +50443,28 @@
         "appl"
       ]
     },
-    "4384": {
+    "4366": {
       "op": "itxn_field TypeEnum",
       "stack_out": []
     },
-    "4386": {
+    "4368": {
       "op": "intc_0 // 0",
       "stack_out": [
         "0"
       ]
     },
-    "4387": {
+    "4369": {
       "op": "itxn_field Fee",
       "stack_out": []
     },
-    "4389": {
+    "4371": {
       "op": "itxn_submit"
     },
-    "4390": {
+    "4372": {
       "retsub": true,
       "op": "retsub"
     },
-    "4391": {
+    "4373": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureEditable",
       "params": {},
       "block": "ensureEditable",
@@ -50599,7 +50477,7 @@
         "0"
       ]
     },
-    "4392": {
+    "4374": {
       "op": "bytec 12 // \"ready\"",
       "defined_out": [
         "\"ready\"",
@@ -50610,7 +50488,7 @@
         "\"ready\""
       ]
     },
-    "4394": {
+    "4376": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -50621,18 +50499,18 @@
         "maybe_exists%0#0"
       ]
     },
-    "4395": {
+    "4377": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "4396": {
+    "4378": {
       "op": "bz ensureEditable_after_if_else@3",
       "stack_out": []
     },
-    "4399": {
+    "4381": {
       "op": "pushbytes \"ERR:GP_RD\"",
       "defined_out": [
         "\"ERR:GP_RD\""
@@ -50641,14 +50519,14 @@
         "\"ERR:GP_RD\""
       ]
     },
-    "4410": {
+    "4392": {
       "op": "log",
       "stack_out": []
     },
-    "4411": {
+    "4393": {
       "op": "err"
     },
-    "4412": {
+    "4394": {
       "block": "ensureEditable_after_if_else@3",
       "stack_in": [],
       "retsub": true,

@@ -62,7 +62,7 @@ import {
 import { ensure, ensureExtra, u32, u8 } from '../base/utils.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
-import { FracDelegationRegistryContract } from './fracDelegationRegistry.algo'
+import { FracDelegationRegistryContract, fracRegistryGGovKey } from './fracDelegationRegistry.algo'
 
 /**
  * Fractional Delegation Instance: per-protocol delegation contract.
@@ -185,7 +185,7 @@ export class FracDelegationInstanceContract extends BaseContract {
    * `gGovRegistryApp` global state. Throws if the registry has not configured one yet.
    */
   protected resolveGGovRegistryApp(): Application {
-    const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, Bytes`gGovRegistryApp`)
+    const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, fracRegistryGGovKey)
     ensure(exists && appId > 0, errRegistryMissing)
     return Application(appId)
   }
