@@ -11,6 +11,7 @@ import {
 } from '../generated/FracDelegationRegistryClient'
 import { getConstructorConfig } from '../networkConfig'
 import { ReaderConstructorArgs } from './types'
+import { assertUint } from '../util/assertUint'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
 import { errorTransformer } from '../util/wrapErrors'
@@ -62,7 +63,8 @@ export class FracDelegationRegistryReaderSDK {
 
   /** Registered instance record by numeric id, or undefined if no such instance. */
   async getInstance(instanceNumId: number | bigint) {
-    return undefinedIfBoxMissing(() => this.readClient.state.box.instances.value(instanceNumId))
+    const id = assertUint(instanceNumId, 16, 'instanceNumId')
+    return undefinedIfBoxMissing(() => this.readClient.state.box.instances.value(id))
   }
 
   /** Instance numeric ID an escrow account is assigned to, or undefined if unassigned. */
