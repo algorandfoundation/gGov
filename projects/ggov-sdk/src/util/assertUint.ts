@@ -7,8 +7,10 @@
  * this at the call site surfaces a clear, actionable error instead.
  */
 export function assertUint(value: bigint | number, bits: number, label: string): bigint {
-  if (typeof value === 'number' && !Number.isInteger(value)) {
-    throw new RangeError(`${label} must be an integer, got ${value}`)
+  // Number.isSafeInteger (not isInteger): a JS number above 2^53 can't distinguish adjacent
+  // integers, so BigInt(value) would silently round it to a different id. Reject and require a bigint.
+  if (typeof value === 'number' && !Number.isSafeInteger(value)) {
+    throw new RangeError(`${label} must be a safe integer; pass a bigint for values above 2^53, got ${value}`)
   }
   const asBigInt = BigInt(value)
   const max = (1n << BigInt(bits)) - 1n
