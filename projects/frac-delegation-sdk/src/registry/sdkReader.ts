@@ -55,10 +55,9 @@ export class FracDelegationRegistryReaderSDK {
     return defaultOperator!
   }
 
-  /** Configured gGov registry app id, or undefined while unset. */
-  async getGGovRegistryApp(): Promise<bigint | undefined> {
-    const appId = await this.readClient.state.global.gGovRegistryApp()
-    return appId === undefined ? undefined : BigInt(appId)
+  /** Configured gGov registry app id; `0n` while unset (sentinel). */
+  async getGGovRegistryApp(): Promise<bigint> {
+    return (await this.readClient.state.global.gGovRegistryApp()) ?? 0n
   }
 
   /** Registered instance record by numeric id, or undefined if no such instance. */
