@@ -37,6 +37,8 @@ import { FracEscrowInstance, FracInstance, FracRegAccount } from '../base/types.
 import { ensure, u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 
+export const fracRegistryGGovKey = Bytes`gGovRegistryApp`
+
 /**
  * Fractional Delegation Registry: global singleton, instance deployer.
  *
@@ -50,7 +52,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   /** Fallback operator for frac instances; defaults to creator */
   defaultOperator = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** gGov registry application ID */
-  gGovRegistryApp = GlobalState<Application>()
+  gGovRegistryApp = GlobalState<Application>({ key: fracRegistryGGovKey, initialValue: Application(0) })
   /** Last account numeric ID */
   lastAccountId = GlobalState<uint64>({ initialValue: 0 })
   /** Account registry; account ID + frac instance (numeric) IDs  */

@@ -40,6 +40,7 @@ import {
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
+  errRegistryMissing,
   errTotalGovsExceeded,
   errTotalMembersOverflow,
   errTotalMembersZero,
@@ -74,15 +75,15 @@ function getCommitteeSBGovs(sbMeta: Box<SuperboxMeta>): uint64 {
   return sbMeta.value.totalByteLength.asUint64() / ACCOUNT_ID_WITH_VOTES_STORED_SIZE
 }
 
-export const ggovRegistryXGovKey = Bytes`xGovRegistryApp`
-export const ggovRegistryFDKey = Bytes`fdRegistryApp`
+export const gGovRegistryXGovKey = Bytes`xGovRegistryApp`
+export const gGovRegistryFDKey = Bytes`fracRegistryApp`
 
 @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
 export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** xGov registry application ID */
-  xGovRegistryApp = GlobalState<Application>({ key: ggovRegistryXGovKey })
+  xGovRegistryApp = GlobalState<Application>({ key: gGovRegistryXGovKey, initialValue: Application(0) })
   /** Fractional delegation registry application ID */
-  fracRegistryApp = GlobalState<Application>({ key: ggovRegistryFDKey })
+  fracRegistryApp = GlobalState<Application>({ key: gGovRegistryFDKey, initialValue: Application(0) })
   /** Committee metadata box map */
   committees = BoxMap<CommitteeId, CommitteeMetadata>({ keyPrefix: 'c' })
   /**
@@ -365,6 +366,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** Mirror delegation from the xGov registry's box (if present). Admin only. */
   public mirrorXGovDelegation(account: Account): void {
     this.ensureCallerIsAdmin()
+    ensure(this.xGovRegistryApp.value.id > 0, errRegistryMissing)
     // never overwrite an existing gGov delegation; mirroring only seeds delegations not yet set locally
     ensure(!this.delegations(account).exists, errGGovDelegationExists)
 
@@ -395,6 +397,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public importFracDelegations(escrowAccounts: Account[]): void {
     this.ensureCallerIsAdmin()
+    ensure(this.fracRegistryApp.value.id > 0, errRegistryMissing)
     for (const escrow of escrowAccounts) {
       // Checked before the inner call so the likely admin mistake fails cheaply
       ensureExtra(this.accounts(escrow).exists, errAccountNotExists, escrow.bytes)

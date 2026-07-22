@@ -132,6 +132,7 @@ describe('GGovRegistry delegation', () => {
     test('refuses to overwrite an existing delegation', async () => {
       const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 2)
       const [delegator, delegatee] = govAccounts
+      await sdk.setXGovRegistryApp({ appId: 12345n })
       // delegator (a known, ingested account) sets a local gGov delegation
       await createSDK(localnet, sdk.appId, delegator).setVotingAccount({ votingAddress: delegatee.toString() })
       // admin attempting to mirror over the existing delegation must be rejected
