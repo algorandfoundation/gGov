@@ -110,12 +110,12 @@ describe('FracDelegationRegistry admin', () => {
   })
 
   describe('admin transfer and lifecycle', () => {
-    test('admin and default operator default to creator; gGov registry app starts unset', async () => {
+    test('admin and default operator default to creator; gGov registry app starts unset (zero sentinel)', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracRegistry(localnet, testAccount)
       expect(await sdk.getAdmin()).toBe(testAccount.toString())
       expect(await sdk.getDefaultOperator()).toBe(testAccount.toString())
-      expect(await sdk.getGGovRegistryApp()).toBeUndefined()
+      expect(await sdk.getGGovRegistryApp()).toBe(0n)
     })
 
     test('admin cannot transfer to the zero address', async () => {

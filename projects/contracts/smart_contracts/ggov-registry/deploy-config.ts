@@ -1,28 +1,18 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { GGovSDK, GGovRegistrySDK } from 'ggov-sdk'
-import { appIdFromEnv } from '../deploy-utils'
 
+// Cross-app links (xGovRegistryApp, fracRegistryApp) are set by wireRegistries in
+// ../wire-registries.ts, after every deploy config has run.
 export async function deploy() {
-  console.log('=== Deploying GGovRegistry ===')
+  console.log('\n=== Deploying GGovRegistry ===')
 
   const algorand = AlgorandClient.fromEnvironment()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
-
-  const xGovRegistryAppId = appIdFromEnv('XGOV_REGISTRY_APP_ID')
-  if (xGovRegistryAppId === undefined) {
-    console.warn(
-      'XGOV_REGISTRY_APP_ID is not set: xGovRegistryApp will be left unconfigured. ' +
-        'Set it and redeploy, or call setXGovRegistryApp directly.',
-    )
-  } else {
-    console.log(`Using xGov registry app id ${xGovRegistryAppId} from XGOV_REGISTRY_APP_ID`)
-  }
 
   const { appClient } = await GGovRegistrySDK.createRegistry({
     algorand,
     deployer: { sender: deployer.addr, signer: deployer.signer },
     operatorAccount: deployer.addr.toString(),
-    xGovRegistryAppId,
     initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
     update: true,
   })
@@ -48,4 +38,6 @@ export async function deploy() {
       console.log(`Updated period app ${appId} (periodId ${id})`)
     }
   }
+
+  return appClient.appId
 }

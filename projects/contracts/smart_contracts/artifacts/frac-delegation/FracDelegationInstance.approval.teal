@@ -591,13 +591,13 @@ syncCommittee:
     // this.ensureCallerIsOperator()
     callsub ensureCallerIsOperator
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:188
-    // const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, Bytes`gGovRegistryApp`)
+    // const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, fracRegistryGGovKey)
     intc_0 // 0
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:75
     // registryApp = GlobalState<uint64>({ initialValue: Global.callerApplicationId })
     bytec_2 // "registryApp"
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:188
-    // const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, Bytes`gGovRegistryApp`)
+    // const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, fracRegistryGGovKey)
     app_global_get_ex
     assert // check GlobalState exists
     pushbytes "gGovRegistryApp"
@@ -1388,23 +1388,23 @@ getCommitteeAq:
     err
 
 getCommitteeAq_after_if_else@17:
-    // smart_contracts/base/types.algo.ts:395
+    // smart_contracts/base/types.algo.ts:403
     // totalAq: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:396
+    // smart_contracts/base/types.algo.ts:404
     // ingestedAq: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:397
+    // smart_contracts/base/types.algo.ts:405
     // totalAccounts: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:398
+    // smart_contracts/base/types.algo.ts:406
     // numAccounts: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/base/types.algo.ts:394-399
+    // smart_contracts/base/types.algo.ts:402-407
     // return {
     //   totalAq: u32(0),
     //   ingestedAq: u32(0),
