@@ -18,7 +18,13 @@ import { GGovRegistryReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { createTxnExecutor } from '../util/txnExecutor'
 import { chunk } from '../util/chunk'
-import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, DEFAULT_PERIOD_MBR_MICROALGOS } from '../constants'
+import { padForRefSlots } from '../util/padForRefSlots'
+import {
+  MAX_GROUP_SIZE,
+  BODY_CHUNK_BYTES,
+  DEFAULT_PERIOD_MBR_MICROALGOS,
+  MAX_ESCROWS_PER_FD_IMPORT,
+} from '../constants'
 
 export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -180,6 +186,21 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   setXGovRegistryApp = this.makeTxnExecutor({
     maker: this.makeSetXGovRegistryAppTxns,
+  })
+
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeSetFracRegistryAppTxns({
+    appId,
+    builder,
+  }: GGovRegistryContractArgs['setFracRegistryApp(uint64)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.setFracRegistryApp({ args: { appId } })
+    return builder
+  }
+
+  setFracRegistryApp = this.makeTxnExecutor({
+    maker: this.makeSetFracRegistryAppTxns,
   })
 
   @requireWriterWithClient()
@@ -370,6 +391,72 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   mirrorXGovDelegation = this.makeTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns })
 
   /**
+   * Delegate a batch of escrow accounts to the frac instance each is registered to, so that instance
+   * can cast pooled gGov votes on their behalf. Admin only.
+   *
+   * Fail-loud: an escrow that is not a registered gGov account, or not registered to any frac
+   * instance, rejects the whole call. Unlike `mirrorXGovDelegation` this OVERWRITES an existing
+   * delegation; re-importing an unchanged delegation is a contract-level no-op.
+   *
+   * One group per call — use {@link importFracDelegationsAll} to import more than {@link MAX_ESCROWS_PER_FD_IMPORT}
+   * escrow delegations.
+   *
+   * The registry app account pays the delegation box MBR and no payment is attached — fund it
+   * first, sized by `DELEGATION_MBR_NEW_DELEGATEE_MICROALGOS` and `DELEGATION_MBR_EXISTING_DELEGATEE_MICROALGOS`.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeImportFracDelegationsTxns({
+    escrowAccounts,
+    note,
+    builder,
+  }: GGovRegistryContractArgs['importFracDelegations(address[])void'] & CommonMethodBuilderArgs) {
+    if (escrowAccounts.length > MAX_ESCROWS_PER_FD_IMPORT) {
+      throw new Error(
+        `Too many escrows to import in one transaction group: ${escrowAccounts.length} (max ${MAX_ESCROWS_PER_FD_IMPORT}). Use \`importFracDelegationsAll\` method.`,
+      )
+    }
+    builder = builder ?? this.writeClient!.newGroup()
+    // Slots: 7 per escrow, maximized case (every escrow on a distinct instance and already delegated elsewhere) —
+    // this registry's `accounts` (1) + `delegations` (2) boxes; its `reverseDelegations` box keyed by the
+    // previous delegatee (3) (unlinked) AND a second one keyed by the instance (4) (linked; the map is keyed by
+    // delegatee, so a re-delegation touches two entries); the frac registry's `escrows` (5) + `instances` (6) boxes
+    // read by the inner `getEscrow`, and the instance app ref (`Application(id).address` needs the app available).
+    // Plus a fixed 1 for the frac registry app ref, which the whole batch shares.
+    builder = padForRefSlots(builder, escrowAccounts.length * 7 + 1, 'importFracDelegations')
+    // extraFee covers one inner getEscrow call per escrow sent as argument
+    return builder.importFracDelegations({
+      args: { escrowAccounts },
+      note,
+      extraFee: (escrowAccounts.length * 1000).microAlgo(),
+    })
+  }
+
+  importFracDelegations = this.makeTxnExecutor({ maker: this.makeImportFracDelegationsTxns })
+
+  /**
+   * Import any number of frac escrows delegations, one transaction group per {@link MAX_ESCROWS_PER_FD_IMPORT}
+   * chunk.
+   *
+   * Throws on the first failing group, leaving earlier chunks imported. Re-running the whole list
+   * is safe and cheap: the contract treats an unchanged delegation as a no-op, so already-imported
+   * escrows are skipped without side effects.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async importFracDelegationsAll({
+    escrowAccounts,
+    note,
+  }: GGovRegistryContractArgs['importFracDelegations(address[])void'] & {
+    note?: string | Uint8Array
+  }): Promise<void> {
+    for (const escrowsChunk of chunk(escrowAccounts, MAX_ESCROWS_PER_FD_IMPORT)) {
+      const { txIds } = await this.importFracDelegations({ escrowAccounts: escrowsChunk, note })
+      if (this.debug) console.log('escrows imported ', escrowsChunk.length, txIds[txIds.length - 1])
+    }
+  }
+
+  /**
    * Set (or clear) an account's voting-power delegation. ABI-compatible with the xGov registry's
    * `set_voting_account`:
    *  - delegate: `setVotingAccount({ votingAddress })`
@@ -504,8 +591,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   /**
    * Deploy a fresh `GGovRegistry` app, seed its MBR, upload the GGovPeriod approval bytecode
-   * into the registry's approval box, and optionally configure the xGov registry app id and
-   * operator account. Returns the writer-enabled registry SDK bound to the new app.
+   * into the registry's approval box, and optionally configure the xGov registry app id, the
+   * frac-delegation registry app id, and the operator account. Returns the writer-enabled
+   * registry SDK bound to the new app.
    *
    * The period approval bytecode comes from the generated `GGovPeriodClient` app spec
    * (`PERIOD_APP_SPEC.byteCode.approval`), so the version uploaded matches this build.
@@ -515,6 +603,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     deployer,
     operatorAccount,
     xGovRegistryAppId,
+    fracRegistryAppId,
     initialFundingAlgos,
     firstPeriodId,
     update = false,
@@ -523,6 +612,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     deployer: SenderWithSigner
     operatorAccount?: string | Address
     xGovRegistryAppId?: bigint | number
+    fracRegistryAppId?: bigint | number
     initialFundingAlgos?: bigint | number
     /**
      * Id to assign to the first period created on this registry. Use to continue numbering
@@ -576,6 +666,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
     if (xGovRegistryAppId !== undefined) {
       await sdk.setXGovRegistryApp({ appId: BigInt(xGovRegistryAppId) })
+    }
+    if (fracRegistryAppId !== undefined) {
+      await sdk.setFracRegistryApp({ appId: BigInt(fracRegistryAppId) })
     }
     if (operatorAccount !== undefined) {
       const op = typeof operatorAccount === 'string' ? operatorAccount : operatorAccount.toString()

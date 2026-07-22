@@ -30,6 +30,7 @@ import {
   errCommitteeIdOverflow,
   errCommitteeIncomplete,
   errCommitteeNotExists,
+  errEscrowNotAssigned,
   errGGovDelegationExists,
   errGGovPeriodNotExists,
   errGGovSelfDelegate,
@@ -39,6 +40,7 @@ import {
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
+  errRegistryMissing,
   errTotalGovsExceeded,
   errTotalMembersOverflow,
   errTotalMembersZero,
@@ -61,6 +63,7 @@ import {
   GGovPeriodSummary,
 } from '../base/types.algo'
 import { ensure, ensureExtra, u16, u32 } from '../base/utils.algo'
+import { FracDelegationRegistryContract } from '../frac-delegation/fracDelegationRegistry.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { XGovRegistryMock } from '../xgov-registry-mock/xGovRegistryMock.algo'
 import { GGovRegistryAccountContract } from './ggovRegistryAccount.algo'
@@ -72,12 +75,15 @@ function getCommitteeSBGovs(sbMeta: Box<SuperboxMeta>): uint64 {
   return sbMeta.value.totalByteLength.asUint64() / ACCOUNT_ID_WITH_VOTES_STORED_SIZE
 }
 
-export const ggovRegistryXGovKey = Bytes`xGovRegistryApp`
+export const gGovRegistryXGovKey = Bytes`xGovRegistryApp`
+export const gGovRegistryFDKey = Bytes`fracRegistryApp`
 
 @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
 export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** xGov registry application ID */
-  xGovRegistryApp = GlobalState<Application>({ key: ggovRegistryXGovKey })
+  xGovRegistryApp = GlobalState<Application>({ key: gGovRegistryXGovKey, initialValue: Application(0) })
+  /** Fractional delegation registry application ID */
+  fracRegistryApp = GlobalState<Application>({ key: gGovRegistryFDKey, initialValue: Application(0) })
   /** Committee metadata box map */
   committees = BoxMap<CommitteeId, CommitteeMetadata>({ keyPrefix: 'c' })
   /**
@@ -261,6 +267,15 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.xGovRegistryApp.value = appId
   }
 
+  /**
+   * Set the Frac Delegation Registry Application ID
+   * @param appId Frac Delegation Registry Application ID
+   */
+  public setFracRegistryApp(appId: Application): void {
+    this.ensureCallerIsAdmin()
+    this.fracRegistryApp.value = appId
+  }
+
   // ── Admin ─────────────────────────────────────────────────────────
 
   /** Caller must match this registry's stored `admin` (`BaseContract` override). */
@@ -351,6 +366,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** Mirror delegation from the xGov registry's box (if present). Admin only. */
   public mirrorXGovDelegation(account: Account): void {
     this.ensureCallerIsAdmin()
+    ensure(this.xGovRegistryApp.value.id > 0, errRegistryMissing)
     // never overwrite an existing gGov delegation; mirroring only seeds delegations not yet set locally
     ensure(!this.delegations(account).exists, errGGovDelegationExists)
 
@@ -363,6 +379,41 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     // Skip self-delegation (xGov "vote for self" == no delegation) so addDelegation never rejects.
     if (exists && xGovBox.votingAddress !== Global.zeroAddress && xGovBox.votingAddress !== account) {
       this.addDelegation(account, xGovBox.votingAddress)
+    }
+  }
+
+  /**
+   * Import delegations from the frac-delegation registry for a batch of escrow accounts. Admin only.
+   *
+   * Each escrow is resolved to its frac instance via a readonly inner call to the frac registry,
+   * then delegated to that instance's app address, so the instance contract can cast pooled gGov
+   * votes on the escrows' behalf. Unlike `mirrorXGovDelegation`, this OVERWRITES an existing
+   * delegation - fully auditable from logs via `GGovDelegationSet`; re-importing an unchanged
+   * delegation is a no-op.
+   *
+   * Fail-loud batch: an escrow that is not a registered gGov account (`errAccountNotExists`) or
+   * not registered to any frac instance (`errEscrowNotAssigned`) rejects the whole call.
+   * @param escrowAccounts Escrow accounts registered to an instance, tracked by frac-delegation registry
+   */
+  public importFracDelegations(escrowAccounts: Account[]): void {
+    this.ensureCallerIsAdmin()
+    ensure(this.fracRegistryApp.value.id > 0, errRegistryMissing)
+    for (const escrow of escrowAccounts) {
+      // Checked before the inner call so the likely admin mistake fails cheaply
+      ensureExtra(this.accounts(escrow).exists, errAccountNotExists, escrow.bytes)
+
+      // Do NOT hoist compileArc4 out of the loop: hoisting materialises the frac registry's program
+      // and puya rejects the resulting compile cycle (fracRegistry compiles fracInstance, which
+      // compiles this registry). Inline with an explicit appId, only the method selector is needed.
+      const escrowInstance = compileArc4(FracDelegationRegistryContract).call.getEscrow({
+        appId: this.fracRegistryApp.value,
+        args: [escrow],
+      }).returnValue
+
+      // getEscrow returns the zero sentinel (instanceNumId 0) instead of throwing for an unregistered escrow
+      ensureExtra(escrowInstance.instanceNumId.asUint64() !== 0, errEscrowNotAssigned, escrow.bytes)
+
+      this.addDelegation(escrow, Application(escrowInstance.instanceAppId).address)
     }
   }
 
