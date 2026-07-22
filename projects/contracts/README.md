@@ -85,7 +85,7 @@ Max delegations per delegatee: ~1024. At the moment we store reverse delegation 
 - `admin`: Account (default: creator) - admin address, rotatable via `setAdmin`
 - `operator`: Account - operator address; manages periods on spawned `GGovPeriod` apps
 - `xGovRegistryApp`: Application (key: `xGovRegistryApp`) - xGov registry application ID
-- `fracRegistryApp`: Application (key: `fdRegistryApp`) - fractional delegation registry application ID; read by `importFracDelegations` to resolve escrows
+- `fracRegistryApp`: Application (key: `fracRegistryApp`) - fractional delegation registry application ID; read by `importFracDelegations` to resolve escrows
 - `lastCommitteeId`: uint64 (0) - incrementing committee numeric ID; also the committee superbox prefix counter
 - `lastPeriodId`: uint64 (0) - incrementing period ID counter
 - `lastAccountId`: uint64 (0) - incrementing account numeric ID counter
