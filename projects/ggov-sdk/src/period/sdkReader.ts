@@ -13,6 +13,7 @@ import {
 } from '../generated/GGovPeriodClient'
 import { getConstructorConfig } from '../networkConfig'
 import { BodyJson, PeriodBodyJson, parseBodyJson, ReaderConstructorArgs } from './types'
+import { assertUint } from '../util/assertUint'
 import { chunked } from '../util/chunked'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors'
 
@@ -96,7 +97,7 @@ export class GGovReaderSDK {
   /** Resolve the on-chain app ID for a periodId. Throws if the period is unknown. */
   @wrapErrors()
   async getPeriodAppId(periodId: bigint | number): Promise<bigint> {
-    const pid = BigInt(periodId)
+    const pid = assertUint(periodId, 64, 'periodId')
     const cached = this.periodAppCache.get(pid)
     if (cached !== undefined) return cached
     const { return: appId } = await this.registryReadClient.send.getPeriodApp({ args: { periodId: pid } })
@@ -108,7 +109,7 @@ export class GGovReaderSDK {
 
   /** Build (and cache) a read-only per-period client. */
   protected async getPeriodReadClient(periodId: bigint | number): Promise<GGovPeriodClient> {
-    const pid = BigInt(periodId)
+    const pid = assertUint(periodId, 64, 'periodId')
     const cached = this.periodReadClientCache.get(pid)
     if (cached) return cached
     const appId = await this.getPeriodAppId(pid)
@@ -144,6 +145,8 @@ export class GGovReaderSDK {
    */
   @wrapErrors()
   async getPeriod(periodId: bigint | number): Promise<GGovPeriod> {
+    // Validate outside the try so a bad id throws clearly instead of being swallowed as EMPTY_PERIOD.
+    assertUint(periodId, 64, 'periodId')
     try {
       const client = await this.getPeriodReadClient(periodId)
       const { confirmations } = await client.newGroup().logPeriod({ args: {} }).simulate(SIMULATE_PARAMS)
@@ -265,6 +268,8 @@ export class GGovReaderSDK {
 
   /** Read the body JSON for a period from its per-period app. */
   async getPeriodBody(periodId: bigint | number): Promise<PeriodBodyJson | null> {
+    // Validate outside the try so a bad id throws clearly instead of being swallowed as null.
+    assertUint(periodId, 64, 'periodId')
     try {
       const appId = await this.getPeriodAppId(periodId)
       const key = new Uint8Array(1)
@@ -278,12 +283,16 @@ export class GGovReaderSDK {
 
   /** Read the body JSON for a topic from its per-period app. */
   async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<BodyJson | null> {
+    // Validate outside the try so a bad id/index throws clearly instead of being swallowed as null.
+    // `setUint32` would otherwise silently wrap/truncate an out-of-range or non-integer topicIndex.
+    assertUint(periodId, 64, 'periodId')
+    const topicIndexArg = Number(assertUint(topicIndex, 32, 'topicIndex'))
     try {
       const appId = await this.getPeriodAppId(periodId)
       const key = new Uint8Array(5)
       key[0] = 0x54 // 'T'
       const view = new DataView(key.buffer)
-      view.setUint32(1, Number(topicIndex))
+      view.setUint32(1, topicIndexArg)
       const raw = await this.algorand.app.getBoxValue(appId, key)
       return parseBodyJson(raw)
     } catch {

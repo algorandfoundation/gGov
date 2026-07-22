@@ -977,4 +977,55 @@ describe('FracDelegationInstance algoquarters', () => {
       expect(committeeAq.numAccounts).toBe(3)
     })
   })
+
+  describe('aggregate readonly getters', () => {
+    test('getCommittees batch-reads synced committees, undefined for unknown ids', async () => {
+      const ctx = await setupAq(localnet)
+      const { committeeId, sdk, instanceId } = ctx
+      const { secondCommitteeId } = await addSecondCommittee(ctx)
+      const unknownCommitteeId = new Uint8Array(32)
+
+      const committees = await sdk.getCommittees(instanceId, [committeeId, unknownCommitteeId, secondCommitteeId])
+
+      // Index-aligned with the input; each present entry matches the single getter, unknown -> undefined.
+      expect(committees[0]).toEqual(await sdk.getCommittee(instanceId, committeeId))
+      expect(committees[1]).toBeUndefined()
+      expect(committees[2]).toEqual(await sdk.getCommittee(instanceId, secondCommitteeId))
+    })
+
+    test('getAccountCommitteeAq bundles instance + committee identity with the account weight', async () => {
+      const { committeeId, committeeNumId, sdkWrapper, registrySdk, sdk, instanceId } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      const account = freshAccounts(1)[0]
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
+      const accountId = (await registrySdk.getAccountIdMap([account])).get(account)!
+
+      const bundle = await sdk.getAccountCommitteeAq(instanceId, accountId, committeeId)
+
+      expect(bundle).toEqual({
+        instanceNumId: Number(instanceId),
+        instanceAppId: await sdk.getInstanceAppId(instanceId),
+        committeeNumId,
+        committeeId,
+        instanceName: (await registrySdk.getInstance(instanceId))!.name,
+        userAq: 100,
+        totalAq: 1000,
+      })
+    })
+
+    test('getAccountCommitteeAq zeroes the weights for an unsynced committee', async () => {
+      const { sdk, instanceId } = await setupAq(localnet)
+      const unknownCommitteeId = new Uint8Array(32)
+
+      const bundle = await sdk.getAccountCommitteeAq(instanceId, 1, unknownCommitteeId)
+
+      // committeeNumId 0 marks "not synced"; the weight lookups then miss and read back 0. committeeId
+      // still echoes the input.
+      expect(bundle.committeeNumId).toBe(0)
+      expect(bundle.userAq).toBe(0)
+      expect(bundle.totalAq).toBe(0)
+      expect(bundle.committeeId).toEqual(unknownCommitteeId)
+      expect(bundle.instanceNumId).toBe(Number(instanceId))
+    })
+  })
 })
