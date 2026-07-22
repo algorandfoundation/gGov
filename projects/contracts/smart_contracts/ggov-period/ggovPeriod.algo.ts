@@ -36,6 +36,7 @@ import {
   errGGovVotingEnded,
   errGGovVotingNotStarted,
   errPeriodEndLessThanStart,
+  errRegistryMissing,
   errUnauthorized,
 } from '../base/errors.algo'
 import {
@@ -116,22 +117,41 @@ export class GGovPeriodContract extends BaseContract {
 
   // ── Helpers ──────────────────────────────────────────────────────
 
-  /** Inner-call the registry's verifyOperator and ensure caller is the operator. */
-  protected ensureCallerIsOperator(): void {
-    const ok = compileArc4(GGovRegistryContract).call.verifyOperator({
-      appId: Application(this.registryApp.value),
-      args: [Txn.sender],
-    }).returnValue
-    ensure(ok, errUnauthorized)
+  /**
+   * Admin is the registry's `admin` global, read directly from the registry app's state (no inner
+   * call). `admin` has an initial value on the registry, so a missing key means `registryApp` isn't
+   * a registry — surface that as errRegistryMissing.
+   */
+  protected resolveAdmin(): Account {
+    const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`admin`)
+    ensure(exists, errRegistryMissing)
+    return Account(value)
   }
 
-  /** Inner-call the registry's verifyAdmin and ensure caller is the admin. */
-  protected checkAdminCaller(): void {
-    const ok = compileArc4(GGovRegistryContract).call.verifyAdmin({
-      appId: Application(this.registryApp.value),
-      args: [Txn.sender],
-    }).returnValue
-    ensure(ok, errUnauthorized)
+  /**
+   * Operator is the registry's `operator` global, read directly (no inner call). Unlike `admin`,
+   * the registry's `operator` has no initial value, so before setOperator the key is absent; return
+   * the zero address in that case so an operator-gated caller fails the comparison with errUnauthorized
+   * (as under the old c2c check), rather than errRegistryMissing.
+   */
+  protected resolveOperator(): Account {
+    const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`operator`)
+    return exists ? Account(value) : Global.zeroAddress
+  }
+
+  /**
+   * Caller must match the registry's admin (`BaseContract` override). The creator — the spawning
+   * registry app account — always passes too: a permanent escape hatch, mirroring
+   * FracDelegationInstance.
+   */
+  protected override ensureCallerIsAdmin(): void {
+    if (Txn.sender === Global.creatorAddress) return
+    ensure(Txn.sender === this.resolveAdmin(), errUnauthorized)
+  }
+
+  /** Caller must match the registry's operator. */
+  protected ensureCallerIsOperator(): void {
+    ensure(Txn.sender === this.resolveOperator(), errUnauthorized)
   }
 
   /** Mirror current summary (votingStart, votingEnd, numTopics, ready) onto the registry. */
@@ -308,7 +328,7 @@ export class GGovPeriodContract extends BaseContract {
    * unknown/stale indexes are harmless. Each referenced box must be in the txn's box-reference array.
    */
   public deleteTopicBodies(topicIndexes: uint64[]): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsAdmin()
     this.ensureEditable()
     for (const idx of clone(topicIndexes)) {
       op.Box.delete(this.topicBodyBoxKey(idx))
@@ -534,35 +554,35 @@ export class GGovPeriodContract extends BaseContract {
     }
   }
 
-  // ── Admin: withdraw ALGO (via registry C2C verifyAdmin) ──────────
+  // ── Admin: withdraw ALGO ─────────────────────────────────────────
 
   /**
    * Withdraw $amount microALGO from this period app account to $receiver. Registry admin
-   * only (verified via inner call to registry.verifyAdmin). The AVM rejects the inner
-   * payment if it would drop the app account below its min balance.
+   * only (resolved from the registry's `admin` global, or the creator escape hatch). The AVM
+   * rejects the inner payment if it would drop the app account below its min balance.
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsAdmin()
     itxn.payment({ receiver, amount }).submit()
   }
 
-  // ── Lifecycle: update + delete (admin only, via registry C2C) ────
+  // ── Lifecycle: update + delete (admin only) ──────────────────────
 
-  /** App updatable by registry admin (verified via inner call to registry.verifyAdmin) */
+  /** App updatable by registry admin (resolved from the registry's `admin` global) */
   @baremethod({ allowActions: ['UpdateApplication'] })
   public updateApplication(): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsAdmin()
   }
 
   /**
-   * App deletable by registry admin (verified via inner call to registry.verifyAdmin), and only
+   * App deletable by registry admin (resolved from the registry's `admin` global), and only
    * while the period is not ready. Blocking deletion on ready keeps a period that is locked for
    * voting from being torn down; to delete a ready period the admin must setReady(false) first,
    * which itself only succeeds when no votes have been cast.
    */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsAdmin()
     this.ensureEditable()
     // delete boxes to reclaim their mbr
     // topicOptionsArr and topicVotesArr will always exist
