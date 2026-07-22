@@ -2,6 +2,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { generateAccount, getApplicationAddress, makeEmptyTransactionSigner } from 'algosdk'
 import {
+  AlgoQuartersFile,
   FracDelegationInstanceClient,
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
@@ -44,6 +45,28 @@ const freshAccounts = (n: number) => Array.from({ length: n }, () => generateAcc
 
 /** `[address, aq]` rows in the tuple shape the generated client takes. */
 const rows = (accounts: string[], aq: number): [string, number][] => accounts.map((a) => [a, aq])
+
+/**
+ * Manifest-shaped `AlgoQuartersFile` over `[address, aq]` rows: totals computed from the rows and
+ * the genesis hash taken from LocalNet, so it passes `uploadAqFile`'s client-side validation.
+ */
+const makeAqFile = async (
+  localnet: AlgorandFixture,
+  accountAqs: [string, number][],
+  overrides: Partial<AlgoQuartersFile> = {},
+): Promise<AlgoQuartersFile> => {
+  const sp = await localnet.algorand.getSuggestedParams()
+  return {
+    networkGenesisHash: Buffer.from(sp.genesisHash!).toString('base64'),
+    protocol: 'reti',
+    periodStart: 1_000_000,
+    periodEnd: 2_000_000,
+    totalAccounts: accountAqs.length,
+    totalAlgoQuarters: accountAqs.reduce((sum, [, aq]) => sum + aq, 0).toString(),
+    accounts: accountAqs.map(([account, aq]) => ({ account, algoQuarters: aq.toString() })),
+    ...overrides,
+  }
+}
 
 /** An arbitrary committee numeric ID that was never opened. */
 const UNKNOWN_COMMITTEE_NUM_ID = 999
@@ -99,6 +122,16 @@ const setupAq = async (localnet: AlgorandFixture) => {
     getCommitteeAq: (committeeNumId: number) => sdk.getCommitteeAq(instanceId, committeeNumId),
     getAccountAq: (accountId: number, committeeNumId: number) =>
       sdk.getAccountAq(instanceId, accountId, committeeNumId),
+    getAccountAqs: (committeeNumId: number, accountIds: number[]) =>
+      sdk.getAccountAqs(instanceId, committeeNumId, accountIds),
+    getAccountAqMap: (committeeNumId: number, accounts?: string[]) =>
+      sdk.getAccountAqMap(instanceId, committeeNumId, accounts),
+    uploadAqFile: (args: {
+      committeeId: Uint8Array | string
+      aqFile: AlgoQuartersFile
+      autoFund?: boolean
+      note?: string
+    }) => sdk.uploadAqFile({ instanceNumId: instanceId, ...args }),
     readClient,
   }
   return {
@@ -736,6 +769,263 @@ describe('FracDelegationInstance algoquarters', () => {
       await expect(
         sdkWrapper.uningestAq({ committeeNumId, accounts: freshAccounts(MAX_ACCOUNTS_PER_UNINGEST_AQ + 1) }),
       ).rejects.toThrow(/exceeds the .* per call/)
+    })
+  })
+
+  describe('getAccountAqs (plural reader)', () => {
+    test('returns AQ per account ID, index-aligned, 0 for missing', async () => {
+      const { committeeId, committeeNumId, sdkWrapper, registrySdk } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      const accounts = freshAccounts(3)
+      await sdkWrapper.ingestAq({
+        committeeNumId,
+        accountAqs: [
+          [accounts[0], 100],
+          [accounts[1], 150],
+          [accounts[2], 200],
+        ],
+      })
+
+      const ids = await registrySdk.getAccountIdMap(accounts)
+      const aqs = await sdkWrapper.getAccountAqs(committeeNumId, [
+        ids.get(accounts[1])!,
+        9999, // never minted
+        ids.get(accounts[0])!,
+      ])
+      expect(aqs).toEqual([150, 0, 100])
+    })
+
+    test('getAccountAqMap maps addresses to AQ, 0 for unregistered accounts', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      const [ingested, stranger] = [freshAccounts(1)[0], freshAccounts(1)[0]]
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: [[ingested, 100]] })
+
+      const aqMap = await sdkWrapper.getAccountAqMap(committeeNumId, [ingested, stranger])
+      expect(aqMap.get(ingested)).toBe(100)
+      expect(aqMap.get(stranger)).toBe(0)
+    })
+
+    test('fans out past the per-call and per-group chunk limits', async () => {
+      // 300 IDs exercise both chunk layers: 63 per call (each id is one box ref, and a simulate
+      // group carries at most 128 unnamed refs), two calls per group, @chunked(126) fan-out.
+      // The boxes need not exist — a missing box reads as 0 — so this is simulate-only and cheap.
+      const { committeeNumId, sdkWrapper } = await setupAq(localnet)
+      const ids = Array.from({ length: 300 }, (_, i) => i + 1)
+
+      const aqs = await sdkWrapper.getAccountAqs(committeeNumId, ids)
+      expect(aqs).toHaveLength(300)
+      expect(aqs.every((aq) => aq === 0)).toBe(true)
+    })
+  })
+
+  describe('uploadAqFile', () => {
+    test('uploads a manifest end-to-end into a fresh ledger', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      const accounts = freshAccounts(5)
+      const aqFile = await makeAqFile(
+        localnet,
+        accounts.map((account, i): [string, number] => [account, (i + 1) * 100]),
+      )
+
+      const { committeeNumId: numId, committeeAq } = await sdkWrapper.uploadAqFile({ committeeId, aqFile })
+
+      expect(numId).toBe(committeeNumId)
+      expect(committeeAq).toEqual({ totalAq: 1500, ingestedAq: 1500, totalAccounts: 5, numAccounts: 5 })
+      const aqMap = await sdkWrapper.getAccountAqMap(committeeNumId, accounts)
+      expect(accounts.map((account) => aqMap.get(account))).toEqual([100, 200, 300, 400, 500])
+    })
+
+    test('re-running against a complete ledger is a no-op', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      const aqFile = await makeAqFile(localnet, rows(freshAccounts(3), 100))
+
+      await sdkWrapper.uploadAqFile({ committeeId, aqFile })
+      const { committeeAq } = await sdkWrapper.uploadAqFile({ committeeId, aqFile })
+
+      expect(committeeAq).toEqual({ totalAq: 300, ingestedAq: 300, totalAccounts: 3, numAccounts: 3 })
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual(committeeAq)
+    })
+
+    test('resumes after a partial manual ingest, skipping ingested accounts', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      const accounts = freshAccounts(4)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 400, totalAccounts: 4 })
+      await sdkWrapper.ingestAq({
+        committeeNumId,
+        accountAqs: [
+          [accounts[0], 100],
+          [accounts[1], 100],
+        ],
+      })
+
+      const aqFile = await makeAqFile(localnet, rows(accounts, 100))
+      const { committeeAq } = await sdkWrapper.uploadAqFile({ committeeId, aqFile })
+
+      expect(committeeAq.ingestedAq).toBe(400)
+      expect(committeeAq.numAccounts).toBe(4)
+    })
+
+    test('syncs the committee when it has no local snapshot', async () => {
+      const ctx = await setupAq(localnet)
+      const thirdCommitteeId = await ctx.ggovSdk.uploadCommitteeFile({
+        ...committeeTemplate,
+        periodStart: 7_000_000,
+        periodEnd: 8_000_000,
+        totalMembers: 1,
+        totalVotes: 25,
+        registryId: 0,
+        govs: [{ address: ctx.govAccounts[0].toString(), votes: 25 }],
+      } as GGovCommitteeFile)
+      expect(await ctx.sdk.getCommittee(ctx.instanceId, thirdCommitteeId)).toBeUndefined()
+
+      const aqFile = await makeAqFile(localnet, rows(freshAccounts(2), 50))
+      const { committeeAq } = await ctx.sdkWrapper.uploadAqFile({ committeeId: thirdCommitteeId, aqFile })
+
+      expect(await ctx.sdk.getCommittee(ctx.instanceId, thirdCommitteeId)).toBeDefined()
+      expect(committeeAq.ingestedAq).toBe(100)
+    })
+
+    test('corrects the totals of a pristine ledger', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 999, totalAccounts: 9 })
+
+      const aqFile = await makeAqFile(localnet, rows(freshAccounts(3), 100))
+      const { committeeAq } = await sdkWrapper.uploadAqFile({ committeeId, aqFile })
+
+      expect(committeeAq).toEqual({ totalAq: 300, ingestedAq: 300, totalAccounts: 3, numAccounts: 3 })
+      expect(await sdkWrapper.getCommitteeAq(committeeNumId)).toEqual(committeeAq)
+    })
+
+    test('rejects a manifest whose totals differ from a frozen ledger', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      const accounts = freshAccounts(4)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 400, totalAccounts: 4 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: [[accounts[0], 100]] })
+
+      // Internally consistent file (300 AQ / 3 accounts), but the ledger froze at 400 / 4.
+      const aqFile = await makeAqFile(localnet, rows(accounts.slice(0, 3), 100))
+      await expect(sdkWrapper.uploadAqFile({ committeeId, aqFile })).rejects.toThrow(/frozen/)
+    })
+
+    test('rejects when an ingested account differs from its manifest row', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      const accounts = freshAccounts(3)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 300, totalAccounts: 3 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: [[accounts[0], 100]] })
+
+      const aqFile = await makeAqFile(localnet, [
+        [accounts[0], 150],
+        [accounts[1], 100],
+        [accounts[2], 50],
+      ])
+      await expect(sdkWrapper.uploadAqFile({ committeeId, aqFile })).rejects.toThrow(/already ingested with 100/)
+    })
+
+    test('rejects a ledger holding accounts outside the manifest', async () => {
+      const { committeeId, committeeNumId, sdkWrapper } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 300, totalAccounts: 3 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: [[freshAccounts(1)[0], 100]] })
+
+      // Same totals, but none of the file's accounts are the one already ingested.
+      const aqFile = await makeAqFile(localnet, rows(freshAccounts(3), 100))
+      await expect(sdkWrapper.uploadAqFile({ committeeId, aqFile })).rejects.toThrow(/wrong manifest/)
+    })
+
+    test('rejects invalid manifests client-side, before any transaction', async () => {
+      const { committeeId, sdkWrapper } = await setupAq(localnet)
+      const good = await makeAqFile(localnet, rows(freshAccounts(2), 100))
+
+      await expect(sdkWrapper.uploadAqFile({ committeeId, aqFile: { ...good, totalAccounts: 3 } })).rejects.toThrow(
+        /totalAccounts/,
+      )
+      await expect(
+        sdkWrapper.uploadAqFile({ committeeId, aqFile: { ...good, totalAlgoQuarters: '999' } }),
+      ).rejects.toThrow(/totalAlgoQuarters/)
+      const dup = good.accounts[0].account
+      await expect(
+        sdkWrapper.uploadAqFile({
+          committeeId,
+          aqFile: await makeAqFile(localnet, [
+            [dup, 100],
+            [dup, 100],
+          ]),
+        }),
+      ).rejects.toThrow(/duplicate/)
+      await expect(
+        sdkWrapper.uploadAqFile({ committeeId, aqFile: await makeAqFile(localnet, [[freshAccounts(1)[0], 0]]) }),
+      ).rejects.toThrow(/out of uint32 range/)
+      await expect(
+        sdkWrapper.uploadAqFile({ committeeId, aqFile: { ...good, networkGenesisHash: 'bm90LXRoaXMtbmV0d29yaw==' } }),
+      ).rejects.toThrow(/genesis/)
+    })
+
+    test('pre-checks MBR with the exact shortfall; autoFund tops it up', async () => {
+      const { committeeId, sdkWrapper, sdk, instanceId, testAccount } = await setupAq(localnet)
+      // Drain the instance app to 15,000 µA spendable: enough for the ledger box (10,100 µA MBR),
+      // not for the batch's three accountAq boxes (3 x 6,900 µA).
+      const instanceAppId = await sdk.getInstanceAppId(instanceId)
+      const appAddress = getApplicationAddress(instanceAppId).toString()
+      const info = await localnet.algorand.client.algod.accountInformation(appAddress).do()
+      const drain = BigInt(info.amount) - BigInt(info.minBalance) - 15_000n
+      await sdk.withdrawInstanceALGO({ instanceNumId: instanceId, receiver: testAccount.toString(), amount: drain })
+
+      const aqFile = await makeAqFile(localnet, rows(freshAccounts(3), 100))
+      await expect(sdkWrapper.uploadAqFile({ committeeId, aqFile })).rejects.toThrow(/instance app .* µAlgo/)
+
+      const { committeeAq } = await sdkWrapper.uploadAqFile({ committeeId, aqFile, autoFund: true })
+      expect(committeeAq.numAccounts).toBe(3)
+    })
+  })
+
+  describe('aggregate readonly getters', () => {
+    test('getCommittees batch-reads synced committees, undefined for unknown ids', async () => {
+      const ctx = await setupAq(localnet)
+      const { committeeId, sdk, instanceId } = ctx
+      const { secondCommitteeId } = await addSecondCommittee(ctx)
+      const unknownCommitteeId = new Uint8Array(32)
+
+      const committees = await sdk.getCommittees(instanceId, [committeeId, unknownCommitteeId, secondCommitteeId])
+
+      // Index-aligned with the input; each present entry matches the single getter, unknown -> undefined.
+      expect(committees[0]).toEqual(await sdk.getCommittee(instanceId, committeeId))
+      expect(committees[1]).toBeUndefined()
+      expect(committees[2]).toEqual(await sdk.getCommittee(instanceId, secondCommitteeId))
+    })
+
+    test('getAccountCommitteeAq bundles instance + committee identity with the account weight', async () => {
+      const { committeeId, committeeNumId, sdkWrapper, registrySdk, sdk, instanceId } = await setupAq(localnet)
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      const account = freshAccounts(1)[0]
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
+      const accountId = (await registrySdk.getAccountIdMap([account])).get(account)!
+
+      const bundle = await sdk.getAccountCommitteeAq(instanceId, accountId, committeeId)
+
+      expect(bundle).toEqual({
+        instanceNumId: Number(instanceId),
+        instanceAppId: await sdk.getInstanceAppId(instanceId),
+        committeeNumId,
+        committeeId,
+        instanceName: (await registrySdk.getInstance(instanceId))!.name,
+        userAq: 100,
+        totalAq: 1000,
+      })
+    })
+
+    test('getAccountCommitteeAq zeroes the weights for an unsynced committee', async () => {
+      const { sdk, instanceId } = await setupAq(localnet)
+      const unknownCommitteeId = new Uint8Array(32)
+
+      const bundle = await sdk.getAccountCommitteeAq(instanceId, 1, unknownCommitteeId)
+
+      // committeeNumId 0 marks "not synced"; the weight lookups then miss and read back 0. committeeId
+      // still echoes the input.
+      expect(bundle.committeeNumId).toBe(0)
+      expect(bundle.userAq).toBe(0)
+      expect(bundle.totalAq).toBe(0)
+      expect(bundle.committeeId).toEqual(unknownCommitteeId)
+      expect(bundle.instanceNumId).toBe(Number(instanceId))
     })
   })
 })

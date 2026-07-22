@@ -151,6 +151,21 @@ describe('FracDelegationInstance periods', () => {
       expect((await fracSdk.getPeriodVoteCache(instanceId, secondId))!.internal).toEqual([[0]])
     })
 
+    test('getPeriods batch-reads synced periods, undefined for unknown ids', async () => {
+      const { ggovSdk, committeeId, fracSdk, instanceId } = await setupWithSyncedCommittee(localnet)
+      const firstId = await createReadyPeriod(ggovSdk, committeeId, TOPICS)
+      const secondId = await createReadyPeriod(ggovSdk, committeeId, [['Only']])
+      await fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(firstId) })
+      await fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(secondId) })
+
+      const periods = await fracSdk.getPeriods(instanceId, [firstId, 999999, secondId])
+
+      // Index-aligned with the input; each present entry matches the single getter, unknown -> undefined.
+      expect(periods[0]).toEqual(await fracSdk.getPeriod(instanceId, firstId))
+      expect(periods[1]).toBeUndefined()
+      expect(periods[2]).toEqual(await fracSdk.getPeriod(instanceId, secondId))
+    })
+
     test('re-syncs a pristine period, widening escrows picked up by a committee re-sync', async () => {
       const { ggovSdk, committeeId, govAccounts, fracSdk, instanceId } = await setupWithSyncedCommittee(localnet, 1)
       const periodId = await createReadyPeriod(ggovSdk, committeeId, TOPICS)

@@ -17,7 +17,7 @@ import {
   Txn,
   uint64,
 } from '@algorandfoundation/algorand-typescript'
-import { compileArc4, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
+import { compileArc4, encodeArc4, Uint16, Uint32, Uint8 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
 import {
   errAccountAqExists,
@@ -48,6 +48,7 @@ import {
   AccountWithAq,
   CommitteeId,
   FracAccountAqKey,
+  FracAccountCommitteeAq,
   FracCommitteeAq,
   FracEscrowVotes,
   FracInstanceCommittee,
@@ -58,8 +59,13 @@ import {
   FracVoteCast,
   FracVotingRecord,
   getEmptyFracCommitteeAq,
+  getEmptyFracEscrowVotes,
+  getEmptyFracInstanceCommittee,
+  getEmptyFracInstancePeriod,
+  getEmptyFracPeriodVoteCache,
+  getEmptyFracVotingRecord,
 } from '../base/types.algo'
-import { ensure, ensureExtra, u32, u8 } from '../base/utils.algo'
+import { ensure, ensureExtra, u16, u32, u8 } from '../base/utils.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
 import { FracDelegationRegistryContract, fracRegistryGGovKey } from './fracDelegationRegistry.algo'
@@ -280,6 +286,20 @@ export class FracDelegationInstanceContract extends BaseContract {
     this.escrows.value = clone(escrows)
   }
 
+  /**
+   * This instance's registered escrow accounts, in registration order, or an empty list if none has
+   * been registered yet. `escrowsVotes` on each `FracInstanceCommittee` snapshot is index-synced
+   * with this list. Readonly - meant to be simulated.
+   *
+   * Reads the whole `escrows` box onto the stack, so it is bounded by the AVM's 4096-byte stack cap
+   * (~127 escrows), well above any realistic escrow count. Off-chain readers wanting the raw box
+   * without that cap can still read it directly.
+   */
+  @abimethod({ readonly: true })
+  public getEscrows(): Account[] {
+    return this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
+  }
+
   // ── Committees ────────────────────────────────────────────────────
 
   /**
@@ -338,6 +358,38 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
     this.committees(committeeId).value = clone(committee)
     return committee
+  }
+
+  /**
+   * This instance's synced snapshot of gGov committee `committeeId`, or an empty record (sentinel
+   * `committeeNumId` 0) if `syncCommittee` has never been run for it - mirroring
+   * `GGovRegistry.getCommitteeMetadata`. `escrowsVotes` is index-synced with `getEscrows`. Readonly.
+   * @param committeeId 32-byte gGov committee ID
+   */
+  @abimethod({ readonly: true })
+  public getCommittee(committeeId: CommitteeId): FracInstanceCommittee {
+    const box = this.committees(committeeId)
+    if (box.exists) return box.value
+    return getEmptyFracInstanceCommittee()
+  }
+
+  /**
+   * Batch-log committee snapshots in input order, one line per id: the record if synced, else the
+   * empty sentinel (`committeeNumId` 0). Readonly - meant to be simulated with `allowMoreLogging`.
+   * Modelled on `GGovRegistry.logCommitteeMetadata`; each id is one `committees` box reference, so
+   * callers supply the ids to probe.
+   * @param committeeIds 32-byte gGov committee IDs
+   */
+  @abimethod({ readonly: true })
+  public logCommittees(committeeIds: CommitteeId[]): void {
+    for (const committeeId of committeeIds) {
+      const box = this.committees(committeeId)
+      if (box.exists) {
+        log(encodeArc4(box.value))
+      } else {
+        log(encodeArc4(getEmptyFracInstanceCommittee()))
+      }
+    }
   }
 
   // ── AlgoQuarters ──────────────────────────────────────────────────
@@ -497,6 +549,57 @@ export class FracDelegationInstanceContract extends BaseContract {
     const box = this.accountAq([accountId, committeeNumId])
     if (!box.exists) return u32(0)
     return box.value
+  }
+
+  /**
+   * Log each account's ingested AlgoQuarters in committee `committeeNumId`, one Uint32 line per
+   * entry of `accountIds`, in input order. 0 for an account with no entry - unambiguous, since
+   * `ingestAq` rejects zero-AQ accounts. Readonly - meant to be simulated with `allowMoreLogging`.
+   * Batch shape like the registry's `logAccounts`: the accountAq box key puts the committee in the
+   * suffix, so callers supply the account IDs to probe.
+   * @param committeeNumId gGov committee numeric ID
+   * @param accountIds Frac registry numeric account IDs
+   */
+  @abimethod({ readonly: true })
+  public logAccountAqs(committeeNumId: Uint16, accountIds: Uint32[]): void {
+    for (const accountId of accountIds) {
+      const box = this.accountAq([accountId, committeeNumId])
+      log(encodeArc4(box.exists ? box.value : u32(0)))
+    }
+  }
+
+  /**
+   * Bundled read of `accountId`'s AlgoQuarters standing in committee `committeeId`: the instance's
+   * own identity, the committee's identity, and the account's weight against the committee total, in
+   * one readonly call so a caller (e.g. a wallet showing "your voting weight here") needs no
+   * follow-up lookups.
+   *
+   * Non-throwing: an unsynced committee resolves `committeeNumId` to 0 (never assigned by the
+   * registry), and `userAq`/`totalAq` then read from the sentinel numeric ID, so both come back 0.
+   * `committeeId` echoes the input regardless.
+   * @param accountId Frac registry numeric account ID
+   * @param committeeId 32-byte gGov committee ID
+   */
+  @abimethod({ readonly: true })
+  public getAccountCommitteeAq(accountId: Uint32, committeeId: CommitteeId): FracAccountCommitteeAq {
+    const committeeBox = this.committees(committeeId)
+    const committeeNumId = committeeBox.exists ? committeeBox.value.committeeNumId : u16(0)
+
+    const aqBox = this.committeeAq(committeeNumId)
+    const totalAq = aqBox.exists ? aqBox.value.totalAq : u32(0)
+
+    const accountAqBox = this.accountAq([accountId, committeeNumId])
+    const userAq = accountAqBox.exists ? accountAqBox.value : u32(0)
+
+    return {
+      instanceNumId: this.instanceNumId.value,
+      instanceAppId: Global.currentApplicationId.id,
+      committeeNumId,
+      committeeId,
+      instanceName: this.name.value,
+      userAq,
+      totalAq,
+    }
   }
 
   /**
@@ -672,6 +775,36 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
 
     return period
+  }
+
+  /**
+   * This instance's synced snapshot of gGov period `periodId`, or an empty record (sentinel
+   * `periodAppId` 0) if `syncPeriod` has never been run for it. Readonly.
+   * @param periodId gGov period ID
+   */
+  @abimethod({ readonly: true })
+  public getPeriod(periodId: Uint32): FracInstancePeriod {
+    const box = this.periods(periodId)
+    if (box.exists) return box.value
+    return getEmptyFracInstancePeriod()
+  }
+
+  /**
+   * Batch-log period snapshots in input order, one line per id: the record if synced, else the empty
+   * sentinel (`periodAppId` 0). Readonly - meant to be simulated with `allowMoreLogging`. Modelled
+   * on `GGovRegistry.logPeriodSummaries`; each id is one `periods` box reference.
+   * @param periodIds gGov period IDs
+   */
+  @abimethod({ readonly: true })
+  public logPeriods(periodIds: Uint32[]): void {
+    for (const periodId of periodIds) {
+      const box = this.periods(periodId)
+      if (box.exists) {
+        log(encodeArc4(box.value))
+      } else {
+        log(encodeArc4(getEmptyFracInstancePeriod()))
+      }
+    }
   }
 
   // ── Voting ────────────────────────────────────────────────────────
@@ -902,6 +1035,48 @@ export class FracDelegationInstanceContract extends BaseContract {
     for (let i: uint64 = 0; i < period.numEscrows.asUint64(); i++) {
       log(encodeArc4(clone(this.periodEscrowVotes([periodId, u8(i)]).value)))
     }
+  }
+
+  /**
+   * This instance's aggregate vote tallies for gGov period `periodId` ([topic][option], both
+   * `internal` and `ggovTotals`), or an empty record (empty top-level arrays) if `syncPeriod` has
+   * never been run for it. Readonly. For the whole voting state in one shot, prefer
+   * `logPeriodVotingState`.
+   * @param periodId gGov period ID
+   */
+  @abimethod({ readonly: true })
+  public getPeriodVoteCache(periodId: Uint32): FracPeriodVoteCache {
+    const box = this.periodVoteCache(periodId)
+    if (box.exists) return box.value
+    return getEmptyFracPeriodVoteCache()
+  }
+
+  /**
+   * One escrow's external gGov votes for gGov period `periodId` ([topic][option]), or an empty
+   * record (empty `votes`) if that escrow has no box for the period. `escrowIndex` is the index into
+   * `getEscrows`. Readonly.
+   * @param periodId gGov period ID
+   * @param escrowIndex Index into the `escrows` list
+   */
+  @abimethod({ readonly: true })
+  public getPeriodEscrowVotes(periodId: Uint32, escrowIndex: Uint8): FracEscrowVotes {
+    const box = this.periodEscrowVotes([periodId, escrowIndex])
+    if (box.exists) return box.value
+    return getEmptyFracEscrowVotes()
+  }
+
+  /**
+   * `accountId`'s internal vote record for gGov period `periodId` ([topic][option] AlgoQuarters,
+   * exactly as submitted), or an empty record (empty `topicVotes`) if it has not voted. `accountId`
+   * is the frac registry numeric ID. Readonly.
+   * @param periodId gGov period ID
+   * @param accountId Frac registry numeric account ID
+   */
+  @abimethod({ readonly: true })
+  public getVotingRecord(periodId: Uint32, accountId: Uint32): FracVotingRecord {
+    const box = this.votingRecords([periodId, accountId])
+    if (box.exists) return box.value
+    return getEmptyFracVotingRecord()
   }
 
   // ── Admin: lifecycle ──────────────────────────────────────────────

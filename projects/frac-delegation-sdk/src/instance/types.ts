@@ -31,3 +31,23 @@ export interface InstanceMethodBuilderArgs {
 }
 
 export type FracDelegationInstanceContractArgs = FracDelegationInstanceArgs['obj']
+
+/**
+ * Off-chain AlgoQuarters manifest — the `AlgoQuartersData` shape emitted by the
+ * `ggov-algoquarters` pipeline (one file per protocol per period window).
+ */
+export interface AlgoQuartersFile {
+  networkGenesisHash: string
+  /** Protocol from which the algoquarters were calculated. */
+  protocol: string
+  periodStart: number
+  periodEnd: number
+  /** Liquid-token/ALGO rate for the window (12-decimal fixed-point string). Absent for native staking. */
+  rate?: string
+  /** Number of eligible accounts. */
+  totalAccounts: number
+  /** Sum of all accounts' algoquarters (bigint as decimal string). */
+  totalAlgoQuarters: string
+  /** Eligible accounts only (each ≥ 1 AQ), sorted ascending by address. */
+  accounts: Array<{ account: string; algoQuarters: string }>
+}

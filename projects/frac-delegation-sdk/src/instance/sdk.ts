@@ -1,7 +1,9 @@
 import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
+import { getApplicationAddress } from 'algosdk'
 import { FracDelegationRegistrySDK, SendResult, executeTxns } from '../registry'
-import { FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient'
+import { FracCommitteeAq, FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient'
 import {
+  AlgoQuartersFile,
   ConstructorArgs,
   SenderWithSigner,
   InstanceMethodBuilderArgs,
@@ -10,10 +12,17 @@ import {
 import { requireWriter } from '../util/requiresSender'
 import { FracDelegationReaderSDK } from './sdkReader'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
+import { parseAqFile } from '../util/aqFile'
+import { getSpendableBalance } from '../util/spendable'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { chunk } from '../util/chunk'
 import { padForRefSlots } from '../util/padForRefSlots'
-import { MAX_ACCOUNTS_PER_INGEST_AQ, MAX_ACCOUNTS_PER_UNINGEST_AQ } from '../constants'
+import {
+  AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
+  AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS,
+  MAX_ACCOUNTS_PER_INGEST_AQ,
+  MAX_ACCOUNTS_PER_UNINGEST_AQ,
+} from '../constants'
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -346,6 +355,183 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     for (const batch of chunk(accountAqs, MAX_ACCOUNTS_PER_INGEST_AQ)) {
       await this.ingestAq({ instanceNumId, committeeNumId, accountAqs: batch, note })
     }
+  }
+
+  /**
+   * Upload a whole AQ manifest (`AlgoQuartersFile`, the `ggov-algoquarters` pipeline output) into
+   * committee `committeeId`'s ledger on instance `instanceNumId`. Operator only.
+   *
+   * End-to-end orchestration of the AQ primitives: validates the manifest client-side (totals,
+   * uint32 bounds, duplicates, network genesis hash), syncs the committee if it has no local
+   * snapshot yet, opens the ledger via `startAqIngest` (or corrects a still-pristine one), and
+   * ingests in `MAX_ACCOUNTS_PER_INGEST_AQ` batches.
+   *
+   * Resumable and idempotent: already-ingested accounts are detected up front (`getAccountAqs`)
+   * and skipped, so a run interrupted mid-way — each batch is atomic on its own — completes on
+   * re-run, and re-running against a complete ledger is a no-op. Throws if the on-chain state
+   * contradicts the manifest: a frozen ledger with different totals, an ingested account whose AQ
+   * differs from its row, or ingested accounts the manifest does not contain.
+   *
+   * MBR is pre-checked before any ingest: the instance pays per ingested account and the registry
+   * per never-seen account (see `AQ_*_MBR_*` constants), with no funding path between the apps.
+   * On a shortfall this throws with the exact top-up per app account, unless `autoFund` is set,
+   * in which case the writer tops up the shortfalls itself.
+   * @returns The committee's numeric ID and the completed ledger
+   */
+  @requireWriter()
+  @wrapErrors()
+  async uploadAqFile({
+    instanceNumId,
+    committeeId,
+    aqFile,
+    autoFund = false,
+    note,
+  }: {
+    instanceNumId: bigint | number
+    /** 32-byte committee ID, raw bytes or base64 */
+    committeeId: Uint8Array | string
+    aqFile: AlgoQuartersFile
+    /** Top up instance/registry app MBR shortfalls from the writer instead of throwing */
+    autoFund?: boolean
+    note?: string
+  }): Promise<{ committeeNumId: number; committeeAq: FracCommitteeAq }> {
+    // TODO add uningest support
+
+    const rows = parseAqFile(aqFile)
+    const totalAq = BigInt(aqFile.totalAlgoQuarters)
+    const totalAccounts = aqFile.totalAccounts
+
+    // A manifest is bound to a network; uploading e.g. a mainnet file to testnet must not get far.
+    const sp = await this.algorand.getSuggestedParams()
+    const networkGenesisHash = Buffer.from(sp.genesisHash!).toString('base64')
+    if (networkGenesisHash !== aqFile.networkGenesisHash) {
+      throw new Error(
+        `uploadAqFile: manifest genesis hash ${aqFile.networkGenesisHash} does not match network ${networkGenesisHash}`,
+      )
+    }
+
+    let committee = await this.getCommittee(instanceNumId, committeeId)
+    if (!committee) {
+      if (this.debug) console.log('uploadAqFile: committee not synced on instance, syncing...')
+      await this.syncCommittee({ instanceNumId, committeeId, note })
+      committee = await this.getCommittee(instanceNumId, committeeId)
+      if (!committee) throw new Error('uploadAqFile: syncCommittee produced no committee snapshot')
+    }
+    const committeeNumId = Number(committee.committeeNumId)
+
+    // Address → account ID (frac registry); 0 = never seen (used for both resume and registry MBR).
+    const addresses = rows.map(({ account }) => account)
+    const idMap = await this.registry.getAccountIdMap(addresses)
+
+    const ledger = await this.getCommitteeAq(instanceNumId, committeeNumId)
+    const pristine = !ledger || (Number(ledger.ingestedAq) === 0 && Number(ledger.numAccounts) === 0)
+    const totalsMatch = !!ledger && BigInt(ledger.totalAq) === totalAq && Number(ledger.totalAccounts) === totalAccounts
+    if (!ledger || (pristine && !totalsMatch)) {
+      if (this.debug) console.log(`uploadAqFile: opening ledger, totalAq ${totalAq}, totalAccounts ${totalAccounts}`)
+      await this.startAqIngest({ instanceNumId, committeeId, totalAq: Number(totalAq), totalAccounts, note })
+    } else if (!totalsMatch) {
+      throw new Error(
+        `uploadAqFile: ledger totals are frozen at ${ledger.totalAq} AQ / ${ledger.totalAccounts} accounts ` +
+          `but the manifest declares ${totalAq} / ${totalAccounts} — wrong manifest for this committee?`,
+      )
+    }
+
+    // Resume set: which manifest rows are already on chain. Only worth probing when something has
+    // been ingested, and only registered accounts (id > 0) can have a box.
+    const ingestedAqByAddress = new Map<string, number>()
+    if (ledger && Number(ledger.numAccounts) > 0) {
+      const registered = addresses.filter((account) => (idMap.get(account) ?? 0) > 0)
+      const aqs = registered.length
+        ? await this.getAccountAqs(
+            instanceNumId,
+            committeeNumId,
+            registered.map((account) => idMap.get(account)!),
+          )
+        : []
+      registered.forEach((account, index) => {
+        if (aqs[index] > 0) ingestedAqByAddress.set(account, aqs[index])
+      })
+      for (const { account, aq } of rows) {
+        const onChain = ingestedAqByAddress.get(account)
+        if (onChain !== undefined && onChain !== aq) {
+          throw new Error(`uploadAqFile: ${account} already ingested with ${onChain} AQ, manifest says ${aq}`)
+        }
+      }
+      // Every ingested account must be a manifest row, else this ledger belongs to another file.
+      if (ingestedAqByAddress.size !== Number(ledger.numAccounts)) {
+        throw new Error(
+          `uploadAqFile: ledger holds ${ledger.numAccounts} ingested accounts but only ` +
+            `${ingestedAqByAddress.size} of them appear in the manifest — wrong manifest for this committee?`,
+        )
+      }
+    }
+    const remainder = rows.filter(({ account }) => !ingestedAqByAddress.has(account))
+
+    // MBR pre-check before any ingest lands: an underfunded app otherwise fails resource population
+    // with an opaque error, part-way through the batches.
+    if (remainder.length > 0) {
+      const newRegistryAccounts = remainder.filter(({ account }) => (idMap.get(account) ?? 0) === 0).length
+      const instanceCost = BigInt(remainder.length) * AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS
+      const registryCost = BigInt(newRegistryAccounts) * AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS
+      const instanceAddress = getApplicationAddress(await this.getInstanceAppId(instanceNumId)).toString()
+      const registryAddress = this.registryReadClient.appAddress.toString()
+      const algod = this.algorand.client.algod
+      const [instanceSpendable, registrySpendable] = await Promise.all([
+        getSpendableBalance(algod, instanceAddress),
+        getSpendableBalance(algod, registryAddress),
+      ])
+      const shortfalls = [
+        { label: 'instance', address: instanceAddress, cost: instanceCost, available: instanceSpendable },
+        { label: 'registry', address: registryAddress, cost: registryCost, available: registrySpendable },
+      ]
+        .map((entry) => ({ ...entry, shortfall: entry.cost > entry.available ? entry.cost - entry.available : 0n }))
+        .filter(({ shortfall }) => shortfall > 0n)
+      if (shortfalls.length > 0 && !autoFund) {
+        throw new Error(
+          'uploadAqFile: insufficient app funds for box MBR: ' +
+            shortfalls
+              .map(({ label, address, shortfall }) => `${label} app ${address} needs ${shortfall} µAlgo`)
+              .join('; ') +
+            ' — top up, or pass autoFund: true',
+        )
+      }
+      for (const { label, address, shortfall } of shortfalls) {
+        if (this.debug) console.log(`uploadAqFile: funding ${label} app ${address} with ${shortfall} µAlgo`)
+        await this.algorand.send.payment({
+          sender: this.writerAccount!.sender,
+          signer: this.writerAccount!.signer,
+          receiver: address,
+          amount: Number(shortfall).microAlgo(),
+          note,
+        })
+      }
+
+      const batches = chunk(remainder, MAX_ACCOUNTS_PER_INGEST_AQ)
+      if (this.debug)
+        console.log(`uploadAqFile: ingesting ${remainder.length} accounts in ${batches.length} batches...`)
+      // Sequential on purpose - do NOT pMap these. For an account the frac registry has never
+      // seen, resource population predicts the accountId its accountAq box name derives from;
+      // concurrent batches would predict the same next ids and all but the first to commit would
+      // fail with "invalid Box reference".
+      for (const batch of batches) {
+        const { txIds } = await this.ingestAq({
+          instanceNumId,
+          committeeNumId,
+          accountAqs: batch.map(({ account, aq }): [string, number] => [account, aq]),
+          note,
+        })
+        if (this.debug) console.log(`uploadAqFile: batch of ${batch.length} ingested`, txIds[txIds.length - 1])
+      }
+    }
+
+    const committeeAq = (await this.getCommitteeAq(instanceNumId, committeeNumId))!
+    if (BigInt(committeeAq.ingestedAq) !== totalAq || Number(committeeAq.numAccounts) !== totalAccounts) {
+      throw new Error(
+        `uploadAqFile: ledger incomplete after upload: ${committeeAq.ingestedAq}/${totalAq} AQ, ` +
+          `${committeeAq.numAccounts}/${totalAccounts} accounts`,
+      )
+    }
+    return { committeeNumId, committeeAq }
   }
 
   /**

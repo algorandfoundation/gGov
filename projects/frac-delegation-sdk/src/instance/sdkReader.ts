@@ -5,7 +5,9 @@ import { FracDelegationRegistryReaderSDK, SIMULATE_PARAMS } from '../registry'
 import { FracDelegationRegistryClient } from '../generated/FracDelegationRegistryClient'
 import {
   FracDelegationInstanceClient,
+  FracDelegationInstanceComposer,
   APP_SPEC as INSTANCE_APP_SPEC,
+  FracAccountCommitteeAq,
   FracCommitteeAq,
   FracEscrowVotes,
   FracInstanceCommittee,
@@ -15,7 +17,9 @@ import {
 } from '../generated/FracDelegationInstanceClient'
 import { getConstructorConfig } from '../networkConfig'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors'
-import { undefinedIfBoxMissing } from '../util/boxes'
+import { assertUint } from '../util/assertUint'
+import { chunk } from '../util/chunk'
+import { chunked } from '../util/chunked'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { ReaderConstructorArgs } from './types'
 
@@ -77,7 +81,7 @@ export class FracDelegationReaderSDK {
   /** Resolve the on-chain app ID for an instanceNumId. Throws if the instance is unknown. */
   @wrapErrors()
   async getInstanceAppId(instanceNumId: bigint | number): Promise<bigint> {
-    const id = BigInt(instanceNumId)
+    const id = assertUint(instanceNumId, 16, 'instanceNumId')
     const cached = this.instanceAppCache.get(id)
     if (cached !== undefined) return cached
     const instance = await this.registry.getInstance(id)
@@ -89,7 +93,7 @@ export class FracDelegationReaderSDK {
 
   /** Build (and cache) a read-only per-instance client. */
   protected async getInstanceReadClient(instanceNumId: bigint | number): Promise<FracDelegationInstanceClient> {
-    const id = BigInt(instanceNumId)
+    const id = assertUint(instanceNumId, 16, 'instanceNumId')
     const cached = this.instanceReadClientCache.get(id)
     if (cached) return cached
     const appId = await this.getInstanceAppId(id)
@@ -129,9 +133,8 @@ export class FracDelegationReaderSDK {
   /** Escrow accounts registered against this instance (addresses, in registration order). */
   async getEscrows(instanceNumId: bigint | number): Promise<string[]> {
     const client = await this.getInstanceReadClient(instanceNumId)
-    // The box only exists once the first escrow is registered; treat "not found" as empty.
-    const escrows = await undefinedIfBoxMissing(() => client.state.box.escrows())
-    return escrows ?? []
+    const { returns } = await client.newGroup().getEscrows({ args: {} }).simulate(SIMULATE_PARAMS)
+    return returns[0]!
   }
 
   /**
@@ -143,7 +146,52 @@ export class FracDelegationReaderSDK {
     committeeId: Uint8Array | string,
   ): Promise<FracInstanceCommittee | undefined> {
     const client = await this.getInstanceReadClient(instanceNumId)
-    return undefinedIfBoxMissing(() => client.state.box.committees.value(committeeIdToRaw(committeeId)))
+    const { returns } = await client
+      .newGroup()
+      .getCommittee({ args: { committeeId: committeeIdToRaw(committeeId) } })
+      .simulate(SIMULATE_PARAMS)
+    const committee = returns[0]!
+    // Sentinel: committeeNumId 0 is never assigned by the gGov registry, so it marks "not synced".
+    return Number(committee.committeeNumId) === 0 ? undefined : committee
+  }
+
+  /**
+   * Batch `getCommittee` via `logCommittees`: index-aligned with `committeeIds`, `undefined` for a
+   * committee this instance has never synced. Prefer this over N x `getCommittee` for many ids.
+   */
+  async getCommittees(
+    instanceNumId: bigint | number,
+    committeeIds: (Uint8Array | string)[],
+  ): Promise<(FracInstanceCommittee | undefined)[]> {
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return this._getCommitteesChunked(committeeIds.map(committeeIdToRaw), client)
+  }
+
+  /**
+   * Each simulate group packs up to two 63-id `logCommittees` calls: every id is one `committees`
+   * box reference, and even with `allowUnnamedResources` a simulate group carries at most 128
+   * unnamed refs. The decorator fans out larger requests concurrently.
+   */
+  @chunked(126)
+  private async _getCommitteesChunked(
+    committeeIds: Uint8Array[],
+    client: FracDelegationInstanceClient,
+  ): Promise<(FracInstanceCommittee | undefined)[]> {
+    if (committeeIds.length === 0) return []
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    for (const ids of chunk(committeeIds, 63)) {
+      builder = builder.logCommittees({ args: { committeeIds: ids } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map((log) => {
+      const committee = getABIDecodedValue(
+        new Uint8Array(log!),
+        'FracInstanceCommittee',
+        client.appSpec.structs,
+      ) as FracInstanceCommittee
+      return Number(committee.committeeNumId) === 0 ? undefined : committee
+    })
   }
 
   /**
@@ -158,8 +206,15 @@ export class FracDelegationReaderSDK {
     instanceNumId: bigint | number,
     committeeNumId: bigint | number,
   ): Promise<FracCommitteeAq | undefined> {
+    const committeeNumIdArg = assertUint(committeeNumId, 16, 'committeeNumId')
     const client = await this.getInstanceReadClient(instanceNumId)
-    return undefinedIfBoxMissing(() => client.state.box.committeeAq.value(BigInt(committeeNumId)))
+    const { returns } = await client
+      .newGroup()
+      .getCommitteeAq({ args: { committeeNumId: committeeNumIdArg, mustBeComplete: false } })
+      .simulate(SIMULATE_PARAMS)
+    const aq = returns[0]!
+    // Sentinel: totalAq 0 is never written by `startAqIngest`, so it marks "no ledger".
+    return Number(aq.totalAq) === 0 ? undefined : aq
   }
 
   /**
@@ -172,11 +227,95 @@ export class FracDelegationReaderSDK {
     accountId: bigint | number,
     committeeNumId: bigint | number,
   ): Promise<number> {
+    const accountIdArg = assertUint(accountId, 32, 'accountId')
+    const committeeNumIdArg = assertUint(committeeNumId, 16, 'committeeNumId')
     const client = await this.getInstanceReadClient(instanceNumId)
-    const aq = await undefinedIfBoxMissing(() =>
-      client.state.box.accountAq.value([BigInt(accountId), BigInt(committeeNumId)]),
+    const { returns } = await client
+      .newGroup()
+      .tryGetAccountAq({ args: { accountId: accountIdArg, committeeNumId: committeeNumIdArg } })
+      .simulate(SIMULATE_PARAMS)
+    return Number(returns[0]!)
+  }
+
+  /**
+   * Batch `getAccountAq` via `logAccountAqs`: index-aligned with `accountIds`, 0 for an account
+   * with no AQ in the committee. Account IDs come from `registry.getAccountIdMap`.
+   */
+  async getAccountAqs(
+    instanceNumId: bigint | number,
+    committeeNumId: bigint | number,
+    accountIds: (bigint | number)[],
+  ): Promise<number[]> {
+    assertUint(committeeNumId, 16, 'committeeNumId')
+    accountIds.forEach((accountId, i) => assertUint(accountId, 32, `accountIds[${i}]`))
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return this._getAccountAqsChunked(accountIds, client, committeeNumId)
+  }
+
+  /**
+   * Each simulate group packs up to two 63-id `logAccountAqs` calls: every id is one `accountAq`
+   * box reference, and even with `allowUnnamedResources` a simulate group carries at most 128
+   * unnamed refs (8 per txn x the 16-txn group capacity). The decorator fans out larger requests
+   * concurrently. 126 used vs 128 possible as the additional app call for only 2 accounts is
+   * not worth the overhead.
+   */
+  @chunked(126)
+  private async _getAccountAqsChunked(
+    accountIds: (bigint | number)[],
+    client: FracDelegationInstanceClient,
+    committeeNumId: bigint | number,
+  ): Promise<number[]> {
+    if (accountIds.length === 0) return []
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    for (const ids of chunk(accountIds, 63)) {
+      builder = builder.logAccountAqs({ args: { committeeNumId, accountIds: ids.map(BigInt) } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map((log) => Number(getABIDecodedValue(new Uint8Array(log!), 'uint32', client.appSpec.structs)))
+  }
+
+  /**
+   * Map each account address to its ingested AQ in the committee: 0 if unregistered on the frac
+   * registry or not ingested. Defaults to every registered account when `accounts` is omitted.
+   */
+  async getAccountAqMap(
+    instanceNumId: bigint | number,
+    committeeNumId: bigint | number,
+    accounts?: string[],
+  ): Promise<Map<string, number>> {
+    accounts = accounts ?? (await this.registry.getAccounts())
+    const idMap = await this.registry.getAccountIdMap(accounts)
+    const registered = accounts.filter((account) => (idMap.get(account) ?? 0) > 0)
+    const aqs = await this.getAccountAqs(
+      instanceNumId,
+      committeeNumId,
+      registered.map((account) => idMap.get(account)!),
     )
-    return aq ?? 0
+    const map = new Map<string, number>(accounts.map((account) => [account, 0]))
+    registered.forEach((account, index) => map.set(account, aqs[index]))
+    return map
+  }
+
+  /**
+   * Bundled read of one account's AlgoQuarters standing in a committee: the instance's identity, the
+   * committee's identity, and the account's weight (`userAq`) against the committee total (`totalAq`)
+   * in a single simulate. `accountId` is the frac registry numeric ID (see `registry.getAccountIdMap`).
+   *
+   * Non-throwing: an unsynced committee comes back with `committeeNumId` 0 and `userAq`/`totalAq` 0.
+   */
+  async getAccountCommitteeAq(
+    instanceNumId: bigint | number,
+    accountId: bigint | number,
+    committeeId: Uint8Array | string,
+  ): Promise<FracAccountCommitteeAq> {
+    const accountIdArg = assertUint(accountId, 32, 'accountId')
+    const client = await this.getInstanceReadClient(instanceNumId)
+    const { returns } = await client
+      .newGroup()
+      .getAccountCommitteeAq({ args: { accountId: accountIdArg, committeeId: committeeIdToRaw(committeeId) } })
+      .simulate(SIMULATE_PARAMS)
+    return returns[0]!
   }
 
   /**
@@ -184,8 +323,54 @@ export class FracDelegationReaderSDK {
    * run for it.
    */
   async getPeriod(instanceNumId: bigint | number, periodId: bigint | number): Promise<FracInstancePeriod | undefined> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
     const client = await this.getInstanceReadClient(instanceNumId)
-    return undefinedIfBoxMissing(() => client.state.box.periods.value(BigInt(periodId)))
+    const { returns } = await client
+      .newGroup()
+      .getPeriod({ args: { periodId: periodIdArg } })
+      .simulate(SIMULATE_PARAMS)
+    const period = returns[0]!
+    // Sentinel: periodAppId 0 is never written by `syncPeriod`, so it marks "not synced".
+    return period.periodAppId === 0n ? undefined : period
+  }
+
+  /**
+   * Batch `getPeriod` via `logPeriods`: index-aligned with `periodIds`, `undefined` for a period
+   * this instance has never synced. Prefer this over N x `getPeriod` for many ids.
+   */
+  async getPeriods(
+    instanceNumId: bigint | number,
+    periodIds: (bigint | number)[],
+  ): Promise<(FracInstancePeriod | undefined)[]> {
+    periodIds.forEach((periodId, i) => assertUint(periodId, 32, `periodIds[${i}]`))
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return this._getPeriodsChunked(periodIds, client)
+  }
+
+  /**
+   * Each simulate group packs up to two 63-id `logPeriods` calls: every id is one `periods` box
+   * reference, bounded by the 128 unnamed-ref simulate cap. The decorator fans out larger requests.
+   */
+  @chunked(126)
+  private async _getPeriodsChunked(
+    periodIds: (bigint | number)[],
+    client: FracDelegationInstanceClient,
+  ): Promise<(FracInstancePeriod | undefined)[]> {
+    if (periodIds.length === 0) return []
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    for (const ids of chunk(periodIds, 63)) {
+      builder = builder.logPeriods({ args: { periodIds: ids.map(BigInt) } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map((log) => {
+      const period = getABIDecodedValue(
+        new Uint8Array(log!),
+        'FracInstancePeriod',
+        client.appSpec.structs,
+      ) as FracInstancePeriod
+      return period.periodAppId === 0n ? undefined : period
+    })
   }
 
   /**
@@ -196,8 +381,15 @@ export class FracDelegationReaderSDK {
     instanceNumId: bigint | number,
     periodId: bigint | number,
   ): Promise<FracPeriodVoteCache | undefined> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
     const client = await this.getInstanceReadClient(instanceNumId)
-    return undefinedIfBoxMissing(() => client.state.box.periodVoteCache.value(BigInt(periodId)))
+    const { returns } = await client
+      .newGroup()
+      .getPeriodVoteCache({ args: { periodId: periodIdArg } })
+      .simulate(SIMULATE_PARAMS)
+    const cache = returns[0]!
+    // Sentinel: a synced period fills `internal` to its topic shape, so empty means "not synced".
+    return cache.internal.length === 0 ? undefined : cache
   }
 
   /**
@@ -209,8 +401,16 @@ export class FracDelegationReaderSDK {
     periodId: bigint | number,
     accountId: bigint | number,
   ): Promise<FracVotingRecord | undefined> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    const accountIdArg = assertUint(accountId, 32, 'accountId')
     const client = await this.getInstanceReadClient(instanceNumId)
-    return undefinedIfBoxMissing(() => client.state.box.votingRecords.value([BigInt(periodId), BigInt(accountId)]))
+    const { returns } = await client
+      .newGroup()
+      .getVotingRecord({ args: { periodId: periodIdArg, accountId: accountIdArg } })
+      .simulate(SIMULATE_PARAMS)
+    const record = returns[0]!
+    // Sentinel: a cast vote has one row per topic, so empty `topicVotes` means "has not voted".
+    return record.topicVotes.length === 0 ? undefined : record
   }
 
   /**
@@ -222,10 +422,16 @@ export class FracDelegationReaderSDK {
     periodId: bigint | number,
     escrowIndex: bigint | number,
   ): Promise<FracEscrowVotes | undefined> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    const escrowIndexArg = assertUint(escrowIndex, 8, 'escrowIndex')
     const client = await this.getInstanceReadClient(instanceNumId)
-    return undefinedIfBoxMissing(() =>
-      client.state.box.periodEscrowVotes.value([BigInt(periodId), BigInt(escrowIndex)]),
-    )
+    const { returns } = await client
+      .newGroup()
+      .getPeriodEscrowVotes({ args: { periodId: periodIdArg, escrowIndex: escrowIndexArg } })
+      .simulate(SIMULATE_PARAMS)
+    const escrowVotes = returns[0]!
+    // Sentinel: a synced period fills each escrow box to its topic shape, so empty means "no box".
+    return escrowVotes.votes.length === 0 ? undefined : escrowVotes
   }
 
   /**
@@ -249,10 +455,11 @@ export class FracDelegationReaderSDK {
       }
     | undefined
   > {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
     const client = await this.getInstanceReadClient(instanceNumId)
     const { confirmations } = await client
       .newGroup()
-      .logPeriodVotingState({ args: { periodId: BigInt(periodId) } })
+      .logPeriodVotingState({ args: { periodId: periodIdArg } })
       .simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap(({ logs }) => logs ?? [])
     // The method logs nothing at all when the period has never been synced.

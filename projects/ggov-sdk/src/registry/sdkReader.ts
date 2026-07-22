@@ -20,6 +20,7 @@ import {
   StoredGov,
   GGovCommitteeFile,
 } from './types'
+import { assertUint } from '../util/assertUint'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
 import { committeeIdToRaw } from '../util/comitteeId'
@@ -417,6 +418,8 @@ export class GGovRegistryReaderSDK {
   @wrapErrors()
   async getPeriodSummaries(periodIds: bigint[]): Promise<GGovPeriodSummary[]> {
     if (periodIds.length === 0) return []
+    // `@chunked` runs this per 128-id chunk, so validate without a (chunk-local, misleading) index.
+    periodIds.forEach((periodId) => assertUint(periodId, 64, 'periodId'))
     const builder = this.readClient.newGroup().logPeriodSummaries({ args: { periodIds } })
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap(({ logs }) => logs ?? [])
