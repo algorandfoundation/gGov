@@ -18,9 +18,9 @@ gGov is two cooperating smart contracts:
                  ▼       ▼       ▼       ▼       ▼
                  GGovPeriod apps — one per voting period
 
-  each GGovPeriod app owns its topics · tallies · vote records, and inner-calls
-  the registry for verifyOperator / verifyAdmin / getDelegate /
-  getGovVotingPower / updatePeriodSummary
+  each GGovPeriod app owns its topics · tallies · vote records, reads the
+  registry's admin / operator globals directly for auth, and inner-calls the
+  registry for getDelegate / getGovVotingPower / updatePeriodSummary
 ```
 
 > **Note on naming**: the "Committee Oracle" referenced in earlier docs is now folded into the **`GGovRegistry`** contract (see [historical note](#xgov-committee-oracle-historical-name)). The repo's `xgov-delegator` name is a holdover from an earlier `Delegator` contract experiment (since removed); the frac-delegation registry/instance contracts that succeeded it trace their design back to the [`xgov-delegator`](https://github.com/d13co/xgov-delegator) prototype.
@@ -209,8 +209,6 @@ store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false
 
 ### Read Methods
 
-- `verifyAdmin(account)` -> boolean - Whether account is the admin (called by period contracts via inner txn)
-- `verifyOperator(account)` -> boolean - Whether account is the operator (called by period contracts via inner txn)
 - `getDelegation(account)` -> [Account, boolean] - Delegatee and whether a delegation exists
 - `getDelegate(account)` -> Account - Delegatee address, or zero address if none (called by period contracts)
 - `logDelegators(delegatee)` - Log the addresses that have delegated to `delegatee` (reverse lookup), one per log line
@@ -284,12 +282,12 @@ value: GGovVoteRecord struct
 ### Lifecycle Methods
 
 - `init(registryApp, periodId, committeeId, votingStart, votingEnd)` - Initialise the period. Called once, as an inner ARC-4 call from the registry's `createPeriod` (sender must be the creator/registry app account)
-- `updateApplication()` - App updatable by the registry admin (verified via inner call to `registry.verifyAdmin`)
-- `deleteApplication()` - App deletable by the registry admin (verified via inner call to `registry.verifyAdmin`)
+- `updateApplication()` - App updatable by the registry admin (resolved from the registry's `admin` global state; the creator/registry app account is a permanent escape hatch)
+- `deleteApplication()` - App deletable by the registry admin (resolved from the registry's `admin` global state; the creator/registry app account is a permanent escape hatch)
 
 ### Operator Methods
 
-Operator status is verified via inner call to `registry.verifyOperator`. All of these require the period to be editable (`ready === false`).
+Operator status is resolved from the registry's `operator` global state (read directly, no inner call). All of these require the period to be editable (`ready === false`).
 
 - `editPeriod(committeeId, votingStart, votingEnd)` - Edit committee + voting window; syncs summary to registry
 - `addTopic(options: string[])` -> topicIndex uint64 - Append a topic with zeroed tallies; syncs summary
