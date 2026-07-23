@@ -5,6 +5,7 @@ import pMap from 'p-map'
 import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
+  FracAccountVotingRecord,
   FracEscrowInstance,
   FracInstance,
   FracRegAccount,
@@ -12,7 +13,7 @@ import {
 } from '../generated/FracDelegationRegistryClient'
 import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient'
 import { getConstructorConfig } from '../networkConfig'
-import { FracAccountVotingRecord, ReaderConstructorArgs } from './types'
+import { ReaderConstructorArgs } from './types'
 import { assertUint } from '../util/assertUint'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
@@ -31,20 +32,16 @@ import { SIMULATE_PARAMS } from '../util/increaseBudget'
 const INSTANCE_PAGE_SIZE = 7
 
 /**
- * Struct layouts for decoding the per-instance log payloads. `getABIDecodedValue` resolves struct
- * names from this map, but the registry's own ARC-56 only registers structs used in a method's
- * args/returns — these two are only ever logged, so they are absent there. `FracAccountCommitteeAq`
- * is borrowed from the instance contract (its `getAccountCommitteeAq` returns it); the registry-only
- * `FracAccountVotingRecord` is declared here to match its contract struct field-for-field.
+ * Struct layouts for decoding the per-instance log payloads of `logAccountInstanceAQ`
+ * (`FracAccountCommitteeAq`) and `logAccountVotingRecords` (`FracAccountVotingRecord`).
+ * `getABIDecodedValue` resolves struct names from this map. Both structs are the return type of a
+ * readonly getter — `getAccountCommitteeAq` on the instance, `getAccountVotingRecord` on the
+ * registry — so each is registered in its contract's ARC-56 and sourced from the generated
+ * `APP_SPEC.structs` here rather than hand-declared.
  */
 const CROSS_INSTANCE_STRUCTS = {
   ...INSTANCE_APP_SPEC.structs,
-  FracAccountVotingRecord: [
-    { name: 'instanceNumId', type: 'uint16' },
-    { name: 'instanceAppId', type: 'uint64' },
-    { name: 'instanceName', type: 'string' },
-    { name: 'topicVotes', type: 'uint32[][]' },
-  ],
+  ...APP_SPEC.structs,
 }
 
 export class FracDelegationRegistryReaderSDK {
@@ -213,6 +210,29 @@ export class FracDelegationRegistryReaderSDK {
         }),
       'FracAccountVotingRecord',
     )
+  }
+
+  /**
+   * Read one account's internal vote record for gGov period `periodId` in a single frac instance,
+   * tagged with the instance's identity. The singular counterpart of `getAccountVotingRecords`:
+   * returns one `FracAccountVotingRecord` directly (no paging) for a known `instanceNumId`. Empty
+   * `topicVotes` means the account has not voted this period on that instance.
+   */
+  async getAccountVotingRecord(
+    account: string,
+    instanceNumId: number | bigint,
+    periodId: bigint | number,
+  ): Promise<FracAccountVotingRecord> {
+    const instanceNumIdArg = assertUint(instanceNumId, 16, 'instanceNumId')
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    const { returns } = await this.readClient
+      .newGroup()
+      .getAccountVotingRecord({
+        args: { account, instanceNumId: instanceNumIdArg, periodId: periodIdArg },
+        staticFee: (2 * 1000).microAlgo(), // outer call + one inner call (instance getVotingRecord)
+      })
+      .simulate(SIMULATE_PARAMS)
+    return returns[0]!
   }
 
   /**

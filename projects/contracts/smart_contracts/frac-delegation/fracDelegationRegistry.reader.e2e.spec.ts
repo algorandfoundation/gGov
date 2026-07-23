@@ -238,6 +238,22 @@ describe('FracDelegationRegistry readers', () => {
         })
       }
     })
+
+    test('getAccountVotingRecord returns one instance-tagged record decoded via the generated struct', async () => {
+      // Singular getter: targets a specific (non-first) instance and returns the struct directly,
+      // exercising the ARC-56-registered FracAccountVotingRecord the plural log path decodes against.
+      const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)
+      const instanceId = instanceIds[1]!
+
+      const record = await registrySdk.getAccountVotingRecord(account, instanceId, 1)
+
+      expect(record).toEqual({
+        instanceNumId: Number(instanceId),
+        instanceAppId: await sdk.getInstanceAppId(instanceId),
+        instanceName: (await registrySdk.getInstance(instanceId))!.name,
+        topicVotes: [], // account has not voted this period on the instance
+      })
+    })
   })
 
   describe('batch reader stress', () => {
