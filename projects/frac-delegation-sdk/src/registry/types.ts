@@ -29,4 +29,23 @@ export interface CommonMethodBuilderArgs {
   note?: string | Uint8Array
 }
 
+/**
+ * Decoded shape of a `FracAccountVotingRecord` log emitted by `logAccountVotingRecords`: one
+ * account's internal vote record in one frac instance, tagged with that instance's identity.
+ * `topicVotes` is empty when the account has not voted for the period on that instance.
+ *
+ * Not emitted as a generated type (the contract method returns void and only logs), so it is
+ * declared here to mirror the registry's `FracAccountVotingRecord` ARC-56 struct.
+ */
+export type FracAccountVotingRecord = {
+  /** Registry-assigned numeric ID of the instance */
+  instanceNumId: number
+  /** On-chain app ID of the instance */
+  instanceAppId: bigint
+  /** Human-readable instance label */
+  instanceName: string
+  /** [topic][option] internal votes, in AlgoQuarters; empty if the account has not voted */
+  topicVotes: number[][]
+}
+
 export type FracDelegationRegistryContractArgs = FracDelegationRegistryArgs['obj']

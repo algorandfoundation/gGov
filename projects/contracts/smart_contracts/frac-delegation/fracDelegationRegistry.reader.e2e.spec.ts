@@ -160,6 +160,86 @@ describe('FracDelegationRegistry readers', () => {
     })
   })
 
+  describe('per-account cross-instance readers', () => {
+    /**
+     * Deploy `count` instances on one registry (distinct names) and register a single fresh account
+     * against every one of them via the admin path — no AQ ingested and no committee synced, so the
+     * per-instance getters resolve to their zero/empty sentinels. Returns the shared account and the
+     * instance ids in creation order (which is also the account's `instanceNumIds` order).
+     */
+    const deployInstancesForAccount = async (localnet: AlgorandFixture, count: number) => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount, { name: 'instance-1' })
+      const registrySdk = sdk.registry
+      const instanceIds = [instanceId]
+      for (let i = 2; i <= count; i++) {
+        const { instanceId: next } = await deployFracInstance(localnet, testAccount, {
+          registrySdk,
+          name: `instance-${i}`,
+        })
+        instanceIds.push(next)
+      }
+      const [account] = await freshAddresses(1)
+      for (const id of instanceIds) await registerAccounts(registrySdk, id, [account])
+      return { registrySdk, sdk, account, instanceIds }
+    }
+
+    test('getAccountInstanceAQs returns one entry per instance, zeroed for an unsynced committee', async () => {
+      const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)
+      const committeeId = new Uint8Array(32).fill(3)
+
+      const results = await registrySdk.getAccountInstanceAQs(account, committeeId)
+
+      expect(results).toHaveLength(instanceIds.length)
+      for (const [i, instanceId] of instanceIds.entries()) {
+        expect(results[i]).toEqual({
+          instanceNumId: Number(instanceId),
+          instanceAppId: await sdk.getInstanceAppId(instanceId),
+          committeeNumId: 0, // committee never synced on these instances
+          committeeId, // echoes the input
+          instanceName: (await registrySdk.getInstance(instanceId))!.name,
+          userAq: 0,
+          totalAq: 0,
+        })
+      }
+    })
+
+    test('getAccountInstanceAQs is empty for an unregistered account', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployFracInstance(localnet, testAccount)
+      const [unknown] = await freshAddresses(1)
+
+      expect(await sdk.registry.getAccountInstanceAQs(unknown, new Uint8Array(32))).toEqual([])
+    })
+
+    test('getAccountInstanceAQs pages across the per-call instance limit', async () => {
+      // 8 instances exceeds INSTANCE_PAGE_SIZE (7): the first page fills the outer transaction's
+      // resource budget (7 instances + the account box) and the 8th spills to a second page. The
+      // aggregated result must stay in the account's instanceNumIds order across the page boundary.
+      const { registrySdk, account, instanceIds } = await deployInstancesForAccount(localnet, 8)
+
+      const results = await registrySdk.getAccountInstanceAQs(account, new Uint8Array(32))
+
+      expect(results.map((r) => r.instanceNumId)).toEqual(instanceIds.map((id) => Number(id)))
+    }, 120_000)
+
+    test('getAccountVotingRecords returns empty topicVotes per instance when the account has not voted', async () => {
+      const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)
+
+      const results = await registrySdk.getAccountVotingRecords(account, 1)
+
+      expect(results).toHaveLength(instanceIds.length)
+      for (const [i, instanceId] of instanceIds.entries()) {
+        expect(results[i]).toEqual({
+          instanceNumId: Number(instanceId),
+          instanceAppId: await sdk.getInstanceAppId(instanceId),
+          instanceName: (await registrySdk.getInstance(instanceId))!.name,
+          topicVotes: [], // no vote record for the period on any instance
+        })
+      }
+    })
+  })
+
   describe('batch reader stress', () => {
     test('getFracRegAccountsMap: known accounts at chunk boundaries in 129 addresses stay index-aligned', async () => {
       // 129 > the 126 chunk size, so the @chunked decorator fans the request into multiple simulate

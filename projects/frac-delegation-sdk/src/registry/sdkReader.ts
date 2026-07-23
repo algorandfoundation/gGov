@@ -10,14 +10,42 @@ import {
   FracRegAccount,
   APP_SPEC,
 } from '../generated/FracDelegationRegistryClient'
+import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient'
 import { getConstructorConfig } from '../networkConfig'
-import { ReaderConstructorArgs } from './types'
+import { FracAccountVotingRecord, ReaderConstructorArgs } from './types'
 import { assertUint } from '../util/assertUint'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
+import { committeeIdToRaw } from '../util/comitteeId'
 import { errorTransformer } from '../util/wrapErrors'
 import { undefinedIfBoxMissing } from '../util/boxes'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
+
+/**
+ * Max instances per `logAccountInstanceAQ`/`logAccountVotingRecords` page. Each paged instance costs
+ * the outer transaction one `instances` box reference (and one foreign-app slot for its inner call),
+ * on top of the single account box; the AVM caps a transaction at 8 box references and 8 foreign
+ * apps, so 7 instances + the account box fill the outer transaction. Longer instance lists are
+ * fetched over successive pages.
+ */
+const INSTANCE_PAGE_SIZE = 7
+
+/**
+ * Struct layouts for decoding the per-instance log payloads. `getABIDecodedValue` resolves struct
+ * names from this map, but the registry's own ARC-56 only registers structs used in a method's
+ * args/returns — these two are only ever logged, so they are absent there. `FracAccountCommitteeAq`
+ * is borrowed from the instance contract (its `getAccountCommitteeAq` returns it); the registry-only
+ * `FracAccountVotingRecord` is declared here to match its contract struct field-for-field.
+ */
+const CROSS_INSTANCE_STRUCTS = {
+  ...INSTANCE_APP_SPEC.structs,
+  FracAccountVotingRecord: [
+    { name: 'instanceNumId', type: 'uint16' },
+    { name: 'instanceAppId', type: 'uint64' },
+    { name: 'instanceName', type: 'string' },
+    { name: 'topicVotes', type: 'uint32[][]' },
+  ],
+}
 
 export class FracDelegationRegistryReaderSDK {
   static APP_SPEC = APP_SPEC
@@ -141,6 +169,78 @@ export class FracDelegationRegistryReaderSDK {
       (log) =>
         getABIDecodedValue(new Uint8Array(log!), 'FracRegAccount', this.readClient.appSpec.structs) as FracRegAccount,
     )
+  }
+
+  /**
+   * An account's AlgoQuarters standing in gGov committee `committeeId` across every frac instance it
+   * belongs to — one `FracAccountCommitteeAq` per instance, in the account's `instanceNumIds` order.
+   * Each entry joins the instance's identity, the committee's local numeric ID, and the account's
+   * weight (`userAq`) against the committee total (`totalAq`).
+   *
+   * Drives the registry's paged `logAccountInstanceAQ`: every page inner-calls its instances, so the
+   * page size is bounded by the AVM per-transaction resource budget (`INSTANCE_PAGE_SIZE`) and long
+   * instance lists span multiple simulate round-trips. Empty if the account is not registered; per
+   * instance, an unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0.
+   */
+  async getAccountInstanceAQs(account: string, committeeId: Uint8Array | string): Promise<FracAccountCommitteeAq[]> {
+    const committeeIdRaw = committeeIdToRaw(committeeId)
+    return this._pageAccountInstanceLogs<FracAccountCommitteeAq>(
+      (limit, offset) =>
+        this.readClient.newGroup().logAccountInstanceAq({
+          args: { account, committeeId: committeeIdRaw, limit, offset },
+          staticFee: ((INSTANCE_PAGE_SIZE + 1) * 1000).microAlgo(),
+        }),
+      'FracAccountCommitteeAq',
+    )
+  }
+
+  /**
+   * An account's internal vote records for gGov period `periodId` across every frac instance it
+   * belongs to — one `FracAccountVotingRecord` (instance identity + `topicVotes`) per instance, in
+   * the account's `instanceNumIds` order. The simpler sibling of `getAccountInstanceAQs`.
+   *
+   * Drives the registry's paged `logAccountVotingRecords` the same way. Empty if the account is not
+   * registered; an instance where the account has not voted for the period comes back with empty
+   * `topicVotes`.
+   */
+  async getAccountVotingRecords(account: string, periodId: bigint | number): Promise<FracAccountVotingRecord[]> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    return this._pageAccountInstanceLogs<FracAccountVotingRecord>(
+      (limit, offset) =>
+        this.readClient.newGroup().logAccountVotingRecords({
+          args: { account, periodId: periodIdArg, limit, offset },
+          staticFee: ((INSTANCE_PAGE_SIZE + 1) * 1000).microAlgo(),
+        }),
+      'FracAccountVotingRecord',
+    )
+  }
+
+  /**
+   * Drive one of the registry's paged per-instance log methods to completion. Each call logs the
+   * account's total instance count first (a `uint16`), then one struct per instance covered by the
+   * page; this reads the total, decodes the page, and advances `offset` by `INSTANCE_PAGE_SIZE`
+   * until the whole instance list is covered. The high `staticFee` on each page (set by the caller)
+   * covers the fee pool for the page's inner calls and is free under `allowEmptySignatures`.
+   */
+  private async _pageAccountInstanceLogs<T>(
+    buildPage: (limit: number, offset: number) => FracDelegationRegistryComposer<any>,
+    structName: string,
+  ): Promise<T[]> {
+    const out: T[] = []
+    let offset = 0
+    let total = Infinity
+    while (offset < total) {
+      const { confirmations } = await buildPage(INSTANCE_PAGE_SIZE, offset).simulate(SIMULATE_PARAMS)
+      const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+      // The method always logs the total count first; no logs at all would mean a malformed response.
+      if (logs.length === 0) break
+      total = Number(getABIDecodedValue(new Uint8Array(logs[0]!), 'uint16', CROSS_INSTANCE_STRUCTS))
+      for (const log of logs.slice(1)) {
+        out.push(getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
+      }
+      offset += INSTANCE_PAGE_SIZE
+    }
+    return out
   }
 
   // ── Instances ────────────────────────────────────────────────────

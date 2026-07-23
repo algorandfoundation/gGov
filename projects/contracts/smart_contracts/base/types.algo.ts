@@ -505,6 +505,28 @@ export type FracAccountCommitteeAq = {
 }
 
 /**
+ * One account's internal vote record in one frac instance, tagged with the instance's identity.
+ * Logged per instance by `FracDelegationRegistry.logAccountVotingRecords` so a caller can pull an
+ * account's votes across all its instances for a given gGov period in one paged simulate, without a
+ * follow-up lookup to learn which instance each record came from.
+ *
+ * The instance identity (`instanceNumId`, `instanceAppId`, `instanceName`) is supplied by the
+ * registry from its own `instances` box; `topicVotes` is the account's `FracVotingRecord` fetched
+ * from the instance. Empty `topicVotes` means the account has not voted in that period on that
+ * instance (see `getEmptyFracVotingRecord`).
+ */
+export type FracAccountVotingRecord = {
+  /** Registry-assigned numeric ID of the instance */
+  instanceNumId: Uint16
+  /** On-chain app ID of the instance */
+  instanceAppId: uint64
+  /** Human-readable instance label */
+  instanceName: string
+  /** [topic][option] internal votes, in AlgoQuarters; empty if the account has not voted */
+  topicVotes: Uint32[][]
+}
+
+/**
  * ARC-28 event emitted by `FracDelegationInstance.vote`, mirroring `GGovVoteCast`.
  *
  * Encoded size is `49 + Σ(4 + 4·options)` bytes - a smaller fixed head than `GGovVoteCast`'s 81,
