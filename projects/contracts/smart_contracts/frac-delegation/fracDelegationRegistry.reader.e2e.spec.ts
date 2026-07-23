@@ -213,10 +213,11 @@ describe('FracDelegationRegistry readers', () => {
     })
 
     test('getAccountInstanceAQs pages across the per-call instance limit', async () => {
-      // 8 instances exceeds INSTANCE_PAGE_SIZE (7): the first page fills the outer transaction's
-      // resource budget (7 instances + the account box) and the 8th spills to a second page. The
-      // aggregated result must stay in the account's instanceNumIds order across the page boundary.
+      // Force a tiny page size (production fits ~25 AQ instances per simulate page) so 8 instances
+      // span three pages: the aggregated result must stay in the account's instanceNumIds order
+      // across the page boundaries.
       const { registrySdk, account, instanceIds } = await deployInstancesForAccount(localnet, 8)
+      registrySdk.aqPageSize = 3
 
       const results = await registrySdk.getAccountInstanceAQs(account, new Uint8Array(32))
 

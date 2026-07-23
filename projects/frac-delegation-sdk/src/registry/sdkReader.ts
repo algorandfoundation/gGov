@@ -23,13 +23,26 @@ import { undefinedIfBoxMissing } from '../util/boxes'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
 
 /**
- * Max instances per `logAccountInstanceAQ`/`logAccountVotingRecords` page. Each paged instance costs
- * the outer transaction one `instances` box reference (and one foreign-app slot for its inner call),
- * on top of the single account box; the AVM caps a transaction at 8 box references and 8 foreign
- * apps, so 7 instances + the account box fill the outer transaction. Longer instance lists are
- * fetched over successive pages.
+ * Max instances per page for the registry's paged cross-instance log methods. Each page is a single
+ * readonly simulate app call, and simulate with `allowUnnamedResources` gives one app call a flat
+ * pool of 128 unnamed resource references (boxes + foreign apps) — the AVM's 8-box/8-foreign-app
+ * per-transaction array caps do not bind here, they are reported as unnamed resources instead. So a
+ * page covers `floor((128 - fixed) / perInstance)` instances and longer instance lists span
+ * successive pages.
+ *
+ * Fixed cost, both methods: 1 reference — the caller's `accounts` box, read once by
+ * `getAccountIfExists`.
+ *
+ * `logAccountInstanceAQ` — 5 references per instance: the registry `instances` box, the instance app
+ * (its inner call), and the 3 boxes `getAccountCommitteeAq` reads on that instance (`committees`,
+ * `committeeAq`, `accountAq`). => floor((128 - 1) / 5) = 25.
+ *
+ * `logAccountVotingRecords` — 3 references per instance: the registry `instances` box, the instance
+ * app (its inner call), and the 1 box `getVotingRecord` reads on that instance (`votingRecords`).
+ * => floor((128 - 1) / 3) = 42.
  */
-const INSTANCE_PAGE_SIZE = 7
+const AQ_PAGE_SIZE = 25
+const VOTING_RECORDS_PAGE_SIZE = 42
 
 /**
  * Struct layouts for decoding the per-instance log payloads of `logAccountInstanceAQ`
@@ -52,6 +65,11 @@ export class FracDelegationRegistryReaderSDK {
   public readClient: FracDelegationRegistryClient
   public concurrency: number
   public debug?: boolean
+
+  /** Per-page instance counts for the paged cross-instance log methods (see the constants above).
+   *  Mutable so a caller can dial them down (or a test can force paging with few instances). */
+  public aqPageSize = AQ_PAGE_SIZE
+  public votingRecordsPageSize = VOTING_RECORDS_PAGE_SIZE
 
   constructor({ algorand, concurrency = 4, debug, ...rest }: ReaderConstructorArgs) {
     const { appId, readerAccount } = getConstructorConfig(rest)
@@ -175,17 +193,18 @@ export class FracDelegationRegistryReaderSDK {
    * weight (`userAq`) against the committee total (`totalAq`).
    *
    * Drives the registry's paged `logAccountInstanceAQ`: every page inner-calls its instances, so the
-   * page size is bounded by the AVM per-transaction resource budget (`INSTANCE_PAGE_SIZE`) and long
-   * instance lists span multiple simulate round-trips. Empty if the account is not registered; per
-   * instance, an unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0.
+   * page size is bounded by the simulate unnamed-reference budget (`aqPageSize`) and long instance
+   * lists span multiple simulate round-trips. Empty if the account is not registered; per instance,
+   * an unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0.
    */
   async getAccountInstanceAQs(account: string, committeeId: Uint8Array | string): Promise<FracAccountCommitteeAq[]> {
     const committeeIdRaw = committeeIdToRaw(committeeId)
     return this._pageAccountInstanceLogs<FracAccountCommitteeAq>(
+      this.aqPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountInstanceAq({
           args: { account, committeeId: committeeIdRaw, limit, offset },
-          staticFee: ((INSTANCE_PAGE_SIZE + 1) * 1000).microAlgo(),
+          staticFee: ((limit + 1) * 1000).microAlgo(),
         }),
       'FracAccountCommitteeAq',
     )
@@ -203,10 +222,11 @@ export class FracDelegationRegistryReaderSDK {
   async getAccountVotingRecords(account: string, periodId: bigint | number): Promise<FracAccountVotingRecord[]> {
     const periodIdArg = assertUint(periodId, 32, 'periodId')
     return this._pageAccountInstanceLogs<FracAccountVotingRecord>(
+      this.votingRecordsPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountVotingRecords({
           args: { account, periodId: periodIdArg, limit, offset },
-          staticFee: ((INSTANCE_PAGE_SIZE + 1) * 1000).microAlgo(),
+          staticFee: ((limit + 1) * 1000).microAlgo(),
         }),
       'FracAccountVotingRecord',
     )
@@ -238,11 +258,12 @@ export class FracDelegationRegistryReaderSDK {
   /**
    * Drive one of the registry's paged per-instance log methods to completion. Each call logs the
    * account's total instance count first (a `uint16`), then one struct per instance covered by the
-   * page; this reads the total, decodes the page, and advances `offset` by `INSTANCE_PAGE_SIZE`
-   * until the whole instance list is covered. The high `staticFee` on each page (set by the caller)
-   * covers the fee pool for the page's inner calls and is free under `allowEmptySignatures`.
+   * page; this reads the total, decodes the page, and advances `offset` by `pageSize` until the
+   * whole instance list is covered. The high `staticFee` on each page (set by the caller) covers the
+   * fee pool for the page's inner calls and is free under `allowEmptySignatures`.
    */
   private async _pageAccountInstanceLogs<T>(
+    pageSize: number,
     buildPage: (limit: number, offset: number) => FracDelegationRegistryComposer<any>,
     structName: string,
   ): Promise<T[]> {
@@ -250,7 +271,7 @@ export class FracDelegationRegistryReaderSDK {
     let offset = 0
     let total = Infinity
     while (offset < total) {
-      const { confirmations } = await buildPage(INSTANCE_PAGE_SIZE, offset).simulate(SIMULATE_PARAMS)
+      const { confirmations } = await buildPage(pageSize, offset).simulate(SIMULATE_PARAMS)
       const logs = confirmations.flatMap(({ logs }) => logs ?? [])
       // The method always logs the total count first; no logs at all would mean a malformed response.
       if (logs.length === 0) break
@@ -258,7 +279,7 @@ export class FracDelegationRegistryReaderSDK {
       for (const log of logs.slice(1)) {
         out.push(getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
       }
-      offset += INSTANCE_PAGE_SIZE
+      offset += pageSize
     }
     return out
   }
