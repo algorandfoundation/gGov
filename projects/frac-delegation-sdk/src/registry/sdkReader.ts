@@ -274,7 +274,9 @@ export class FracDelegationRegistryReaderSDK {
       const { confirmations } = await buildPage(pageSize, offset).simulate(SIMULATE_PARAMS)
       const logs = confirmations.flatMap(({ logs }) => logs ?? [])
       // The method always logs the total count first; no logs at all would mean a malformed response.
-      if (logs.length === 0) break
+      if (logs.length === 0) {
+        throw new Error(`Malformed simulate response: missing logs for ${structName} page (offset=${offset})`)
+      }
       total = Number(getABIDecodedValue(new Uint8Array(logs[0]!), 'uint16', CROSS_INSTANCE_STRUCTS))
       for (const log of logs.slice(1)) {
         out.push(getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
