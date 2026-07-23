@@ -4,14 +4,18 @@ Governance voting on Algorand, built as a **registry-as-factory**: one durable r
 the trust root (committees, roles, delegations, period index); each voting period is a separate
 app the registry spawns via inner transaction. Source: `projects/contracts/smart_contracts/`.
 
+A separate **fractional delegation** subsystem (`frac-delegation/`) is designed to operate on top of
+this one to allow LST and staking pools protocols to split gGov voting power among their users. It interacts
+with gGov only through delegation and readonly reads — find its own architecture doc at `FRAC_ARCHITECTURE.md`.
+
 ## Contracts
 
-| Contract | File | Role |
-| --- | --- | --- |
-| `GGovRegistry` | `ggov-registry/ggovRegistry.algo.ts` | Durable factory + oracle: committees, voting power, operator identity, delegations, period index, period bytecode. Extends `GGovRegistryAccount` → `BaseContract`. |
-| `GGovRegistryAccount` | `ggov-registry/ggovRegistryAccount.algo.ts` | Assigns uint32 account IDs to addresses and tracks per-committee superbox offsets (28 bytes/ref saved). |
-| `GGovPeriod` | `ggov-period/ggovPeriod.algo.ts` | One app per voting period: topics, tallies, per-voter records, period/topic body JSON. Extends `BaseContract`. |
-| `BaseContract` | `base/base.algo.ts` | Abstract base: `increaseBudget()` (opcode budget via no-op inner app calls), default admin check. |
+| Contract              | File                                        | Role                                                                                                                                                                                 |
+| --------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GGovRegistry`        | `ggov-registry/ggovRegistry.algo.ts`        | Durable factory + oracle: committees, voting power, operator identity, delegations, period index, period bytecode, period summaries. Extends `GGovRegistryAccount` → `BaseContract`. |
+| `GGovRegistryAccount` | `ggov-registry/ggovRegistryAccount.algo.ts` | Assigns uint32 account IDs to addresses and tracks per-committee superbox offsets (28 bytes/ref saved).                                                                              |
+| `GGovPeriod`          | `ggov-period/ggovPeriod.algo.ts`            | One app per voting period: topics, tallies, per-voter records, period/topic body JSON. Extends `BaseContract`.                                                                       |
+| `BaseContract`        | `base/base.algo.ts`                         | Abstract base: `increaseBudget()` (opcode budget via no-op inner app calls), default admin check.                                                                                    |
 
 Committee membership is stored in `@d13co/superbox` superboxes (`S<numericId>`), letting a
 committee hold far more govs than a single 32 KB box.
@@ -29,48 +33,46 @@ appointing the operator, delegation mirroring, ALGO withdrawal, and updating/del
 keeps the operator's blast radius confined to voting content while custody and upgrade authority stay
 with the admin.
 
-| Role | Source of truth | How it's checked |
-| --- | --- | --- |
-| **Admin** | Registry `admin` global (defaults to `Global.creatorAddress`, rotatable via `setAdmin`, zero-addr rejected) | Registry: `Txn.sender === admin`. Period: inner call to `registry.verifyAdmin(sender)`. |
-| **Operator** | Registry `operator` global (set by admin via `setOperator`) | Registry `createPeriod`: `Txn.sender === operator`. Period edits: inner call to `registry.verifyOperator(sender)`. |
-| **Voter / Delegatee** | Committee membership (voting power) + `delegations` box | Period `vote()`: sender is the voter, or the voter's registered delegatee (verified via `registry.getDelegate`). |
+| Role                  | Source of truth                                                                                             | How it's checked                                                                                                                           |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Admin**             | Registry `admin` global (defaults to `Global.creatorAddress`, rotatable via `setAdmin`, zero-addr rejected) | Registry: `Txn.sender === admin`. Period: reads the registry's `admin` global directly (`AppGlobal.getExBytes`).                           |
+| **Operator**          | Registry `operator` global (set by admin via `setOperator`)                                                 | Registry `createPeriod`: `Txn.sender === operator`. Period edits: read the registry's `operator` global directly (`AppGlobal.getExBytes`). |
+| **Voter / Delegatee** | Committee membership (voting power) + `delegations` box                                                     | Period `vote()`: sender is the voter, or the voter's registered delegatee (verified via `registry.getDelegate`).                           |
 
-`verifyAdmin` / `verifyOperator` are `readonly` ABI methods the period app inner-calls, so role
-identity lives only on the registry — no per-period copies to keep in sync.
-
-> **Planned change:** these checks are currently cross-contract (C2C) inner calls into the registry.
-> They will be replaced by reading the registry app's global state (`admin` / `operator`) directly —
-> the same source of truth, without the inner-call overhead or the extra transaction in the group.
+The period app resolves `admin` and `operator` directly from registry app's global state, so role identity lives only on the registry — no per-period copies to keep in sync, and no inner call or extra transaction in the group.
 
 ### Permission matrix
 
-| Action | Admin | Operator | Anyone |
-| --- | :---: | :---: | :---: |
-| `registerCommittee` / `unregisterCommittee` / `ingestGovs` / `uningestGovs` | ✓ | | |
-| `setOperator`, `setAdmin`, `setXGovRegistryApp`, `setLastPeriodId` | ✓ | | |
-| `uploadPeriodApprovalPartial` (period bytecode), `withdrawALGO`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) | ✓ | | |
-| `mirrorXGovDelegation` | ✓ | | |
-| `createPeriod` (spawn period app) | | ✓ | |
-| Period `editPeriod` / `addTopic` / `editTopic` / `removeTopic` / `setReady` / body uploads | | ✓ | |
-| Update/delete period app code (`UpdateApplication`/`DeleteApplication`), `withdrawALGO`, `deleteTopicBodies` | ✓¹ | | |
-| Registry `setVotingAccount` (delegate) | | | ✓² |
-| Period `vote()` / `canVote` | | | ✓³ |
+| Action                                                                                                                                     | Admin | Operator | Anyone |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | :---: | :------: | :----: |
+| `registerCommittee` / `unregisterCommittee` / `ingestGovs` / `uningestGovs`                                                                |   ✓   |          |        |
+| `setOperator`, `setAdmin`, `setXGovRegistryApp`, `setFracRegistryApp`, `setLastPeriodId`                                                   |   ✓   |          |        |
+| `uploadPeriodApprovalPartial` (period bytecode), `withdrawALGO`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) |   ✓   |          |        |
+| `mirrorXGovDelegation` / `importFracDelegations`                                                                                           |   ✓   |          |        |
+| `createPeriod` (spawn period app)                                                                                                          |       |    ✓     |        |
+| Period `editPeriod` / `addTopic` / `editTopic` / `removeTopic` / `setReady` / body uploads                                                 |       |    ✓     |        |
+| Update/delete period app code (`UpdateApplication`/`DeleteApplication`), period `withdrawALGO`, `deleteTopicBodies`                        |  ✓¹   |          |        |
+| Registry `setVotingAccount` (delegate)                                                                                                     |       |          |   ✓²   |
+| Period `vote()` / `canVote`                                                                                                                |       |          |   ✓³   |
 
-¹ Verified via registry `verifyAdmin`; deleting the period app code and `deleteTopicBodies` also require the period be **not ready**.
-² Authorization = the `xgovAddress` itself **or** its current delegatee (matches xGov registry rule).
+¹ Resolved from the registry's `admin` global; deleting the period app code and `deleteTopicBodies` also require the period be **not ready**.\
+² Authorization = the `govAddress` itself **or** its current delegatee (matches xGov registry rule).\
 ³ Sender must be the voter or the voter's delegatee, and the account must have voting power.
 
 ## Registry lifecycle
 
 ```
 deploy (creator = admin)
-  └─ setOperator / setXGovRegistryApp
+  └─ setOperator / setXGovRegistryApp / setFracRegistryApp
   └─ uploadPeriodApprovalPartial ……… chunk-upload GGovPeriod approval bytecode into box `Pap`
   └─ setLastPeriodId(15) ……………………… seed counter to continue contiguous numbering after legacy periods
 committee setup
   └─ registerCommittee ……………………… allocate metadata + committee superbox
   └─ ingestGovs (repeat, ascending by accountId) …… append members; complete when ingestedVotes == totalVotes
   └─ uningestGovs (descending) / unregisterCommittee (only when ingestedVotes == 0)
+delegation setup
+  └─ mirrorXGovDelegation …………………… seed a delegation from the xGov registry (never overwrites a local one)
+  └─ importFracDelegations ………………… point a batch of frac escrow accounts at their instance app (overwrites)
 period creation
   └─ createPeriod(committeeId, start, end, mbrPayment) → spawns GGovPeriod app  (operator only)
 ```
@@ -83,21 +85,21 @@ max program pages + reserved global schema headroom; funds its MBR from `mbrPaym
 
 ### Registry state
 
-**Global:** `admin` (Account), `operator` (Account), `xGovRegistryApp` (Application),
+**Global:** `admin` (Account), `operator` (Account), `xGovRegistryApp` (Application, init 0), `fracRegistryApp` (Application, init 0),
 `lastCommitteeId` (uint, init 1 — 0 is the "no committee" sentinel), `lastPeriodId` (uint, init 0),
 `lastAccountId` (uint, init 0). Declared with generous `stateTotals` headroom.
 
 **Boxes:**
 
-| Prefix / key | Contents |
-| --- | --- |
+| Prefix / key        | Contents                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------ |
 | `c<CommitteeId:32>` | `CommitteeMetadata` (numericId, member/vote totals, ingestedVotes, xGov registry id) |
-| `S<numericId>…` | Committee member superbox (`AccountIdWithVotes[]`) |
-| `a<Account>` | `GGovAccount` (uint32 accountId + per-committee offset hints) |
-| `p<Uint32>` | `GGovPeriodSummary` { appId, votingStart, votingEnd, numTopics, ready } |
-| `d<Account>` | Forward delegation: delegator → delegatee |
-| `D<Account>` | Reverse index: delegatee → delegator[] (single-read "who delegated to me") |
-| `Pap` | GGovPeriod approval bytecode (admin-uploaded; upgradable without registry redeploy) |
+| `S<numericId>…`     | Committee member superbox (`AccountIdWithVotes[]`)                                   |
+| `a<Account>`        | `GGovAccount` (uint32 accountId + per-committee offset hints)                        |
+| `p<Uint32>`         | `GGovPeriodSummary` { appId, votingStart, votingEnd, numTopics, ready }              |
+| `d<Account>`        | Forward delegation: delegator → delegatee                                            |
+| `D<Account>`        | Reverse index: delegatee → delegator[] (single-read "who delegated to me")           |
+| `Pap`               | GGovPeriod approval bytecode (admin-uploaded; upgradable without registry redeploy)  |
 
 ## Period lifecycle
 
@@ -114,7 +116,7 @@ deleteApplication: admin, only while !ready → deletes boxes, removePeriodSumma
   committeeId, voting window.
 - **Editable** (`!ready`) — operator sets the window (`editPeriod`), manages topics
   (`addTopic`/`editTopic`/`removeTopic`), and chunk-uploads period/topic body JSON. Every
-  structural change mirrors the summary back to the registry.
+  structural change mirrors the summary back to the registry via inner call.
 - **`setReady(true)`** — locks all edits and enables voting. Rejects if the `GGovVoteCast` event
   for the topic shape would exceed the 1024-byte log limit (`ERR:GP_UV`) — a period that could
   never be voted on. `setReady(false)` is allowed only if no votes exist (`ERR:GP_VE`).
@@ -133,14 +135,15 @@ body JSON, `T<Uint32>` per-topic body JSON, `v<Account>` `GGovVoteRecord` { isDe
 
 ## Cross-contract trust boundaries
 
-| Direction | Call | Guard |
-| --- | --- | --- |
-| Registry → Period | `createPeriod` spawns app + inner-calls `init` | `init`: `registryApp === 0` and sender is the registry app account. |
-| Period → Registry | `updatePeriodSummary` / `removePeriodSummary` | `Global.callerApplicationId === summary.appId` — only the registered period app can mutate/remove its own summary. |
-| Period → Registry | `verifyAdmin` / `verifyOperator` / `getDelegate` / `getGovVotingPower` | Readonly reads; role identity and voting power stay authoritative on the registry. |
+| Direction                                 | Call                                                                                   | Guard                                                                                                              |
+| ----------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Registry → Period                         | `createPeriod` spawns app + inner-calls `init`                                         | `init`: `registryApp === 0` and sender is the registry app account.                                                |
+| Period → Registry                         | `updatePeriodSummary` / `removePeriodSummary`                                          | `Global.callerApplicationId === summary.appId` — only the registered period app can mutate/remove its own summary. |
+| Period → Registry                         | `admin` / `operator` global reads (`AppGlobal.getExBytes`)                             | Direct state reads (no inner call); role identity stays authoritative on the registry.                             |
+| Period → Registry                         | `getDelegate` / `getGovVotingPower`                                                    | Readonly inner calls; delegation and voting power stay authoritative on the registry.                              |
+| Registry → Fractional Delegation Registry | `importFracDelegations` which, per escrow: inner-calls `getEscrow` and adds delegation | Readonly reads; each escrow must be registered to a Fractional Delegation Instance.                                |
 
-Deleted periods set their summary `appId` to 0 implicitly by removal, so period-list reads filter
-them out.
+Deleted periods set their summary `appId` to 0 implicitly by removal, so period-list reads filter them out.
 
 ## Delegation
 
@@ -150,6 +153,12 @@ xgovAddress` (or zero) clears the delegation. Only existing accounts may delegat
 zero-address delegation are rejected. Forward (`d`) and reverse (`D`) indexes are kept in lockstep;
 `mirrorXGovDelegation` (admin) seeds a delegation from the xGov registry without overwriting an
 existing local one. `GGovDelegationSet` / `GGovDelegationCleared` events are emitted on change.
+
+Fractional delegation integrated: `importFracDelegations` (admin) wires the fractional-delegation
+subsystem into gGov's delegation model: the so-called escrow accounts delegate¹ to fractional-delegation
+instance apps. The instances represent the staking products, and the escrows are the product-owned accounts
+that accrue gGov voting power. This way, the instance can cast pooled gGov votes on the escrows' behalf.
+¹ Unlike `mirrorXGovDelegation`, this overwrites any existing delegation.
 
 ## Voting mechanics
 
