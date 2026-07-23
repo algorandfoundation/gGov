@@ -25,7 +25,8 @@ const lastBlockTimestamp = async (algorand: AlgorandClient): Promise<number> => 
 }
 
 export function transformedError(errCode: string) {
-  return errCode.replace('ERR:', 'Error ')
+  // Error constants now hold the bare code (e.g. 'AUTH'); the SDK wraps it as "Error <code>: ..."
+  return `Error ${errCode}`
 }
 
 // --------------------------------------------------------------------

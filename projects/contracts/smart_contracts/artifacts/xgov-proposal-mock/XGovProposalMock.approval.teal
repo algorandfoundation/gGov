@@ -50,7 +50,7 @@ main_after_if_else@2:
     bz main___algots__.defaultCreate@17
     txn OnCompletion
     !
-    assert // OnCompletion must be NoOp
+    assert
     txn ApplicationID
     assert
     pushbytess 0x24615f90 0x1841a0d2 0x86dd3d61 0x2e815514 0xd07a349e 0x45ccc5b9 0x969f5acf 0xa3a2d57a // method "get_voter_box(address)(uint64,bool)", method "vote(address,uint64,uint64)string", method "setProposer(address)void", method "setStatus(uint64)void", method "setCommitteeId(byte[32])void", method "setVoteOpenTs(uint64)void", method "setVotingDuration(uint64)void", method "setVoterBox(address,uint64)void"
@@ -66,8 +66,6 @@ main___algots__.defaultCreate@17:
     txn ApplicationID
     !
     &&
-    assert // OnCompletion must be NoOp && can only call when creating
-    intc_0 // 1
     return
 
 
@@ -96,7 +94,7 @@ getVoterBox:
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:37
     // const value: uint64 = exists ? box.value : 0
     bz getVoterBox_ternary_false@3
-    dig 1
+    swap
     box_get
     assert // Box must have value
     btoi
@@ -107,7 +105,7 @@ getVoterBox_ternary_merge@4:
     itob
     pushbytes 0x00
     intc_1 // 0
-    dig 3
+    uncover 3
     setbit
     concat
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:33
@@ -120,6 +118,7 @@ getVoterBox_ternary_merge@4:
     return
 
 getVoterBox_ternary_false@3:
+    bury 1
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:37
     // const value: uint64 = exists ? box.value : 0
     intc_1 // 0
@@ -329,28 +328,20 @@ ensureCallerIsProposer:
     // const caller = Txn.sender
     txn Sender
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:78
-    // ensure(caller === this.proposer.value, 'ERR:AUTH')
+    // loggedAssert(caller === this.proposer.value, errUnauthorized)
     intc_1 // 0
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:23
     // proposer = GlobalState<Account>({ initialValue: Txn.sender })
     bytec_0 // "proposer"
     // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:78
-    // ensure(caller === this.proposer.value, 'ERR:AUTH')
+    // loggedAssert(caller === this.proposer.value, errUnauthorized)
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // smart_contracts/base/utils.algo.ts:37
-    // if (!cond) {
-    bnz ensureCallerIsProposer_after_if_else@3
-    // smart_contracts/xgov-proposal-mock/xGovProposalMock.algo.ts:78
-    // ensure(caller === this.proposer.value, 'ERR:AUTH')
+    bnz ensureCallerIsProposer_after_assert@2
     pushbytes "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:38
-    // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:39
-    // err()
-    err
+    err // ERR:AUTH
 
-ensureCallerIsProposer_after_if_else@3:
+ensureCallerIsProposer_after_assert@2:
     retsub
