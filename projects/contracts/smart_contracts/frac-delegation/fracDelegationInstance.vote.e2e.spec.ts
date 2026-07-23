@@ -516,4 +516,26 @@ describe('FracDelegationInstance vote', () => {
       )
     })
   })
+
+  // The reader/algoquarters specs cover these getters only against empty topicVotes; here a real vote
+  // is cast so the nested Uint32[][] payload is exercised end-to-end
+  describe('cross-instance voting record readers', () => {
+    test('read back a cast vote, non-empty topicVotes, singular and plural paths agree', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+
+      const expected = {
+        instanceNumId: Number(ctx.instanceId),
+        instanceAppId: await ctx.sdk.getInstanceAppId(ctx.instanceId),
+        instanceName: (await ctx.registrySdk.getInstance(ctx.instanceId))!.name,
+        topicVotes: [[50, 30, 20]], // exactly what was submitted, decoded via the generated struct
+      }
+
+      expect(
+        await ctx.registrySdk.getAccountVotingRecord(voter.account.toString(), ctx.instanceId, ctx.periodId),
+      ).toEqual(expected)
+      expect(await ctx.registrySdk.getAccountVotingRecords(voter.account.toString(), ctx.periodId)).toEqual([expected])
+    }, 120_000)
+  })
 })
