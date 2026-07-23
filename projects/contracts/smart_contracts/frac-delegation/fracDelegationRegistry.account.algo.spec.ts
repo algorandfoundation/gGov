@@ -82,14 +82,12 @@ describe('FracDelegationRegistryContract accounts', () => {
   })
 
   // These exercise the account-creation and auth paths, which require getOrCreateAccountWithInstance to
-  // clone() the FracInstance box. The current stable testing lib
-  // (@algorandfoundation/algorand-typescript-testing@1.1.0) cannot decode that struct's `appId:
-  // Application` field ("unsupported type Application"), so they are skipped here. They were verified
-  // GREEN on the 1.2.0-beta toolchain (algorand-typescript-testing@1.2.0-beta.12 with the matching
-  // algorand-typescript / puya-ts @1.2.0-beta.40). Remove `.skip` once 1.2.0 releases as stable.
-  // The admin auth path and the reject-stranger case are meanwhile covered end-to-end in
+  // clone() the FracInstance box, whose `appId: Application` reference field the old stable testing lib
+  // (@algorandfoundation/algorand-typescript-testing@1.1.0) could not decode ("unsupported type
+  // Application"). The 1.2.0 upgrade fixes that decode, so these run under the unit harness again.
+  // The admin auth path and the reject-stranger case are also covered end-to-end in
   // fracDelegationRegistry.reader.e2e.spec.ts.
-  describe.skip('getOrCreateAccountWithInstance — creation & auth (needs testing lib >= 1.2.0)', () => {
+  describe('getOrCreateAccountWithInstance — creation & auth', () => {
     it('creates account id 1 and associates the instance', () => {
       const contract = ctx.contract.create(FracDelegationRegistryContractTest)
       const instanceApp = ctx.any.application()
