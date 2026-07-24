@@ -26,7 +26,7 @@ const seedInstance = (contract: FracDelegationRegistryContractTest, instanceNum:
   }
 }
 
-describe('FracDelegationRegistryContract accounts', () => {
+describe('[fast] FracDelegationRegistryContract accounts', () => {
   const ctx = new TestExecutionContext()
 
   beforeEach(() => ctx.reset())

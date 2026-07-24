@@ -41,7 +41,7 @@ main___algots__.defaultCreate@12:
 
 // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.getAccount[routing]() -> void:
 getAccount:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:123
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:121
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -49,10 +49,10 @@ getAccount:
     intc_2 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:125
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:123
     // return this.getAccountIfExists(account)
     callsub getAccountIfExists
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:123
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:121
     // @abimethod({ readonly: true })
     pushbytes 0x151f7c75
     swap
@@ -64,7 +64,7 @@ getAccount:
 
 // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts::GGovRegistryAccountContract.logAccounts[routing]() -> void:
 logAccounts:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:133
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:131
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dupn 2
@@ -83,7 +83,7 @@ logAccounts:
     intc_0 // 0
 
 logAccounts_for_header@2:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:135
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:133
     // for (const account of accounts) {
     dup
     dig 2
@@ -96,7 +96,7 @@ logAccounts_for_header@2:
     *
     intc_2 // 32
     extract3 // on error: index access is out of bounds
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:136
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:134
     // log(encodeArc4(this.getAccountIfExists(account)))
     callsub getAccountIfExists
     log
@@ -105,7 +105,7 @@ logAccounts_for_header@2:
     b logAccounts_for_header@2
 
 logAccounts_after_for@5:
-    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:133
+    // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:131
     // @abimethod({ readonly: true })
     intc_1 // 1
     return

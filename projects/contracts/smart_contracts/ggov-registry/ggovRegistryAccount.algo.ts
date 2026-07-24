@@ -1,4 +1,4 @@
-import { Account, BoxMap, clone, err, GlobalState, log, loggedAssert, uint64 } from '@algorandfoundation/algorand-typescript'
+import { Account, BoxMap, clone, GlobalState, log, loggedAssert, loggedErr, uint64 } from '@algorandfoundation/algorand-typescript'
 import { abimethod, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
 import {
@@ -79,9 +79,7 @@ export class GGovRegistryAccountContract extends BaseContract {
         return offset.asUint64()
       }
     }
-    // would like to use an arc65 fail() here ideally but this is also ok I guess. see utils.algo.ts
-    log(errAccountOffsetNotExists)
-    err()
+    loggedErr(errAccountOffsetNotExists)
   }
 
   protected addCommitteeAccountOffsetHint(

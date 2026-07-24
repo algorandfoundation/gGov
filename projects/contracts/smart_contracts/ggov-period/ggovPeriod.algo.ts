@@ -9,12 +9,12 @@ import {
   clone,
   contract,
   emit,
-  err,
   Global,
   GlobalState,
   itxn,
   log,
   loggedAssert,
+  loggedErr,
   op,
   Txn,
   uint64,
@@ -383,8 +383,7 @@ export class GGovPeriodContract extends BaseContract {
     if (voteRecordBox.exists) {
       const existingRecord = clone(voteRecordBox.value)
       if (isDelegated && !existingRecord.isDelegated) {
-        log(errGGovCannotOverride)
-        err()
+        loggedErr(errGGovCannotOverride)
       }
       for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
         const oldTopicVotes = clone(existingRecord.topicVotes[i])
