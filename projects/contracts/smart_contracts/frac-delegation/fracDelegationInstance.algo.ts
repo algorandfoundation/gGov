@@ -854,6 +854,8 @@ export class FracDelegationInstanceContract extends BaseContract {
    *   option.
    */
   public vote(periodId: Uint32, topicVotes: Uint32[][]): void {
+    // TODO split out math-heavy sections into subroutines;
+    // test them independently with algo-ts-testing
     const periodBox = this.periods(periodId)
     loggedAssert(periodBox.exists, errGGovPeriodNotExists)
     const period = clone(periodBox.value)
