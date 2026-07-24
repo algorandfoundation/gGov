@@ -392,6 +392,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   public getAccountVotingRecord(account: Account, instanceNumId: Uint16, periodId: Uint32): FracAccountVotingRecord {
     const accountRecord = this.getAccountIfExists(account)
     const accountId = accountRecord.accountId
+    loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     const instance = clone(this.instances(instanceNumId).value)
     const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
       appId: instance.appId,
