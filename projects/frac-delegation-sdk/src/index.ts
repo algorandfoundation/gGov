@@ -11,6 +11,7 @@ export {
   getIncreaseBudgetBuilder,
   SIMULATE_PARAMS,
 } from './registry'
+export type { FracAccountVotingRecord } from './registry'
 
 // Instance SDK surface.
 export * from './instance/sdk'

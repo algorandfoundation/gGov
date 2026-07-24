@@ -33,7 +33,13 @@ import {
   errInstanceAppNotExists,
   errUnauthorized,
 } from '../base/errors.algo'
-import { FracEscrowInstance, FracInstance, FracRegAccount } from '../base/types.algo'
+import {
+  CommitteeId,
+  FracAccountVotingRecord,
+  FracEscrowInstance,
+  FracInstance,
+  FracRegAccount,
+} from '../base/types.algo'
 import { ensure, u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 
@@ -272,6 +278,130 @@ export class FracDelegationRegistryContract extends BaseContract {
   public logAccounts(accounts: Account[]): void {
     for (const account of accounts) {
       log(encodeArc4(this.getAccountIfExists(account)))
+    }
+  }
+
+  /**
+   * Log an account's AlgoQuarters standing in gGov committee `committeeId` across the frac instances
+   * it belongs to - one `FracAccountCommitteeAq` per instance. Readonly, intended for simulate: it
+   * inner-calls each instance's `getAccountCommitteeAq`, joining the instance identity, the
+   * committee's local numeric ID, and the account's weight against the committee total.
+   *
+   * The account's instance list is paged by `offset`/`limit` (a slice of its `instanceNumIds`), so a
+   * user in more instances than one call's resource budget allows can fetch the rest with follow-up
+   * pages. The full instance count is logged first (a `uint16`) so a caller learns how many results
+   * exist before paging; every subsequent log is one `FracAccountCommitteeAq`, in `instanceNumIds`
+   * order starting at `offset`.
+   *
+   * Non-throwing: an unregistered account logs a count of 0 and nothing else. Per instance, an
+   * unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0 (see the instance's
+   * `getAccountCommitteeAq`).
+   *
+   * @param account Account (user address) to look up
+   * @param committeeId 32-byte gGov committee ID
+   * @param limit Max instances to log on this call
+   * @param offset Index into the account's `instanceNumIds` to start from
+   */
+  @abimethod({ readonly: true })
+  public logAccountInstanceAQ(account: Account, committeeId: CommitteeId, limit: Uint16, offset: Uint16): void {
+    const accountRecord = this.getAccountIfExists(account)
+    const accountId = accountRecord.accountId
+    const instanceNumIds = clone(accountRecord.instanceNumIds)
+    const total: uint64 = instanceNumIds.length
+
+    // Total first: lets a caller size the result set and page for the rest without a separate read.
+    log(encodeArc4(u16(total)))
+
+    const end: uint64 = offset.asUint64() + limit.asUint64()
+    for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
+      const instanceNumId = instanceNumIds[i]
+      // Present by construction: an id only enters an account's list via
+      // getOrCreateAccountWithInstance, which requires the instance to exist.
+      const instanceApp = this.instances(instanceNumId).value.appId
+      const standing = compileArc4(FracDelegationInstanceContract).call.getAccountCommitteeAq({
+        appId: instanceApp,
+        args: [accountId, committeeId],
+      }).returnValue
+      log(encodeArc4(standing))
+    }
+  }
+
+  /**
+   * Log an account's internal vote records for gGov period `periodId` across the frac instances it
+   * belongs to - one `FracAccountVotingRecord` (instance identity + `topicVotes`) per instance. The
+   * simpler sibling of `logAccountInstanceAQ`. Readonly, intended for simulate: it inner-calls each
+   * instance's `getVotingRecord` and tags the result with the instance identity from this registry's
+   * own `instances` box (no committee join).
+   *
+   * Paged identically: `offset`/`limit` slice the account's `instanceNumIds`, the full instance
+   * count is logged first (a `uint16`), then one `FracAccountVotingRecord` per paged instance in
+   * `instanceNumIds` order. An instance where the account has not voted this period logs empty
+   * `topicVotes`.
+   *
+   * Non-throwing: an unregistered account logs a count of 0 and nothing else.
+   *
+   * @param account Account (user address) to look up
+   * @param periodId gGov period numeric ID
+   * @param limit Max instances to log on this call
+   * @param offset Index into the account's `instanceNumIds` to start from
+   */
+  @abimethod({ readonly: true })
+  public logAccountVotingRecords(account: Account, periodId: Uint32, limit: Uint16, offset: Uint16): void {
+    const accountRecord = this.getAccountIfExists(account)
+    const accountId = accountRecord.accountId
+    const instanceNumIds = clone(accountRecord.instanceNumIds)
+    const total: uint64 = instanceNumIds.length
+
+    log(encodeArc4(u16(total)))
+
+    const end: uint64 = offset.asUint64() + limit.asUint64()
+    for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
+      const instanceNumId = instanceNumIds[i]
+      const instance = clone(this.instances(instanceNumId).value)
+      const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
+        appId: instance.appId,
+        args: [periodId, accountId],
+      }).returnValue
+      const tagged: FracAccountVotingRecord = {
+        instanceNumId,
+        instanceAppId: instance.appId.id,
+        instanceName: instance.name,
+        topicVotes: clone(record.topicVotes),
+      }
+      log(encodeArc4(tagged))
+    }
+  }
+
+  /**
+   * Read one account's internal vote record for gGov period `periodId` in a single frac instance,
+   * tagged with the instance's identity - the singular, directly-returning counterpart of
+   * `logAccountVotingRecords`. Readonly, intended for simulate: it inner-calls the instance's
+   * `getVotingRecord` and tags the result from this registry's own `instances` box. Empty
+   * `topicVotes` means the account has not voted this period on the instance.
+   *
+   * Returning (rather than logging) the struct is also what registers `FracAccountVotingRecord` in
+   * this contract's ARC-56, so SDKs decode the `logAccountVotingRecords` payload from the generated
+   * struct instead of a hand-maintained copy.
+   *
+   * @param account Account (user address) to look up
+   * @param instanceNumId Registry-assigned numeric ID of the instance
+   * @param periodId gGov period numeric ID
+   */
+  @abimethod({ readonly: true })
+  public getAccountVotingRecord(account: Account, instanceNumId: Uint16, periodId: Uint32): FracAccountVotingRecord {
+    const accountRecord = this.getAccountIfExists(account)
+    const accountId = accountRecord.accountId
+    ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    const instance = clone(this.instances(instanceNumId).value)
+    const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
+      appId: instance.appId,
+      args: [periodId, accountId],
+    }).returnValue
+    return {
+      instanceNumId,
+      instanceAppId: instance.appId.id,
+      instanceName: instance.name,
+      topicVotes: clone(record.topicVotes),
     }
   }
 

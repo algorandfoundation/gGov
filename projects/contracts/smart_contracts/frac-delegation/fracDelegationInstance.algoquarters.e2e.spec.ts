@@ -1027,5 +1027,56 @@ describe('FracDelegationInstance algoquarters', () => {
       expect(bundle.committeeId).toEqual(unknownCommitteeId)
       expect(bundle.instanceNumId).toBe(Number(instanceId))
     })
+
+    test('registry getAccountInstanceAQs joins an account weight across all its instances', async () => {
+      const ctx = await setupAq(localnet)
+      const { committeeId, committeeNumId, sdkWrapper, registrySdk, sdk, instanceId, testAccount, govAccounts } = ctx
+
+      // A second instance on the same registry with the same committee synced. Its escrow is a fresh
+      // gov (escrow assignment is globally unique, so instance 1's escrow can't be reused).
+      const { appId: instanceApp2, instanceId: instanceId2 } = await deployFracInstance(localnet, testAccount, {
+        registrySdk,
+      })
+      await registrySdk.registerEscrow({ instanceNumId: instanceId2, account: govAccounts[1].toString() })
+      await sdk.syncCommittee({ instanceNumId: instanceId2, committeeId })
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(instanceApp2), (5).algos())
+      const committeeNumId2 = (await sdk.getCommittee(instanceId2, committeeId))!.committeeNumId
+      expect(committeeNumId2).toBe(committeeNumId) // committee numeric id is gGov-global, shared across instances
+
+      // The same account holds AlgoQuarters in both instances' ledgers for that committee.
+      const account = freshAccounts(1)[0]
+      await sdkWrapper.startAqIngest({ committeeId, totalAq: 1000, totalAccounts: 10 })
+      await sdkWrapper.ingestAq({ committeeNumId, accountAqs: rows([account], 100) })
+      await sdk.startAqIngest({ instanceNumId: instanceId2, committeeId, totalAq: 2000, totalAccounts: 20 })
+      await sdk.ingestAq({
+        instanceNumId: instanceId2,
+        committeeNumId: committeeNumId2,
+        accountAqs: rows([account], 300),
+      })
+
+      const results = await registrySdk.getAccountInstanceAQs(account, committeeId)
+
+      // One entry per instance, in the account's instanceNumIds order (instance 1 associated first).
+      expect(results).toEqual([
+        {
+          instanceNumId: Number(instanceId),
+          instanceAppId: await sdk.getInstanceAppId(instanceId),
+          committeeNumId,
+          committeeId,
+          instanceName: (await registrySdk.getInstance(instanceId))!.name,
+          userAq: 100,
+          totalAq: 1000,
+        },
+        {
+          instanceNumId: Number(instanceId2),
+          instanceAppId: await sdk.getInstanceAppId(instanceId2),
+          committeeNumId: committeeNumId2,
+          committeeId,
+          instanceName: (await registrySdk.getInstance(instanceId2))!.name,
+          userAq: 300,
+          totalAq: 2000,
+        },
+      ])
+    }, 120_000)
   })
 })

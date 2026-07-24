@@ -5,3 +5,4 @@ export { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constant
 export { createTxnExecutor, executeTxns } from '../util/txnExecutor'
 export { getIncreaseBudgetBuilder, SIMULATE_PARAMS } from '../util/increaseBudget'
 export { FracDelegationRegistryFactory, FracDelegationRegistryClient } from '../generated/FracDelegationRegistryClient'
+export type { FracAccountVotingRecord } from '../generated/FracDelegationRegistryClient'
