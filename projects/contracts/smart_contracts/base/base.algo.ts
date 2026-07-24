@@ -1,4 +1,13 @@
-import { compile, Contract, Global, itxn, loggedAssert, OnCompleteAction, Txn, uint64 } from '@algorandfoundation/algorand-typescript'
+import {
+  compile,
+  Contract,
+  Global,
+  itxn,
+  loggedAssert,
+  OnCompleteAction,
+  Txn,
+  uint64,
+} from '@algorandfoundation/algorand-typescript'
 import { abimethod } from '@algorandfoundation/algorand-typescript/arc4'
 import { errUnauthorized } from './errors.algo'
 

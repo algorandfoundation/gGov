@@ -1,4 +1,13 @@
-import { abimethod, Account, BoxMap, Bytes, GlobalState, loggedAssert, Txn, uint64 } from '@algorandfoundation/algorand-typescript'
+import {
+  abimethod,
+  Account,
+  BoxMap,
+  Bytes,
+  GlobalState,
+  loggedAssert,
+  Txn,
+  uint64,
+} from '@algorandfoundation/algorand-typescript'
 import { Contract, StaticBytes } from '@algorandfoundation/algorand-typescript/arc4'
 import { CommitteeId } from '../base/types.algo'
 import { errUnauthorized } from '../base/errors.algo'
