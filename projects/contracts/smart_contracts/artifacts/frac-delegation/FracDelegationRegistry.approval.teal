@@ -1857,22 +1857,22 @@ getEscrow_after_assert@5:
 
 // smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]() -> void:
 increaseBudget:
-    // smart_contracts/base/base.algo.ts:20
+    // smart_contracts/base/base.algo.ts:29
     // @abimethod({ validateEncoding: 'unsafe-disabled' })
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/base/base.algo.ts:23
+    // smart_contracts/base/base.algo.ts:32
     // for (let i: uint64 = 0; i < itxns; i++) {
     intc_0 // 0
 
 increaseBudget_while_top@2:
-    // smart_contracts/base/base.algo.ts:23
+    // smart_contracts/base/base.algo.ts:32
     // for (let i: uint64 = 0; i < itxns; i++) {
     dup
     dig 2
     <
     bz increaseBudget_after_while@5
-    // smart_contracts/base/base.algo.ts:24-30
+    // smart_contracts/base/base.algo.ts:33-39
     // itxn
     //   .applicationCall({
     //     approvalProgram: empty.clearStateProgram, // intentionally using clear state program for "return true"
@@ -1881,17 +1881,17 @@ increaseBudget_while_top@2:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/base/base.algo.ts:28
+    // smart_contracts/base/base.algo.ts:37
     // onCompletion: OnCompleteAction.DeleteApplication,
     pushint 5
     itxn_field OnCompletion
-    // smart_contracts/base/base.algo.ts:22
+    // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
     bytec 8 // base64(C4EBQw==)
     itxn_field ClearStateProgramPages
     bytec 8 // base64(C4EBQw==)
     itxn_field ApprovalProgramPages
-    // smart_contracts/base/base.algo.ts:24-29
+    // smart_contracts/base/base.algo.ts:33-38
     // itxn
     //   .applicationCall({
     //     approvalProgram: empty.clearStateProgram, // intentionally using clear state program for "return true"
@@ -1902,7 +1902,7 @@ increaseBudget_while_top@2:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // smart_contracts/base/base.algo.ts:24-30
+    // smart_contracts/base/base.algo.ts:33-39
     // itxn
     //   .applicationCall({
     //     approvalProgram: empty.clearStateProgram, // intentionally using clear state program for "return true"
@@ -1911,14 +1911,14 @@ increaseBudget_while_top@2:
     //   })
     //   .submit()
     itxn_submit
-    // smart_contracts/base/base.algo.ts:23
+    // smart_contracts/base/base.algo.ts:32
     // for (let i: uint64 = 0; i < itxns; i++) {
     intc_1 // 1
     +
     b increaseBudget_while_top@2
 
 increaseBudget_after_while@5:
-    // smart_contracts/base/base.algo.ts:20
+    // smart_contracts/base/base.algo.ts:29
     // @abimethod({ validateEncoding: 'unsafe-disabled' })
     intc_1 // 1
     return
