@@ -281,7 +281,7 @@ export class FracDelegationRegistryReaderSDK {
       for (const log of logs.slice(1)) {
         out.push(getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
       }
-      offset += pageSize
+      offset += Math.max(1, pageSize)
     }
     return out
   }
