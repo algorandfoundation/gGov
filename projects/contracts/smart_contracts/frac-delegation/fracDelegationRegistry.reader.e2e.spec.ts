@@ -213,10 +213,11 @@ describe('FracDelegationRegistry readers', () => {
     })
 
     test('getAccountInstanceAQs pages across the per-call instance limit', async () => {
-      // 8 instances exceeds INSTANCE_PAGE_SIZE (7): the first page fills the outer transaction's
-      // resource budget (7 instances + the account box) and the 8th spills to a second page. The
-      // aggregated result must stay in the account's instanceNumIds order across the page boundary.
+      // Force a tiny page size (production fits ~25 AQ instances per simulate page) so 8 instances
+      // span three pages: the aggregated result must stay in the account's instanceNumIds order
+      // across the page boundaries.
       const { registrySdk, account, instanceIds } = await deployInstancesForAccount(localnet, 8)
+      registrySdk.aqPageSize = 3
 
       const results = await registrySdk.getAccountInstanceAQs(account, new Uint8Array(32))
 
@@ -237,6 +238,22 @@ describe('FracDelegationRegistry readers', () => {
           topicVotes: [], // no vote record for the period on any instance
         })
       }
+    })
+
+    test('getAccountVotingRecord returns one instance-tagged record decoded via the generated struct', async () => {
+      // Singular getter: targets a specific (non-first) instance and returns the struct directly,
+      // exercising the ARC-56-registered FracAccountVotingRecord the plural log path decodes against.
+      const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)
+      const instanceId = instanceIds[1]!
+
+      const record = await registrySdk.getAccountVotingRecord(account, instanceId, 1)
+
+      expect(record).toEqual({
+        instanceNumId: Number(instanceId),
+        instanceAppId: await sdk.getInstanceAppId(instanceId),
+        instanceName: (await registrySdk.getInstance(instanceId))!.name,
+        topicVotes: [], // account has not voted this period on the instance
+      })
     })
   })
 

@@ -5,6 +5,7 @@ import pMap from 'p-map'
 import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
+  FracAccountVotingRecord,
   FracEscrowInstance,
   FracInstance,
   FracRegAccount,
@@ -12,7 +13,7 @@ import {
 } from '../generated/FracDelegationRegistryClient'
 import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient'
 import { getConstructorConfig } from '../networkConfig'
-import { FracAccountVotingRecord, ReaderConstructorArgs } from './types'
+import { ReaderConstructorArgs } from './types'
 import { assertUint } from '../util/assertUint'
 import { chunk } from '../util/chunk'
 import { chunked } from '../util/chunked'
@@ -22,29 +23,38 @@ import { undefinedIfBoxMissing } from '../util/boxes'
 import { SIMULATE_PARAMS } from '../util/increaseBudget'
 
 /**
- * Max instances per `logAccountInstanceAQ`/`logAccountVotingRecords` page. Each paged instance costs
- * the outer transaction one `instances` box reference (and one foreign-app slot for its inner call),
- * on top of the single account box; the AVM caps a transaction at 8 box references and 8 foreign
- * apps, so 7 instances + the account box fill the outer transaction. Longer instance lists are
- * fetched over successive pages.
+ * Max instances per page for the registry's paged cross-instance log methods. Each page is a single
+ * readonly simulate app call, and simulate with `allowUnnamedResources` gives one app call a flat
+ * pool of 128 unnamed resource references (boxes + foreign apps) — the AVM's 8-box/8-foreign-app
+ * per-transaction array caps do not bind here, they are reported as unnamed resources instead. So a
+ * page covers `floor((128 - fixed) / perInstance)` instances and longer instance lists span
+ * successive pages.
+ *
+ * Fixed cost, both methods: 1 reference — the caller's `accounts` box, read once by
+ * `getAccountIfExists`.
+ *
+ * `logAccountInstanceAQ` — 5 references per instance: the registry `instances` box, the instance app
+ * (its inner call), and the 3 boxes `getAccountCommitteeAq` reads on that instance (`committees`,
+ * `committeeAq`, `accountAq`). => floor((128 - 1) / 5) = 25.
+ *
+ * `logAccountVotingRecords` — 3 references per instance: the registry `instances` box, the instance
+ * app (its inner call), and the 1 box `getVotingRecord` reads on that instance (`votingRecords`).
+ * => floor((128 - 1) / 3) = 42.
  */
-const INSTANCE_PAGE_SIZE = 7
+const AQ_PAGE_SIZE = 25
+const VOTING_RECORDS_PAGE_SIZE = 42
 
 /**
- * Struct layouts for decoding the per-instance log payloads. `getABIDecodedValue` resolves struct
- * names from this map, but the registry's own ARC-56 only registers structs used in a method's
- * args/returns — these two are only ever logged, so they are absent there. `FracAccountCommitteeAq`
- * is borrowed from the instance contract (its `getAccountCommitteeAq` returns it); the registry-only
- * `FracAccountVotingRecord` is declared here to match its contract struct field-for-field.
+ * Struct layouts for decoding the per-instance log payloads of `logAccountInstanceAQ`
+ * (`FracAccountCommitteeAq`) and `logAccountVotingRecords` (`FracAccountVotingRecord`).
+ * `getABIDecodedValue` resolves struct names from this map. Both structs are the return type of a
+ * readonly getter — `getAccountCommitteeAq` on the instance, `getAccountVotingRecord` on the
+ * registry — so each is registered in its contract's ARC-56 and sourced from the generated
+ * `APP_SPEC.structs` here rather than hand-declared.
  */
 const CROSS_INSTANCE_STRUCTS = {
   ...INSTANCE_APP_SPEC.structs,
-  FracAccountVotingRecord: [
-    { name: 'instanceNumId', type: 'uint16' },
-    { name: 'instanceAppId', type: 'uint64' },
-    { name: 'instanceName', type: 'string' },
-    { name: 'topicVotes', type: 'uint32[][]' },
-  ],
+  ...APP_SPEC.structs,
 }
 
 export class FracDelegationRegistryReaderSDK {
@@ -55,6 +65,11 @@ export class FracDelegationRegistryReaderSDK {
   public readClient: FracDelegationRegistryClient
   public concurrency: number
   public debug?: boolean
+
+  /** Per-page instance counts for the paged cross-instance log methods (see the constants above).
+   *  Mutable so a caller can dial them down (or a test can force paging with few instances). */
+  public aqPageSize = AQ_PAGE_SIZE
+  public votingRecordsPageSize = VOTING_RECORDS_PAGE_SIZE
 
   constructor({ algorand, concurrency = 4, debug, ...rest }: ReaderConstructorArgs) {
     const { appId, readerAccount } = getConstructorConfig(rest)
@@ -178,17 +193,18 @@ export class FracDelegationRegistryReaderSDK {
    * weight (`userAq`) against the committee total (`totalAq`).
    *
    * Drives the registry's paged `logAccountInstanceAQ`: every page inner-calls its instances, so the
-   * page size is bounded by the AVM per-transaction resource budget (`INSTANCE_PAGE_SIZE`) and long
-   * instance lists span multiple simulate round-trips. Empty if the account is not registered; per
-   * instance, an unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0.
+   * page size is bounded by the simulate unnamed-reference budget (`aqPageSize`) and long instance
+   * lists span multiple simulate round-trips. Empty if the account is not registered; per instance,
+   * an unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0.
    */
   async getAccountInstanceAQs(account: string, committeeId: Uint8Array | string): Promise<FracAccountCommitteeAq[]> {
     const committeeIdRaw = committeeIdToRaw(committeeId)
     return this._pageAccountInstanceLogs<FracAccountCommitteeAq>(
+      this.aqPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountInstanceAq({
           args: { account, committeeId: committeeIdRaw, limit, offset },
-          staticFee: ((INSTANCE_PAGE_SIZE + 1) * 1000).microAlgo(),
+          staticFee: ((limit + 1) * 1000).microAlgo(),
         }),
       'FracAccountCommitteeAq',
     )
@@ -206,23 +222,48 @@ export class FracDelegationRegistryReaderSDK {
   async getAccountVotingRecords(account: string, periodId: bigint | number): Promise<FracAccountVotingRecord[]> {
     const periodIdArg = assertUint(periodId, 32, 'periodId')
     return this._pageAccountInstanceLogs<FracAccountVotingRecord>(
+      this.votingRecordsPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountVotingRecords({
           args: { account, periodId: periodIdArg, limit, offset },
-          staticFee: ((INSTANCE_PAGE_SIZE + 1) * 1000).microAlgo(),
+          staticFee: ((limit + 1) * 1000).microAlgo(),
         }),
       'FracAccountVotingRecord',
     )
   }
 
   /**
+   * Read one account's internal vote record for gGov period `periodId` in a single frac instance,
+   * tagged with the instance's identity. The singular counterpart of `getAccountVotingRecords`:
+   * returns one `FracAccountVotingRecord` directly (no paging) for a known `instanceNumId`. Empty
+   * `topicVotes` means the account has not voted this period on that instance.
+   */
+  async getAccountVotingRecord(
+    account: string,
+    instanceNumId: number | bigint,
+    periodId: bigint | number,
+  ): Promise<FracAccountVotingRecord> {
+    const instanceNumIdArg = assertUint(instanceNumId, 16, 'instanceNumId')
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    const { returns } = await this.readClient
+      .newGroup()
+      .getAccountVotingRecord({
+        args: { account, instanceNumId: instanceNumIdArg, periodId: periodIdArg },
+        staticFee: (2 * 1000).microAlgo(), // outer call + one inner call (instance getVotingRecord)
+      })
+      .simulate(SIMULATE_PARAMS)
+    return returns[0]!
+  }
+
+  /**
    * Drive one of the registry's paged per-instance log methods to completion. Each call logs the
    * account's total instance count first (a `uint16`), then one struct per instance covered by the
-   * page; this reads the total, decodes the page, and advances `offset` by `INSTANCE_PAGE_SIZE`
-   * until the whole instance list is covered. The high `staticFee` on each page (set by the caller)
-   * covers the fee pool for the page's inner calls and is free under `allowEmptySignatures`.
+   * page; this reads the total, decodes the page, and advances `offset` by `pageSize` until the
+   * whole instance list is covered. The high `staticFee` on each page (set by the caller) covers the
+   * fee pool for the page's inner calls and is free under `allowEmptySignatures`.
    */
   private async _pageAccountInstanceLogs<T>(
+    pageSize: number,
     buildPage: (limit: number, offset: number) => FracDelegationRegistryComposer<any>,
     structName: string,
   ): Promise<T[]> {
@@ -230,15 +271,17 @@ export class FracDelegationRegistryReaderSDK {
     let offset = 0
     let total = Infinity
     while (offset < total) {
-      const { confirmations } = await buildPage(INSTANCE_PAGE_SIZE, offset).simulate(SIMULATE_PARAMS)
+      const { confirmations } = await buildPage(pageSize, offset).simulate(SIMULATE_PARAMS)
       const logs = confirmations.flatMap(({ logs }) => logs ?? [])
       // The method always logs the total count first; no logs at all would mean a malformed response.
-      if (logs.length === 0) break
+      if (logs.length === 0) {
+        throw new Error(`Malformed simulate response: missing logs for ${structName} page (offset=${offset})`)
+      }
       total = Number(getABIDecodedValue(new Uint8Array(logs[0]!), 'uint16', CROSS_INSTANCE_STRUCTS))
       for (const log of logs.slice(1)) {
         out.push(getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
       }
-      offset += INSTANCE_PAGE_SIZE
+      offset += pageSize
     }
     return out
   }

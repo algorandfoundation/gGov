@@ -374,6 +374,38 @@ export class FracDelegationRegistryContract extends BaseContract {
   }
 
   /**
+   * Read one account's internal vote record for gGov period `periodId` in a single frac instance,
+   * tagged with the instance's identity - the singular, directly-returning counterpart of
+   * `logAccountVotingRecords`. Readonly, intended for simulate: it inner-calls the instance's
+   * `getVotingRecord` and tags the result from this registry's own `instances` box. Empty
+   * `topicVotes` means the account has not voted this period on the instance.
+   *
+   * Returning (rather than logging) the struct is also what registers `FracAccountVotingRecord` in
+   * this contract's ARC-56, so SDKs decode the `logAccountVotingRecords` payload from the generated
+   * struct instead of a hand-maintained copy.
+   *
+   * @param account Account (user address) to look up
+   * @param instanceNumId Registry-assigned numeric ID of the instance
+   * @param periodId gGov period numeric ID
+   */
+  @abimethod({ readonly: true })
+  public getAccountVotingRecord(account: Account, instanceNumId: Uint16, periodId: Uint32): FracAccountVotingRecord {
+    const accountRecord = this.getAccountIfExists(account)
+    const accountId = accountRecord.accountId
+    const instance = clone(this.instances(instanceNumId).value)
+    const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
+      appId: instance.appId,
+      args: [periodId, accountId],
+    }).returnValue
+    return {
+      instanceNumId,
+      instanceAppId: instance.appId.id,
+      instanceName: instance.name,
+      topicVotes: clone(record.topicVotes),
+    }
+  }
+
+  /**
    * Get validated account or create account, associating instance.
    * Callable by the associated instance app (the production path) or the registry admin
    * (bootstrap/administration path).
