@@ -399,7 +399,7 @@ ingested_accounts = count from superbox
 // get last ingested ID to ensure ascending ID order, deduplication enforcement
 last_ingested_id = ingested_accounts > 0 ? [ingested_accounts - 1].id : 0
 // ensure we are not going over by # of accounts
-ensure(ingested_accounts + govs.length <= committee.total_members)
+assert(ingested_accounts + govs.length <= committee.total_members)
 // buffer to write to superbox once
 write_chunk: bytes of shape [id, votes][]
 // iterate govs

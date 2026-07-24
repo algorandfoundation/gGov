@@ -19,11 +19,11 @@ import { FracDelegationRegistryContract } from './fracDelegationRegistry.algo'
  * What it does: removes per-account AlgoQuarters from a committee's ledger.
  * Body, in order:
  *   1. ensureCallerIsOperator()
- *   2. registryApp = resolveRegistryApp()            // ensure(registryApp > 0)
- *   3. aqBox = committeeAq(committeeNumId)            // ensure(aqBox.exists)
+ *   2. registryApp = resolveRegistryApp()            // assert(registryApp > 0)
+ *   3. aqBox = committeeAq(committeeNumId)            // assert(aqBox.exists)
  *   4. for each account:                              // ← inner call here
  *        id = registry.getAccount(account).accountId  // inner app call (readonly)
- *        ensure(accountAq[id, numId].exists)
+ *        assert(accountAq[id, numId].exists)
  *        removedAq += box.value; box.delete()
  *   5. ingestedAq -= removedAq; numAccounts -= accounts.length
  *

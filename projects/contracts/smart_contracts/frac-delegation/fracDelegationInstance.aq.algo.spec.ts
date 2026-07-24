@@ -28,14 +28,14 @@ import { FracDelegationRegistryContract } from './fracDelegationRegistry.algo'
 //   Body, in order:
 //     1. ensureCallerIsOperator()                       — operator override, else registry fallback
 //     2. resolveRegistryApp()                           — registryApp must be > 0
-//     3. ensure(committeeAq(numId).exists)              — ledger must be open        [errAqNotStarted]
+//     3. assert(committeeAq(numId).exists)              — ledger must be open        [errAqNotStarted]
 //     4. for (row of clone(accountAqs)) {               — ← clone of the input array
-//          a. ensure(row.aq > 0)                        — reject zero-AQ rows        [errZeroAq]
+//          a. assert(row.aq > 0)                        — reject zero-AQ rows        [errZeroAq]
 //          b. registry.getOrCreateAccountWithInstance() — INNER CALL → accountId
-//          c. ensure(!accountAq[id,numId].exists)       — write-once per account     [errAccountAqExists]
+//          c. assert(!accountAq[id,numId].exists)       — write-once per account     [errAccountAqExists]
 //          d. write box, sumAq += row.aq }
-//     5. ensure(ingestedAq + sumAq <= totalAq)          — AQ overflow guard          [errTotalAqExceeded]
-//     6. ensure(numAccounts + rows <= totalAccounts)    — account-count guard        [errTotalGovsExceeded]
+//     5. assert(ingestedAq + sumAq <= totalAq)          — AQ overflow guard          [errTotalAqExceeded]
+//     6. assert(numAccounts + rows <= totalAccounts)    — account-count guard        [errTotalGovsExceeded]
 //     7. write ingestedAq / numAccounts back
 //
 // UNIT-TESTABILITY BOUNDARY (what runs here vs end-to-end)
