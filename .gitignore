@@ -122,6 +122,10 @@ celerybeat.pid
 # Environments
 .env
 
+# Deterministic localnet seed output: addresses + mnemonics written by
+# projects/ggov-frontend/scripts/deploy-sample-data.ts. Throwaway keys, but keep them out of git.
+.localnet-seed.json
+
 # Cloudflare Worker local secrets (never commit real values; .example is tracked)
 .dev.vars
 .dev.vars.*

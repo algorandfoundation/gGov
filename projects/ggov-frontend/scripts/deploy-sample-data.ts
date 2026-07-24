@@ -1,233 +1,560 @@
 /**
- * Deploy GGov contract to localnet and seed a full active governance session.
+ * Seed a localnet with a full gGov session *and* the Fractional Delegation subsystem wired on top,
+ * so the frontend has both voting paths populated: direct/delegated gGov ballots, and AQ-weighted
+ * internal votes re-cast into gGov through protocol escrows.
  *
- * Usage (from repo root):
- *   npx tsx projects/ggov-frontend/scripts/deploy-sample-data.ts
- *   OR from ggov-frontend:
- *   npx tsx scripts/deploy-sample-data.ts
+ * USAGE
+ *   From root:
+ *     pnpm --filter "ggov-frontend" seed-localnet-data
  *
- * Requires: algokit localnet running, SDKs built (ggov-sdk dist).
+ *   Usage from ggov-frontend:
+ *     pnpm seed-localnet-data
  *
- * Resets localnet, then uses the KMD default wallet accounts as committee members
- * (so they persist and can connect + vote via the frontend). Seeds three periods —
- * an ENDED council election (id 1), an ACTIVE council election (id 2), and an
- * UPCOMING standard vote (id 3) — with
- * votes and delegations cast so the results pages, the live council standings, and
- * the multi-account voting record are all populated. Random transaction notes
- * deduplicate otherwise-identical calls (no sleeps needed). Finally rewrites the
- * frontend .env with the new registry app id.
+ * REQUIREMENTS
+ *   Algokit localnet running, both SDKs built (`algokit project run build` builds all projects).
  *
- * Delegation story (connect as the deployer/operator to see it on the ended period):
- *   - Member B delegates to A (deployer); A casts B's ballot  → "Delegated to you"
- *   - Member C delegates to A but votes directly (locked)     → "Voted directly"
- *   - A votes its own ballot                                  → "Your account"
+ * PERSONAS (KMD)
+ *   The frontend treats every account in the connected wallet as a voter, so the four personas live
+ *   together in `unencrypted-default-wallet` (the rich multi-account view) *and* each gets its own
+ *   single-account wallet for looking at one persona in isolation:
+ *
+ *     deployer  admin + operator of both registries; not a gov                        (ggov-deployer)
+ *     alice     gov · delegatee of bob and g2 · holds AQ in both instances            (ggov-alice)
+ *     bob       gov only, a plain block producer · delegated his power to alice       (ggov-bob)
+ *     carol     AlgoQuarters only, not a committee member                             (ggov-carol)
+ *
+ *   Between them they cover every governance stance: runs the show, votes and is voted for, hands
+ *   its power to someone else, and holds pooled stake with no gGov power of its own.
+ *
+ *   Switch persona with VITE_KMD_WALLET=ggov-bob and restart vite, or import the persona's
+ *   mnemonic (written to the accounts manifest) into any localnet wallet.
+ *
+ * STEPS
+ * 1) RESET & ACCOUNTS
+ *   Reset localnet. Derive every account deterministically from a fixed namespace, so addresses are
+ *   stable across runs and their mnemonics can be imported into a wallet in case it's needed. Shape
+ *   the KMD wallets (see PERSONAS below).
+ *
+ * 2) FUNDING
+ *   Dispenser → personas, govs, escrows and AlgoQuarter holders.
+ *
+ * 3) REGISTRIES
+ *   Deploy the gGov registry and the frac registry, wired to each other in both directions.
+ *   The deployer is admin + operator of both.
+ *
+ * 4) COMMITTEE
+ *   Build and upload the committee file. Members are the two gov personas, 13 plain govs, and the
+ *   three protocol escrows — escrows hold gGov voting power like any other member, they just never
+ *   vote with it themselves.
+ *
+ * 5) INSTANCES & AQ
+ *   Create the `tinyman` (1 escrow) and `reti` (2 escrows) instances, register their escrows, upload
+ *   an AlgoQuarters manifest to each, then point every escrow's gGov delegation at its instance app
+ *   via `importFracDelegations`.
+ *
+ * 6)  DELEGATIONS
+ *   Account-level gGov delegations between govs.
+ *
+ * 7) PERIOD 1 (ENDED)
+ *   A council election voted in full through both paths, inside a short window we then wait out so it
+ *   reads as ended.
+ *
+ * 8) PERIOD 2 (ACTIVE)
+ *   The same election shape, deliberately half-voted so there is live work left to do from the UI.
+ *
+ * 9) PERIOD 3 (UPCOMING)
+ *   A standard vote, ready and pre-synced by the instances, no votes yet.
+ *
+ * 10) OUTPUT
+ *   Self-check the on-chain result, rewrite .env, write the accounts manifest, print the summary.
+ *
+ * CONSTRAINTS
+ *   - The first vote of either kind locks a period against setReady(false)/editPeriod, so all
+ *     period editing happens before any vote, and period 3 stays unvoted.
+ *   - Keep escrows out of the ballot tables, they must never cast a direct gGov vote.
  */
 
 import { createRequire } from 'node:module'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, createHash } from 'node:crypto'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
 import type { GGovCommitteeFile } from 'ggov-sdk'
+import type { AlgoQuartersFile } from 'frac-delegation-sdk'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Use require for packages that have CJS dist but ESM source issues
-const { AlgorandClient } = require('@algorandfoundation/algokit-utils')
-const { GGovSDK, GGovRegistrySDK } = require('../../ggov-sdk/dist/index.js')
-const algosdk = require('algosdk')
+// Use require for packages that have CJS dist but ESM source issues.
+// `as typeof import(...)` restores the types require() erases (it returns `any`); the cast is erased at runtime.
+const { AlgorandClient, Config, algo } =
+  require('@algorandfoundation/algokit-utils') as typeof import('@algorandfoundation/algokit-utils')
+const { GGovSDK, GGovRegistrySDK } = require('../../ggov-sdk/dist/index.js') as typeof import('ggov-sdk')
+const { FracDelegationSDK, FracDelegationRegistrySDK } =
+  require('../../frac-delegation-sdk/dist/index.js') as typeof import('frac-delegation-sdk')
+const algosdk = require('algosdk') as typeof import('algosdk')
 
-const KMD_TOKEN = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+type Kmd = InstanceType<typeof algosdk.Kmd>
+
+Config.configure({
+  logger: { error: console.error, warn: console.warn, info: () => {}, verbose: () => {}, debug: () => {} },
+})
+
+// =========================================================
+// SEED DEFINITION
+// =========================================================
+
+/** Namespace for deterministic key derivation. Change it and every address in the seed changes. */
+const SEED_NAMESPACE = 'ggov-localnet'
+
+/** Committee window, in rounds. Shared by the committee file and both AlgoQuarters manifests. */
+const COMMITTEE_PERIOD_START = 50_000_000
+const COMMITTEE_PERIOD_END = 53_000_000
+
+/**
+ * Lifetime of period 1's voting window, in seconds: long enough to cast its ballots inside, short
+ * enough that waiting for it to lapse is cheap (see step 7). Overrunning it fails loudly.
+ */
+const ENDED_VOTING_WINDOW_SECONDS = 40
+
+/** Persona wallets are unencrypted like the LocalNet default, so switching only needs the name. */
+const PERSONA_WALLET_PASSWORD = ''
+
+/** The four accounts that go into KMD, and so can connect from the frontend. */
+const PERSONAS = ['deployer', 'alice', 'bob', 'carol']
+
+/** Persona → its own single-account KMD wallet, for viewing that persona in isolation. */
+const PERSONA_WALLETS: Record<string, string> = {
+  deployer: 'ggov-deployer',
+  alice: 'ggov-alice',
+  bob: 'ggov-bob',
+  carol: 'ggov-carol',
+}
+
+/**
+ * gGov committee: account label → voting power. `alice`/`bob` are KMD personas, `g*` are plain
+ * external govs, `x*` are the protocol escrows — which carry the largest single powers.
+ */
+const GOV_VOTES: Record<string, number> = {
+  alice: 420,
+  bob: 180,
+  g1: 520,
+  g2: 460,
+  g3: 90,
+  g4: 215,
+  g5: 25,
+  g6: 360,
+  g7: 140,
+  g8: 570,
+  g9: 620,
+  g10: 480,
+  g11: 45,
+  g12: 60,
+  g13: 435,
+  x1: 1600, // e.g LST escrow
+  x2: 900, // reti escrow
+  x3: 500, // reti escrow
+}
+
+/**
+ * The two frac instances. Each one's AQ total is its escrows' combined gGov votes × 1000
+ * (`tinyman` 1600 → 1.6M, `reti` 900+500 → 1.4M) — a seed convention, not a system rule.
+ *
+ * Note the deliberate overlap with the committee: g1/g4 hold tALGO and g5 stakes in a Réti pool, so
+ * the gov and AQ-holder sets intersect without being the same set. u1..u10 are pure staking
+ * protocol users with no gGov voting power of their own.
+ */
+const INSTANCES = [
+  {
+    label: 'tinyman',
+    escrows: ['x1'],
+    aq: {
+      alice: 120_000,
+      carol: 85_000,
+      g1: 240_000,
+      g4: 60_000,
+      u1: 310_000,
+      u2: 145_000,
+      u3: 95_000,
+      u4: 260_000,
+      u5: 175_000,
+      u6: 110_000,
+    } as Record<string, number>,
+  },
+  {
+    label: 'reti',
+    escrows: ['x2', 'x3'],
+    aq: {
+      alice: 90_000,
+      carol: 130_000,
+      g5: 40_000,
+      u1: 210_000,
+      u2: 75_000,
+      u4: 165_000,
+      u6: 120_000,
+      u7: 280_000,
+      u8: 95_000,
+      u9: 115_000,
+      u10: 80_000,
+    } as Record<string, number>,
+  },
+]
+
+/**
+ * gGov account-level delegations: delegator → delegatee. Both sides are personas you can connect
+ * as: alice receives, bob hands his power over — a block producer who would rather a representative
+ * voted for him, which is the ordinary reason to delegate.
+ */
+const DELEGATIONS: [string, string][] = [
+  ['bob', 'alice'], // alice casts bob's ballot
+  ['g2', 'alice'], // g2 delegates but will vote directly
+]
+
+/**
+ * ALGO handed out per account class. Easy to setup and try different scenarios if needed.
+ * Escrows do not need funding on this setup.
+ *
+ * TODO: once instance MBR on-demand is implemented, this can be set to 0. For now, instances
+ * need explicit funding for per-period vote caches and every voter's record.
+ *
+ * TODO: same applies for period when the upfront payment for estimated voting MBR is implemented.
+ */
+const FUNDING = { deployer: 300, persona: 20, gov: 5, user: 5, instance: 10, period: 5 }
+
+/**
+ * A gGov ballot, one character per topic: Y = first option, N = second, A = last (abstain).
+ * `castBy` names the delegatee signing on the voter's behalf; absent means the voter signs itself.
+ */
+type Ballot = { voter: string; ballot: string; castBy?: string }
+
+/** An internal frac vote: same shorthand, weighted by the voter's AlgoQuarters in that instance. */
+type FracBallot = { voter: string; ballot: string; instance: string }
+
+/**
+ * Council candidates, shared by periods 1 and 2. Each is a Support/Against/Abstain ballot;
+ * candidates rank by net score (Support − Against) for the available seats.
+ */
+const CANDIDATE_TOPICS = [
+  { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
+  { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
+  { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
+  { title: 'reti.algo', body: 'Reti staking pool collective.' },
+  { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
+]
+
+/** Period 1: 11 of the 15 non-escrow members vote, shaped for a clean descending ranking. */
+const ENDED_BALLOTS: Ballot[] = [
+  { voter: 'alice', ballot: 'YYYYN' },
+  { voter: 'bob', ballot: 'YYYAN', castBy: 'alice' }, // delegated: alice votes bob's power for him
+  { voter: 'g2', ballot: 'YYNNA' }, // delegated to alice, votes directly anyway → alice locked out
+  { voter: 'g1', ballot: 'YYYYN' },
+  { voter: 'g3', ballot: 'YYNAN' },
+  { voter: 'g4', ballot: 'YYYNA' },
+  { voter: 'g5', ballot: 'YNNNY' },
+  { voter: 'g6', ballot: 'YYYNN' },
+  { voter: 'g7', ballot: 'YYANN' },
+  { voter: 'g8', ballot: 'YYYAN' },
+  { voter: 'g9', ballot: 'YNYNA' },
+]
+
+/** Period 1 frac votes: 670k of tinyman's 1.6M AQ and 525k of reti's 1.4M turn out; the rest abstains. */
+const ENDED_FRAC_BALLOTS: FracBallot[] = [
+  { instance: 'tinyman', voter: 'alice', ballot: 'YYYAN' },
+  { instance: 'tinyman', voter: 'g1', ballot: 'YYNYN' },
+  { instance: 'tinyman', voter: 'u1', ballot: 'YYYNA' },
+  { instance: 'reti', voter: 'carol', ballot: 'YYYYN' },
+  { instance: 'reti', voter: 'u7', ballot: 'YNYNA' },
+  { instance: 'reti', voter: 'u9', ballot: 'YYNAN' },
+]
+
+/**
+ * Period 2: only 7 direct voters so far, and bob's delegated power is untouched — connect as alice
+ * to cast his ballot for him, or as bob to override by voting directly.
+ */
+const ACTIVE_BALLOTS: Ballot[] = [
+  { voter: 'alice', ballot: 'YYYYN' },
+  { voter: 'g1', ballot: 'YYYYN' },
+  { voter: 'g2', ballot: 'YYYAN' },
+  { voter: 'g4', ballot: 'YYYNA' },
+  { voter: 'g6', ballot: 'YYNNA' },
+  { voter: 'g8', ballot: 'YNNNY' },
+  { voter: 'g9', ballot: 'YYYNN' },
+]
+
+/** Period 2 frac votes: tinyman has started, reti has not — carol's reti position is yours to cast. */
+const ACTIVE_FRAC_BALLOTS: FracBallot[] = [
+  { instance: 'tinyman', voter: 'alice', ballot: 'YYYYN' },
+  { instance: 'tinyman', voter: 'u1', ballot: 'YYYNA' },
+]
+
+// =========================================================
+// HELPERS
+// =========================================================
 
 /** Generate a random 8-byte note to deduplicate otherwise-identical transactions. */
 function randomNote(): Uint8Array {
   return new Uint8Array(randomBytes(8))
 }
 
-const LOCALNET_CONFIG = {
-  algodConfig: {
-    server: 'http://localhost',
-    port: 4001,
-    token: KMD_TOKEN,
-  },
-  indexerConfig: {
-    server: 'http://localhost',
-    port: 8980,
-    token: KMD_TOKEN,
-  },
-  kmdConfig: {
-    server: 'http://localhost',
-    port: 4002,
-    token: KMD_TOKEN,
-  },
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
+  return out
 }
 
-async function getKmdDefaultWalletHandle(kmd: any): Promise<string> {
+const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`
+const hex = (bytes: Uint8Array) =>
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+const num = (n: number) => n.toLocaleString('en-US')
+
+let stepNumber = 0
+/** The only progress output inside the pipeline: one line per step, because the run takes minutes. */
+const step = (label: string) => console.log(`[${String(++stepNumber).padStart(2, ' ')}/10] ${label}`)
+
+type SeedAccount = { label: string; address: string; sk: Uint8Array; mnemonic: string }
+
+/**
+ * Derive an account from its label alone, so the whole seed is reproducible: the same label always
+ * yields the same address, and its mnemonic can be imported into any wallet.
+ */
+function deterministicAccount(label: string): SeedAccount {
+  const seed = new Uint8Array(createHash('sha512-256').update(`${SEED_NAMESPACE}:${label}`).digest())
+  const mnemonic = algosdk.mnemonicFromSeed(seed)
+  const { addr, sk } = algosdk.mnemonicToSecretKey(mnemonic)
+  return { label, address: addr.toString(), sk, mnemonic }
+}
+
+async function getKmdDefaultWalletHandle(kmd: Kmd): Promise<string> {
   const { wallets } = await kmd.listWallets()
-  const defaultWallet = wallets.find((w: any) => w.name === 'unencrypted-default-wallet')
+  const defaultWallet = wallets.find((w: { id: string; name: string }) => w.name === 'unencrypted-default-wallet')
   if (!defaultWallet) throw new Error('Could not find unencrypted-default-wallet in KMD')
   const { wallet_handle_token } = await kmd.initWalletHandle(defaultWallet.id, '')
   return wallet_handle_token
 }
 
-async function getKmdAccounts(kmd: any, walletHandle: string): Promise<string[]> {
-  const { addresses } = await kmd.listKeys(walletHandle)
-  return addresses as string[]
-}
-
-/** Export a private key from KMD and register the signer with AlgorandClient. */
-async function registerKmdAccount(kmd: any, walletHandle: string, address: string, algorand: any): Promise<void> {
-  const { private_key } = await kmd.exportKey(walletHandle, '', address)
-  const account = algosdk.mnemonicToSecretKey(algosdk.secretKeyToMnemonic(private_key))
-  algorand.account.setSignerFromAccount(account)
+/** Create a single-account KMD wallet, or top up an existing one (a localnet reset usually clears these). */
+async function createPersonaWallet(kmd: Kmd, name: string, password: string, account: SeedAccount): Promise<void> {
+  const { wallets } = await kmd.listWallets()
+  const existing = wallets.find((w: { id: string; name: string }) => w.name === name)
+  const walletId = existing?.id ?? (await kmd.createWallet(name, password)).wallet.id
+  const { wallet_handle_token: handle } = await kmd.initWalletHandle(walletId, password)
+  // A wallet with no keys yet omits `addresses` from the response entirely.
+  const addresses: string[] = (await kmd.listKeys(handle)).addresses ?? []
+  if (!addresses.includes(account.address)) await kmd.importKey(handle, account.sk)
+  await kmd.releaseWalletHandle(handle)
 }
 
 async function main() {
-  // ── Reset localnet ──────────────────────────────────────────────────
-  console.log('Resetting localnet...')
+  // =========================================================
+  // 1. RESET & ACCOUNTS
+  // =========================================================
+
+  step('Resetting LocalNet…')
   execSync('algokit localnet reset', { stdio: 'inherit' })
-  // Give localnet a moment to come back up
-  await new Promise((r) => setTimeout(r, 3000))
+  await new Promise((r) => setTimeout(r, 3000)) // give localnet a moment to come back up
 
-  console.log('Connecting to localnet...')
-  const algorand = AlgorandClient.fromConfig(LOCALNET_CONFIG)
+  const algorand = AlgorandClient.defaultLocalNet()
+  const kmd = algorand.client.kmd
+  const network = await algorand.client.network()
 
-  // Set up KMD client and get existing accounts from default wallet
-  const kmd = new algosdk.Kmd(KMD_TOKEN, 'http://localhost', 4002)
-  const walletHandle = await getKmdDefaultWalletHandle(kmd)
-  const kmdAddresses = await getKmdAccounts(kmd, walletHandle)
-  console.log(`Found ${kmdAddresses.length} accounts in KMD default wallet`)
-
-  // Get the default localnet dispenser account
   const dispenser = await algorand.account.localNetDispenser()
-  const dispenserAddr = dispenser.addr.toString()
-  console.log(`Dispenser: ${dispenserAddr}`)
+  const dispenserAddress = dispenser.addr.toString()
 
-  // Use the first non-dispenser KMD account as deployer
-  const nonDispenserAccounts = kmdAddresses.filter((a: string) => a !== dispenserAddr)
-  if (nonDispenserAccounts.length < 1) {
-    throw new Error(`Need at least 1 non-dispenser KMD account for deployer, found ${nonDispenserAccounts.length}`)
+  const govLabels = Object.keys(GOV_VOTES)
+  const escrowLabels = INSTANCES.flatMap((i) => i.escrows)
+  const aqHoldersLabels = [...new Set(INSTANCES.flatMap((i) => Object.keys(i.aq)))]
+  const allLabels = [...new Set([...PERSONAS, ...govLabels, ...aqHoldersLabels])]
+
+  // Derive every account up front and register its signer, so any of them can sign later.
+  const accounts = new Map<string, SeedAccount>()
+  for (const label of allLabels) {
+    const account = deterministicAccount(label)
+    accounts.set(label, account)
+    algorand.account.setSignerFromAccount(algosdk.mnemonicToSecretKey(account.mnemonic))
+  }
+  /** Label → address. Everything downstream resolves accounts by label. */
+  const addr = (label: string) => accounts.get(label)!.address
+  const deployer = addr('deployer')
+
+  // Shape the default wallet: drop the pre-seeded genesis keys other than the dispenser (their ALGO
+  // stays on chain, we just stop showing them in the frontend's account switcher), then import the
+  // four personas so a single connect exposes exactly them.
+  const defaultHandle = await getKmdDefaultWalletHandle(kmd)
+  const preSeeded: string[] = (await kmd.listKeys(defaultHandle)).addresses ?? []
+  for (const a of preSeeded) if (a !== dispenserAddress) await kmd.deleteKey(defaultHandle, '', a)
+  for (const label of PERSONAS) await kmd.importKey(defaultHandle, accounts.get(label)!.sk)
+  await kmd.releaseWalletHandle(defaultHandle)
+
+  // …plus one isolated wallet per persona, to see how the UI reads for a single-account holder.
+  for (const [label, wallet] of Object.entries(PERSONA_WALLETS)) {
+    await createPersonaWallet(kmd, wallet, PERSONA_WALLET_PASSWORD, accounts.get(label)!)
   }
 
-  const deployerAddr = nonDispenserAccounts[0]
-  console.log(`Deployer: ${deployerAddr}`)
+  // =========================================================
+  // 2. FUNDING
+  // =========================================================
 
-  // Register deployer signer from KMD
-  await registerKmdAccount(kmd, walletHandle, deployerAddr, algorand)
+  step('Funding accounts…')
 
-  // Fund deployer (pays registry + 3 period MBRs, vote-record boxes, and its own votes)
-  await algorand.send.payment({
-    sender: dispenser.addr,
-    receiver: deployerAddr,
-    amount: (300 as any).algo(),
-  })
+  const fundingPlan: { label: string; algos: number }[] = [
+    { label: 'deployer', algos: FUNDING.deployer },
+    ...['alice', 'bob', 'carol'].map((label) => ({ label, algos: FUNDING.persona })),
+    // Personas are funded above; escrows never sign anything and the registry pays their delegation
+    // MBR, so they need no balance at all.
+    ...govLabels
+      .filter((l) => !PERSONAS.includes(l) && !escrowLabels.includes(l))
+      .map((label) => ({ label, algos: FUNDING.gov })),
+    // Every AQ holder gets ALGO even if this seed never votes with it, so any of them can be
+    // imported by mnemonic and used to cast an internal vote by hand.
+    ...aqHoldersLabels
+      .filter((l) => !PERSONAS.includes(l) && !govLabels.includes(l))
+      .map((label) => ({ label, algos: FUNDING.user })),
+  ]
 
-  // ── Deploy GGovRegistry contract ──────────────────────────────────
+  for (const batch of chunk(fundingPlan, 15)) {
+    let group = algorand.newGroup()
+    for (const { label, algos } of batch) {
+      group = group.addPayment({ sender: dispenser.addr, receiver: addr(label), amount: algo(algos) })
+    }
+    await group.send()
+  }
 
-  console.log('\nDeploying GGovRegistry contract via GGovRegistrySDK.createRegistry()...')
-  const { appClient } = await GGovRegistrySDK.createRegistry({
+  // =========================================================
+  // 3. REGISTRIES
+  // =========================================================
+
+  step('Deploying registries…')
+
+  const deployerAccount = { sender: deployer, signer: algorand.account.getSigner(deployer) }
+
+  const { appClient: gGovRegistryApp } = await GGovRegistrySDK.createRegistry({
     algorand,
-    deployer: {
-      sender: deployerAddr,
-      signer: algorand.account.getSigner(deployerAddr),
-    },
-    operatorAccount: deployerAddr,
+    deployer: deployerAccount,
+    operatorAccount: deployer,
     initialFundingAlgos: 50n,
   })
-  // Combined SDK for period ops; registry ops go through sdk.registry.
-  const sdk = new GGovSDK({
+  const { appClient: fracRegistryApp } = await FracDelegationRegistrySDK.createRegistry({
     algorand,
-    registryAppId: appClient.appId,
-    writerAccount: { sender: deployerAddr, signer: algorand.account.getSigner(deployerAddr) },
+    deployer: deployerAccount,
+    defaultOperatorAccount: deployer,
+    gGovRegistryAppId: gGovRegistryApp.appId, // frac → gGov, wired at deploy time
+    initialFundingAlgos: 50n,
   })
-  const appId = appClient.appId
-  console.log(`GGovRegistry deployed! App ID: ${appId}`)
-  console.log(`App address: ${appClient.appAddress}`)
-  console.log('Operator set to deployer')
 
-  // ── Generate 5 external committee accounts (B..F) ──────────────────
-  // These are standalone accounts (NOT added to the KMD wallet) so that, when the
-  // dev connects the deployer A in the frontend, the accounts that delegate to A
-  // (B, C) read as external delegators — "Delegated to you" / "Voted directly" —
-  // rather than the wallet's own accounts. Their signers are auto-registered.
+  const sdk = new GGovSDK({ algorand, registryAppId: gGovRegistryApp.appId, writerAccount: deployerAccount })
+  const fracSdk = new FracDelegationSDK({
+    algorand,
+    registryAppId: fracRegistryApp.appId,
+    writerAccount: deployerAccount,
+  })
 
-  console.log('\nGenerating 5 external committee accounts (B..F)...')
-  const generatedAddresses: string[] = []
-  for (let i = 0; i < 5; i++) {
-    const acct = algorand.account.random()
-    generatedAddresses.push(acct.addr.toString())
-    console.log(`  Generated account ${i + 1}: ${acct.addr.toString().slice(0, 12)}...`)
-  }
+  await sdk.registry.setFracRegistryApp({ appId: fracRegistryApp.appId }) // gGov → frac, wire the other direction
 
-  // Deployer (A, in the KMD wallet) + 5 external accounts (B..F) as committee
-  // members, with distinct power so council scores spread and the cutoff is clear.
-  const memberAddresses = [deployerAddr, ...generatedAddresses]
-  const memberVotes = [200, 150, 120, 90, 60, 30]
-  console.log(`\nUsing ${memberAddresses.length} accounts as committee members:`)
+  /** The same SDKs bound to another signer, for votes and delegations cast by non-deployer accounts. */
+  const voterSdk = (label: string) =>
+    new GGovSDK({
+      algorand,
+      registryAppId: gGovRegistryApp.appId,
+      writerAccount: { sender: addr(label), signer: algorand.account.getSigner(addr(label)) },
+    })
+  const fracVoterSdk = (label: string) =>
+    new FracDelegationSDK({
+      algorand,
+      registryAppId: fracRegistryApp.appId,
+      writerAccount: { sender: addr(label), signer: algorand.account.getSigner(addr(label)) },
+    })
 
-  for (let i = 0; i < memberAddresses.length; i++) {
-    const addr = memberAddresses[i]
-    const role = addr === deployerAddr ? ' (admin/operator, KMD wallet)' : ' (external)'
-    // Fund every non-deployer member enough to vote (a multi-topic vote must clear
-    // the ~643_210 µAlgo opcode-budget pre-sim bar).
-    if (addr !== deployerAddr) {
-      await algorand.send.payment({
-        sender: dispenser.addr,
-        receiver: addr,
-        amount: (20 as any).algo(),
-        note: randomNote(),
-      })
-    }
-    console.log(`  Member${i + 1}: ${addr.slice(0, 12)}... (${memberVotes[i]} votes)${role}`)
-  }
+  // =========================================================
+  // 4. GGOV COMMITTEE
+  // =========================================================
+
+  step('Uploading committee file…')
 
   const committeeFile: GGovCommitteeFile = {
-    networkGenesisHash: 'wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=',
-    periodStart: 50000000,
-    periodEnd: 53000000,
-    registryId: 0,
-    totalMembers: memberAddresses.length,
-    totalVotes: memberVotes.reduce((a: number, b: number) => a + b, 0),
-    govs: memberAddresses.map((addr: string, i: number) => ({
-      address: addr,
-      votes: memberVotes[i],
-    })),
+    networkGenesisHash: network.genesisHash,
+    periodStart: COMMITTEE_PERIOD_START,
+    periodEnd: COMMITTEE_PERIOD_END,
+    registryId: Number(gGovRegistryApp.appId),
+    totalMembers: govLabels.length,
+    totalVotes: Object.values(GOV_VOTES).reduce((a, b) => a + b, 0),
+    govs: govLabels.map((label) => ({ address: addr(label), votes: GOV_VOTES[label] })),
+  }
+  const committeeId = (await sdk.registry.uploadCommitteeFile(committeeFile)) as Uint8Array
+
+  // =========================================================
+  // 5. INSTANCES & ALGOQUARTERS
+  // =========================================================
+
+  step('Creating frac-delegation instances and uploading AQ files…')
+
+  const instanceNumIds = new Map<string, bigint>()
+  const instanceAppIds = new Map<string, bigint>()
+
+  for (const instance of INSTANCES) {
+    // Only 1 ALGO for MBR payment, as will use `uploadAqFile`'s `autoFund` feature.
+    const instanceNumId = await fracSdk.registry.addInstance({ name: instance.label, mbrAmount: 1e6 })
+    const appId = await fracSdk.getInstanceAppId(instanceNumId)
+    instanceNumIds.set(instance.label, instanceNumId)
+    instanceAppIds.set(instance.label, appId)
+
+    for (const escrow of instance.escrows) {
+      await fracSdk.registry.registerEscrow({ instanceNumId, account: addr(escrow) })
+    }
+
+    const rows = Object.entries(instance.aq)
+    const aqFile: AlgoQuartersFile = {
+      networkGenesisHash: network.genesisHash,
+      protocol: instance.label,
+      periodStart: COMMITTEE_PERIOD_START,
+      periodEnd: COMMITTEE_PERIOD_END,
+      totalAccounts: rows.length,
+      totalAlgoQuarters: rows.reduce((sum, [, aq]) => sum + aq, 0).toString(),
+      // The AQ pipeline emits its rows sorted ascending by address; mirror that.
+      accounts: rows
+        .map(([label, aq]) => ({ account: addr(label), algoQuarters: aq.toString() }))
+        .sort((a, b) => (a.account < b.account ? -1 : 1)),
+    }
+    // syncCommittee → startAqIngest → ingestAq, in one call.
+    await fracSdk.uploadAqFile({ instanceNumId, committeeId, aqFile, autoFund: true })
+
+    // TODO: remove once instance on-demand MBR is implemented. See `FUNDING` for more details.
+    await algorand.send.payment({
+      sender: deployer,
+      receiver: algosdk.getApplicationAddress(appId).toString(),
+      amount: algo(FUNDING.instance),
+      note: randomNote(),
+    })
   }
 
-  console.log('Uploading committee file...')
-  const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile)
-  const committeeHex = Array.from(committeeId as Uint8Array)
-    .map((b: number) => b.toString(16).padStart(2, '0'))
-    .join('')
-  console.log(`Committee ID: ${committeeHex}`)
+  // Point every escrow's gGov delegation at the instance it belongs to.
+  await sdk.registry.importFracDelegationsAll({ escrowAccounts: escrowLabels.map(addr) })
 
-  // Release KMD wallet handle (signers are already registered with AlgorandClient).
-  await kmd.releaseWalletHandle(walletHandle)
+  // =========================================================
+  // 6. DELEGATIONS
+  // =========================================================
 
-  // ── Session helpers ────────────────────────────────────────────────
+  step('Setting gGov delegations…')
+
+  for (const [delegator, delegatee] of DELEGATIONS) {
+    await voterSdk(delegator).registry.setVotingAccount({ votingAddress: addr(delegatee) })
+  }
+
+  // =========================================================
+  // PERIOD HELPERS
+  // =========================================================
 
   const now = BigInt(Math.floor(Date.now() / 1000))
-  const [A, B, C, D, E, F] = memberAddresses
-  const [pA, pB, pC, pD, pE, pF] = memberVotes
 
-  // Per-voter SDK (writer = that account); reuse the main `sdk` for the deployer A
-  // (used both for A's own votes and for A casting a delegator's ballot).
-  const voterSdk = (addr: string) =>
-    addr === deployerAddr
-      ? sdk
-      : new GGovSDK({
-          algorand,
-          registryAppId: appId,
-          writerAccount: { sender: addr, signer: algorand.account.getSigner(addr) },
-        })
-
-  // Create a period: future window first (so topics can be added), upload body
-  // (with electSeats for a council election), add topics, then set the real
-  // window and mark ready.
-  async function createPeriod(opts: {
+  /**
+   * Create a period end to end: open a future window first (so topics can be added), upload the body
+   * — with `electSeats` for a council election — add the topics, set the real window, mark it ready,
+   * fund its vote-record boxes, and sync it on both frac-delegation instances.
+   */
+  async function createPeriodHelper(opts: {
     title: string
     body: string
     electSeats?: number
@@ -248,139 +575,139 @@ async function main() {
         ...(opts.electSeats !== undefined ? { electSeats: opts.electSeats } : {}),
       },
     })
-    for (const t of opts.topics) {
-      const topicIndex = (await sdk.addTopic({
+    for (const topic of opts.topics) {
+      // addTopicWithBody packs addTopic + the body chunks into one atomic, single-signature group.
+      // Election candidates are always Support/Against/Abstain (mirroring the Manage UI); standard
+      // topics use their own options. Either way Abstain is last, as frac voting requires.
+      await sdk.addTopicWithBody({
         periodId,
-        // Election candidates are fixed Support / Against / Abstain ballots (mirrors the
-        // Manage UI), so the election ballot always wins over any per-topic override;
-        // standard-vote topics use their `options` or default to Yes / No / Abstain.
         options:
-          opts.electSeats !== undefined ? ['Support', 'Against', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
+          opts.electSeats !== undefined
+            ? ['Support', 'Against', 'Abstain']
+            : (topic.options ?? ['Yes', 'No', 'Abstain']),
+        body: { title: topic.title, body: topic.body },
         note: randomNote(),
-      })) as bigint
-      await sdk.uploadTopicBody({ periodId, topicIndex, body: { title: t.title, body: t.body } })
+      })
     }
     await sdk.editPeriod({ periodId, committeeId, votingStart: opts.votingStart, votingEnd: opts.votingEnd })
     await sdk.setReady({ periodId, ready: true })
+
+    // The period app pays MBR for one vote-record box per voter, so needs funding.
+    // TODO: this extra payment won't be needed in the future. See `FUNDING`.
+    const periodAppId = await sdk.getPeriodAppId(periodId)
+    await algorand.send.payment({
+      sender: deployer,
+      receiver: algosdk.getApplicationAddress(periodAppId).toString(),
+      amount: algo(FUNDING.period),
+      note: randomNote(),
+    })
+
+    // Snapshot the now-ready period on both instances. Without this an instance's vote() has nothing to write into (ERR:GP_NX).
+    for (const instance of INSTANCES) {
+      await fracSdk.syncPeriod({ instanceNumId: instanceNumIds.get(instance.label)!, periodApp: periodAppId })
+    }
     return periodId
   }
 
-  // Fund a period app for per-voter vote-record boxes (3 ALGO covers our committee).
-  async function fundPeriodForVotes(periodId: bigint) {
-    const periodAppId = await sdk.getPeriodAppId(periodId)
-    const periodAppAddr = algosdk.getApplicationAddress(periodAppId).toString()
-    await algorand.send.payment({
-      sender: deployerAddr,
-      receiver: periodAppAddr,
-      amount: (3 as any).algo(),
-      note: randomNote(),
-    })
+  /** One-hot row: the voter's full weight on the chosen option. Y → first, N → second, A → last. */
+  const oneHot = (choice: string, weight: number, options: number) => {
+    const index = choice === 'Y' ? 0 : choice === 'N' ? 1 : options - 1
+    return Array.from({ length: options }, (_, i) => (i === index ? weight : 0))
   }
 
-  // One-hot ballot row: full voting power on the chosen option. The Y/N/A shorthand selects
-  // option index 0/1/2 — for these elections that's Support/Against/Abstain (Y→Support, N→Against).
-  const oneHot = (choice: string, power: number): number[] => {
-    const idx = choice === 'Y' ? 0 : choice === 'N' ? 1 : 2
-    return [0, 1, 2].map((i) => (i === idx ? power : 0))
+  /** Cast gGov ballots with each voter's committee voting power, signed by the voter or its delegatee. */
+  async function castBallots(periodId: bigint, ballots: Ballot[]) {
+    for (const { voter, ballot, castBy } of ballots) {
+      const topicVotes = ballot.split('').map((c) => oneHot(c, GOV_VOTES[voter], 3))
+      await voterSdk(castBy ?? voter).vote({ periodId, voterAccount: addr(voter), topicVotes, note: randomNote() })
+    }
   }
 
-  // Cast `choices` (one per topic) for `voter` with `power`. `castBy` is the signer:
-  // the voter itself (direct) or its delegatee (delegated vote).
-  async function castBallot(periodId: bigint, voter: string, power: number, choices: string[], castBy: string) {
-    const topicVotes = choices.map((c) => oneHot(c, power))
-    await voterSdk(castBy).vote({ periodId, voterAccount: voter, topicVotes, note: randomNote() })
+  /**
+   * Cast internal frac-delegation ballots weighted by each voter's AQ. The instance maps its internal
+   * tally onto its escrows' gGov power and re-casts externally inside the same call; AQ that never vote
+   * land on the last option.
+   */
+  async function castFracBallots(periodId: bigint, ballots: FracBallot[]) {
+    for (const { instance, voter, ballot } of ballots) {
+      const aq = INSTANCES.find((i) => i.label === instance)!.aq[voter]
+      const topicVotes = ballot.split('').map((c) => oneHot(c, aq, 3))
+      await fracVoterSdk(voter).vote({
+        instanceNumId: instanceNumIds.get(instance)!,
+        periodId,
+        topicVotes,
+        note: randomNote(),
+      })
+    }
   }
 
-  // Global (registry-level) voting-power delegation: `delegator` → `delegatee`.
-  async function delegate(delegator: string, delegatee: string) {
-    await voterSdk(delegator).registry.setVotingAccount({ votingAddress: delegatee })
-  }
+  // =========================================================
+  // 7. PERIOD 1 — ENDED council election
+  // =========================================================
 
-  // ── Delegations (global; apply to every period) ────────────────────
-  console.log('\nSetting delegations: B→A (delegated), C→A (votes directly)...')
-  await delegate(B, A) // B delegates to A; A will cast B's ballot
-  await delegate(C, A) // C delegates to A but votes directly → locked ("Voted directly")
+  // The contract blocks editPeriod once a period is `ready` (and voting requires ready), and
+  // setReady(false) is blocked once votes exist — so a voted period can't be backdated. Instead give
+  // it a short window, cast within it, then let wall-clock pass votingEnd; the frontend derives
+  // "ended" from votingEnd vs now.
+  step('Period 1 — ENDED council election…')
 
-  // Council candidates (5), shared by the past and active elections. Each is a
-  // Support/Against/Abstain ballot; candidates rank by net score (Support − Against) for the seats.
-  const candidateTopics = [
-    { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
-    { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
-    { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
-    { title: 'reti.algo', body: 'Reti staking pool collective.' },
-    { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
-  ]
-
-  // ── 1) ENDED (past) council election ───────────────────────────────
-  // The contract blocks editPeriod once a period is `ready` (and voting requires
-  // ready), and setReady(false) is blocked once votes exist — so a voted period
-  // can't be backdated. Instead give it a short window, cast within it, then let
-  // wall-clock pass votingEnd; the frontend derives "ended" from votingEnd vs now.
-  console.log('\nCreating ENDED council election (id 1; 3 seats, 5 candidates)...')
-  const endedStart = BigInt(Math.floor(Date.now() / 1000))
-  const endedVotingEnd = endedStart + 90n // short window: cast within it, then it lapses
-  const endedId = await createPeriod({
+  const endedVotingStart = BigInt(Math.floor(Date.now() / 1000))
+  const endedVotingEnd = endedVotingStart + BigInt(ENDED_VOTING_WINDOW_SECONDS)
+  const endedPeriodId = await createPeriodHelper({
     title: 'gGov Council — Term 1 election',
     body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
     electSeats: 3,
-    topics: candidateTopics,
-    votingStart: endedStart - 3600n,
+    topics: CANDIDATE_TOPICS,
+    votingStart: endedVotingStart - 3600n,
     votingEnd: endedVotingEnd,
   })
-  await fundPeriodForVotes(endedId)
-  // Ballots per candidate [c0..c4], designed for a descending ranking with one negative.
-  const endedBallots: Record<string, string[]> = {
-    [A]: ['Y', 'Y', 'Y', 'Y', 'N'],
-    [B]: ['Y', 'Y', 'Y', 'A', 'N'],
-    [C]: ['Y', 'Y', 'Y', 'N', 'A'],
-    [D]: ['Y', 'Y', 'N', 'N', 'A'],
-    [E]: ['Y', 'N', 'N', 'N', 'Y'],
-    [F]: ['Y', 'N', 'N', 'Y', 'N'],
+  try {
+    await castBallots(endedPeriodId, ENDED_BALLOTS)
+    await castFracBallots(endedPeriodId, ENDED_FRAC_BALLOTS)
+  } catch (err) {
+    if (Math.floor(Date.now() / 1000) < Number(endedVotingEnd)) throw err
+    throw Object.assign(
+      new Error(
+        `Period 1's voting window (${ENDED_VOTING_WINDOW_SECONDS}s) closed before its ballots were cast. ` +
+          `Raise ENDED_VOTING_WINDOW_SECONDS. Original error: ${(err as Error).message}`,
+      ),
+      { cause: err },
+    )
   }
-  await castBallot(endedId, A, pA, endedBallots[A], A)
-  await castBallot(endedId, B, pB, endedBallots[B], A) // delegated: A casts for B
-  await castBallot(endedId, C, pC, endedBallots[C], C) // direct (delegation locked)
-  await castBallot(endedId, D, pD, endedBallots[D], D)
-  await castBallot(endedId, E, pE, endedBallots[E], E)
-  await castBallot(endedId, F, pF, endedBallots[F], F)
+
   // Wait for the voting window to lapse so the period reads as ENDED in the UI.
   const waitMs = Number(endedVotingEnd) * 1000 + 2000 - Date.now()
   if (waitMs > 0) {
-    console.log(`  Waiting ${Math.ceil(waitMs / 1000)}s for the voting window to close...`)
+    console.log(`        Waiting ${Math.ceil(waitMs / 1000)}s for the voting window to close…`)
     await new Promise((r) => setTimeout(r, waitMs))
   }
-  console.log(`Council election period #${endedId} is ENDED with votes cast`)
 
-  // ── 2) ACTIVE council election ─────────────────────────────────────
-  console.log('\nCreating ACTIVE council election (id 2; 3 seats, 5 candidates)...')
-  const activeId = await createPeriod({
+  // =========================================================
+  // 8. PERIOD 2 — ACTIVE council election
+  // =========================================================
+
+  step('Period 2 — ACTIVE council election…')
+
+  const activePeriodId = await createPeriodHelper({
     title: 'gGov Council — Term 2 election',
     body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 lead for the available seats.',
     electSeats: 3,
-    topics: candidateTopics,
+    topics: CANDIDATE_TOPICS,
     votingStart: now - 3600n,
     votingEnd: now + 86400n * 7n,
   })
-  await fundPeriodForVotes(activeId)
-  const activeBallots: Record<string, string[]> = {
-    [A]: ['Y', 'Y', 'Y', 'Y', 'N'],
-    [B]: ['Y', 'Y', 'Y', 'Y', 'N'],
-    [C]: ['Y', 'Y', 'Y', 'A', 'N'],
-    [D]: ['Y', 'Y', 'Y', 'N', 'A'],
-    [E]: ['Y', 'Y', 'N', 'N', 'A'],
-    [F]: ['Y', 'N', 'N', 'N', 'Y'],
-  }
-  await castBallot(activeId, A, pA, activeBallots[A], A)
-  await castBallot(activeId, B, pB, activeBallots[B], A) // delegated: A casts for B
-  await castBallot(activeId, C, pC, activeBallots[C], C) // direct
-  await castBallot(activeId, D, pD, activeBallots[D], D)
-  await castBallot(activeId, E, pE, activeBallots[E], E)
-  await castBallot(activeId, F, pF, activeBallots[F], F)
-  console.log(`Council election period #${activeId} is ACTIVE with votes cast`)
+  await castBallots(activePeriodId, ACTIVE_BALLOTS)
+  await castFracBallots(activePeriodId, ACTIVE_FRAC_BALLOTS)
 
-  // ── 3) UPCOMING (future) standard period ───────────────────────────
-  console.log('\nCreating UPCOMING standard period (id 3)...')
-  const upcomingId = await createPeriod({
+  // =========================================================
+  // 9. PERIOD 3 — UPCOMING standard vote
+  // =========================================================
+
+  // Ready and pre-synced by both instances (the realistic operator sequence), but unvoted — the
+  // first vote of either kind would lock it against further editing.
+  step('Period 3 — UPCOMING standard vote…')
+
+  const upcomingPeriodId = await createPeriodHelper({
     title: 'Q2 2026 Governance',
     body: 'Upcoming governance period covering protocol upgrades and ecosystem strategy.',
     topics: [
@@ -393,39 +720,151 @@ async function main() {
     votingStart: now + 86400n * 14n,
     votingEnd: now + 86400n * 28n,
   })
-  console.log(`Standard period #${upcomingId} is UPCOMING (starts in 14 days)`)
 
-  // ── Update .env with app ID ───────────────────────────────────────
+  // =========================================================
+  // 10. OUTPUT
+  // =========================================================
 
-  const envPath = path.resolve(__dirname, '../.env')
-  if (fs.existsSync(envPath)) {
-    let envContent = fs.readFileSync(envPath, 'utf-8')
-    envContent = envContent.replace(/VITE_GGOV_(REGISTRY_)?APP_ID=.*/, `VITE_GGOV_REGISTRY_APP_ID=${appId}`)
-    fs.writeFileSync(envPath, envContent)
-    console.log(`\n.env updated: VITE_GGOV_REGISTRY_APP_ID=${appId}`)
-  } else {
-    console.log(`\nNo .env found at ${envPath}. Set VITE_GGOV_REGISTRY_APP_ID=${appId} manually.`)
+  step('Verifying and writing output…')
+
+  // gGov demands a voter's full power on every topic, so each topic of period 1 must tally to the
+  // direct voters' power plus every escrow's — members who never voted contribute nothing. The
+  // escrow half only lands if both instances mapped their internal tallies out to gGov.
+  const directVotes = ENDED_BALLOTS.reduce((sum, b) => sum + GOV_VOTES[b.voter], 0)
+  const escrowVotes = escrowLabels.reduce((sum, label) => sum + GOV_VOTES[label], 0)
+  const endedPeriod = await sdk.getPeriod(endedPeriodId)
+  for (const [i, [, votes]] of endedPeriod.topics.entries()) {
+    const tallied = votes.reduce((a, b) => a + b, 0)
+    if (tallied !== directVotes + escrowVotes) {
+      throw new Error(
+        `Period ${endedPeriodId} topic ${i}: ${tallied} votes tallied, expected ${directVotes + escrowVotes} ` +
+          `(${directVotes} direct + ${escrowVotes} re-cast by escrows).`,
+      )
+    }
   }
 
-  // ── Summary ───────────────────────────────────────────────────────
+  const envPath = path.resolve(__dirname, '../.env')
+  const envWritten = fs.existsSync(envPath)
+  if (envWritten) {
+    let env = fs.readFileSync(envPath, 'utf-8')
+    env = env.replace(/VITE_GGOV_(REGISTRY_)?APP_ID=.*/, `VITE_GGOV_REGISTRY_APP_ID=${gGovRegistryApp.appId}`)
+    env = env.replace(/VITE_FRAC_REGISTRY_APP_ID=.*/, `VITE_FRAC_REGISTRY_APP_ID=${fracRegistryApp.appId}`)
+    fs.writeFileSync(envPath, env)
+  }
 
-  console.log('\n=== Deployment Summary ===')
-  console.log(`App ID:        ${appId}`)
-  console.log(`App Address:   ${appClient.appAddress}`)
-  console.log(`Operator:      ${deployerAddr}`)
-  console.log(`Committee:     ${committeeHex.slice(0, 16)}... (${memberAddresses.length} members)`)
-  console.log(`Period #${endedId}:  ENDED council election (3 seats, 5 candidates, votes + delegations)`)
-  console.log(`Period #${activeId}:  ACTIVE council election (3 seats, 5 candidates, votes cast)`)
-  console.log(`Period #${upcomingId}:  UPCOMING standard vote (2 topics, starts in 14 days)`)
-  console.log(`\nDelegations: B→A (delegated to you), C→A (voted directly).`)
-  console.log('Connect as the deployer/operator account below to see the voting record + your votes:')
-  console.log(`  ${deployerAddr}`)
-  console.log(`\nCommittee members (${memberAddresses.length} total; A is in the KMD wallet, B..F are external):`)
-  memberAddresses.forEach((addr: string, i: number) => {
-    const label = addr === deployerAddr ? 'A (admin/operator, KMD wallet)' : `${String.fromCharCode(65 + i)} (external)`
-    console.log(`  Member${i + 1}: ${addr.slice(0, 12)}... (${memberVotes[i]} votes) — ${label}`)
-  })
-  console.log('\nReady! Run: cd projects/ggov-frontend && pnpm dev')
+  /** What the seed made an account responsible for, as greppable tags. */
+  const rolesOf = (label: string) => [
+    ...(label === 'deployer' ? ['admin+operator'] : []),
+    ...(GOV_VOTES[label] !== undefined ? [`gov:${GOV_VOTES[label]}`] : []),
+    ...INSTANCES.flatMap((i) => [
+      ...(i.escrows.includes(label) ? [`escrow:${i.label}`] : []),
+      ...(i.aq[label] !== undefined ? [`aq:${i.label}:${i.aq[label]}`] : []),
+    ]),
+    ...DELEGATIONS.filter(([from]) => from === label).map(([, to]) => `delegates-to:${to}`),
+    ...DELEGATIONS.filter(([, to]) => to === label).map(([from]) => `delegatee-of:${from}`),
+  ]
+
+  const manifestPath = path.resolve(__dirname, '../.localnet-seed.json')
+  fs.writeFileSync(
+    manifestPath,
+    `${JSON.stringify(
+      {
+        gGovRegistryAppId: Number(gGovRegistryApp.appId),
+        fracRegistryAppId: Number(fracRegistryApp.appId),
+        committeeId: hex(committeeId),
+        instances: Object.fromEntries(
+          INSTANCES.map((i) => [
+            i.label,
+            { numId: Number(instanceNumIds.get(i.label)!), appId: Number(instanceAppIds.get(i.label)!) },
+          ]),
+        ),
+        periods: { ended: Number(endedPeriodId), active: Number(activePeriodId), upcoming: Number(upcomingPeriodId) },
+        // `wallet` is the persona's standalone KMD wallet, absent for the external accounts.
+        accounts: Object.fromEntries(
+          allLabels.map((label) => [
+            label,
+            {
+              address: addr(label),
+              mnemonic: accounts.get(label)!.mnemonic,
+              wallet: PERSONA_WALLETS[label],
+              roles: rolesOf(label),
+            },
+          ]),
+        ),
+      },
+      null,
+      2,
+    )}\n`,
+  )
+
+  /** What each persona is for, in one line — the point of connecting as it. */
+  const personaNotes: Record<string, string> = {
+    deployer: 'admin + operator — unlocks the Manage UI',
+    alice: 'gov · delegatee of bob, g2 · AQ in both instances',
+    bob: "gov · delegated to alice · the delegator's view",
+    carol: 'AQ only, no gGov voting power',
+  }
+
+  // Rows print into a fixed label gutter, so how this source is indented no longer decides how the
+  // output lines up — which is exactly what one long template literal cannot give you.
+  const out: string[] = []
+  const section = (label: string, ...rows: string[]) => {
+    rows.forEach((row, i) => out.push((i === 0 ? label : '').padEnd(13) + row))
+    out.push('')
+  }
+
+  const escrowShare = Math.round((escrowVotes / committeeFile.totalVotes) * 100)
+
+  section(
+    'REGISTRIES',
+    `gGov  ${gGovRegistryApp.appId}  ${gGovRegistryApp.appAddress}`,
+    `frac  ${fracRegistryApp.appId}  ${fracRegistryApp.appAddress}`,
+    'deployer is admin + operator of both',
+  )
+  section(
+    'COMMITTEE',
+    `0x${hex(committeeId).slice(0, 16)}…`,
+    `${committeeFile.totalMembers} members · ${num(committeeFile.totalVotes)} votes · rounds ${num(COMMITTEE_PERIOD_START)}–${num(COMMITTEE_PERIOD_END)}`,
+    `${escrowLabels.length} protocol escrows hold ${num(escrowVotes)} of those votes (${escrowShare}%)`,
+  )
+  section(
+    'INSTANCES',
+    ...INSTANCES.map(
+      (i) =>
+        `#${instanceNumIds.get(i.label)} ${i.label.padEnd(8)} app ${instanceAppIds.get(i.label)}  ` +
+        `escrows ${i.escrows.join(',').padEnd(6)}  ${num(Object.values(i.aq).reduce((a, b) => a + b, 0))} AQ ` +
+        `over ${Object.keys(i.aq).length} accounts`,
+    ),
+  )
+  section(
+    'PERIODS',
+    `#${endedPeriodId} ENDED     council election · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
+    `#${activePeriodId} ACTIVE    council election · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`,
+    `#${upcomingPeriodId} UPCOMING  standard vote · 2 topics · opens in 14 days`,
+  )
+  section(
+    'WALLETS',
+    'all four share unencrypted-default-wallet — connect once, switch accounts in the app,',
+    'or set VITE_KMD_WALLET=<wallet> for a single-account view',
+    ...PERSONAS.map(
+      (label) =>
+        `${label.padEnd(9)} ${short(addr(label))}  ${PERSONA_WALLETS[label].padEnd(14)} ${personaNotes[label]}`,
+    ),
+  )
+  section(
+    'FILES',
+    `${'.env'.padEnd(21)}${
+      envWritten
+        ? `VITE_GGOV_REGISTRY_APP_ID=${gGovRegistryApp.appId} · VITE_FRAC_REGISTRY_APP_ID=${fracRegistryApp.appId}`
+        : `missing — set VITE_GGOV_REGISTRY_APP_ID=${gGovRegistryApp.appId} by hand`
+    }`,
+    `${path.basename(manifestPath).padEnd(21)}${allLabels.length} addresses + mnemonics, identical on every run`,
+  )
+
+  const rule = '═'.repeat(Math.max(...out.map((line) => line.length)))
+  console.log(`\n${rule}\nLOCALNET SEED\n${rule}\n`)
+  console.log(out.join('\n'))
+  console.log('Ready — seed data details on projects/ggov-frontend/.localnet-seed.json. \n')
 }
 
 main().catch((err) => {

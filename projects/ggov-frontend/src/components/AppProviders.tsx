@@ -22,6 +22,11 @@ if (getAlgodConfigFromViteEnvironment().network === 'localnet') {
         baseServer: kmdConfig.server,
         token: String(kmdConfig.token),
         port: String(kmdConfig.port),
+        // Forwarded so VITE_KMD_WALLET / VITE_KMD_PASSWORD apply at all — the seed script gives
+        // each persona its own wallet. Unset, they resolve to use-wallet's own defaults. Answering
+        // the password from config instead of prompting is safe here: this branch is localnet-only.
+        wallet: kmdConfig.wallet,
+        promptForPassword: () => Promise.resolve(kmdConfig.password),
       },
     },
     { id: WalletId.LUTE, options: { siteName: 'gGov' } },
