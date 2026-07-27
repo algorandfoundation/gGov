@@ -49,7 +49,7 @@ export interface MockScenario {
   canVote: Record<string, { canVote: boolean; votingPower: bigint }>
   /** Vote record per `${periodId}:${account}`; `null` = eligible but didn't vote. */
   voteRecords: Record<string, GGovVoteRecord | null>
-  /** Registry voting power per `${committeeB64}:${account}` (`useXGovVotingPowers`). */
+  /** Registry voting power per `${committeeB64}:${account}` (`useGovVotingPowers`). */
   votingPowers: Record<string, number>
   /** Producer rank per `${committeeB64}:${account}` (`useProducerRank`). */
   producerRanks?: Record<string, ProducerRank | null>
@@ -110,7 +110,7 @@ export interface TopicConfig {
 
 /** Per-account state within one period. */
 export interface AccountState {
-  /** Registry xGov voting power (also the default eligibility gate). */
+  /** Registry gov voting power (also the default eligibility gate). */
   power?: number
   /** Active-window `canVote` flag; defaults to `power > 0`. */
   canVote?: boolean
