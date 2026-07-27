@@ -23,11 +23,15 @@ overrides:
   'picomatch@4': ^4.0.4 # eslint-plugin-unused-imports>@typescript-eslint>tinyglobby>picomatch
   'ws@7': ^7.5.11 # ggov-frontend>@blockshake/defly-connect>@walletconnect>ws
   '@isaacs/brace-expansion': ^5.0.1 # contracts>@algorandfoundation/puya-ts>minimatch>@isaacs/brace-expansion
-  'brace-expansion@2': ^2.1.2 # ggov-frontend>@storybook/react-vite>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp)
-  'brace-expansion@5': ^5.0.7 # eslint>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp)
+  # ggov-frontend>@storybook/react-vite pins 0.6.1, which drags in glob@10>minimatch@9>brace-expansion@2.
+  # The 2.x line has no fix for GHSA-mh99-v99m-4gvg and 5.x is not API-compatible with minimatch@9, so bump
+  # the plugin instead: 0.6.4 uses glob@13>minimatch@10>brace-expansion@5. Stay below 0.7.0, which is ESM-only.
+  '@joshwooding/vite-plugin-react-docgen-typescript': ^0.6.4
+  'brace-expansion@5': ^5.0.8 # eslint>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp, GHSA-mh99-v99m-4gvg)
 
 minimumReleaseAgeExclude:
   - fast-uri@3.1.4 # 3 days old at this commit time - remove when minimumReleaseAge is surpassed
+  - brace-expansion@5.0.8 # 4 days old at this commit time - remove when minimumReleaseAge is surpassed
   # puya-ts 1.2.0 toolchain (ARC-65 logged errors) - newer than the 1-week window; remove when surpassed
   - '@algorandfoundation/algorand-typescript@1.2.0'
   - '@algorandfoundation/puya-ts@1.2.0'
