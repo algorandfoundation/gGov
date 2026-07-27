@@ -28,7 +28,7 @@ export class GGovRegistryAccountContract extends BaseContract {
   /**
    * Create new account ID
    * @param account Account to create ID for
-   * @throws ERR:AUTH if account already has ID
+   * @throws ERR:A_EX if account already has ID
    * @returns new account ID
    */
   protected createAccount(account: Account): GGovAccount {
