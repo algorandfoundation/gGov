@@ -10,8 +10,9 @@
  *
  * Resets localnet, then uses the KMD default wallet accounts as committee members
  * (so they persist and can connect + vote via the frontend). Seeds three periods —
- * an ENDED council election (id 1), an ACTIVE council election (id 2), and an
- * UPCOMING standard vote (id 3) — with
+ * an ENDED single-election council vote (id 1), an ACTIVE period running two elections
+ * at once, a council and a treasury committee (id 2), and an UPCOMING standard vote
+ * (id 3) — with
  * votes and delegations cast so the results pages, the live council standings, and
  * the multi-account voting record are all populated. Random transaction notes
  * deduplicate otherwise-identical calls (no sleeps needed). Finally rewrites the
@@ -29,7 +30,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
-import type { GGovCommitteeFile } from 'ggov-sdk'
+import type { Election, GGovCommitteeFile } from 'ggov-sdk'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
@@ -225,13 +226,13 @@ async function main() {
         })
 
   // Create a period: future window first (so topics can be added), upload body
-  // (with electSeats for a council election), add topics, then set the real
-  // window and mark ready.
+  // (with `elect` — one entry per election — for an election period), add topics,
+  // then set the real window and mark ready.
   async function createPeriod(opts: {
     title: string
     body: string
-    electSeats?: number
-    topics: { title: string; body: string; options?: string[] }[]
+    elect?: Election[]
+    topics: { title: string; body: string; options?: string[]; e?: number }[]
     votingStart: bigint
     votingEnd: bigint
   }): Promise<bigint> {
@@ -245,7 +246,7 @@ async function main() {
       body: {
         title: opts.title,
         body: opts.body,
-        ...(opts.electSeats !== undefined ? { electSeats: opts.electSeats } : {}),
+        ...(opts.elect !== undefined ? { elect: opts.elect } : {}),
       },
     })
     for (const t of opts.topics) {
@@ -254,11 +255,16 @@ async function main() {
         // Election candidates are fixed Support / Against / Abstain ballots (mirrors the
         // Manage UI), so the election ballot always wins over any per-topic override;
         // standard-vote topics use their `options` or default to Yes / No / Abstain.
-        options:
-          opts.electSeats !== undefined ? ['Support', 'Against', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
+        options: opts.elect !== undefined ? ['Support', 'Against', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
         note: randomNote(),
       })) as bigint
-      await sdk.uploadTopicBody({ periodId, topicIndex, body: { title: t.title, body: t.body } })
+      await sdk.uploadTopicBody({
+        periodId,
+        topicIndex,
+        // A candidate joins one election by its index into `elect`; a single-election
+        // period needn't spell out the only choice.
+        body: { title: t.title, body: t.body, ...(opts.elect !== undefined ? { e: t.e ?? 0 } : {}) },
+      })
     }
     await sdk.editPeriod({ periodId, committeeId, votingStart: opts.votingStart, votingEnd: opts.votingEnd })
     await sdk.setReady({ periodId, ready: true })
@@ -301,14 +307,30 @@ async function main() {
   await delegate(B, A) // B delegates to A; A will cast B's ballot
   await delegate(C, A) // C delegates to A but votes directly → locked ("Voted directly")
 
-  // Council candidates (5), shared by the past and active elections. Each is a
+  // Council candidates (5) for the past term's single election. Each is a
   // Support/Against/Abstain ballot; candidates rank by net score (Support − Against) for the seats.
-  const candidateTopics = [
+  const councilTopics = [
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
     { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
     { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
     { title: 'reti.algo', body: 'Reti staking pool collective.' },
     { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
+  ]
+
+  // The current term runs two elections in one period, so every candidate carries the index
+  // (`e`) of the race it stands in: 4 candidates for 3 council seats, 3 for 2 treasury seats.
+  const termTwoElections: Election[] = [
+    { t: 'xGov Council', s: 3 },
+    { t: 'EAC', s: 1 },
+  ]
+  const termTwoTopics = [
+    { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.', e: 0 },
+    { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.', e: 0 },
+    { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.', e: 0 },
+    { title: 'reti.algo', body: 'Reti staking pool collective.', e: 0 },
+    { title: 'gard.algo', body: 'GARD stablecoin protocol team.', e: 1 },
+    { title: 'pact.algo', body: 'Pact AMM protocol and treasury tooling.', e: 1 },
+    { title: 'tinyman.algo', body: 'Tinyman AMM liquidity and grants steward.', e: 1 },
   ]
 
   // ── 1) ENDED (past) council election ───────────────────────────────
@@ -322,8 +344,8 @@ async function main() {
   const endedId = await createPeriod({
     title: 'gGov Council — Term 1 election',
     body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
-    electSeats: 3,
-    topics: candidateTopics,
+    elect: [{ t: 'Council', s: 3 }],
+    topics: councilTopics,
     votingStart: endedStart - 3600n,
     votingEnd: endedVotingEnd,
   })
@@ -351,24 +373,26 @@ async function main() {
   }
   console.log(`Council election period #${endedId} is ENDED with votes cast`)
 
-  // ── 2) ACTIVE council election ─────────────────────────────────────
-  console.log('\nCreating ACTIVE council election (id 2; 3 seats, 5 candidates)...')
+  // ── 2) ACTIVE two-election period ──────────────────────────────────
+  console.log('\nCreating ACTIVE two-election period (id 2; council 3 seats, treasury 2 seats, 7 candidates)...')
   const activeId = await createPeriod({
-    title: 'gGov Council — Term 2 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 lead for the available seats.',
-    electSeats: 3,
-    topics: candidateTopics,
+    title: 'gGov Council — Term 2 elections',
+    body: 'Elect 3 council members and a 2-seat treasury committee. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) within their own election and the top scorers lead for its available seats.',
+    elect: termTwoElections,
+    topics: termTwoTopics,
     votingStart: now - 3600n,
     votingEnd: now + 86400n * 7n,
   })
   await fundPeriodForVotes(activeId)
+  // Ballots per candidate: council [c0..c3], then treasury committee [c4..c6]. Each race
+  // gets a descending ranking with one candidate below its own cutoff.
   const activeBallots: Record<string, string[]> = {
-    [A]: ['Y', 'Y', 'Y', 'Y', 'N'],
-    [B]: ['Y', 'Y', 'Y', 'Y', 'N'],
-    [C]: ['Y', 'Y', 'Y', 'A', 'N'],
-    [D]: ['Y', 'Y', 'Y', 'N', 'A'],
-    [E]: ['Y', 'Y', 'N', 'N', 'A'],
-    [F]: ['Y', 'N', 'N', 'N', 'Y'],
+    [A]: ['Y', 'Y', 'Y', 'N', 'Y', 'Y', 'N'],
+    [B]: ['Y', 'Y', 'Y', 'N', 'Y', 'Y', 'N'],
+    [C]: ['Y', 'Y', 'A', 'N', 'Y', 'A', 'N'],
+    [D]: ['Y', 'Y', 'N', 'A', 'Y', 'N', 'A'],
+    [E]: ['Y', 'A', 'N', 'N', 'Y', 'N', 'Y'],
+    [F]: ['Y', 'N', 'N', 'Y', 'A', 'N', 'Y'],
   }
   await castBallot(activeId, A, pA, activeBallots[A], A)
   await castBallot(activeId, B, pB, activeBallots[B], A) // delegated: A casts for B
@@ -376,7 +400,7 @@ async function main() {
   await castBallot(activeId, D, pD, activeBallots[D], D)
   await castBallot(activeId, E, pE, activeBallots[E], E)
   await castBallot(activeId, F, pF, activeBallots[F], F)
-  console.log(`Council election period #${activeId} is ACTIVE with votes cast`)
+  console.log(`Two-election period #${activeId} is ACTIVE with votes cast`)
 
   // ── 3) UPCOMING (future) standard period ───────────────────────────
   console.log('\nCreating UPCOMING standard period (id 3)...')
@@ -415,7 +439,9 @@ async function main() {
   console.log(`Operator:      ${deployerAddr}`)
   console.log(`Committee:     ${committeeHex.slice(0, 16)}... (${memberAddresses.length} members)`)
   console.log(`Period #${endedId}:  ENDED council election (3 seats, 5 candidates, votes + delegations)`)
-  console.log(`Period #${activeId}:  ACTIVE council election (3 seats, 5 candidates, votes cast)`)
+  console.log(
+    `Period #${activeId}:  ACTIVE two-election period (council 3 seats / 4 candidates, treasury committee 2 seats / 3 candidates, votes cast)`,
+  )
   console.log(`Period #${upcomingId}:  UPCOMING standard vote (2 topics, starts in 14 days)`)
   console.log(`\nDelegations: B→A (delegated to you), C→A (voted directly).`)
   console.log('Connect as the deployer/operator account below to see the voting record + your votes:')

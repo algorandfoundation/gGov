@@ -249,9 +249,9 @@ export default function VotePeriodDetail() {
   const isActive = status === 'active'
   const isUpcoming = status === 'upcoming'
   const isEnded = status === 'ended'
-  // Elections (period body carries `electSeats`) expose their live
+  // Elections (period body carries `elect`) expose their live
   // ranked standings while active; any ended period exposes its full results.
-  const isElection = periodBody?.electSeats !== undefined
+  const isElection = periodBody?.elect !== undefined
   const showVoteForm = isActive && canVoteResult?.canVote && sdk
   const votingPower = canVoteResult?.votingPower ?? 0n
 
@@ -561,7 +561,11 @@ export default function VotePeriodDetail() {
           everyone (connected or not), below the account selector / connect CTA. */}
       {isActive && isElection && (
         <div className="mt-4 flex justify-end items-center gap-3 text-[13px] text-muted-foreground">
-          Election seats: {periodBody?.electSeats} &nbsp;·&nbsp;
+          {/* One race → its seat count; several → the per-election breakdown. */}
+          {periodBody?.elect?.length === 1
+            ? `Election seats: ${periodBody.elect[0].s}`
+            : periodBody?.elect?.map((e) => `${e.t}: ${e.s}`).join(' · ')}{' '}
+          &nbsp;·&nbsp;
           <Button asChild variant="outline" size="sm">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
               View Ranked Results

@@ -6,6 +6,9 @@ import {
   emptyScenario,
   SAMPLE_TOPICS_TALLIED,
   ELECTION_TOPICS,
+  COUNCIL_ELECTION,
+  MULTI_ELECTIONS,
+  MULTI_ELECTION_TOPICS,
   type Phase,
 } from '../../.storybook/mocks/scenarios'
 
@@ -30,7 +33,7 @@ function resultsScenario(phase: Phase, election: boolean) {
         body: election
           ? 'Elect the next governance council — the top 3 candidates are seated.'
           : 'A standard protocol-upgrade vote.',
-        electSeats: election ? 3 : undefined,
+        elect: election ? COUNCIL_ELECTION : undefined,
         topics: election ? ELECTION_TOPICS : SAMPLE_TOPICS_TALLIED,
         committee: { totalVotes: 84_500 },
         voters: [alice.address],
@@ -70,6 +73,60 @@ export const ElectionFinal: Story = {
 export const ElectionLive: Story = {
   name: 'Election — live results (active)',
   parameters: { wallet: connected, scenario: resultsScenario('active', true) },
+}
+
+/**
+ * One shared ballot carrying two independent elections: candidates are bucketed by their
+ * `e` tag and each election is ranked against its own seat count.
+ */
+export const MultiElection: Story = {
+  name: 'Election — two elections on one ballot',
+  parameters: {
+    wallet: connected,
+    scenario: buildScenario(
+      [
+        {
+          id: 7,
+          phase: 'ended',
+          title: 'Period 7 · Council + treasury elections',
+          body: 'Two seats being filled on one ballot: the governance council (3 seats) and the treasury committee (2 seats). Each is ranked separately.',
+          elect: MULTI_ELECTIONS,
+          topics: MULTI_ELECTION_TOPICS,
+          committee: { totalVotes: 84_500 },
+          voters: [alice.address],
+          accounts: { [alice.address]: { power: 4200 } },
+        },
+      ],
+      { globalLastPeriodId: 7 },
+    ),
+  },
+}
+
+/**
+ * An election period with a candidate whose `e` tag is missing — it ranks in no election,
+ * so the page reports it instead of quietly folding it into the first race.
+ */
+export const MultiElectionUnassigned: Story = {
+  name: 'Election — unassigned candidate',
+  parameters: {
+    wallet: connected,
+    scenario: buildScenario(
+      [
+        {
+          id: 7,
+          phase: 'ended',
+          title: 'Period 7 · Council + treasury elections',
+          body: 'One candidate was never assigned to an election.',
+          elect: MULTI_ELECTIONS,
+          topics: MULTI_ELECTION_TOPICS.map((t, i) => (i === 2 ? { ...t, e: undefined } : t)),
+          committee: { totalVotes: 84_500 },
+          voters: [alice.address],
+          accounts: { [alice.address]: { power: 4200 } },
+        },
+      ],
+      { globalLastPeriodId: 7 },
+    ),
+  },
 }
 
 export const NotAvailableYet: Story = {

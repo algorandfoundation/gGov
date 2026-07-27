@@ -11,7 +11,7 @@
  * (src/utils/time.ts) classifies them exactly as the requested phase — the same
  * derivation the app uses, so the toolbar `periodPhase` toggle is faithful.
  */
-import type { GGovPeriod, GGovVoteRecord, BodyJson, PeriodBodyJson } from 'ggov-sdk'
+import type { GGovPeriod, GGovVoteRecord, Election, PeriodBodyJson, TopicBodyJson } from 'ggov-sdk'
 import type { PeriodWithId, CommitteeOption, ProducerRank } from '../../src/hooks/queries'
 // Re-use the app's real base64url codec so committee keys match the ids the
 // components compute via `toBase64Url(period.committeeId)`.
@@ -34,7 +34,7 @@ export interface MockScenario {
     {
       period: GGovPeriod
       body: PeriodBodyJson | null
-      topicBodies: (BodyJson | null)[]
+      topicBodies: (TopicBodyJson | null)[]
       /** Distinct accounts that cast a vote; `.length` is the voter count. */
       voters: string[]
       /** On-chain app id of the GGovPeriod contract (TechnicalInfoCard link). */
@@ -82,8 +82,8 @@ export function makeTopic(options: string[], tallies?: number[]): [string[], num
   return [options, tallies ?? options.map(() => 0)]
 }
 
-export function makePeriodBody(title: string, body: string, electSeats?: number): PeriodBodyJson {
-  return electSeats !== undefined ? { title, body, electSeats } : { title, body }
+export function makePeriodBody(title: string, body: string, elect?: Election[]): PeriodBodyJson {
+  return elect !== undefined ? { title, body, elect } : { title, body }
 }
 
 export function makeCommittee(
@@ -106,6 +106,8 @@ export interface TopicConfig {
   options: string[]
   /** Result tallies per option; omit for an un-tallied (upcoming/active) topic. */
   tallies?: number[]
+  /** Election index this candidate runs in (`TopicBodyJson.e`); omit on standard topics. */
+  e?: number
 }
 
 /** Per-account state within one period. */
@@ -128,7 +130,8 @@ export interface PeriodConfig {
   id: number
   phase: Phase
   ready?: boolean
-  electSeats?: number
+  /** Elections this period runs; presence makes it an election period. */
+  elect?: Election[]
   title?: string
   body?: string
   topics?: TopicConfig[]
@@ -183,8 +186,12 @@ export function buildScenario(
 
     scenario.periodDetail[cfg.id] = {
       period,
-      body: makePeriodBody(cfg.title ?? `Period ${cfg.id}`, cfg.body ?? 'A sample governance period.', cfg.electSeats),
-      topicBodies: topicConfigs.map((t) => ({ title: t.title, body: t.body ?? '' })),
+      body: makePeriodBody(cfg.title ?? `Period ${cfg.id}`, cfg.body ?? 'A sample governance period.', cfg.elect),
+      topicBodies: topicConfigs.map((t) => ({
+        title: t.title,
+        body: t.body ?? '',
+        ...(t.e !== undefined ? { e: t.e } : {}),
+      })),
       voters: cfg.voters ?? [],
       appId: cfg.appId ?? 1000 + cfg.id,
     }
@@ -245,15 +252,27 @@ export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 /**
  * Election ballot: one topic PER candidate, each a Support/Against/Abstain vote.
  * The results page derives a net score (Support − Against) per candidate via
- * `tallyBallot` and ranks them; `electSeats` is the seat cutoff. Carries tallies so
- * the (live or final) ranked results render. Candidate name = the topic-body title.
+ * `tallyBallot`, buckets candidates by their `e` tag and ranks each election
+ * separately against its own seat count. Carries tallies so the (live or final)
+ * ranked results render. Candidate name = the topic-body title.
  */
-const candidate = (name: string, support: number, against: number, abstain: number): TopicConfig => ({
+const candidate = (
+  name: string,
+  support: number,
+  against: number,
+  abstain: number,
+  e = 0,
+  seat = 'a governance council seat',
+): TopicConfig => ({
   title: name,
-  body: 'Candidate for a governance council seat.',
+  body: `Candidate for ${seat}.`,
   options: ['Support', 'Against', 'Abstain'],
   tallies: [support, against, abstain],
+  e,
 })
+
+/** One council election with 3 seats — the single-election shape. */
+export const COUNCIL_ELECTION: Election[] = [{ t: 'Governance council', s: 3 }]
 
 export const ELECTION_TOPICS: TopicConfig[] = [
   candidate('Alice Acharya', 42_000, 6_000, 3_000),
@@ -261,6 +280,24 @@ export const ELECTION_TOPICS: TopicConfig[] = [
   candidate('Carol Chen', 31_000, 14_000, 4_000),
   candidate('Dave Diaz', 19_000, 22_000, 5_000),
   candidate('Erin Engel', 12_000, 28_000, 6_000),
+]
+
+/** Two elections on one shared ballot — candidates split across them by `e`. */
+export const MULTI_ELECTIONS: Election[] = [
+  { t: 'Governance council', s: 3 },
+  { t: 'Treasury committee', s: 2 },
+]
+
+const treasurySeat = 'a treasury committee seat'
+
+export const MULTI_ELECTION_TOPICS: TopicConfig[] = [
+  candidate('Alice Acharya', 42_000, 6_000, 3_000),
+  candidate('Bob Bauer', 38_000, 9_000, 2_500),
+  candidate('Carol Chen', 31_000, 14_000, 4_000),
+  candidate('Dave Diaz', 19_000, 22_000, 5_000),
+  candidate('Frank Fischer', 36_000, 7_500, 2_000, 1, treasurySeat),
+  candidate('Grace Gallo', 29_000, 11_000, 3_500, 1, treasurySeat),
+  candidate('Hana Haddad', 24_000, 18_000, 4_500, 1, treasurySeat),
 ]
 
 // --- Page presets ------------------------------------------------------------
@@ -309,7 +346,8 @@ export interface DetailOptions {
   eligible?: boolean
   /** Account already voted (seeds a vote record). */
   voted?: boolean
-  electSeats?: number
+  /** Elections this period runs; presence makes it an election period. */
+  elect?: Election[]
   /** Delegators that point at `account` (shown nested in the selector). */
   delegators?: Array<{ address: string; power?: number; voted?: boolean; votedDirectly?: boolean }>
 }
@@ -370,7 +408,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
         phase: o.phase,
         title: `Period ${id} · Reward policy`,
         body: 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.',
-        electSeats: o.electSeats,
+        elect: o.elect,
         topics,
         voters,
         accounts,
@@ -397,7 +435,7 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
   const connected = auth !== 'disconnected'
   const power = 4200
 
-  // Election periods carry `electSeats` (drives the detail page's "Election seats" /
+  // Election periods carry `elect` (drives the detail page's "Election seats" /
   // "View Ranked Results" UI and the results page's ranked layout) plus an
   // election-flavoured title + per-candidate topics. The title is visible on the
   // landing hero and the index row too, so the toggle shows on all four pages.
@@ -408,7 +446,7 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
     body: election
       ? 'Elect the next governance council — vote Support/Against/Abstain on each candidate; the top 3 are seated.'
       : 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
-    electSeats: election ? 3 : undefined,
+    elect: election ? COUNCIL_ELECTION : undefined,
     topics: election ? ELECTION_TOPICS : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,
     committee: p === 'ended' || election ? { totalVotes: 84_500 } : undefined,
     accounts: connected
