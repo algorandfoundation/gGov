@@ -192,3 +192,7 @@ TODO.md
 BACKLOG.md
 /NOTES
 NOTES.md
+
+# Deterministic localnet seed output: addresses + mnemonics written by
+# projects/ggov-frontend/scripts/deploy-frac-sample-data.ts. Throwaway keys, but keep them out of git.
+.localnet-seed.json
