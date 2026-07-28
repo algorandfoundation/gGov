@@ -151,7 +151,7 @@ const GOV_VOTES: Record<string, number> = {
  */
 const INSTANCES = [
   {
-    label: 'tinyman',
+    label: 'Tinyman tALGO',
     escrows: ['x1'],
     aq: {
       alice: 120_000,
@@ -167,7 +167,7 @@ const INSTANCES = [
     } as Record<string, number>,
   },
   {
-    label: 'reti',
+    label: 'Réti #42',
     escrows: ['x2', 'x3'],
     aq: {
       alice: 90_000,
@@ -242,12 +242,12 @@ const ENDED_BALLOTS: Ballot[] = [
 
 /** Period 1 frac votes: 670k of tinyman's 1.6M AQ and 525k of reti's 1.4M turn out; the rest abstains. */
 const ENDED_FRAC_BALLOTS: FracBallot[] = [
-  { instance: 'tinyman', voter: 'alice', ballot: 'YYYAN' },
-  { instance: 'tinyman', voter: 'g1', ballot: 'YYNYN' },
-  { instance: 'tinyman', voter: 'u1', ballot: 'YYYNA' },
-  { instance: 'reti', voter: 'carol', ballot: 'YYYYN' },
-  { instance: 'reti', voter: 'u7', ballot: 'YNYNA' },
-  { instance: 'reti', voter: 'u9', ballot: 'YYNAN' },
+  { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYAN' },
+  { instance: 'Tinyman tALGO', voter: 'g1', ballot: 'YYNYN' },
+  { instance: 'Tinyman tALGO', voter: 'u1', ballot: 'YYYNA' },
+  { instance: 'Réti #42', voter: 'carol', ballot: 'YYYYN' },
+  { instance: 'Réti #42', voter: 'u7', ballot: 'YNYNA' },
+  { instance: 'Réti #42', voter: 'u9', ballot: 'YYNAN' },
 ]
 
 /**
@@ -266,8 +266,8 @@ const ACTIVE_BALLOTS: Ballot[] = [
 
 /** Period 2 frac votes: tinyman has started, reti has not — carol's reti position is yours to cast. */
 const ACTIVE_FRAC_BALLOTS: FracBallot[] = [
-  { instance: 'tinyman', voter: 'alice', ballot: 'YYYYN' },
-  { instance: 'tinyman', voter: 'u1', ballot: 'YYYNA' },
+  { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYYN' },
+  { instance: 'Tinyman tALGO', voter: 'u1', ballot: 'YYYNA' },
 ]
 
 // =========================================================

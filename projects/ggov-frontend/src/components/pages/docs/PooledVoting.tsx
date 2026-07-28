@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react'
-import { ArticleHeader, Callout, H2, InlineLink, Lead, P, Pager, Strong } from '@/components/pages/docs/components'
+import { ArticleHeader, H2, InlineLink, Lead, P, Pager, Strong } from '@/components/pages/docs/components'
 
 /**
  * The AlgoQuarters definition, as a small inline formula strip. Local to this
@@ -22,37 +22,47 @@ export default function PooledVoting() {
       <div className="mt-[22px]">
         <Lead>
           Liquid staking tokens (xALGO, tALGO) and Reti pools produce blocks from shared accounts — so the voting power
-          lands with the pool, not with you. Pooled voting gives it back: you vote your prorated share, and the pool
-          casts the combined result on-chain.
+          lands with the pool, not with you. Pooled voting gives it back: you vote your prorated share, and the combined
+          result is cast on-chain.
         </Lead>
-
-        <AqFormula />
 
         <H2>Your share of the pool</H2>
         <P>
-          Your pool measures each member's contribution in <Strong>AlgoQuarters</Strong> — stake over time across the
-          committee window. Your AQ share of the pool's total is exactly your share of its voting power. The pool
-          reports contributions for each committee; there's nothing for you to register or opt into.
+          Your contributions to pools are measured in <Strong>AlgoQuarters</Strong> — stake over time across the
+          committee window. Your AQ share of the pool's total AQ is exactly your share of the pool's voting power.
+          Contributions are reported for each committee; there's nothing for you to register or opt into.
         </P>
+
+        <AqFormula />
 
         <H2>How your vote travels</H2>
         <P>
           Pooled positions appear next to your own accounts on any open period, and you vote the same way any direct
-          voter does — scoring each option <Strong>Support</Strong> (+1), <Strong>Veto</Strong> (−1) or{' '}
-          <Strong>Abstain</Strong> (0). Your choices are weighted by your AQ and tallied with every other member's vote;
-          the pool then maps the combined tally onto its full voting power and casts the external vote on-chain via{' '}
-          <InlineLink to="/docs/delegation">delegation</InlineLink> from its escrow accounts.
+          voter does. Your choices are weighted by your AQ and tallied with every other pool member's vote; the combined
+          tally is mapped onto the pool's full voting power and the resulting vote is cast on-chain.
         </P>
 
         <H2>If you don't vote</H2>
         <P>
-          Your share scores <Strong>Abstain</Strong> on every option — the pool never invents a preference for you. And
+          Your share votes <Strong>Abstain</Strong> on every option — no preference is ever invented on your behalf. And
           like any vote, you can change yours until the period closes.
         </P>
-        <Callout variant="info">
-          Pooled figures are approximate until the period closes: your effective weight is your AQ share of the pool's
-          snapshotted power for that committee.
-        </Callout>
+
+        <H2>Why the pool's full weight appears at once</H2>
+        <P>
+          A period records each account's <Strong>full</Strong> voting power on every topic, so the first vote from
+          anyone in the pool — however small their share — puts the pool's whole weight on-chain, with every share that
+          hasn't voted yet counted as <Strong>Abstain</Strong>. Nothing has been decided for you: as members vote, their
+          shares move off Abstain onto their own choices. Only the split changes, never the total.
+        </P>
+
+        <H2>Delegation applies</H2>
+        <P>
+          <InlineLink to="/docs/delegation">Delegating</InlineLink> your governance power applies to pooled voting as
+          well. The delegated party will be able to vote with your share of the pool, and you can revoke delegation at
+          any time. If you delegate to a party that doesn't vote, your share will score <Strong>Abstain</Strong> just
+          like if you didn't vote yourself.
+        </P>
       </div>
       <Pager from="/docs/pooled-voting" />
     </div>

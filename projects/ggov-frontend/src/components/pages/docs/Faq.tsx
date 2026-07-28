@@ -66,7 +66,7 @@ const glossary = [
   },
   {
     term: 'Pooled voting',
-    def: "Voting your prorated share of a staking pool's power. Members' votes are combined and cast on-chain by the pool.",
+    def: "Voting your prorated share of a staking pool's power. Members' votes are weighted, combined and cast on-chain.",
   },
   {
     term: 'AlgoQuarter (AQ)',
