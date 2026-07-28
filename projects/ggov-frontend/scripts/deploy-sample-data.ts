@@ -10,6 +10,9 @@
  *   Usage from ggov-frontend:
  *     pnpm seed-localnet-data
  *
+ *   Leave period 2 as an editable draft instead of a voted one, to work on it from the Manage UI:
+ *     SEED_ACTIVE_PERIOD=draft pnpm seed-localnet-data
+ *
  * REQUIREMENTS
  *   Algokit localnet running, both SDKs built (`algokit project run build` builds all projects).
  *
@@ -60,7 +63,9 @@
  *   reads as ended.
  *
  * 8) PERIOD 2 (ACTIVE)
- *   The same election shape, deliberately half-voted so there is live work left to do from the UI.
+ *   Two elections on one shared ballot — one committee, one window, one vote() — each with its own
+ *   candidates, seats and ranking. Deliberately half-voted so there is live work left from the UI,
+ *   or left unready and unvoted under SEED_ACTIVE_PERIOD=draft so Manage can still edit it.
  *
  * 9) PERIOD 3 (UPCOMING)
  *   A standard vote, ready and pre-synced by the instances, no votes yet.
@@ -80,7 +85,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
-import type { GGovCommitteeFile } from 'ggov-sdk'
+import type { Election, GGovCommitteeFile } from 'ggov-sdk'
 import type { AlgoQuartersFile } from 'frac-delegation-sdk'
 
 const require = createRequire(import.meta.url)
@@ -118,6 +123,12 @@ const COMMITTEE_PERIOD_END = 53_000_000
  * enough that waiting for it to lapse is cheap (see step 7). Overrunning it fails loudly.
  */
 const ENDED_VOTING_WINDOW_SECONDS = 40
+
+/**
+ * How period 2 is left, from SEED_ACTIVE_PERIOD. `voted` (the default) casts its ballots, which
+ * locks the period; `draft` stops before `setReady` instead, so stays editable.
+ */
+const ACTIVE_PERIOD_MODE = process.env.SEED_ACTIVE_PERIOD === 'draft' ? 'draft' : 'voted'
 
 /** Persona wallets are unencrypted like the LocalNet default, so switching only needs the name. */
 const PERSONA_WALLET_PASSWORD = ''
@@ -225,6 +236,7 @@ const FUNDING = { deployer: 300, persona: 20, gov: 5, user: 5, instance: 10, per
 
 /**
  * A gGov ballot, one character per topic: Y = first option, N = second, A = last (abstain).
+ * A `|` marks a race boundary and is ignored — it only keeps a multi-election ballot readable.
  * `castBy` names the delegatee signing on the voter's behalf; absent means the voter signs itself.
  */
 type Ballot = { voter: string; ballot: string; castBy?: string }
@@ -233,15 +245,36 @@ type Ballot = { voter: string; ballot: string; castBy?: string }
 type FracBallot = { voter: string; ballot: string; instance: string }
 
 /**
- * Council candidates, shared by periods 1 and 2. Each is a Support/Against/Abstain ballot;
- * candidates rank by net score (Support − Against) for the available seats.
+ * Period 1's council candidates. Each is a Support/Against/Abstain ballot; candidates rank by net
+ * score (Support − Against) for the available seats. One race, so none needs an `e` tag.
  */
-const CANDIDATE_TOPICS = [
+const ENDED_ELECTIONS: Election[] = [{ t: 'xGov Council', s: 3 }]
+const ENDED_CANDIDATE_TOPICS = [
   { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
   { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
   { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
   { title: 'reti.algo', body: 'Reti staking pool collective.' },
   { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
+]
+
+/**
+ * Period 2 runs both of these races on one shared ballot — one committee, one window, one vote().
+ * Append-only: `e` is an index into this list, so reordering it silently re-tags every candidate.
+ */
+const ACTIVE_ELECTIONS: Election[] = [
+  { t: 'xGov Council', s: 3 },
+  { t: 'EAC', s: 1 },
+]
+
+/** Period 2's candidates, each naming its race: 4 contest the council's 3 seats, 3 the EAC's one. */
+const ACTIVE_CANDIDATE_TOPICS = [
+  { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.', e: 0 },
+  { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.', e: 0 },
+  { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.', e: 0 },
+  { title: 'reti.algo', body: 'Reti staking pool collective.', e: 0 },
+  { title: 'gard.algo', body: 'GARD stablecoin protocol team.', e: 1 },
+  { title: 'pact.algo', body: 'Pact AMM protocol and treasury tooling.', e: 1 },
+  { title: 'tinyman.algo', body: 'Tinyman AMM liquidity and grants steward.', e: 1 },
 ]
 
 /** Period 1: 11 of the 15 non-escrow members vote, shaped for a clean descending ranking. */
@@ -271,22 +304,23 @@ const ENDED_FRAC_BALLOTS: FracBallot[] = [
 
 /**
  * Period 2: only 7 direct voters so far, and bob's delegated power is untouched — connect as alice
- * to cast his ballot for him, or as bob to override by voting directly.
+ * to cast his ballot for him, or as bob to override by voting directly. Council left of the `|`,
+ * EAC right of it; each race ends with one candidate well below its own cutoff.
  */
 const ACTIVE_BALLOTS: Ballot[] = [
-  { voter: 'alice', ballot: 'YYYYN' },
-  { voter: 'g1', ballot: 'YYYYN' },
-  { voter: 'g2', ballot: 'YYYAN' },
-  { voter: 'g4', ballot: 'YYYNA' },
-  { voter: 'g6', ballot: 'YYNNA' },
-  { voter: 'g8', ballot: 'YNNNY' },
-  { voter: 'g9', ballot: 'YYYNN' },
+  { voter: 'alice', ballot: 'YYYN|YYN' },
+  { voter: 'g1', ballot: 'YYYN|YYN' },
+  { voter: 'g2', ballot: 'YYAN|AYN' },
+  { voter: 'g4', ballot: 'YYNA|YYA' },
+  { voter: 'g6', ballot: 'YANN|NYN' },
+  { voter: 'g8', ballot: 'YNYN|YAY' },
+  { voter: 'g9', ballot: 'YYNA|YNY' },
 ]
 
 /** Period 2 frac votes: tinyman has started, reti has not — carol's reti position is yours to cast. */
 const ACTIVE_FRAC_BALLOTS: FracBallot[] = [
-  { instance: 'tinyman', voter: 'alice', ballot: 'YYYYN' },
-  { instance: 'tinyman', voter: 'u1', ballot: 'YYYNA' },
+  { instance: 'tinyman', voter: 'alice', ballot: 'YYYN|YYN' },
+  { instance: 'tinyman', voter: 'u1', ballot: 'YYNA|YYN' },
 ]
 
 // =========================================================
@@ -555,17 +589,23 @@ async function main() {
 
   /**
    * Create a period end to end: open a future window first (so topics can be added), upload the body
-   * — with `electSeats` for a council election — add the topics, set the real window, mark it ready,
-   * fund its vote-record boxes, and sync it on both frac-delegation instances.
+   * — with `elect`, one entry per election, for an election period — add the topics, set the real
+   * window, mark it ready, fund its vote-record boxes, and sync it on both frac-delegation instances.
+   *
+   * `ready: false` stops after funding, leaving an editable draft: setReady is what freezes the topic
+   * set, and syncPeriod refuses an unready period (ERR:GP_NOTREADY) precisely because a snapshot
+   * taken while topics can still change would cache a shape that then drifts out from under it.
    */
   async function createPeriodHelper(opts: {
     title: string
     body: string
-    electSeats?: number
-    topics: { title: string; body: string; options?: string[] }[]
+    elect?: Election[]
+    topics: { title: string; body: string; options?: string[]; e?: number }[]
     votingStart: bigint
     votingEnd: bigint
+    ready?: boolean
   }): Promise<bigint> {
+    const ready = opts.ready ?? true
     const periodId = (await sdk.registry.addPeriod({
       committeeId,
       votingStart: now + 100000n,
@@ -576,7 +616,7 @@ async function main() {
       body: {
         title: opts.title,
         body: opts.body,
-        ...(opts.electSeats !== undefined ? { electSeats: opts.electSeats } : {}),
+        ...(opts.elect !== undefined ? { elect: opts.elect } : {}),
       },
     })
     for (const topic of opts.topics) {
@@ -586,15 +626,15 @@ async function main() {
       await sdk.addTopicWithBody({
         periodId,
         options:
-          opts.electSeats !== undefined
-            ? ['Support', 'Against', 'Abstain']
-            : (topic.options ?? ['Yes', 'No', 'Abstain']),
-        body: { title: topic.title, body: topic.body },
+          opts.elect !== undefined ? ['Support', 'Against', 'Abstain'] : (topic.options ?? ['Yes', 'No', 'Abstain']),
+        // A candidate joins one race by its index into `elect`. Tagging is mandatory — an untagged
+        // one is an authoring error, not election 0 — but a single-race period needn't say so.
+        body: { title: topic.title, body: topic.body, ...(opts.elect !== undefined ? { e: topic.e ?? 0 } : {}) },
         note: randomNote(),
       })
     }
     await sdk.editPeriod({ periodId, committeeId, votingStart: opts.votingStart, votingEnd: opts.votingEnd })
-    await sdk.setReady({ periodId, ready: true })
+    if (ready) await sdk.setReady({ periodId, ready: true })
 
     // The period app pays MBR for one vote-record box per voter, so needs funding.
     // TODO: this extra payment won't be needed in the future. See `FUNDING`.
@@ -607,8 +647,10 @@ async function main() {
     })
 
     // Snapshot the now-ready period on both instances. Without this an instance's vote() has nothing to write into (ERR:GP_NX).
-    for (const instance of INSTANCES) {
-      await fracSdk.syncPeriod({ instanceNumId: instanceNumIds.get(instance.label)!, periodApp: periodAppId })
+    if (ready) {
+      for (const instance of INSTANCES) {
+        await fracSdk.syncPeriod({ instanceNumId: instanceNumIds.get(instance.label)!, periodApp: periodAppId })
+      }
     }
     return periodId
   }
@@ -619,10 +661,13 @@ async function main() {
     return Array.from({ length: options }, (_, i) => (i === index ? weight : 0))
   }
 
+  /** One choice per topic, dropping the `|` race separators a multi-election ballot is written with. */
+  const choices = (ballot: string) => ballot.replace(/\|/g, '').split('')
+
   /** Cast gGov ballots with each voter's committee voting power, signed by the voter or its delegatee. */
   async function castBallots(periodId: bigint, ballots: Ballot[]) {
     for (const { voter, ballot, castBy } of ballots) {
-      const topicVotes = ballot.split('').map((c) => oneHot(c, GOV_VOTES[voter], 3))
+      const topicVotes = choices(ballot).map((c) => oneHot(c, GOV_VOTES[voter], 3))
       await voterSdk(castBy ?? voter).vote({ periodId, voterAccount: addr(voter), topicVotes, note: randomNote() })
     }
   }
@@ -635,7 +680,7 @@ async function main() {
   async function castFracBallots(periodId: bigint, ballots: FracBallot[]) {
     for (const { instance, voter, ballot } of ballots) {
       const aq = INSTANCES.find((i) => i.label === instance)!.aq[voter]
-      const topicVotes = ballot.split('').map((c) => oneHot(c, aq, 3))
+      const topicVotes = choices(ballot).map((c) => oneHot(c, aq, 3))
       await fracVoterSdk(voter).vote({
         instanceNumId: instanceNumIds.get(instance)!,
         periodId,
@@ -660,8 +705,8 @@ async function main() {
   const endedPeriodId = await createPeriodHelper({
     title: 'gGov Council — Term 1 election',
     body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
-    electSeats: 3,
-    topics: CANDIDATE_TOPICS,
+    elect: ENDED_ELECTIONS,
+    topics: ENDED_CANDIDATE_TOPICS,
     votingStart: endedVotingStart - 3600n,
     votingEnd: endedVotingEnd,
   })
@@ -687,21 +732,24 @@ async function main() {
   }
 
   // =========================================================
-  // 8. PERIOD 2 — ACTIVE council election
+  // 8. PERIOD 2 — ACTIVE two-election period
   // =========================================================
 
-  step('Period 2 — ACTIVE council election…')
+  step(`Period 2 — ACTIVE two-election period (${ACTIVE_PERIOD_MODE})…`)
 
   const activePeriodId = await createPeriodHelper({
-    title: 'gGov Council — Term 2 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 lead for the available seats.',
-    electSeats: 3,
-    topics: CANDIDATE_TOPICS,
+    title: 'gGov Council — Term 2 elections',
+    body: 'Elect 3 council members and 1 EAC member. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) within their own election, and the top scorers lead for that election’s seats.',
+    elect: ACTIVE_ELECTIONS,
+    topics: ACTIVE_CANDIDATE_TOPICS,
     votingStart: now - 3600n,
     votingEnd: now + 86400n * 7n,
+    ready: ACTIVE_PERIOD_MODE === 'voted',
   })
-  await castBallots(activePeriodId, ACTIVE_BALLOTS)
-  await castFracBallots(activePeriodId, ACTIVE_FRAC_BALLOTS)
+  if (ACTIVE_PERIOD_MODE === 'voted') {
+    await castBallots(activePeriodId, ACTIVE_BALLOTS)
+    await castFracBallots(activePeriodId, ACTIVE_FRAC_BALLOTS)
+  }
 
   // =========================================================
   // 9. PERIOD 3 — UPCOMING standard vote
@@ -845,10 +893,20 @@ async function main() {
         `over ${Object.keys(i.aq).length} accounts`,
     ),
   )
+  const races = ACTIVE_ELECTIONS.map(
+    (e, i) =>
+      `${e.t} ${e.s} seat${e.s === 1 ? '' : 's'}/${ACTIVE_CANDIDATE_TOPICS.filter((t) => t.e === i).length} cands`,
+  ).join(' · ')
+
   section(
     'PERIODS',
-    `#${endedPeriodId} ENDED     council election · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
-    `#${activePeriodId} ACTIVE    council election · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`,
+    `#${endedPeriodId} ENDED     ${ENDED_ELECTIONS[0].t} ${ENDED_ELECTIONS[0].s} seats/${ENDED_CANDIDATE_TOPICS.length} cands · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
+    ACTIVE_PERIOD_MODE === 'voted'
+      ? `#${activePeriodId} ACTIVE    ${races} · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`
+      : `#${activePeriodId} DRAFT     ${races} · unready and unvoted — edit it under /manage`,
+    ...(ACTIVE_PERIOD_MODE === 'draft'
+      ? ['draft period 2 is unsynced on both instances: once ready, frac voting on it needs a syncPeriod']
+      : []),
     `#${upcomingPeriodId} UPCOMING  standard vote · 2 topics · opens in 14 days`,
   )
   section(
