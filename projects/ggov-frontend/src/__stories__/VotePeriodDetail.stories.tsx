@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { within, userEvent, expect } from 'storybook/test'
 import VotePeriodDetail from '@/components/pages/vote/VotePeriodDetail'
 import { demoAccounts } from '../../.storybook/mocks/use-wallet-react'
-import { detailScenario, emptyScenario } from '../../.storybook/mocks/scenarios'
+import { detailScenario, emptyScenario, COUNCIL_ELECTION } from '../../.storybook/mocks/scenarios'
 
 const [alice, bob] = demoAccounts
 const connected = { walletName: 'Lute', accounts: [alice] }
@@ -74,7 +74,7 @@ export const EndedElection: Story = {
   name: 'Ended — election (ranked results)',
   parameters: {
     wallet: connected,
-    scenario: detailScenario({ phase: 'ended', eligible: true, voted: true, electSeats: 3 }),
+    scenario: detailScenario({ phase: 'ended', eligible: true, voted: true, elect: COUNCIL_ELECTION }),
   },
 }
 

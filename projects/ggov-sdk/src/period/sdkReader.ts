@@ -12,7 +12,7 @@ import {
   APP_SPEC as PERIOD_APP_SPEC,
 } from '../generated/GGovPeriodClient'
 import { getConstructorConfig } from '../networkConfig'
-import { BodyJson, PeriodBodyJson, parseBodyJson, ReaderConstructorArgs } from './types'
+import { PeriodBodyJson, TopicBodyJson, parsePeriodBodyJson, parseTopicBodyJson, ReaderConstructorArgs } from './types'
 import { assertUint } from '../util/assertUint'
 import { chunked } from '../util/chunked'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors'
@@ -275,14 +275,18 @@ export class GGovReaderSDK {
       const key = new Uint8Array(1)
       key[0] = 0x50 // 'P'
       const raw = await this.algorand.app.getBoxValue(appId, key)
-      return parseBodyJson(raw)
+      return parsePeriodBodyJson(raw)
     } catch {
       return null
     }
   }
 
-  /** Read the body JSON for a topic from its per-period app. */
-  async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<BodyJson | null> {
+  /**
+   * Read the body JSON for a topic from its per-period app. Parsed with the
+   * topic-shaped validator so the candidate's election tag (`e`) survives the read —
+   * the period-shaped one would reject nothing but also carries no knowledge of `e`.
+   */
+  async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<TopicBodyJson | null> {
     // Validate outside the try so a bad id/index throws clearly instead of being swallowed as null.
     // `setUint32` would otherwise silently wrap/truncate an out-of-range or non-integer topicIndex.
     assertUint(periodId, 64, 'periodId')
@@ -294,7 +298,7 @@ export class GGovReaderSDK {
       const view = new DataView(key.buffer)
       view.setUint32(1, topicIndexArg)
       const raw = await this.algorand.app.getBoxValue(appId, key)
-      return parseBodyJson(raw)
+      return parseTopicBodyJson(raw)
     } catch {
       return null
     }

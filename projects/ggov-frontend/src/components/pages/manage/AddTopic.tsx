@@ -24,14 +24,24 @@ export default function AddTopic() {
   const { sdk } = useGGovSDK()
   const navigate = useNavigate()
   const addTopicMutation = useAddTopicMutation()
-  // An election period (body carries `electSeats`) hardcodes its topic options to
+  // An election period (body carries `elect`) hardcodes its topic options to
   // Support / Against / Abstain; only standard periods expose the free-form editor.
   const { data: periodBody } = usePeriodBody(periodId)
-  const isElection = periodBody?.electSeats !== undefined
+  const elect = periodBody?.elect
+  const isElection = elect !== undefined
 
   const [options, setOptions] = useState<string[]>(['', ''])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  // Which election this candidate runs in. A multi-election period demands an explicit
+  // choice (empty until picked) — a period with one election has only one answer.
+  const [election, setElection] = useState('')
+
+  const electionIdx = election === '' ? undefined : Number(election)
+  // With a single election there's nothing to choose, so it's implied; with several, an
+  // unpicked election would silently land the candidate in whichever race is first.
+  const resolvedElection = !isElection ? undefined : elect.length === 1 ? 0 : electionIdx
+  const electionValid = !isElection || resolvedElection !== undefined
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,13 +50,14 @@ export default function AddTopic() {
     // through. Wait until it resolves (to the body or `null`) before allowing submission.
     if (periodBody === undefined) return
     const filtered = isElection ? ELECTION_OPTIONS : options.filter((o) => o.trim())
-    if (filtered.length < 2 || !title.trim() || !body.trim()) return
+    if (filtered.length < 2 || !title.trim() || !body.trim() || !electionValid) return
 
     await addTopicMutation.mutateAsync({
       periodId,
       options: filtered,
       title: title.trim(),
       body: body.trim(),
+      e: resolvedElection,
     })
 
     void navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
@@ -87,6 +98,32 @@ export default function AddTopic() {
                 required
               />
             </div>
+
+            {/* Election picker — only meaningful when the period runs more than one race. */}
+            {isElection && elect.length > 1 && (
+              <div className="space-y-2">
+                <Label htmlFor="topic-election">Election</Label>
+                <select
+                  id="topic-election"
+                  name="topic-election"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={election}
+                  onChange={(e) => setElection(e.target.value)}
+                  required
+                >
+                  <option value="">Select an election</option>
+                  {elect.map((e, i) => (
+                    <option key={i} value={String(i)}>
+                      {e.t} ({e.s} seat{e.s === 1 ? '' : 's'})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  This period runs {elect.length} elections. Each is ranked separately, so a candidate competes only
+                  against others in the same election.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="topic-description">Description</Label>
@@ -166,7 +203,11 @@ export default function AddTopic() {
 
             <TxButton
               type="submit"
-              disabled={periodBody === undefined || (!isElection && options.filter((o) => o.trim()).length < 2)}
+              disabled={
+                periodBody === undefined ||
+                !electionValid ||
+                (!isElection && options.filter((o) => o.trim()).length < 2)
+              }
               pending={addTopicMutation.isPending}
               success={addTopicMutation.isSuccess}
               idleLabel={isElection ? 'Add candidate' : 'Add topic'}

@@ -155,6 +155,20 @@ export class GGovPeriodContract extends BaseContract {
     loggedAssert(Txn.sender === this.resolveOperator(), errUnauthorized)
   }
 
+  /**
+   * Caller must match either gate. Used by deleteTopicBodies, which serves two callers: the admin
+   * clearing every body box before deletePeriodApp, and the operator re-aligning body boxes after a
+   * removeTopic. Granting the operator nothing new — while editable it can already delete any body
+   * box via uploadTopicBodyPartial, whose startOffset-0 path is a box delete + create — and freed
+   * min-balance accrues to the app account, never to the caller. Both resolvers read the registry's
+   * global state directly, so the extra check costs no inner call.
+   */
+  protected ensureCallerIsOperatorOrAdmin(): void {
+    if (Txn.sender === Global.creatorAddress) return
+    if (Txn.sender === this.resolveOperator()) return
+    loggedAssert(Txn.sender === this.resolveAdmin(), errUnauthorized)
+  }
+
   /** Mirror current summary (votingStart, votingEnd, numTopics, ready) onto the registry. */
   protected syncSummaryToRegistry(): void {
     compileArc4(GGovRegistryContract).call.updatePeriodSummary({
@@ -322,14 +336,16 @@ export class GGovPeriodContract extends BaseContract {
   }
 
   /**
-   * Delete the topic-body boxes ('T'+index) for the given topic indexes. Admin only and only while
-   * not ready (same gates as deletePeriodApp). Used by the SDK to clear per-topic body boxes — paged
-   * ≤8 per txn because of the 8-box-reference limit — before deletion, so their min-balance is
-   * reclaimed rather than permanently locked. op.Box.delete is a no-op for an absent box, so
+   * Delete the topic-body boxes ('T'+index) for the given topic indexes. Operator or admin, and only
+   * while not ready. Two callers: the admin clearing every body box before deletePeriodApp, so their
+   * min-balance is reclaimed rather than permanently locked; and the operator re-aligning body boxes
+   * after a removeTopic, which splices the topic arrays but cannot re-key the boxes — without this
+   * the vacated tail box would survive and a later bodyless addTopic would inherit it. Paged ≤8 per
+   * txn because of the 8-box-reference limit. op.Box.delete is a no-op for an absent box, so
    * unknown/stale indexes are harmless. Each referenced box must be in the txn's box-reference array.
    */
   public deleteTopicBodies(topicIndexes: uint64[]): void {
-    this.ensureCallerIsAdmin()
+    this.ensureCallerIsOperatorOrAdmin()
     this.ensureEditable()
     for (const idx of clone(topicIndexes)) {
       op.Box.delete(this.topicBodyBoxKey(idx))

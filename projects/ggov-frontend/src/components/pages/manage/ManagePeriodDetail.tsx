@@ -7,8 +7,10 @@ import {
   useUploadPeriodBodyMutation,
   useUploadTopicBodyMutation,
   useRemoveTopicMutation,
+  useSetCandidateElectionMutation,
   useSetReadyMutation,
 } from '@/hooks/mutations'
+import { validateAssignment, describeAssignmentReport } from 'ggov-sdk'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import PeriodAppExplorerLink from '@/components/PeriodAppExplorerLink'
 import { Button } from '@/components/ui/button'
@@ -22,6 +24,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Callout } from '@/components/ui/callout'
 import { EditOptionsDialog } from '@/components/pages/manage/EditOptionsDialog'
+import ElectionsEditor from '@/components/pages/manage/ElectionsEditor'
+import { type ElectionDraft, electToDrafts, draftsToElect, draftsValid } from '@/utils/electionDrafts'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
@@ -43,6 +47,7 @@ export default function ManagePeriodDetail() {
   const uploadPeriodBodyMutation = useUploadPeriodBodyMutation()
   const uploadTopicBodyMutation = useUploadTopicBodyMutation()
   const removeTopicMutation = useRemoveTopicMutation()
+  const setCandidateElectionMutation = useSetCandidateElectionMutation()
   const setReadyMutation = useSetReadyMutation()
 
   // Edit period form
@@ -54,7 +59,7 @@ export default function ManagePeriodDetail() {
   const [editPeriodTitle, setEditPeriodTitle] = useState('')
   const [editPeriodBody, setEditPeriodBody] = useState('')
   const [editIsElection, setEditIsElection] = useState(false)
-  const [editElectSeats, setEditElectSeats] = useState('')
+  const [editElections, setEditElections] = useState<ElectionDraft[]>(electToDrafts())
 
   // Edit topic options dialog: tracks which topic is open; the dialog owns the form state.
   const [editingTopic, setEditingTopic] = useState<number | null>(null)
@@ -90,8 +95,8 @@ export default function ManagePeriodDetail() {
       seededBodyPeriodId.current = periodId
       setEditPeriodTitle(periodBody?.title ?? '')
       setEditPeriodBody(periodBody?.body ?? '')
-      setEditIsElection(periodBody?.electSeats !== undefined)
-      setEditElectSeats(periodBody?.electSeats !== undefined ? String(periodBody.electSeats) : '')
+      setEditIsElection(periodBody?.elect !== undefined)
+      setEditElections(electToDrafts(periodBody?.elect))
     }
   }, [periodBody, periodId])
 
@@ -107,17 +112,16 @@ export default function ManagePeriodDetail() {
     })
   }
 
-  const editElectSeatsNum = Number(editElectSeats)
-  const editElectSeatsValid = !editIsElection || (Number.isSafeInteger(editElectSeatsNum) && editElectSeatsNum >= 1)
+  const editElectionsValid = draftsValid(editIsElection, editElections)
 
   function handleSavePeriodBody() {
-    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectSeatsValid) return
+    if (!editPeriodTitle.trim() || !editPeriodBody.trim() || !editElectionsValid) return
     uploadPeriodBodyMutation.mutate({
       periodId,
       body: {
         title: editPeriodTitle.trim(),
         body: editPeriodBody.trim(),
-        ...(editIsElection ? { electSeats: editElectSeatsNum } : {}),
+        ...(editIsElection ? { elect: draftsToElect(editElections) } : {}),
       },
     })
   }
@@ -131,8 +135,19 @@ export default function ManagePeriodDetail() {
 
   function handleSaveTopicBody() {
     if (editingTopicBody === null || !editTopicTitle.trim() || !editTopicBody.trim()) return
+    // A body upload replaces the whole box, so carry the existing election tag through —
+    // editing a candidate's description must not quietly un-assign it from its election.
+    const existing = topicBodies[editingTopicBody]?.e
     uploadTopicBodyMutation.mutate(
-      { periodId, topicIndex: editingTopicBody, body: { title: editTopicTitle.trim(), body: editTopicBody.trim() } },
+      {
+        periodId,
+        topicIndex: editingTopicBody,
+        body: {
+          title: editTopicTitle.trim(),
+          body: editTopicBody.trim(),
+          ...(existing !== undefined ? { e: existing } : {}),
+        },
+      },
       { onSuccess: () => setEditingTopicBody(null) },
     )
   }
@@ -154,13 +169,21 @@ export default function ManagePeriodDetail() {
   const canEdit = status === 'upcoming' && !ready && !!sdk
   // Election topic options are fixed (Support / Against / Abstain), so the per-topic
   // options editor is suppressed for elections even while the period is otherwise editable.
-  const isElection = periodBody?.electSeats !== undefined
+  const elect = periodBody?.elect
+  const isElection = elect !== undefined
   const hasVotes = period.topics.some(([, tallies]) => tallies.some((t) => t > 0))
   const readyWarnings: string[] = []
   if (!periodBody) readyWarnings.push('period body is missing')
   if (period.topics.length === 0) readyWarnings.push('no topics added')
   else if (topicBodies.length < period.topics.length || topicBodies.some((b) => !b))
     readyWarnings.push('one or more topics are missing a body')
+  // An election period also needs every candidate pointing at a declared election. Worth
+  // blocking on now: once the period is ready and a vote lands, the topic set is frozen and a
+  // mis-tagged candidate can no longer be moved. Only once every body has loaded, though —
+  // judging tags against a half-fetched list would report candidates as unassigned that aren't.
+  if (elect && period.topics.length > 0 && topicBodies.length === period.topics.length) {
+    readyWarnings.push(...describeAssignmentReport(validateAssignment(topicBodies, elect), elect))
+  }
   if (status === 'ended') readyWarnings.push('voting window has already ended')
 
   return (
@@ -300,40 +323,18 @@ export default function ManagePeriodDetail() {
                   placeholder="Period description..."
                 />
               </div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-input"
-                    checked={editIsElection}
-                    onChange={(e) => setEditIsElection(e.target.checked)}
-                  />
-                  Election type
-                </label>
-                {editIsElection && (
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-elect-seats">Seats to elect</Label>
-                    <Input
-                      id="edit-elect-seats"
-                      name="edit-elect-seats"
-                      type="number"
-                      min={1}
-                      step={1}
-                      value={editElectSeats}
-                      onChange={(e) => setEditElectSeats(e.target.value)}
-                      placeholder="Number of seats being elected"
-                      required
-                    />
-                    {!editElectSeatsValid && (
-                      <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
-                    )}
-                  </div>
-                )}
-              </div>
+              <ElectionsEditor
+                isElection={editIsElection}
+                onIsElectionChange={setEditIsElection}
+                rows={editElections}
+                onRowsChange={setEditElections}
+                idPrefix="edit-period"
+                candidateCount={period.topics.length}
+              />
               <TxButton
                 size="sm"
                 onClick={handleSavePeriodBody}
-                disabled={!editElectSeatsValid}
+                disabled={!editElectionsValid}
                 pending={uploadPeriodBodyMutation.isPending}
                 success={uploadPeriodBodyMutation.isSuccess}
                 idleLabel={periodBody ? 'Update body' : 'Add body'}
@@ -423,6 +424,41 @@ export default function ManagePeriodDetail() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Which election this candidate runs in. Shown when there's a choice to make,
+                      and always when the tag is missing so an unassigned candidate can't hide. */}
+                  {elect && (elect.length > 1 || (tb && tb.e === undefined)) && (
+                    <div className="mb-3 flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Election:</span>
+                      {canEdit && tb ? (
+                        <select
+                          name={`topic-${topicIdx}-election`}
+                          className="h-8 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          value={tb.e === undefined ? '' : String(tb.e)}
+                          onChange={(ev) =>
+                            setCandidateElectionMutation.mutate({
+                              periodId,
+                              topicIndex: topicIdx,
+                              e: ev.target.value === '' ? undefined : Number(ev.target.value),
+                            })
+                          }
+                          disabled={setCandidateElectionMutation.isPending}
+                        >
+                          <option value="">Unassigned</option>
+                          {elect.map((e, i) => (
+                            <option key={i} value={String(i)}>
+                              {e.t} ({e.s} seat{e.s === 1 ? '' : 's'})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className={tb?.e === undefined ? 'font-medium text-warning-strong' : 'font-medium'}>
+                          {tb?.e === undefined
+                            ? 'Unassigned'
+                            : (elect[tb.e]?.t ?? `election #${tb.e + 1} (not declared)`)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-1">
                     {options.map((option, optIdx) => {
                       const tally = tallies[optIdx] ?? 0
@@ -526,7 +562,7 @@ export default function ManagePeriodDetail() {
           if (!o) setRemovingTopic(null)
         }}
         title={removingTopic !== null ? `Remove topic ${removingTopic + 1}?` : 'Remove topic?'}
-        description="This can't be undone. The topic and its options will be permanently deleted from this draft."
+        description="This can't be undone. The topic and its options will be permanently deleted from this draft. Every later topic shifts down one index, so its stored body is moved to match — expect more than one wallet signature."
         confirmLabel="Remove topic"
         onConfirm={() => {
           if (removingTopic !== null) removeTopicMutation.mutate({ periodId, topicIndex: removingTopic })
