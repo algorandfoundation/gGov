@@ -404,9 +404,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
         loggedErr(errAccountNotExists)
       }
 
-      // Do NOT hoist compileArc4 out of the loop: hoisting materialises the frac registry's program
-      // and puya rejects the resulting compile cycle (fracRegistry compiles fracInstance, which
-      // compiles this registry). Inline with an explicit appId, only the method selector is needed.
       const escrowInstance = compileArc4(FracDelegationRegistryContract).call.getEscrow({
         appId: this.fracRegistryApp.value,
         args: [escrow],

@@ -905,8 +905,7 @@ export class FracDelegationInstanceContract extends BaseContract {
       isDelegated = true
     }
 
-    // Resolve the voter's weight: readonly registry resolve (inlined - hoisting materialises the
-    // registry program and puya rejects the cycle, see ingestAq), then one O(1) box read.
+    // Resolve the voter's weight: readonly registry resolve, then one O(1) box read.
     const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
       appId: this.resolveRegistryApp(),
       args: [voterAccount],
@@ -1085,7 +1084,12 @@ export class FracDelegationInstanceContract extends BaseContract {
 
     const aqBox = this.committeeAq(period.committeeNumId)
     // return false if the ledger is incomplete or the committee has no ingested accounts
-    if (!aqBox.exists || aqBox.value.ingestedAq !== aqBox.value.totalAq || aqBox.value.numAccounts !== aqBox.value.totalAccounts) return [false, 0]
+    if (
+      !aqBox.exists ||
+      aqBox.value.ingestedAq !== aqBox.value.totalAq ||
+      aqBox.value.numAccounts !== aqBox.value.totalAccounts
+    )
+      return [false, 0]
 
     const isDelegated = senderAccount !== voterAccount
     if (isDelegated) {
