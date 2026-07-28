@@ -18,13 +18,12 @@ overrides:
   tar: ^7.5.19 # contracts>@algorandfoundation/puya-ts>tar (GHSA-23hp-3jrh-7fpw, GHSA-8x88-c5mf-7j5w)
   postcss: ^8.5.19 # common>ggov-algoquarters>vitest>@vitest/mocker>vite>postcss (GHSA-6g55-p6wh-862q)
   'js-yaml@4': ^4.3.0 # ggov-frontend>@tanstack/react-start>...>xmlbuilder2>js-yaml (GHSA-52cp-r559-cp3m)
-  'minimatch@9': ^9.0.9 # contracts>@vitest/coverage-v8>test-exclude>minimatch
+  'minimatch@9': ^10.2.5 # ggov-frontend>@storybook/react-vite>...>glob>minimatch (GHSA-mh99-v99m-4gvg)
   'minimatch@10': ^10.2.5 # contracts>@algorandfoundation/puya-ts>minimatch
   'picomatch@4': ^4.0.4 # eslint-plugin-unused-imports>@typescript-eslint>tinyglobby>picomatch
   'ws@7': ^7.5.11 # ggov-frontend>@blockshake/defly-connect>@walletconnect>ws
   '@isaacs/brace-expansion': ^5.0.1 # contracts>@algorandfoundation/puya-ts>minimatch>@isaacs/brace-expansion
-  'brace-expansion@2': ^2.1.2 # ggov-frontend>@storybook/react-vite>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp)
-  'brace-expansion@5': ^5.0.7 # eslint>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp)
+  'brace-expansion@5': ^5.0.8 # eslint>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp, GHSA-mh99-v99m-4gvg)
 
 minimumReleaseAgeExclude:
-  - fast-uri@3.1.4 # 3 days old at this commit time - remove when minimumReleaseAge is surpassed
+  - brace-expansion@5.0.8 # 5 days old at this commit time - remove when minimumReleaseAge is surpassed
