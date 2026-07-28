@@ -486,7 +486,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   /**
    * Escrow on-chain getter. Resolve an escrow registration by returning its instance numeric ID
    * and app ID. Cross-app box reads are impossible on the AVM, so this is the read surface.
-   * Mostly called via readonly inner txn by `GGovRegistry.importFracDelegation`.
+   * Mostly called via readonly inner txn by `GGovRegistry.importFracDelegations`.
    *
    * If the escrow is not registered to any instance, returns the zero sentinel so this stays a
    * plain read. Callers that must fail on an unassigned escrow enforce that themselves.

@@ -449,7 +449,7 @@
                 ]
             },
             "readonly": true,
-            "desc": "Escrow on-chain getter. Resolve an escrow registration by returning its instance numeric ID\nand app ID. Cross-app box reads are impossible on the AVM, so this is the read surface.\nMostly called via readonly inner txn by `GGovRegistry.importFracDelegation`.\n\nIf the escrow is not registered to any instance, returns the zero sentinel so this stays a\nplain read. Callers that must fail on an unassigned escrow enforce that themselves.",
+            "desc": "Escrow on-chain getter. Resolve an escrow registration by returning its instance numeric ID\nand app ID. Cross-app box reads are impossible on the AVM, so this is the read surface.\nMostly called via readonly inner txn by `GGovRegistry.importFracDelegations`.\n\nIf the escrow is not registered to any instance, returns the zero sentinel so this stays a\nplain read. Callers that must fail on an unassigned escrow enforce that themselves.",
             "events": [],
             "recommendations": {}
         },
