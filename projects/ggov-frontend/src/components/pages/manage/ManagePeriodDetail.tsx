@@ -173,15 +173,18 @@ export default function ManagePeriodDetail() {
   const isElection = elect !== undefined
   const hasVotes = period.topics.some(([, tallies]) => tallies.some((t) => t > 0))
   const readyWarnings: string[] = []
+  // Every topic body readable and accounted for: still fetching (the query resolves the whole
+  // array at once, so it's empty until then) and unreadable-box both land here as "not present".
+  const allBodiesPresent = topicBodies.length === period.topics.length && topicBodies.every((b) => b)
   if (!periodBody) readyWarnings.push('period body is missing')
   if (period.topics.length === 0) readyWarnings.push('no topics added')
-  else if (topicBodies.length < period.topics.length || topicBodies.some((b) => !b))
-    readyWarnings.push('one or more topics are missing a body')
+  else if (!allBodiesPresent) readyWarnings.push('one or more topics are missing a body')
   // An election period also needs every candidate pointing at a declared election. Worth
   // blocking on now: once the period is ready and a vote lands, the topic set is frozen and a
-  // mis-tagged candidate can no longer be moved. Only once every body has loaded, though —
-  // judging tags against a half-fetched list would report candidates as unassigned that aren't.
-  if (elect && period.topics.length > 0 && topicBodies.length === period.topics.length) {
+  // mis-tagged candidate can no longer be moved. Only once every body is in hand, though — the
+  // tag rides *in* the body, so judging a half-fetched or unreadable list would report candidates
+  // as unassigned whose tag is merely unknown, on top of the missing-body warning just above.
+  if (elect && period.topics.length > 0 && allBodiesPresent) {
     readyWarnings.push(...describeAssignmentReport(validateAssignment(topicBodies, elect), elect))
   }
   if (status === 'ended') readyWarnings.push('voting window has already ended')
@@ -450,12 +453,17 @@ export default function ManagePeriodDetail() {
                             </option>
                           ))}
                         </select>
-                      ) : (
-                        <span className={tb?.e === undefined ? 'font-medium text-warning-strong' : 'font-medium'}>
-                          {tb?.e === undefined
+                      ) : tb ? (
+                        <span className={tb.e === undefined ? 'font-medium text-warning-strong' : 'font-medium'}>
+                          {tb.e === undefined
                             ? 'Unassigned'
                             : (elect[tb.e]?.t ?? `election #${tb.e + 1} (not declared)`)}
                         </span>
+                      ) : (
+                        // The tag rides in the body box, so with no body the election is unknown
+                        // rather than unset. Calling it "Unassigned" would send the operator after
+                        // the wrong fix; the missing body is already flagged in the ready checklist.
+                        <span className="font-medium text-muted-foreground">unknown (body missing)</span>
                       )}
                     </div>
                   )}
