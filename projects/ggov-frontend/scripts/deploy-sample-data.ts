@@ -35,12 +35,12 @@
  *   stable across runs and their mnemonics can be imported into a wallet in case it's needed. Shape
  *   the KMD wallets (see PERSONAS below).
  *
- * 2) FUNDING
- *   Dispenser → personas, govs, escrows and AlgoQuarter holders.
- *
- * 3) REGISTRIES
+ * 2) REGISTRIES
  *   Deploy the gGov registry and the frac registry, wired to each other in both directions.
  *   The deployer is admin + operator of both.
+ *
+ * 3) FUNDING
+ *   Dispenser → personas, govs, escrows and AlgoQuarter holders.
  *
  * 4) COMMITTEE
  *   Build and upload the committee file. Members are the two gov personas, 13 plain govs, and the
@@ -395,39 +395,15 @@ async function main() {
   }
 
   // =========================================================
-  // 2. FUNDING
-  // =========================================================
-
-  step('Funding accounts…')
-
-  const fundingPlan: { label: string; algos: number }[] = [
-    { label: 'deployer', algos: FUNDING.deployer },
-    ...['alice', 'bob', 'carol'].map((label) => ({ label, algos: FUNDING.persona })),
-    // Personas are funded above; escrows never sign anything and the registry pays their delegation
-    // MBR, so they need no balance at all.
-    ...govLabels
-      .filter((l) => !PERSONAS.includes(l) && !escrowLabels.includes(l))
-      .map((label) => ({ label, algos: FUNDING.gov })),
-    // Every AQ holder gets ALGO even if this seed never votes with it, so any of them can be
-    // imported by mnemonic and used to cast an internal vote by hand.
-    ...aqHoldersLabels
-      .filter((l) => !PERSONAS.includes(l) && !govLabels.includes(l))
-      .map((label) => ({ label, algos: FUNDING.user })),
-  ]
-
-  for (const batch of chunk(fundingPlan, 15)) {
-    let group = algorand.newGroup()
-    for (const { label, algos } of batch) {
-      group = group.addPayment({ sender: dispenser.addr, receiver: addr(label), amount: algo(algos) })
-    }
-    await group.send()
-  }
-
-  // =========================================================
-  // 3. REGISTRIES
+  // 2. REGISTRIES
   // =========================================================
 
   step('Deploying registries…')
+
+  // Funding just the deployer, the rest of the accounts are funded in step 3: an app's id is the
+  // ledger's transaction counter at creation, so this lands the registries on the same ids
+  // `algokit project deploy` gives them, keeping the .env app ids valid under either approach.
+  await algorand.send.payment({ sender: dispenser.addr, receiver: deployer, amount: algo(FUNDING.deployer) })
 
   const deployerAccount = { sender: deployer, signer: algorand.account.getSigner(deployer) }
 
@@ -467,6 +443,34 @@ async function main() {
       registryAppId: fracRegistryApp.appId,
       writerAccount: { sender: addr(label), signer: algorand.account.getSigner(addr(label)) },
     })
+
+  // =========================================================
+  // 3. FUNDING
+  // =========================================================
+
+  step('Funding accounts…')
+
+  const fundingPlan: { label: string; algos: number }[] = [
+    ...['alice', 'bob', 'carol'].map((label) => ({ label, algos: FUNDING.persona })),
+    // Personas are funded above; escrows never sign anything and the registry pays their delegation
+    // MBR, so they need no balance at all.
+    ...govLabels
+      .filter((l) => !PERSONAS.includes(l) && !escrowLabels.includes(l))
+      .map((label) => ({ label, algos: FUNDING.gov })),
+    // Every AQ holder gets ALGO even if this seed never votes with it, so any of them can be
+    // imported by mnemonic and used to cast an internal vote by hand.
+    ...aqHoldersLabels
+      .filter((l) => !PERSONAS.includes(l) && !govLabels.includes(l))
+      .map((label) => ({ label, algos: FUNDING.user })),
+  ]
+
+  for (const batch of chunk(fundingPlan, 15)) {
+    let group = algorand.newGroup()
+    for (const { label, algos } of batch) {
+      group = group.addPayment({ sender: dispenser.addr, receiver: addr(label), amount: algo(algos) })
+    }
+    await group.send()
+  }
 
   // =========================================================
   // 4. GGOV COMMITTEE
