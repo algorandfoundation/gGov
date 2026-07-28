@@ -747,8 +747,13 @@ async function main() {
   const envWritten = fs.existsSync(envPath)
   if (envWritten) {
     let env = fs.readFileSync(envPath, 'utf-8')
-    env = env.replace(/VITE_GGOV_(REGISTRY_)?APP_ID=.*/, `VITE_GGOV_REGISTRY_APP_ID=${gGovRegistryApp.appId}`)
-    env = env.replace(/VITE_FRAC_REGISTRY_APP_ID=.*/, `VITE_FRAC_REGISTRY_APP_ID=${fracRegistryApp.appId}`)
+    // Replace in place, or append when absent
+    const setVar = (body: string, key: string, value: bigint) => {
+      const line = new RegExp(`^${key}=.*$`, 'm')
+      return line.test(body) ? body.replace(line, `${key}=${value}`) : `${body.trimEnd()}\n${key}=${value}\n`
+    }
+    env = setVar(env, 'VITE_GGOV_REGISTRY_APP_ID', gGovRegistryApp.appId)
+    env = setVar(env, 'VITE_FRAC_REGISTRY_APP_ID', fracRegistryApp.appId)
     fs.writeFileSync(envPath, env)
   }
 
