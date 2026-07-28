@@ -140,6 +140,7 @@
   --color-warning-strong: var(--warning-strong);
   --color-destructive-strong: var(--destructive-strong);
   --color-info-strong: var(--info-strong);
+  --color-teal-strong: var(--teal-strong);
   --color-scrim: var(--scrim);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -202,6 +203,10 @@
   /* Readable danger/info text on pale tint strips (callouts, toasts, error dialog). */
   --destructive-strong: #c24a1e;
   --info-strong: #2d2df1;
+  /* Teal that reads as text on a pale teal tint — the brand teal (#17CAC6) does
+   * not. Pooled voting power is teal by design (direct power is blue), so it
+   * needs a text-weight teal rather than the accent used for fills and dots. */
+  --teal-strong: #0e8a87;
   /* Unified overlay scrim shared by dialogs and sheets (opacity applied at use site). */
   --scrim: #001324;
   --chart-1: #2d2df1;
@@ -255,6 +260,8 @@
   --warning-strong: #e7c24a;
   --destructive-strong: #ff9166;
   --info-strong: #6c6cf1;
+  /* On dark the brand teal already reads as text, so this matches --algo-teal. */
+  --teal-strong: #45d5d1;
   --scrim: #001324;
   --chart-1: #6c6cf1;
   --chart-2: #45d5d1;

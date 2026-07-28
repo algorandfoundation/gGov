@@ -1,11 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useWallet } from '@txnlab/use-wallet-react'
 import { toast } from 'sonner'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useErrorDialog } from '@/hooks/useErrorDialog'
-import { queryKeys } from '@/hooks/queries'
+import { fetchIsGGovAccount, queryKeys } from '@/hooks/queries'
 import { signingProgress } from '@/lib/signingProgress'
 import { GGovSDK } from 'ggov-sdk'
-import type { Election, PeriodBodyJson, TopicBodyJson } from 'ggov-sdk'
+import type { Election, PeriodBodyJson, TopicBodyJson, GGovReaderSDK } from 'ggov-sdk'
 
 function txnSuccessToast(message: string, data?: unknown) {
   const txIds = data && typeof data === 'object' && 'txIds' in data ? (data as { txIds: string[] }).txIds : undefined
@@ -44,13 +45,49 @@ export function useVoteMutation() {
   })
 }
 
+/**
+ * Whether a `set_voting_account` for `account` needs the `fractionalOnly` flag.
+ *
+ * The registry's `ensureDelegatorRegistered` accepts a delegator known to *either*
+ * registry: it checks its own `accounts` box first, and only on a miss inner-calls
+ * the frac registry's `getAccount`. The SDK funds that extra inner call only when
+ * `fractionalOnly` is set — so a pool member who has never produced a block
+ * cannot delegate at all without it.
+ *
+ * Resolved per call rather than by a hook, because `useRedelegateMutation` acts on
+ * a delegator that varies per invocation. Cached, so repeat delegations are free.
+ */
+async function needsFractionalOnly(
+  queryClient: QueryClient,
+  readerSDK: GGovReaderSDK,
+  account: string,
+): Promise<boolean> {
+  try {
+    const isGGovAccount = await queryClient.ensureQueryData({
+      queryKey: queryKeys.isGGovAccount(account),
+      queryFn: () => fetchIsGGovAccount(readerSDK, account),
+      staleTime: 300_000,
+    })
+    return !isGGovAccount
+  } catch {
+    // If the lookup itself fails, opt in: the cost of a false positive is 0.001
+    // ALGO of unused fee, while a false negative fails the transaction outright.
+    return true
+  }
+}
+
 export function useDelegateMutation() {
-  const { sdk } = useGGovSDK()
+  const { sdk, readerSDK } = useGGovSDK()
+  const { activeAddress } = useWallet()
   const queryClient = useQueryClient()
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: (delegatee: string) => sdk!.setVotingAccount({ votingAddress: delegatee }),
+    mutationFn: async (delegatee: string) =>
+      sdk!.setVotingAccount({
+        votingAddress: delegatee,
+        fractionalOnly: await needsFractionalOnly(queryClient, readerSDK, activeAddress!),
+      }),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation set', data)
@@ -60,12 +97,14 @@ export function useDelegateMutation() {
 }
 
 export function useUndelegateMutation() {
-  const { sdk } = useGGovSDK()
+  const { sdk, readerSDK } = useGGovSDK()
+  const { activeAddress } = useWallet()
   const queryClient = useQueryClient()
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: () => sdk!.setVotingAccount({}),
+    mutationFn: async () =>
+      sdk!.setVotingAccount({ fractionalOnly: await needsFractionalOnly(queryClient, readerSDK, activeAddress!) }),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'delegation' })
       txnSuccessToast('Delegation removed', data)
@@ -81,13 +120,18 @@ export function useUndelegateMutation() {
  * list onto the new delegatee's, so refresh both reverse indexes and the forward delegation.
  */
 export function useRedelegateMutation() {
-  const { sdk } = useGGovSDK()
+  const { sdk, readerSDK } = useGGovSDK()
   const queryClient = useQueryClient()
   const { showError } = useErrorDialog()
 
   return useMutation({
-    mutationFn: (args: { account: string; votingAddress: string }) =>
-      sdk!.setVotingAccount({ account: args.account, votingAddress: args.votingAddress }),
+    mutationFn: async (args: { account: string; votingAddress: string }) =>
+      sdk!.setVotingAccount({
+        account: args.account,
+        votingAddress: args.votingAddress,
+        // The delegator here is the incoming account, not the signer.
+        fractionalOnly: await needsFractionalOnly(queryClient, readerSDK, args.account),
+      }),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({
         predicate: (q) => ['delegation', 'delegatedToMe', 'allDelegations'].includes(q.queryKey[0] as string),

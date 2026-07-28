@@ -32,6 +32,8 @@ interface GGovSDKContextValue {
   sdk: any | null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   escregSDK: any
+  fracEnabled: boolean
+  getFracReaderSDK: () => Promise<null>
 }
 
 export function useGGovSDK(): GGovSDKContextValue {
@@ -41,6 +43,11 @@ export function useGGovSDK(): GGovSDKContextValue {
     escregSDK: inertStub,
     // A non-null sdk enables write actions (e.g. casting a vote) when connected.
     sdk: activeAddress ? inertStub : null,
+    // Pooled data comes from the `fracQueries` mock, so nothing should reach the
+    // SDK here. Report the feature off and hand back null if anything does — that
+    // way a leak degrades to "no pooled power" instead of hanging on the stub.
+    fracEnabled: false,
+    getFracReaderSDK: () => Promise.resolve(null),
   }
 }
 

@@ -13,6 +13,7 @@ import { formatMonthDayYear, formatTime, roundsToDays } from '@/utils/time'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import { Surface } from '@/components/ui/surface'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { useAddressName } from '@/hooks/use-nfd'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
@@ -25,11 +26,6 @@ const PAGE_SIZE = 25
 /** Shorten a base64url committee id for the title (first 8 … last 6). */
 function ellipseCommitteeId(id: string): string {
   return id.length > 18 ? `${id.slice(0, 8)}…${id.slice(-6)}` : id
-}
-
-/** Card surface matching the vote/period pages (hairline border + sm shadow). */
-function Surface({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('rounded-xl border border-border bg-card shadow-sm', className)} {...props} />
 }
 
 // ── Export dropdown ─────────────────────────────────────────────────────────

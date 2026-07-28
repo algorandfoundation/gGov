@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import { History } from 'lucide-react'
+import { Droplets, History } from 'lucide-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { usePeriods, usePeriodBody, type PeriodWithId } from '@/hooks/queries'
 import { periodStatus, formatDateRange, type PeriodStatus } from '@/utils/time'
@@ -34,6 +34,7 @@ const STEPS = [
   { n: '01', title: 'One block, one vote', body: 'Your weight equals the blocks you produced.' },
   { n: '02', title: '3M-block window', body: 'Each window spans 3M blocks, advancing 1M at a time.' },
   { n: '03', title: 'No opt-in required', body: 'No ALGO committed — just vote.' },
+  { n: '04', title: 'Pooled stake counts', body: 'Pool & liquid stakers vote their share pro-rata.' },
 ]
 
 /**
@@ -102,9 +103,35 @@ export default function Home() {
         </section>
       )}
 
-      <section className="mx-auto w-full max-w-[760px] bg-muted/40 p-7">
+      {/* Pooled voting is invisible to a staker who doesn't know it exists — their
+          power sits with the pool's escrows, not their own account — so this is
+          unconditional rather than gated on wallet state. */}
+      <section className="mx-auto w-full max-w-[680px]">
+        <div className="flex items-start gap-4 rounded-lg border border-algo-teal/20 bg-algo-teal/10 px-5 py-[18px]">
+          <span className="grid size-[42px] shrink-0 place-items-center rounded-full bg-card text-algo-teal">
+            <Droplets className="size-[21px]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-[15.5px] font-bold">Staking through a pool? You vote here too.</div>
+            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
+              If you hold xALGO or tALGO, or stake with a Reti pool, your share of the pool's voting power is yours to
+              cast — no unstaking required.
+            </p>
+            <div className="mt-2.5 text-right">
+              <Link
+                to="/docs/pooled-voting"
+                className="text-[13px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+              >
+                How it works →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[860px] bg-muted/40 p-7">
         <h2 className="mb-4 text-center font-display text-base font-bold">How Governance works</h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
           {STEPS.map((s) => (
             <div key={s.n}>
               <div className="font-display text-sm font-bold text-algo-blue dark:text-algo-teal">{s.n}</div>

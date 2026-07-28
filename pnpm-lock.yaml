@@ -236,6 +236,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      frac-delegation-sdk:
+        specifier: link:../frac-delegation-sdk
+        version: link:../frac-delegation-sdk
       ggov-sdk:
         specifier: link:../ggov-sdk
         version: link:../ggov-sdk

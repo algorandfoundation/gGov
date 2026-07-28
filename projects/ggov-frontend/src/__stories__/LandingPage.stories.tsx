@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import Home from '@/components/pages/Home'
 import { demoAccounts } from '../../.storybook/mocks/use-wallet-react'
-import { buildScenario, listScenario, emptyScenario, SAMPLE_TOPICS } from '../../.storybook/mocks/scenarios'
+import {
+  buildScenario,
+  listScenario,
+  emptyScenario,
+  SAMPLE_TOPICS,
+  SAMPLE_POOLED,
+} from '../../.storybook/mocks/scenarios'
 
 const [alice] = demoAccounts
 
@@ -27,6 +33,33 @@ export const FeaturedActiveLoggedIn: Story = {
   parameters: {
     wallet: { walletName: 'Lute', accounts: [alice] },
     scenario: listScenario({ connected: true }),
+  },
+}
+
+export const FeaturedActivePooled: Story = {
+  name: 'Featured active — pooled weight (direct + 2 pools)',
+  parameters: {
+    wallet: { walletName: 'Lute', accounts: [alice] },
+    scenario: buildScenario(
+      [
+        {
+          id: 9,
+          phase: 'active',
+          title: 'Period 9 · Reward policy',
+          body: 'The active reward-policy vote.',
+          topics: SAMPLE_TOPICS,
+          accounts: { [alice.address]: { power: 12_480, pooled: SAMPLE_POOLED } },
+        },
+        {
+          id: 8,
+          phase: 'ended',
+          title: 'Period 8 · Treasury direction',
+          body: 'Closed last week.',
+          topics: SAMPLE_TOPICS,
+        },
+      ],
+      { globalLastPeriodId: 9 },
+    ),
   },
 }
 

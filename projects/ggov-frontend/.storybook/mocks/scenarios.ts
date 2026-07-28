@@ -13,6 +13,7 @@
  */
 import type { GGovPeriod, GGovVoteRecord, Election, PeriodBodyJson, TopicBodyJson } from 'ggov-sdk'
 import type { PeriodWithId, CommitteeOption, ProducerRank } from '../../src/hooks/queries'
+import type { PooledPosition } from '../../src/hooks/fracQueries'
 // Re-use the app's real base64url codec so committee keys match the ids the
 // components compute via `toBase64Url(period.committeeId)`.
 import { toBase64Url } from '../../src/hooks/queries'
@@ -49,14 +50,30 @@ export interface MockScenario {
   canVote: Record<string, { canVote: boolean; votingPower: bigint }>
   /** Vote record per `${periodId}:${account}`; `null` = eligible but didn't vote. */
   voteRecords: Record<string, GGovVoteRecord | null>
-  /** Registry voting power per `${committeeB64}:${account}` (`useXGovVotingPowers`). */
+  /** Registry voting power per `${committeeB64}:${account}` (`useGovVotingPowers`). */
   votingPowers: Record<string, number>
+  /**
+   * Pooled (fractional-delegation) positions per `${committeeB64}:${account}` —
+   * drives `usePooledPositions`. Omit for accounts in no pool; a present-but-empty
+   * array still marks the account a pool member, which is what the merged
+   * voting-power card commits its layout on.
+   */
+  pooled?: Record<string, PooledPosition[]>
   /** Producer rank per `${committeeB64}:${account}` (`useProducerRank`). */
   producerRanks?: Record<string, ProducerRank | null>
   /** Global registry state (`useGlobalState`, PeriodStatsCard). */
   globalState?: { lastPeriodId?: bigint }
   /** Force loading/error UIs without real async. */
-  flags?: { periodsLoading?: boolean; periodLoading?: boolean; periodsError?: boolean }
+  flags?: {
+    periodsLoading?: boolean
+    periodLoading?: boolean
+    periodsError?: boolean
+    /**
+     * Pool membership known but amounts still resolving — the state where the
+     * merged voting-power card shows its pooled chrome with skeleton amounts.
+     */
+    pooledLoading?: boolean
+  }
 }
 
 const DAY = 86_400
@@ -124,6 +141,12 @@ export interface AccountState {
   isDelegated?: boolean
   /** Producer rank for the "Top N% of producers" tag. */
   producerRank?: ProducerRank
+  /**
+   * Pooled positions this account holds in the period's committee. An empty array
+   * still marks the account a pool member — useful for the "member, amounts not in
+   * yet" state the merged voting-power card renders with skeletons.
+   */
+  pooled?: PooledPosition[]
 }
 
 export interface PeriodConfig {
@@ -163,6 +186,7 @@ export function buildScenario(
     voteRecords: {},
     votingPowers: {},
     producerRanks: {},
+    pooled: {},
     globalState: {
       lastPeriodId: BigInt(opts?.globalLastPeriodId ?? Math.max(0, ...periods.map((p) => p.id))),
     },
@@ -214,6 +238,7 @@ export function buildScenario(
         scenario.voteRecords[pakey(cfg.id, address)] = null
       }
       if (state.producerRank) scenario.producerRanks![cakey(committeeB64, address)] = state.producerRank
+      if (state.pooled) scenario.pooled![cakey(committeeB64, address)] = state.pooled
     }
   }
 
@@ -303,6 +328,32 @@ export const MULTI_ELECTION_TOPICS: TopicConfig[] = [
 // --- Page presets ------------------------------------------------------------
 
 /** Landing/index list with one period of every phase (alice connected & eligible). */
+/**
+ * Two pooled positions for the stories that exercise pooled voting: a liquid-staking
+ * token and a Reti pool, with the shares/AQ that produce "≈ 5,820.44 via 2 pools".
+ * `votes` is `userAq / totalAq * poolVotes`, as the real hook derives it.
+ */
+export const SAMPLE_POOLED: PooledPosition[] = [
+  {
+    instanceNumId: 1,
+    instanceName: 'Folks Finance xALGO',
+    userAq: 4_120,
+    totalAq: 512_400,
+    sharePct: (4_120 / 512_400) * 100,
+    poolVotes: 509_800,
+    votes: (4_120 / 512_400) * 509_800,
+  },
+  {
+    instanceNumId: 2,
+    instanceName: 'Reti pool #42',
+    userAq: 1_730,
+    totalAq: 91_050,
+    sharePct: (1_730 / 91_050) * 100,
+    poolVotes: 90_600,
+    votes: (1_730 / 91_050) * 90_600,
+  },
+]
+
 export function listScenario(opts: { connected?: boolean; account?: string } = {}): MockScenario {
   const account = opts.account ?? alice.address
   const accounts = (opts.connected ?? true) ? { [account]: { power: 4200, producerRank: rank(4) } } : {}

@@ -22,6 +22,10 @@ const faqs = [
     a: 'A direct vote always wins. If an account votes on its own, its power is locked for that period and a delegate cannot override it.',
   },
   {
+    q: 'I stake through a pool (xALGO, tALGO, Reti). Can I vote?',
+    a: "Yes. Your share of the pool's voting power is yours to cast — pooled positions appear next to your own accounts on any open period. If you don't vote, your share counts as Abstain.",
+  },
+  {
     q: 'When can I vote?',
     a: 'While a period is active. Upcoming periods can be read in advance, and ended periods show final results.',
   },
@@ -59,6 +63,14 @@ const glossary = [
   {
     term: 'Delegation',
     def: 'Letting another account vote with your voting power, or voting on behalf of others.',
+  },
+  {
+    term: 'Pooled voting',
+    def: "Voting your prorated share of a staking pool's power. Members' votes are combined and cast on-chain by the pool.",
+  },
+  {
+    term: 'AlgoQuarter (AQ)',
+    def: "A pool's unit of member contribution: 1 ALGO staked for the full 3M-block window equals 1 AQ. Your AQ share is your share of the pool's voting power.",
   },
   {
     term: 'Governor',
