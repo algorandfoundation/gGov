@@ -486,10 +486,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     }) {
     builder = builder ?? this.writeClient!.newGroup()
     const self = sender ?? String(this.writerAccount!.sender)
-    const xgovAddress = account ?? self
-    const target = votingAddress ?? xgovAddress // omitted target == clear ("vote for self")
+    const govAddress = account ?? self
+    const target = votingAddress ?? govAddress // omitted target == clear ("vote for self")
     const opts: any = {
-      args: { xgovAddress, votingAddress: target },
+      args: { govAddress, votingAddress: target },
       note,
       // The frac fallback fires on the delegator, whichever way this call is going: clearing runs the
       // same gate as delegating, so a frac-only account pays it to undelegate too.
