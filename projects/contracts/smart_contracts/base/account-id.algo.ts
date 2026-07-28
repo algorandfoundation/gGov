@@ -1,8 +1,8 @@
-import { Account, BoxMap, GlobalState, uint64 } from '@algorandfoundation/algorand-typescript'
+import { Account, BoxMap, GlobalState, loggedAssert, uint64 } from '@algorandfoundation/algorand-typescript'
 import { Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from './base.algo'
 import { errAccountExists, errAccountNotExists } from './errors.algo'
-import { ensure, u32 } from './utils.algo'
+import { u32 } from './utils.algo'
 
 // Not used in gGov - we need more complex/specific value schema
 // Instead we use ggovRegistryAccount that mirrors this
@@ -19,7 +19,7 @@ export abstract class AccountIdContract extends BaseContract {
    */
   protected createAccountId(account: Account): Uint32 {
     const box = this.accountIds(account)
-    ensure(!box.exists, errAccountExists)
+    loggedAssert(!box.exists, errAccountExists)
     this.lastAccountId.value++
     const accountId = u32(this.lastAccountId.value)
     box.value = accountId
@@ -45,7 +45,7 @@ export abstract class AccountIdContract extends BaseContract {
    */
   protected mustGetAccountId(account: Account): Uint32 {
     const accountIdBox = this.accountIds(account)
-    ensure(accountIdBox.exists, errAccountNotExists)
+    loggedAssert(accountIdBox.exists, errAccountNotExists)
     return accountIdBox.value
   }
 

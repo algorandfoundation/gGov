@@ -16,6 +16,7 @@ import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import TopicVoteCard from '@/components/TopicVoteCard'
 import TurnoutCard from '@/components/TurnoutCard'
 import ElectionResults, { type ElectionCandidate } from '@/components/ElectionResults'
+import { groupCandidates, type Election } from 'ggov-sdk'
 import { InfoRow } from '@/components/PeriodInfoCard'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,7 +27,7 @@ import { tallyBallot, singleChoiceIndex } from '@/utils/vote'
 import { cn } from '@/lib/utils'
 
 /** "How scoring works" sidebar card (elections only). */
-function ScoringCard({ threshold }: { threshold: number }) {
+function ScoringCard({ elect }: { elect: Election[] }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <Eyebrow>How scoring works</Eyebrow>
@@ -60,8 +61,17 @@ function ScoringCard({ threshold }: { threshold: number }) {
         </div>
       </div>
       <div className="mt-3.5 border-t border-border pt-3 text-[13px] leading-snug text-muted-foreground">
-        Candidates are ranked by score; the top <strong className="text-foreground">{threshold}</strong> lead for a
-        seat.
+        {elect.length === 1 ? (
+          <>
+            Candidates are ranked by score; the top <strong className="text-foreground">{elect[0].s}</strong> lead for a
+            seat.
+          </>
+        ) : (
+          <>
+            Each election is ranked <strong className="text-foreground">separately</strong> — a candidate competes only
+            against others in the same election, and each election fills its own seats.
+          </>
+        )}
       </div>
     </div>
   )
@@ -69,10 +79,10 @@ function ScoringCard({ threshold }: { threshold: number }) {
 
 /**
  * Read-only Period Results page (`/vote/period/:periodId/results`). The layout is
- * chosen by period type: an election (period body has `electSeats`) shows
- * the ranked candidate list with a seat cutoff; any other period shows per-topic
- * tally cards. Election results are also shown live while the period is active (the
- * in-progress order); standard results are post-close only.
+ * chosen by period type: an election (period body has `elect`) shows one ranked
+ * candidate list with a seat cutoff per election it declares; any other period shows
+ * per-topic tally cards. Election results are also shown live while the period is
+ * active (the in-progress order); standard results are post-close only.
  */
 export default function VotePeriodResults() {
   const { periodId: pidParam } = useParams({ strict: false })
@@ -99,8 +109,8 @@ export default function VotePeriodResults() {
 
   const status = periodStatus(period.votingStart, period.votingEnd)
   const isEnded = status === 'ended'
-  const isElection = periodBody?.electSeats !== undefined
-  const threshold = periodBody?.electSeats ?? 0
+  const elect = periodBody?.elect
+  const isElection = elect !== undefined
   // Elections expose the in-progress order while active; standard results
   // are post-close only.
   const live = isElection && status === 'active'
@@ -142,22 +152,34 @@ export default function VotePeriodResults() {
   )
   const governorsVoted = voters?.length ?? 0
 
-  const candidates: ElectionCandidate[] = isElection
-    ? period.topics.map(([options, tallies], i) => {
-        // tallyBallot classifies free-form labels into yes/no/abstain sentiment;
-        // for an election those map to Support / Against / Abstain.
-        const { yes, no, abstain } = tallyBallot(options, tallies)
-        return { name: topicBodies[i]?.title ?? `Candidate ${i + 1}`, support: yes, against: no, abstain }
-      })
-    : []
+  // Bucket the candidates into their elections by each topic body's `e` tag. Candidates whose
+  // tag is missing or names no declared election are left out of every group on purpose — they
+  // surface below as "unassigned" rather than silently ranking in the first election.
+  const groups = elect ? groupCandidates(period.topics, topicBodies, elect) : []
+  const toCandidate = ({
+    name,
+    options,
+    tallies,
+    topicIndex,
+  }: (typeof groups)[number]['candidates'][number]): ElectionCandidate => {
+    // tallyBallot classifies free-form labels into yes/no/abstain sentiment;
+    // for an election those map to Support / Against / Abstain.
+    const { yes, no, abstain } = tallyBallot(options, tallies)
+    // Trim-based, not `??`: a body's title is only validated as a string, so a blank one would
+    // otherwise render as an empty candidate name. Matches `describeAssignmentReport`'s labelling.
+    return { name: name?.trim() || `Candidate ${topicIndex + 1}`, support: yes, against: no, abstain }
+  }
+  const groupedCount = groups.reduce((n, g) => n + g.candidates.length, 0)
+  const unassignedCount = isElection ? period.topics.length - groupedCount : 0
 
   const metaCount = isElection
-    ? `${candidates.length} candidate${candidates.length === 1 ? '' : 's'}`
+    ? `${period.topics.length} candidate${period.topics.length === 1 ? '' : 's'}` +
+      (elect.length > 1 ? ` · ${elect.length} elections` : '')
     : `${period.topics.length} topic${period.topics.length === 1 ? '' : 's'}`
 
   const sidebar = (
     <div className="space-y-4">
-      {isElection && <ScoringCard threshold={threshold} />}
+      {elect && <ScoringCard elect={elect} />}
       {committee ? (
         <TurnoutCard
           votesCast={periodVotesCast}
@@ -181,14 +203,33 @@ export default function VotePeriodResults() {
               {isElection ? 'Election' : 'Standard vote'}
             </span>
           </InfoRow>
-          {isElection ? (
+          {elect ? (
             <>
-              <InfoRow label="Seats">
-                <span className="font-display text-[15px] font-bold tabular-nums">{threshold}</span>
-              </InfoRow>
-              <InfoRow label="Candidates">
-                <span className="font-display text-[15px] font-bold tabular-nums">{candidates.length}</span>
-              </InfoRow>
+              {/* One election → a plain seats/candidates pair; several → a row each, so a
+                  reader can see how the ballot's candidates split across the races. */}
+              {elect.length === 1 ? (
+                <>
+                  <InfoRow label="Seats">
+                    <span className="font-display text-[15px] font-bold tabular-nums">{elect[0].s}</span>
+                  </InfoRow>
+                  <InfoRow label="Candidates">
+                    <span className="font-display text-[15px] font-bold tabular-nums">{groupedCount}</span>
+                  </InfoRow>
+                </>
+              ) : (
+                groups.map((g) => (
+                  <InfoRow key={g.electionIndex} label={g.election.t}>
+                    <span className="text-sm font-medium tabular-nums">
+                      {g.election.s} seat{g.election.s === 1 ? '' : 's'} · {g.candidates.length} cand.
+                    </span>
+                  </InfoRow>
+                ))
+              )}
+              {unassignedCount > 0 && (
+                <InfoRow label="Unassigned">
+                  <span className="text-sm font-medium tabular-nums text-warning-strong">{unassignedCount}</span>
+                </InfoRow>
+              )}
             </>
           ) : (
             <InfoRow label="Topics">
@@ -210,8 +251,36 @@ export default function VotePeriodResults() {
     </div>
   )
 
-  const main = isElection ? (
-    <ElectionResults candidates={candidates} threshold={threshold} live={live} />
+  const main = elect ? (
+    <div className="flex flex-col gap-9">
+      {groups.map((g) => (
+        <section key={g.electionIndex}>
+          {/* A single-election period keeps the original unheaded layout; only a
+              multi-election ballot needs each race labelled. */}
+          {elect.length > 1 && (
+            <h2 className="mb-3.5 font-display text-lg font-bold">
+              {g.election.t}
+              <span className="ml-2 text-[13px] font-medium text-muted-foreground">
+                {g.election.s} seat{g.election.s === 1 ? '' : 's'}
+              </span>
+            </h2>
+          )}
+          {g.candidates.length === 0 ? (
+            <p className="text-muted-foreground">No candidates ran in this election.</p>
+          ) : (
+            <ElectionResults candidates={g.candidates.map(toCandidate)} threshold={g.election.s} live={live} />
+          )}
+        </section>
+      ))}
+      {unassignedCount > 0 && (
+        <p className="text-[13px] text-warning-strong">
+          {unassignedCount} candidate{unassignedCount === 1 ? '' : 's'} on this ballot{' '}
+          {unassignedCount === 1 ? 'is' : 'are'} not assigned to any election, so{' '}
+          {unassignedCount === 1 ? 'it' : 'they'} {unassignedCount === 1 ? 'does' : 'do'} not appear above. Their votes
+          were still recorded on-chain.
+        </p>
+      )}
+    </div>
   ) : period.topics.length === 0 ? (
     <p className="text-muted-foreground">No topics in this period.</p>
   ) : (

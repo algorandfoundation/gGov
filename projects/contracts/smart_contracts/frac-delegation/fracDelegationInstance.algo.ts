@@ -13,6 +13,8 @@ import {
   GlobalState,
   itxn,
   log,
+  loggedAssert,
+  loggedErr,
   op,
   Txn,
   uint64,
@@ -65,7 +67,7 @@ import {
   getEmptyFracPeriodVoteCache,
   getEmptyFracVotingRecord,
 } from '../base/types.algo'
-import { ensure, ensureExtra, u16, u32, u8 } from '../base/utils.algo'
+import { u16, u32, u8 } from '../base/utils.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
 import { FracDelegationRegistryContract, fracRegistryGGovKey } from './fracDelegationRegistry.algo'
@@ -153,7 +155,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   /** Instance admin is the registry's `admin` */
   protected resolveAdmin(): Account {
     const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`admin`)
-    ensure(exists, errRegistryMissing)
+    loggedAssert(exists, errRegistryMissing)
     return Account(value)
   }
 
@@ -165,7 +167,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   protected resolveOperator(): Account {
     if (this.operator.value === Global.zeroAddress) {
       const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`defaultOperator`)
-      ensure(exists, errRegistryMissing)
+      loggedAssert(exists, errRegistryMissing)
       return Account(value)
     }
     return this.operator.value
@@ -178,12 +180,12 @@ export class FracDelegationInstanceContract extends BaseContract {
    */
   protected override ensureCallerIsAdmin(): void {
     if (Txn.sender === Global.creatorAddress) return
-    ensure(Txn.sender === this.resolveAdmin(), errUnauthorized)
+    loggedAssert(Txn.sender === this.resolveAdmin(), errUnauthorized)
   }
 
   /** Caller must match the resolved operator. */
   protected ensureCallerIsOperator(): void {
-    ensure(Txn.sender === this.resolveOperator(), errUnauthorized)
+    loggedAssert(Txn.sender === this.resolveOperator(), errUnauthorized)
   }
 
   /**
@@ -192,7 +194,7 @@ export class FracDelegationInstanceContract extends BaseContract {
    */
   protected resolveGGovRegistryApp(): Application {
     const [appId, exists] = op.AppGlobal.getExUint64(this.registryApp.value, fracRegistryGGovKey)
-    ensure(exists && appId > 0, errRegistryMissing)
+    loggedAssert(exists && appId > 0, errRegistryMissing)
     return Application(appId)
   }
 
@@ -202,14 +204,14 @@ export class FracDelegationInstanceContract extends BaseContract {
    * needs the app rather than a field out of it.
    */
   protected resolveRegistryApp(): Application {
-    ensure(this.registryApp.value > 0, errRegistryMissing)
+    loggedAssert(this.registryApp.value > 0, errRegistryMissing)
     return Application(this.registryApp.value)
   }
 
   /** Caller must be the configured registry application (inner app call). */
   protected ensureCallerIsRegistry(): void {
-    ensure(this.registryApp.value > 0, errRegistryMissing)
-    ensure(Global.callerApplicationId === this.registryApp.value, errUnauthorized)
+    loggedAssert(this.registryApp.value > 0, errRegistryMissing)
+    loggedAssert(Global.callerApplicationId === this.registryApp.value, errUnauthorized)
   }
 
   /**
@@ -250,7 +252,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   public setRegistryApp(appId: uint64): void {
     this.ensureCallerIsAdmin()
     const [_, exists] = op.AppGlobal.getExBytes(appId, Bytes`admin`)
-    ensure(exists, errRegistryMissing)
+    loggedAssert(exists, errRegistryMissing)
     this.registryApp.value = appId
   }
 
@@ -328,7 +330,7 @@ export class FracDelegationInstanceContract extends BaseContract {
     // Nothing to snapshot without escrows. Checked before the first inner call so the failure
     // costs nothing, and so an empty record can never be written.
     const escrows = this.escrows.exists ? clone(this.escrows.value) : ([] as Account[])
-    ensure(escrows.length > 0, errNoEscrows)
+    loggedAssert(escrows.length > 0, errNoEscrows)
 
     const gGovRegistry = compileArc4(GGovRegistryContract)
 
@@ -338,7 +340,7 @@ export class FracDelegationInstanceContract extends BaseContract {
       appId: gGovRegistryAppId,
       args: [committeeId, true],
     }).returnValue
-    ensure(committeeMetadata.numericId.asUint64() > 0, errCommitteeNotExists)
+    loggedAssert(committeeMetadata.numericId.asUint64() > 0, errCommitteeNotExists)
 
     const escrowsVotes: Uint32[] = []
     let totalVotes: uint64 = 0
@@ -422,12 +424,12 @@ export class FracDelegationInstanceContract extends BaseContract {
     // Must have nonzero totals. A zero total would also make the record indistinguishable from the
     // "no ledger" sentinel `getCommitteeAq` returns. Mirrors the gGov registry's totalVotes/totalMembers
     // guards.
-    ensure(totalAq.asUint64() > 0, errTotalAqZero)
-    ensure(totalAccounts.asUint64() > 0, errTotalAccountsZero)
+    loggedAssert(totalAq.asUint64() > 0, errTotalAqZero)
+    loggedAssert(totalAccounts.asUint64() > 0, errTotalAccountsZero)
 
     const committeeBox = this.committees(committeeId)
     // committee must exist locally
-    ensure(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
 
     const committeeNumId = committeeBox.value.committeeNumId
     const committeeAqBox = this.committeeAq(committeeNumId)
@@ -435,7 +437,7 @@ export class FracDelegationInstanceContract extends BaseContract {
     if (committeeAqBox.exists) {
       // Only a pristine ledger may have its total re-set. `ingestAq` rejects zero-AQ accounts, so a
       // zero `ingestedAq` also implies zero `numAccounts` - nothing is lost by rebuilding from scratch.
-      ensure(committeeAqBox.value.ingestedAq.asUint64() === 0, errIngestedAqNotZero)
+      loggedAssert(committeeAqBox.value.ingestedAq.asUint64() === 0, errIngestedAqNotZero)
     }
 
     const committeeAq: FracCommitteeAq = {
@@ -476,13 +478,13 @@ export class FracDelegationInstanceContract extends BaseContract {
 
     // ensure aq import has started
     const aqBox = this.committeeAq(committeeNumId)
-    ensure(aqBox.exists, errAqNotStarted)
+    loggedAssert(aqBox.exists, errAqNotStarted)
     const committeeAq = clone(aqBox.value)
 
     let sumAq: uint64 = 0
     for (const accountAq of clone(accountAqs)) {
       // zero account AQ is not valid
-      ensure(accountAq.aq.asUint64() > 0, errZeroAq)
+      loggedAssert(accountAq.aq.asUint64() > 0, errZeroAq)
 
       // get account ID, creating it if this is the first sighting of the account
       // also associates account with this instance on the frac registry
@@ -493,7 +495,10 @@ export class FracDelegationInstanceContract extends BaseContract {
 
       // if box exists, the account has already been ingested for this committee
       const box = this.accountAq([registryAccount.accountId, committeeNumId])
-      ensureExtra(!box.exists, errAccountAqExists, accountAq.account.bytes)
+      if (box.exists) {
+        log(accountAq.account.bytes)
+        loggedErr(errAccountAqExists)
+      }
       box.value = accountAq.aq
 
       sumAq += accountAq.aq.asUint64()
@@ -502,10 +507,10 @@ export class FracDelegationInstanceContract extends BaseContract {
     // tally of ingested AQ updated with this run's AQ sum
     const ingestedAq: uint64 = committeeAq.ingestedAq.asUint64() + sumAq
     // ensure we do not exceed the stated total AQ
-    ensure(ingestedAq <= committeeAq.totalAq.asUint64(), errTotalAqExceeded)
+    loggedAssert(ingestedAq <= committeeAq.totalAq.asUint64(), errTotalAqExceeded)
     // ensure we do not exceed the stated total accounts
     const nextNumAccounts: uint64 = committeeAq.numAccounts.asUint64() + accountAqs.length
-    ensure(nextNumAccounts <= committeeAq.totalAccounts.asUint64(), errTotalGovsExceeded)
+    loggedAssert(nextNumAccounts <= committeeAq.totalAccounts.asUint64(), errTotalGovsExceeded)
 
     committeeAq.ingestedAq = u32(ingestedAq)
     committeeAq.numAccounts = u32(nextNumAccounts)
@@ -523,7 +528,7 @@ export class FracDelegationInstanceContract extends BaseContract {
   public getCommitteeAq(committeeNumId: Uint16, mustBeComplete: boolean): FracCommitteeAq {
     const aqBox = this.committeeAq(committeeNumId)
     if (!aqBox.exists) {
-      ensure(!mustBeComplete, errAqNotStarted)
+      loggedAssert(!mustBeComplete, errAqNotStarted)
       return getEmptyFracCommitteeAq()
     }
     const committeeAq = clone(aqBox.value)
@@ -531,8 +536,8 @@ export class FracDelegationInstanceContract extends BaseContract {
     // ledger would hand early voters an inflated share. Same role as the `mustBeComplete` flag
     // `syncCommittee` passes into the gGov registry one level up.
     if (mustBeComplete) {
-      ensure(committeeAq.ingestedAq === committeeAq.totalAq, errAqIncomplete)
-      ensure(committeeAq.numAccounts === committeeAq.totalAccounts, errAqIncomplete)
+      loggedAssert(committeeAq.ingestedAq === committeeAq.totalAq, errAqIncomplete)
+      loggedAssert(committeeAq.numAccounts === committeeAq.totalAccounts, errAqIncomplete)
     }
     return committeeAq
   }
@@ -637,7 +642,7 @@ export class FracDelegationInstanceContract extends BaseContract {
     const registryApp = this.resolveRegistryApp()
 
     const aqBox = this.committeeAq(committeeNumId)
-    ensure(aqBox.exists, errAqNotStarted)
+    loggedAssert(aqBox.exists, errAqNotStarted)
     const committeeAq = clone(aqBox.value)
 
     let removedAq: uint64 = 0
@@ -648,7 +653,10 @@ export class FracDelegationInstanceContract extends BaseContract {
       }).returnValue
 
       const box = this.accountAq([registryAccount.accountId, committeeNumId])
-      ensureExtra(box.exists, errAccountAqNotExists, account.bytes)
+      if (!box.exists) {
+        log(account.bytes)
+        loggedErr(errAccountAqNotExists)
+      }
       removedAq += box.value.asUint64()
       box.delete()
     }
@@ -729,14 +737,14 @@ export class FracDelegationInstanceContract extends BaseContract {
     // neither. Mirrors resolveGGovRegistryApp's getEx* pattern. periodId has no initial value, so
     // its absence also rejects a non-period app before any inner call is made.
     const [periodId, hasPeriodId] = op.AppGlobal.getExUint64(periodApp, Bytes`periodId`)
-    ensure(hasPeriodId, errGGovPeriodNotExists)
+    loggedAssert(hasPeriodId, errGGovPeriodNotExists)
     const [ready, _hasReady] = op.AppGlobal.getExUint64(periodApp, Bytes`ready`)
-    ensure(ready > 0, errGGovNotReady)
+    loggedAssert(ready > 0, errGGovNotReady)
 
     const short = compileArc4(GGovPeriodContract).call.getPeriodShort({ appId: periodApp }).returnValue
 
     const committeeBox = this.committees(short.committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
     const committee = clone(committeeBox.value)
 
     const key = u32(periodId)
@@ -744,8 +752,8 @@ export class FracDelegationInstanceContract extends BaseContract {
     // A pristine cache may be rebuilt; one holding votes may not. Rebinding a period ID to a
     // different app is never valid, so reject it rather than silently repointing the record.
     if (this.periodVoteCache(key).exists) {
-      ensure(this.periods(key).value.periodAppId === periodApp.id, errPeriodAppMismatch)
-      ensure(!this.cacheHasVotes(key), errGGovHasVotes)
+      loggedAssert(this.periods(key).value.periodAppId === periodApp.id, errPeriodAppMismatch)
+      loggedAssert(!this.cacheHasVotes(key), errGGovHasVotes)
     }
 
     const period: FracInstancePeriod = {
@@ -846,25 +854,27 @@ export class FracDelegationInstanceContract extends BaseContract {
    *   option.
    */
   public vote(periodId: Uint32, topicVotes: Uint32[][]): void {
+    // TODO split out math-heavy sections into subroutines;
+    // test them independently with algo-ts-testing
     const periodBox = this.periods(periodId)
-    ensure(periodBox.exists, errGGovPeriodNotExists)
+    loggedAssert(periodBox.exists, errGGovPeriodNotExists)
     const period = clone(periodBox.value)
 
     // Live period-app state, cheapest gates first (no inner call - getEx* like resolveAdmin).
     const [ready, _hasReady] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`ready`)
-    ensure(ready > 0, errGGovNotReady)
+    loggedAssert(ready > 0, errGGovNotReady)
     const [votingStart, _hasStart] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`votingStart`)
-    ensure(Global.latestTimestamp >= votingStart, errGGovVotingNotStarted)
+    loggedAssert(Global.latestTimestamp >= votingStart, errGGovVotingNotStarted)
     const [votingEnd, _hasEnd] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`votingEnd`)
-    ensure(Global.latestTimestamp < votingEnd, errGGovVotingEnded)
+    loggedAssert(Global.latestTimestamp < votingEnd, errGGovVotingEnded)
     const [liveCommitteeId, _hasCommittee] = op.AppGlobal.getExBytes(period.periodAppId, Bytes`committeeId`)
-    ensure(liveCommitteeId === period.committeeId.bytes, errPeriodAppMismatch)
+    loggedAssert(liveCommitteeId === period.committeeId.bytes, errPeriodAppMismatch)
 
     // The AQ ledger must be complete: weight is split against totalAq, so a half-ingested ledger
     // would hand early voters an inflated share (see getCommitteeAq).
     const aqBox = this.committeeAq(period.committeeNumId)
-    ensure(aqBox.exists, errAqNotStarted)
-    ensure(aqBox.value.ingestedAq === aqBox.value.totalAq, errAqIncomplete)
+    loggedAssert(aqBox.exists, errAqNotStarted)
+    loggedAssert(aqBox.value.ingestedAq === aqBox.value.totalAq, errAqIncomplete)
     const totalAq: uint64 = aqBox.value.totalAq.asUint64()
 
     // Resolve the sender's weight: readonly registry resolve (inlined - hoisting materialises the
@@ -873,14 +883,14 @@ export class FracDelegationInstanceContract extends BaseContract {
       appId: this.resolveRegistryApp(),
       args: [Txn.sender],
     }).returnValue
-    ensure(registryAccount.accountId.asUint64() > 0, errAccountNotExists)
+    loggedAssert(registryAccount.accountId.asUint64() > 0, errAccountNotExists)
     const accountAqBox = this.accountAq([registryAccount.accountId, period.committeeNumId])
-    ensure(accountAqBox.exists, errAccountAqNotExists)
+    loggedAssert(accountAqBox.exists, errAccountAqNotExists)
     const userAq: uint64 = accountAqBox.value.asUint64()
 
     const cache = clone(this.periodVoteCache(periodId).value)
     const newVotes = clone(topicVotes)
-    ensure(newVotes.length === cache.internal.length, errGGovVoteMismatch)
+    loggedAssert(newVotes.length === cache.internal.length, errGGovVoteMismatch)
 
     // Re-vote: subtract the previous rows from the tally before adding the new ones. Underflow-safe
     // by construction - every stored row was added by the vote that wrote it.
@@ -905,14 +915,14 @@ export class FracDelegationInstanceContract extends BaseContract {
     for (let t: uint64 = 0; t < newVotes.length; t++) {
       const row = clone(newVotes[t])
       const tally = clone(cache.internal[t])
-      ensure(row.length === tally.length, errGGovVoteMismatch)
+      loggedAssert(row.length === tally.length, errGGovVoteMismatch)
       let rowSum: uint64 = 0
       const next: Uint32[] = []
       for (let o: uint64 = 0; o < row.length; o++) {
         next.push(u32(tally[o].asUint64() + row[o].asUint64()))
         rowSum += row[o].asUint64()
       }
-      ensure(rowSum === userAq, errGGovVotePowerMismatch)
+      loggedAssert(rowSum === userAq, errGGovVotePowerMismatch)
       cache.internal[t] = clone(next)
     }
 

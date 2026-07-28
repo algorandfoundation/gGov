@@ -20,7 +20,7 @@ main_after_if_else@2:
     bz main___algots__.defaultCreate@13
     txn OnCompletion
     !
-    assert // OnCompletion must be NoOp
+    assert
     txn ApplicationID
     assert
     pushbytess 0x27630d65 0xd69c3b18 0xdf3a667e 0x4118ecbf // method "get_xgov_box(address)((address,uint64,uint64,uint64),bool)", method "createProposal()uint64", method "setXGovBox(address,(address,uint64,uint64,uint64))void", method "increaseBudget(uint64)void"
@@ -36,8 +36,6 @@ main___algots__.defaultCreate@13:
     txn ApplicationID
     !
     &&
-    assert // OnCompletion must be NoOp && can only call when creating
-    intc_1 // 1
     return
 
 
@@ -66,7 +64,7 @@ getXGovBox:
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:30
     // const value: XGovBoxValue = exists ? box.value : this.getEmptyXGovBoxValue()
     bz getXGovBox_ternary_false@3
-    dig 1
+    swap
     box_get
     assert // Box must have value
 
@@ -75,7 +73,7 @@ getXGovBox_ternary_merge@4:
     // return [value, exists]
     pushbytes 0x00
     intc_0 // 0
-    dig 3
+    uncover 3
     setbit
     concat
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:26
@@ -88,6 +86,7 @@ getXGovBox_ternary_merge@4:
     return
 
 getXGovBox_ternary_false@3:
+    bury 1
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:35-40
     // return {
     //   votingAddress: Global.zeroAddress,
@@ -113,17 +112,17 @@ createProposal:
     itxn_begin
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:53
     // globalNumUint: 4,
-    pushint 4 // 4
+    pushint 4
     itxn_field GlobalNumUint
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:52
     // globalNumBytes: 2,
-    pushint 2 // 2
+    pushint 2
     itxn_field GlobalNumByteSlice
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:46
     // const proposalContract = compile(XGovProposalMock)
     bytec_0 // base64(C4EBQw==)
     itxn_field ClearStateProgramPages
-    pushbytes base64(CyAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQAAyKDEAZykjZyqAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZysjZycEI2cxG0EARzEZFEQxGESCCAQkYV+QBBhBoNIEht09YQQugVUUBNB6NJ4ERczFuQSWn1rPBKOi1Xo2GgCOCAALAD4AXgBuAH8AjwCgALIAMRkUMRgUEEQiQzYaAUkVJRJEgAFWTFBJvUlPAkhBABlLAb5EFxaAAQAjSwNUUIAEFR98dUxQsCJDI0L/6DYaARUlEkQ2GgIVJBJENhoDFSQSRIAGFR98dQAAsCJDNhoBSRUlEkSIAGgoTGciQzYaAUkVJBJEF4gAVylMZyJDNhoBSRUlEkSIAEcqTGciQzYaAUkVJBJEF4gANitMZyJDNhoBSRUkEkQXiAAlJwRMZyJDNhoBSRUlEkQ2GgJJFSQSRBeIAAuAAVZPAlBMFr8iQzEAIyhlRBJAAAyACEVSUjpBVVRIsACJ)
+    pushbytes base64(CyAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQAAyKDEAZykjZyqAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZysjZycEI2cxG0EARzEZFEQxGESCCAQkYV+QBBhBoNIEht09YQQugVUUBNB6NJ4ERczFuQSWn1rPBKOi1Xo2GgCOCAAJAD0AXQBtAH4AjgCfALEAMRkUMRgUEEM2GgFJFSUSRIABVkxQSb1JTwJIQQAYTL5EFxaAAQAjTwNUUIAEFR98dUxQsCJDRQEjQv/mNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIgAaChMZyJDNhoBSRUkEkQXiABXKUxnIkM2GgFJFSUSRIgARypMZyJDNhoBSRUkEkQXiAA2K0xnIkM2GgFJFSQSRBeIACUnBExnIkM2GgFJFSUSRDYaAkkVJBJEF4gAC4ABVk8CUEwWvyJDMQAjKGVEEkAADIAIRVJSOkFVVEiwAIk=)
     itxn_field ApprovalProgramPages
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:48-54
     // const created = itxn
@@ -152,13 +151,13 @@ createProposal:
     // proposal.call.setProposer({ appId, args: [Txn.sender] })
     itxn_begin
     txn Sender
+    intc_0 // 0
+    itxn_field OnCompletion
+    dig 1
+    itxn_field ApplicationID
     pushbytes 0x86dd3d61 // method "setProposer(address)void"
     itxn_field ApplicationArgs
     itxn_field ApplicationArgs
-    intc_0 // 0
-    itxn_field OnCompletion
-    dup
-    itxn_field ApplicationID
     intc_2 // appl
     itxn_field TypeEnum
     intc_0 // 0
@@ -188,36 +187,28 @@ setXGovBox:
     txna ApplicationArgs 2
     dup
     len
-    pushint 56 // 56
+    pushint 56
     ==
     assert // invalid number of bytes for smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts::XGovBoxValue
-    // smart_contracts/base/base.algo.ts:14
-    // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
+    // smart_contracts/base/base.algo.ts:22
+    // loggedAssert(Txn.sender === Global.creatorAddress, errUnauthorized)
     txn Sender
     global CreatorAddress
     ==
-    // smart_contracts/base/utils.algo.ts:37
-    // if (!cond) {
-    bnz setXGovBox_after_if_else@3
-    // smart_contracts/base/base.algo.ts:14
-    // ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
+    bnz setXGovBox_after_assert@3
     pushbytes "ERR:AUTH"
-    // smart_contracts/base/utils.algo.ts:38
-    // log(code)
     log
-    // smart_contracts/base/utils.algo.ts:39
-    // err()
-    err
+    err // ERR:AUTH
 
-setXGovBox_after_if_else@3:
+setXGovBox_after_assert@3:
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:24
     // xgovBox = BoxMap<Account, XGovBoxValue>({ keyPrefix: 'x' })
     bytec_1 // "x"
-    dig 2
+    uncover 2
     concat
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:66
     // this.xgovBox(voterAddress).value = clone(value)
-    dig 1
+    swap
     box_put
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:64
     // public setXGovBox(voterAddress: Account, value: XGovBoxValue): void {
@@ -227,22 +218,22 @@ setXGovBox_after_if_else@3:
 
 // smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]() -> void:
 increaseBudget:
-    // smart_contracts/base/base.algo.ts:21
+    // smart_contracts/base/base.algo.ts:29
     // @abimethod({ validateEncoding: 'unsafe-disabled' })
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/base/base.algo.ts:24
+    // smart_contracts/base/base.algo.ts:32
     // for (let i: uint64 = 0; i < itxns; i++) {
     intc_0 // 0
 
 increaseBudget_while_top@2:
-    // smart_contracts/base/base.algo.ts:24
+    // smart_contracts/base/base.algo.ts:32
     // for (let i: uint64 = 0; i < itxns; i++) {
     dup
     dig 2
     <
     bz increaseBudget_after_while@5
-    // smart_contracts/base/base.algo.ts:25-31
+    // smart_contracts/base/base.algo.ts:33-39
     // itxn
     //   .applicationCall({
     //     approvalProgram: empty.clearStateProgram, // intentionally using clear state program for "return true"
@@ -251,17 +242,17 @@ increaseBudget_while_top@2:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/base/base.algo.ts:29
+    // smart_contracts/base/base.algo.ts:37
     // onCompletion: OnCompleteAction.DeleteApplication,
-    pushint 5 // 5
+    pushint 5
     itxn_field OnCompletion
-    // smart_contracts/base/base.algo.ts:23
+    // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
     bytec_0 // base64(C4EBQw==)
     itxn_field ClearStateProgramPages
     bytec_0 // base64(C4EBQw==)
     itxn_field ApprovalProgramPages
-    // smart_contracts/base/base.algo.ts:25-30
+    // smart_contracts/base/base.algo.ts:33-38
     // itxn
     //   .applicationCall({
     //     approvalProgram: empty.clearStateProgram, // intentionally using clear state program for "return true"
@@ -272,7 +263,7 @@ increaseBudget_while_top@2:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // smart_contracts/base/base.algo.ts:25-31
+    // smart_contracts/base/base.algo.ts:33-39
     // itxn
     //   .applicationCall({
     //     approvalProgram: empty.clearStateProgram, // intentionally using clear state program for "return true"
@@ -281,16 +272,14 @@ increaseBudget_while_top@2:
     //   })
     //   .submit()
     itxn_submit
-    // smart_contracts/base/base.algo.ts:24
+    // smart_contracts/base/base.algo.ts:32
     // for (let i: uint64 = 0; i < itxns; i++) {
-    dup
     intc_1 // 1
     +
-    bury 1
     b increaseBudget_while_top@2
 
 increaseBudget_after_while@5:
-    // smart_contracts/base/base.algo.ts:21
+    // smart_contracts/base/base.algo.ts:29
     // @abimethod({ validateEncoding: 'unsafe-disabled' })
     intc_1 // 1
     return

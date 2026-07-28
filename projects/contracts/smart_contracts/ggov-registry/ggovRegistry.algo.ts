@@ -15,6 +15,8 @@ import {
   gtxn,
   itxn,
   log,
+  loggedAssert,
+  loggedErr,
   op,
   Txn,
   uint64,
@@ -62,7 +64,7 @@ import {
   GGovDelegationSet,
   GGovPeriodSummary,
 } from '../base/types.algo'
-import { ensure, ensureExtra, u16, u32 } from '../base/utils.algo'
+import { u16, u32 } from '../base/utils.algo'
 import { FracDelegationRegistryContract } from '../frac-delegation/fracDelegationRegistry.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { XGovRegistryMock } from '../xgov-registry-mock/xGovRegistryMock.algo'
@@ -140,12 +142,12 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
 
     const committeeBox = this.committees(committeeId)
-    ensure(!committeeBox.exists, errCommitteeExists)
-    ensure(periodEnd.asUint64() > periodStart.asUint64(), errPeriodEndLessThanStart)
-    ensure(totalMembers.asUint64() > 0, errTotalMembersZero)
-    ensure(totalVotes.asUint64() > 0, errTotalVotesZero)
-    ensure(totalMembers.asUint64() <= 65535, errTotalMembersOverflow)
-    ensure(this.lastCommitteeId.value <= 65535, errCommitteeIdOverflow)
+    loggedAssert(!committeeBox.exists, errCommitteeExists)
+    loggedAssert(periodEnd.asUint64() > periodStart.asUint64(), errPeriodEndLessThanStart)
+    loggedAssert(totalMembers.asUint64() > 0, errTotalMembersZero)
+    loggedAssert(totalVotes.asUint64() > 0, errTotalVotesZero)
+    loggedAssert(totalMembers.asUint64() <= 65535, errTotalMembersOverflow)
+    loggedAssert(this.lastCommitteeId.value <= 65535, errCommitteeIdOverflow)
     committeeBox.value = {
       periodStart,
       periodEnd,
@@ -167,8 +169,8 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
 
     const committeeBox = this.committees(committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
-    ensure(committeeBox.value.ingestedVotes === u32(0), errIngestedVotesNotZero)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.value.ingestedVotes === u32(0), errIngestedVotesNotZero)
     sbDeleteSuperbox(this.getCommitteeSBPrefix(committeeId))
     committeeBox.delete()
   }
@@ -187,7 +189,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     // figure out ingested accounts from superbox size
     const ingestedAccounts: uint64 = getCommitteeSBGovs(sbMeta)
     // not exceeding total govs
-    ensure(ingestedAccounts + govs.length <= committee.totalMembers.asUint64(), errTotalGovsExceeded)
+    loggedAssert(ingestedAccounts + govs.length <= committee.totalMembers.asUint64(), errTotalGovsExceeded)
 
     let lastAccountId = u32(0)
     if (ingestedAccounts > 0) {
@@ -200,11 +202,11 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     let writeBuffer = Bytes``
     for (const gov of clone(govs)) {
       // reject zero-vote govs; they carry no voting power and would skew totals/member counts
-      ensure(gov.votes.asUint64() > 0, errZeroVotes)
+      loggedAssert(gov.votes.asUint64() > 0, errZeroVotes)
       const gGovAccount = this.getOrCreateAccount(gov.account)
       const accountId = gGovAccount.accountId
       // ensure govs are added in ascending order
-      ensure(accountId.asUint64() > lastAccountId.asUint64(), errOutOfOrder)
+      loggedAssert(accountId.asUint64() > lastAccountId.asUint64(), errOutOfOrder)
       // store variant removes account
       const govStored: AccountIdWithVotes = {
         accountId: accountId,
@@ -218,14 +220,14 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     }
 
     // ensure we did not exceed total votes
-    ensure(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
+    loggedAssert(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
 
     sbAppend(superboxName, writeBuffer)
 
     committee.ingestedVotes = u32(ingestedVotes)
     // if we are finished, ensure total votes match
     if (ingestedAccounts + govs.length === committee.totalMembers.asUint64()) {
-      ensure(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
+      loggedAssert(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
     }
     this.committees(committeeId).value = clone(committee)
   }
@@ -241,14 +243,17 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const superboxName = this.getMetadataSBPrefix(committee)
     const sbMeta = sbMetaBox(superboxName)
     const totalGovs = getCommitteeSBGovs(sbMeta)
-    ensure(govs.length <= totalGovs, errNumGovsExceeded)
+    loggedAssert(govs.length <= totalGovs, errNumGovsExceeded)
     let ingestedVotes = committee.ingestedVotes.asUint64()
     let expectedGovOffset = totalGovs
     for (const account of clone(govs)) {
       expectedGovOffset--
       const gGovAccount = this.mustGetAccount(account)
       const offset = this.getCommitteeAccountOffsetHint(committee.numericId, gGovAccount)
-      ensureExtra(expectedGovOffset === offset, errOutOfOrder, account.bytes)
+      if (expectedGovOffset !== offset) {
+        log(account.bytes)
+        loggedErr(errOutOfOrder)
+      }
       const govStored = this.getStoredGovAt(superboxName, offset)
       this.removeCommitteeAccountOffsetHint(committee.numericId, account, gGovAccount)
       sbDeleteIndex(superboxName, offset)
@@ -280,13 +285,13 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
 
   /** Caller must match this registry's stored `admin` (`BaseContract` override). */
   protected override ensureCallerIsAdmin(): void {
-    ensure(Txn.sender === this.admin.value, errUnauthorized)
+    loggedAssert(Txn.sender === this.admin.value, errUnauthorized)
   }
 
   /** Transfer admin to `newAdmin`. Admin only; zero address rejected. */
   public setAdmin(newAdmin: Account): void {
     this.ensureCallerIsAdmin()
-    ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
+    loggedAssert(newAdmin !== Global.zeroAddress, errUnauthorized)
     this.admin.value = newAdmin
   }
 
@@ -342,7 +347,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   @abimethod({ name: 'set_voting_account' })
   public setVotingAccount(xgovAddress: Account, votingAddress: Account): void {
-    ensure(this.accounts(xgovAddress).exists, errAccountNotExists) // xGov NOT_XGOV analog
+    loggedAssert(this.accounts(xgovAddress).exists, errAccountNotExists) // xGov NOT_XGOV analog
     this.ensureCallerCanManageDelegation(xgovAddress)
     if (votingAddress === xgovAddress || votingAddress === Global.zeroAddress) {
       this.removeDelegation(xgovAddress)
@@ -354,9 +359,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** Mirror delegation from the xGov registry's box (if present). Admin only. */
   public mirrorXGovDelegation(account: Account): void {
     this.ensureCallerIsAdmin()
-    ensure(this.xGovRegistryApp.value.id > 0, errRegistryMissing)
+    loggedAssert(this.xGovRegistryApp.value.id > 0, errRegistryMissing)
     // never overwrite an existing gGov delegation; mirroring only seeds delegations not yet set locally
-    ensure(!this.delegations(account).exists, errGGovDelegationExists)
+    loggedAssert(!this.delegations(account).exists, errGGovDelegationExists)
 
     const registry = compileArc4(XGovRegistryMock)
     const [xGovBox, exists] = registry.call.getXGovBox({
@@ -385,10 +390,13 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public importFracDelegations(escrowAccounts: Account[]): void {
     this.ensureCallerIsAdmin()
-    ensure(this.fracRegistryApp.value.id > 0, errRegistryMissing)
+    loggedAssert(this.fracRegistryApp.value.id > 0, errRegistryMissing)
     for (const escrow of escrowAccounts) {
       // Checked before the inner call so the likely admin mistake fails cheaply
-      ensureExtra(this.accounts(escrow).exists, errAccountNotExists, escrow.bytes)
+      if (!this.accounts(escrow).exists) {
+        log(escrow.bytes)
+        loggedErr(errAccountNotExists)
+      }
 
       // Do NOT hoist compileArc4 out of the loop: hoisting materialises the frac registry's program
       // and puya rejects the resulting compile cycle (fracRegistry compiles fracInstance, which
@@ -399,7 +407,10 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
       }).returnValue
 
       // getEscrow returns the zero sentinel (instanceNumId 0) instead of throwing for an unregistered escrow
-      ensureExtra(escrowInstance.instanceNumId.asUint64() !== 0, errEscrowNotAssigned, escrow.bytes)
+      if (escrowInstance.instanceNumId.asUint64() === 0) {
+        log(escrow.bytes)
+        loggedErr(errEscrowNotAssigned)
+      }
 
       this.addDelegation(escrow, Application(escrowInstance.instanceAppId).address)
     }
@@ -412,10 +423,10 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * off the previous delegatee's reverse list onto the new one.
    */
   private addDelegation(delegator: Account, delegatee: Account): void {
-    ensure(delegator !== delegatee, errGGovSelfDelegate)
-    ensure(delegator !== Global.zeroAddress, errGGovSelfDelegate)
+    loggedAssert(delegator !== delegatee, errGGovSelfDelegate)
+    loggedAssert(delegator !== Global.zeroAddress, errGGovSelfDelegate)
     // only existing accounts can delegate; prevents spamming delegations from random addresses and keeps reverse index clean
-    ensure(this.accounts(delegator).exists, errAccountNotExists)
+    loggedAssert(this.accounts(delegator).exists, errAccountNotExists)
     let previousDelegatee = Global.zeroAddress
     const fwdBox = this.delegations(delegator)
     if (fwdBox.exists) {
@@ -436,7 +447,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   private ensureCallerCanManageDelegation(delegator: Account): void {
     const box = this.delegations(delegator)
     const isCurrentDelegatee = box.exists && box.value === Txn.sender
-    ensure(Txn.sender === delegator || isCurrentDelegatee, errUnauthorized)
+    loggedAssert(Txn.sender === delegator || isCurrentDelegatee, errUnauthorized)
   }
 
   /** Remove `delegator`'s delegation if present (idempotent), keeping the reverse index in sync. */
@@ -555,15 +566,15 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     votingEnd: uint64,
     mbrPayment: gtxn.PaymentTxn,
   ): [Uint32, uint64] {
-    ensure(Txn.sender === this.operator.value, errUnauthorized)
-    ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
-    ensure(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
+    loggedAssert(Txn.sender === this.operator.value, errUnauthorized)
+    loggedAssert(votingEnd > votingStart, errPeriodEndLessThanStart)
+    loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
 
     const committeeBox = this.committees(committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
-    ensure(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
 
-    ensure(this.periodApprovalBox.exists, errPeriodAppNotConfigured)
+    loggedAssert(this.periodApprovalBox.exists, errPeriodAppNotConfigured)
 
     this.lastPeriodId.value++
     const periodId = u32(this.lastPeriodId.value)
@@ -638,7 +649,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
     const cur = this.lastPeriodId.value
     for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {
-      ensure(!this.periods(u32(id)).exists, errPeriodInRange)
+      loggedAssert(!this.periods(u32(id)).exists, errPeriodInRange)
     }
     this.lastPeriodId.value = newLastPeriodId
   }
@@ -656,9 +667,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     ready: boolean,
   ): void {
     const box = this.periods(periodId)
-    ensure(box.exists, errGGovPeriodNotExists)
+    loggedAssert(box.exists, errGGovPeriodNotExists)
     const summary = clone(box.value)
-    ensure(Global.callerApplicationId === summary.appId, errUnauthorized)
+    loggedAssert(Global.callerApplicationId === summary.appId, errUnauthorized)
     summary.votingStart = votingStart
     summary.votingEnd = votingEnd
     summary.numTopics = numTopics
@@ -675,8 +686,8 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public removePeriodSummary(periodId: Uint32): void {
     const box = this.periods(periodId)
-    ensure(box.exists, errGGovPeriodNotExists)
-    ensure(Global.callerApplicationId === box.value.appId, errUnauthorized)
+    loggedAssert(box.exists, errGGovPeriodNotExists)
+    loggedAssert(Global.callerApplicationId === box.value.appId, errUnauthorized)
     box.delete()
   }
 
@@ -724,7 +735,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const committeeBox = this.committees(committeeId)
     if (committeeBox.exists) {
       if (mustBeComplete) {
-        ensure(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
+        loggedAssert(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
       }
       return committeeBox.value
     }
@@ -768,7 +779,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
     const superboxPrefix = this.getMetadataSBPrefix(committeeMetadata)
     const sbMetaBoxRef = sbMetaBox(superboxPrefix)
-    ensure(sbMetaBoxRef.exists, errCommitteeNotExists)
+    loggedAssert(sbMetaBoxRef.exists, errCommitteeNotExists)
     const sbMeta = clone(sbMetaBoxRef.value)
     if (logMetadata) {
       log(encodeArc4(committeeMetadata))
@@ -809,11 +820,14 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
 
     const gGovAccount = this.getAccountIfExists(account)
-    ensure(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
+    loggedAssert(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
 
     const accountOffset = this.getCommitteeAccountOffsetHint(committeeMetadata.numericId, gGovAccount)
     const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
-    ensureExtra(gov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
+    if (gov.accountId !== gGovAccount.accountId) {
+      log(gGovAccount.accountId.bytes)
+      loggedErr(errAccountOffsetMismatch)
+    }
 
     return gov.votes
   }
@@ -853,7 +867,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   private mustGetCommitteeMetadata(committeeId: CommitteeId): CommitteeMetadata {
     const committeeBox = this.committees(committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
     return committeeBox.value
   }
 

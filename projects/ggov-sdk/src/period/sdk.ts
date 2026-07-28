@@ -1,27 +1,40 @@
 import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address } from 'algosdk'
+import pMap from 'p-map'
 import { GGovRegistrySDK, SendResult, executeTxns } from '../registry'
 import { GGovPeriodClient, GGovPeriodComposer } from '../generated/GGovPeriodClient'
 import { GGovReaderSDK } from './sdkReader'
 import {
   BodyJson,
   PeriodBodyJson,
+  TopicBodyJson,
   CommitteeId,
   ConstructorArgs,
   GGovPeriodContractArgs,
   PeriodMethodBuilderArgs,
   SenderWithSigner,
-  validateBodyJson,
+  validatePeriodBodyJson,
+  validateTopicBodyJson,
 } from './types'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { asciiBoxName, topicBodyBoxName } from '../util/boxNames'
 import { chunk } from '../util/chunk'
+import { assertUint } from '../util/assertUint'
 import { requireWriter } from '../util/requiresSender'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
 import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, MAX_BODY_BYTES } from '../constants'
 
 /** Max box references per transaction (AVM limit) — caps how many topic bodies one deleteTopicBodies call may delete. */
 const MAX_BOX_REFS_PER_TXN = 8
+
+/**
+ * Single-chunk topic-body rewrites packed into one group by {@link GGovSDK.removeCandidate}'s
+ * re-alignment pass. Kept well under {@link MAX_GROUP_SIZE} so the group's box-I/O budget (1024
+ * bytes per box reference, ≤8 references per txn) stays comfortably ahead of the bytes written —
+ * 8 chunks of {@link BODY_CHUNK_BYTES} needs ~16 references against the ~64 the group provides —
+ * with slack left for an automatic budget-increase txn.
+ */
+const REALIGN_WRITES_PER_GROUP = 8
 
 /**
  * Max body chunks that ride along with addTopic in {@link GGovSDK.addTopicWithBody}'s single-group
@@ -271,7 +284,7 @@ export class GGovSDK extends GGovReaderSDK {
     note?: string | Uint8Array
   }): Promise<void> {
     const client = await this.getPeriodWriteClient(periodId)
-    const data = serializeAndValidateBody(body)
+    const data = serializeAndValidatePeriodBody(body)
     const groups = chunk(toBodyChunks(data), MAX_GROUP_SIZE)
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup()
@@ -302,11 +315,11 @@ export class GGovSDK extends GGovReaderSDK {
   }: {
     periodId: bigint | number
     topicIndex: bigint | number
-    body: BodyJson | string | Uint8Array
+    body: TopicBodyJson | string | Uint8Array
     note?: string | Uint8Array
   }): Promise<void> {
     const client = await this.getPeriodWriteClient(periodId)
-    const data = serializeAndValidateBody(body)
+    const data = serializeAndValidateTopicBody(body)
     const groups = chunk(toBodyChunks(data), MAX_GROUP_SIZE)
     for (const group of groups) {
       let builder: GGovPeriodComposer<any> = client.newGroup()
@@ -377,8 +390,8 @@ export class GGovSDK extends GGovReaderSDK {
    * signing-progress indicator) know up front how many wallet signatures to expect. Throws if `body`
    * is invalid or larger than {@link MAX_BODY_BYTES} (same validation as the upload).
    */
-  static addTopicWithBodyGroupCount(body: BodyJson | string | Uint8Array): number {
-    const numChunks = Math.max(1, Math.ceil(serializeAndValidateBody(body).length / BODY_CHUNK_BYTES))
+  static addTopicWithBodyGroupCount(body: TopicBodyJson | string | Uint8Array): number {
+    const numChunks = Math.max(1, Math.ceil(serializeAndValidateTopicBody(body).length / BODY_CHUNK_BYTES))
     if (numChunks <= ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS) return 1
     return 1 + Math.ceil(numChunks / MAX_GROUP_SIZE)
   }
@@ -415,11 +428,11 @@ export class GGovSDK extends GGovReaderSDK {
   }: {
     periodId: bigint | number
     options: string[]
-    body: BodyJson | string | Uint8Array
+    body: TopicBodyJson | string | Uint8Array
     note?: string | Uint8Array
     onSigningGroup?: (groupIndex: number) => void
   }): Promise<bigint> {
-    const data = serializeAndValidateBody(body)
+    const data = serializeAndValidateTopicBody(body)
     const numChunks = Math.max(1, Math.ceil(data.length / BODY_CHUNK_BYTES))
 
     if (numChunks > ADD_TOPIC_FIRST_GROUP_BODY_CHUNKS) {
@@ -469,6 +482,161 @@ export class GGovSDK extends GGovReaderSDK {
   }
 
   removeTopic = this.makePeriodTxnExecutor({ maker: this.makeRemoveTopicTxns })
+
+  // ── Period: topic body boxes (delete / re-align) ─────────────────
+
+  /**
+   * Delete the `T<index>` body boxes for the given topic indexes, reclaiming their min-balance to
+   * the period app account. Paged at {@link MAX_BOX_REFS_PER_TXN} indexes per app call (the AVM
+   * box-reference limit) and {@link MAX_GROUP_SIZE}-1 calls per group. The contract's `op.Box.delete`
+   * is a no-op on an absent box, so stale or unknown indexes are harmless.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async deleteTopicBodies({
+    periodId,
+    topicIndexes,
+    note,
+  }: {
+    periodId: bigint | number
+    topicIndexes: (bigint | number)[]
+    note?: string | Uint8Array
+  }): Promise<void> {
+    if (topicIndexes.length === 0) return
+    const client = await this.getPeriodWriteClient(periodId)
+    const indexes = topicIndexes.map((i) => Number(assertUint(i, 32, 'topicIndex')))
+    // leave 1 slot for the possible auto-budget-increase txn (deleteTopicBodies grows with the number of boxes)
+    for (const group of chunk(chunk(indexes, MAX_BOX_REFS_PER_TXN), MAX_GROUP_SIZE - 1)) {
+      let builder: GGovPeriodComposer<any> = client.newGroup()
+      for (const page of group) {
+        builder = builder.deleteTopicBodies({
+          args: { topicIndexes: page.map((i) => BigInt(i)) },
+          boxReferences: page.map(topicBodyBoxName),
+          note,
+        })
+      }
+      await builder.send()
+    }
+  }
+
+  /**
+   * Move a candidate into a different election by rewriting the `e` tag in its topic body, leaving
+   * the rest of the body untouched. Pass `e: undefined` to clear the tag (back to unassigned).
+   *
+   * Membership lives with the candidate, so this is the whole reassignment — no other candidate and
+   * no period-level bookkeeping is touched. Editable phase only (the underlying body upload is
+   * operator-gated and `ensureEditable`). Throws if the candidate has no body yet: there is nothing
+   * to tag, so upload a body first.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async setCandidateElection({
+    periodId,
+    topicIndex,
+    e,
+    note,
+  }: {
+    periodId: bigint | number
+    topicIndex: bigint | number
+    e?: number
+    note?: string | Uint8Array
+  }): Promise<void> {
+    const current = await this.getTopicBody(periodId, topicIndex)
+    if (!current) {
+      throw new Error(
+        `Topic ${topicIndex} in period ${periodId} has no body to tag; upload a body before assigning it to an election`,
+      )
+    }
+    const { e: _previous, ...rest } = current
+    await this.uploadTopicBody({ periodId, topicIndex, body: e === undefined ? rest : { ...rest, e }, note })
+  }
+
+  /**
+   * Remove a topic **and** keep the per-topic body boxes aligned with the topic array.
+   *
+   * The contract's `removeTopic` splices the parallel `o`/`t` arrays but leaves the `T<index>` body
+   * boxes where they are, so every topic after the removed one then reads the body one index too
+   * high. That was always a name-scrambling bug; with per-topic election tags it is worse — the `e`
+   * tag rides in the body, so a bare `removeTopic` silently moves surviving candidates into other
+   * races.
+   *
+   * So: read the trailing bodies, call `removeTopic`, rewrite each body one index down (deleting the
+   * target box instead when the topic moving into it has no body of its own), then delete the
+   * vacated last box — leaving that one behind would let a later bodyless `addTopic` inherit a
+   * removed candidate's title and election.
+   *
+   * **Not atomic**, and it may ask for several signatures: the splice, the body rewrites, then the
+   * deletions. If a later group fails, bodies from that point on stay one index high and re-running
+   * this won't repair it — the operator has to re-upload the affected bodies. The manage view's
+   * assignment check surfaces the damage as duplicated or missing candidate names and tags.
+   */
+  @requireWriter()
+  @wrapErrors()
+  async removeCandidate({
+    periodId,
+    topicIndex,
+    note,
+  }: {
+    periodId: bigint | number
+    topicIndex: bigint | number
+    note?: string | Uint8Array
+  }): Promise<void> {
+    const removed = Number(assertUint(topicIndex, 32, 'topicIndex'))
+    const [summary] = await this.registry.getPeriodSummaries([BigInt(periodId)])
+    const numTopics = Number(summary?.numTopics ?? 0)
+    if (removed >= numTopics) {
+      throw new Error(`Topic ${removed} is out of range for period ${periodId}, which has ${numTopics} topic(s)`)
+    }
+
+    // Read every body that will shift down *before* the destructive call, so a failed read costs
+    // nothing. removeTopic doesn't touch the T boxes, so these payloads stay valid across it.
+    const shifting = await pMap(
+      Array.from({ length: numTopics - removed - 1 }, (_, i) => removed + 1 + i),
+      async (from) => ({ from, body: await this.getTopicBody(periodId, from) }),
+      { concurrency: this.concurrency },
+    )
+
+    await this.removeTopic({ periodId, topicIndex: removed, note })
+
+    // Single-chunk bodies (the norm) are batched REALIGN_WRITES_PER_GROUP at a time so an
+    // order-preserving shift doesn't cost one signature per surviving topic; a body larger than one
+    // chunk needs a dedicated group to cover its own box-I/O budget.
+    const rewrites = shifting.flatMap(({ from, body }) =>
+      body ? [{ target: from - 1, data: serializeAndValidateTopicBody(body) }] : [],
+    )
+    const client = await this.getPeriodWriteClient(periodId)
+    for (const batch of chunk(
+      rewrites.filter((r) => r.data.length <= BODY_CHUNK_BYTES),
+      REALIGN_WRITES_PER_GROUP,
+    )) {
+      let builder: GGovPeriodComposer<any> = client.newGroup()
+      for (const { target, data } of batch) {
+        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
+        // eslint-disable-next-line @typescript-eslint/await-thenable
+        builder = await this.makeUploadTopicBodyPartialTxns({
+          periodId,
+          topicIndex: target,
+          startOffset: 0,
+          data,
+          note,
+          client,
+          builder,
+        })
+      }
+      await builder.send()
+    }
+    for (const { target, data } of rewrites.filter((r) => r.data.length > BODY_CHUNK_BYTES)) {
+      await this.uploadTopicBody({ periodId, topicIndex: target, body: data, note })
+    }
+
+    // Drop the vacated tail box, plus every target whose incoming topic had no body — otherwise the
+    // previous occupant's body would stay there and be attributed to the topic that moved in.
+    await this.deleteTopicBodies({
+      periodId,
+      topicIndexes: [...shifting.filter(({ body }) => !body).map(({ from }) => from - 1), numTopics - 1],
+      note,
+    })
+  }
 
   // ── Period: setReady ─────────────────────────────────────────────
 
@@ -670,13 +838,22 @@ function toBodyChunks(data: Uint8Array): { startOffset: number; data: Uint8Array
   }))
 }
 
-function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Array {
+/**
+ * Serialize + size-check a body box payload. Period and topic bodies share `title`/`body`
+ * but differ in what else they may carry, so the caller supplies the matching validator
+ * and a description of those extra fields — a rejected body then names the schema it
+ * missed instead of a generic shape.
+ */
+function serializeAndValidateBody(
+  body: BodyJson | string | Uint8Array,
+  validate: (obj: unknown) => boolean,
+  optionalFields: string,
+): Uint8Array {
+  const shapeError = `Body must have 'title' (string) and 'body' (string) fields, and ${optionalFields}`
   let data: Uint8Array
   if (typeof body === 'object' && !(body instanceof Uint8Array)) {
-    if (!validateBodyJson(body)) {
-      throw new Error(
-        "Body must have 'title' (string) and 'body' (string) fields, and 'electSeats' (if present) must be a positive integer",
-      )
+    if (!validate(body)) {
+      throw new Error(shapeError)
     }
     data = new TextEncoder().encode(JSON.stringify(body))
   } else {
@@ -687,8 +864,8 @@ function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Ar
     } catch {
       throw new Error("Body must be valid JSON with 'title' (string) and 'body' (string) fields")
     }
-    if (!validateBodyJson(parsed)) {
-      throw new Error("Body must have 'title' (string) and 'body' (string) fields")
+    if (!validate(parsed)) {
+      throw new Error(shapeError)
     }
     data = typeof body === 'string' ? new TextEncoder().encode(body) : body
   }
@@ -700,4 +877,18 @@ function serializeAndValidateBody(body: BodyJson | string | Uint8Array): Uint8Ar
     )
   }
   return data
+}
+
+/** A period body may declare the period's elections in `elect`. */
+function serializeAndValidatePeriodBody(body: PeriodBodyJson | string | Uint8Array): Uint8Array {
+  return serializeAndValidateBody(
+    body,
+    validatePeriodBodyJson,
+    "'elect' (if present) must be a non-empty array of { t: non-empty string, s: integer >= 1 }",
+  )
+}
+
+/** A topic body may name the election it runs in via the `e` index. */
+function serializeAndValidateTopicBody(body: TopicBodyJson | string | Uint8Array): Uint8Array {
+  return serializeAndValidateBody(body, validateTopicBodyJson, "'e' (if present) must be a non-negative integer")
 }
