@@ -23,7 +23,7 @@ import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 // protected subroutines (exposed via the declare-public subclass trick the account spec uses) —
 // pure functions of (internal tally, escrow powers, totalAq) that need no harness support at all.
 
-describe('FracDelegationInstanceContract vote', () => {
+describe('[fast] FracDelegationInstanceContract vote', () => {
   const ctx = new TestExecutionContext()
 
   beforeEach(() => ctx.reset())

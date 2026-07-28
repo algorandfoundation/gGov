@@ -14,6 +14,7 @@ import {
   gtxn,
   itxn,
   log,
+  loggedAssert,
   op,
   Txn,
   uint64,
@@ -40,7 +41,7 @@ import {
   FracInstance,
   FracRegAccount,
 } from '../base/types.algo'
-import { ensure, u16, u32 } from '../base/utils.algo'
+import { u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 
 export const fracRegistryGGovKey = Bytes`gGovRegistryApp`
@@ -85,13 +86,13 @@ export class FracDelegationRegistryContract extends BaseContract {
 
   /** Caller must match this registry's stored `admin` (`BaseContract` override). */
   protected override ensureCallerIsAdmin(): void {
-    ensure(Txn.sender === this.admin.value, errUnauthorized)
+    loggedAssert(Txn.sender === this.admin.value, errUnauthorized)
   }
 
   /** Transfer admin to `newAdmin`. Admin only; zero address rejected. */
   public setAdmin(newAdmin: Account): void {
     this.ensureCallerIsAdmin()
-    ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
+    loggedAssert(newAdmin !== Global.zeroAddress, errUnauthorized)
     this.admin.value = newAdmin
   }
 
@@ -179,8 +180,8 @@ export class FracDelegationRegistryContract extends BaseContract {
    */
   public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
     this.ensureCallerIsAdmin()
-    ensure(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
-    ensure(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
+    loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
+    loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
     // IMPORTANT: Always allocate the MAXIMUM AVM extraProgramPages (3) and reserve 2 extra
     // slots in each global-schema dimension (uint + bytes). This headroom lets the
@@ -391,7 +392,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   public getAccountVotingRecord(account: Account, instanceNumId: Uint16, periodId: Uint32): FracAccountVotingRecord {
     const accountRecord = this.getAccountIfExists(account)
     const accountId = accountRecord.accountId
-    ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     const instance = clone(this.instances(instanceNumId).value)
     const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
       appId: instance.appId,
@@ -414,11 +415,11 @@ export class FracDelegationRegistryContract extends BaseContract {
    * @returns FracRegAccount for the account, including the associated instance
    */
   public getOrCreateAccountWithInstance(account: Account, instanceNumId: Uint16): FracRegAccount {
-    ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     const instance = clone(this.instances(instanceNumId).value)
 
     // sender must be the instance app itself, or the registry admin
-    ensure(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
+    loggedAssert(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
 
     if (!this.accounts(account).exists) {
       this.lastAccountId.value++
@@ -459,8 +460,8 @@ export class FracDelegationRegistryContract extends BaseContract {
    */
   public registerEscrow(instanceNumId: Uint16, account: Account): void {
     this.ensureCallerIsAdmin()
-    ensure(this.instances(instanceNumId).exists, errInstanceAppNotExists)
-    ensure(!this.escrows(account).exists, errEscrowAssigned)
+    loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    loggedAssert(!this.escrows(account).exists, errEscrowAssigned)
     const instance = clone(this.instances(instanceNumId).value)
 
     // Record the globally-unique escrow -> instance assignment.
@@ -498,7 +499,7 @@ export class FracDelegationRegistryContract extends BaseContract {
     }
     const instanceNumId = escrowBox.value
     const instanceBox = this.instances(instanceNumId)
-    ensure(instanceBox.exists, errInstanceAppNotExists) // invariant: registerEscrow only writes against live instances
+    loggedAssert(instanceBox.exists, errInstanceAppNotExists) // invariant: registerEscrow only writes against live instances
     return { instanceNumId, instanceAppId: instanceBox.value.appId.id }
   }
 }

@@ -15,7 +15,7 @@ class GGovRegistryAccountContractTest extends GGovRegistryAccountContract {
   declare public getOrCreateAccount: (account: Account) => GGovAccount
 }
 
-describe('GGovRegistryAccountContract', () => {
+describe('[fast] GGovRegistryAccountContract', () => {
   const ctx = new TestExecutionContext()
 
   beforeEach(() => ctx.reset())

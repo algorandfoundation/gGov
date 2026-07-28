@@ -1,5 +1,6 @@
-import { Uint64 } from '@algorandfoundation/algorand-typescript'
-import { TestExecutionContext } from '@algorandfoundation/algorand-typescript-testing'
+import { Account, Uint64 } from '@algorandfoundation/algorand-typescript'
+import { ApplicationSpy, TestExecutionContext } from '@algorandfoundation/algorand-typescript-testing'
+import { Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { expectArc65Error } from '../base/common-tests'
 import {
@@ -13,6 +14,7 @@ import {
 } from '../base/errors.algo'
 import { u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
+import { FracDelegationRegistryContract } from './fracDelegationRegistry.algo'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Unit tests for FracDelegationInstance.ingestAq (algorand-typescript-testing).
@@ -26,30 +28,29 @@ import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 //   Body, in order:
 //     1. ensureCallerIsOperator()                       — operator override, else registry fallback
 //     2. resolveRegistryApp()                           — registryApp must be > 0
-//     3. ensure(committeeAq(numId).exists)              — ledger must be open        [errAqNotStarted]
+//     3. assert(committeeAq(numId).exists)              — ledger must be open        [errAqNotStarted]
 //     4. for (row of clone(accountAqs)) {               — ← clone of the input array
-//          a. ensure(row.aq > 0)                        — reject zero-AQ rows        [errZeroAq]
+//          a. assert(row.aq > 0)                        — reject zero-AQ rows        [errZeroAq]
 //          b. registry.getOrCreateAccountWithInstance() — INNER CALL → accountId
-//          c. ensure(!accountAq[id,numId].exists)       — write-once per account     [errAccountAqExists]
+//          c. assert(!accountAq[id,numId].exists)       — write-once per account     [errAccountAqExists]
 //          d. write box, sumAq += row.aq }
-//     5. ensure(ingestedAq + sumAq <= totalAq)          — AQ overflow guard          [errTotalAqExceeded]
-//     6. ensure(numAccounts + rows <= totalAccounts)    — account-count guard        [errTotalGovsExceeded]
+//     5. assert(ingestedAq + sumAq <= totalAq)          — AQ overflow guard          [errTotalAqExceeded]
+//     6. assert(numAccounts + rows <= totalAccounts)    — account-count guard        [errTotalGovsExceeded]
 //     7. write ingestedAq / numAccounts back
 //
-// UNIT-TESTABILITY BOUNDARY (why this file is split into runnable + skipped)
-//   The pinned stable testing lib (@algorandfoundation/algorand-typescript-testing@1.1.0) cannot
-//   clone/decode a struct carrying a reference-type field. TWO such barriers sit on the ingestion
-//   path, and the first one is hit early:
-//     • Step 4 opens with `clone(accountAqs)`, and AccountWithAq = { account: Account, aq }. `Account`
-//       is a reference type, so 1.1.0 throws "unsupported type Account" cloning it — meaning ANY
-//       NON-EMPTY batch fails at loop entry, before even the zero-AQ guard (4a).
-//     • Step 4b then clone()s the registry's FracInstance { appId: Application } inside
-//       getOrCreateAccountWithInstance — the same barrier the registry's own unit spec skips.
-//   So what runs green on 1.1.0 is steps 1-3 (auth, registry-resolve, ledger-exists), reachable with
-//   an EMPTY batch, plus the empty-batch no-op (loop runs zero times → steps 5-6 with sumAq == 0).
-//   The zero-AQ guard (4a) and the entire ingestion path (4a-6) require a non-empty batch and are
-//   therefore skipped below. Their AUTHORITATIVE coverage is the end-to-end spec
-//   fracDelegationInstance.algoquarters.e2e.spec.ts (localnet), which drives the real registry.
+// UNIT-TESTABILITY BOUNDARY (what runs here vs end-to-end)
+//   The ingestion loop crosses into the registry: step 4b inner-calls getOrCreateAccountWithInstance
+//   to resolve/mint each account's numeric id. On the 1.2.0 testing lib that inner call is stubbed
+//   with an `ApplicationSpy` (ctx.addApplicationSpy), which answers it with a chosen accountId — so
+//   the caller-side ingestion logic (one box per account, the running ingestedAq/numAccounts tallies,
+//   and every guard: zero-AQ, write-once, the two overflow guards) is unit-testable here.
+//   (On the old 1.1.0 stable lib none of this ran: it could neither clone the Account-bearing batch
+//   nor decode the registry's FracInstance { appId: Application } inside the inner call, so the whole
+//   loop was e2e-only. The 1.2.0 upgrade fixes both barriers.)
+//   What a return-value stub cannot model stays covered end-to-end in
+//   fracDelegationInstance.algoquarters.e2e.spec.ts (localnet, real registry): the registry's OWN
+//   state — an address minted a NEW id vs an already-registered address keeping its id, and the
+//   per-instance numAccounts link.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Committee numeric ID used throughout; arbitrary, only its box presence matters. */
@@ -85,7 +86,29 @@ const seedLedger = (contract: FracDelegationInstanceContract, totalAq = 1000, to
   }
 }
 
-describe('FracDelegationInstance.ingestAq', () => {
+/** Hex of a bytes-like value; keys the id lookup by account. Matches the inner call's `appArgs(1)`. */
+const hexOf = (bytesLike: unknown): string => Buffer.from(bytesLike as Uint8Array).toString('hex')
+
+/** Build a (account → numeric id) lookup for the getOrCreateAccountWithInstance stub. */
+const idMap = (...pairs: [Account, Uint32][]): Map<string, Uint32> =>
+  new Map(pairs.map(([account, id]) => [hexOf(account.bytes), id]))
+
+/**
+ * Stub the registry's `getOrCreateAccountWithInstance` inner call: resolve each mapped account to its
+ * numeric id. The real method mints an id on first sight and links the account to the instance;
+ * neither registry-side effect is modelled by the stub (those are covered end-to-end), but the id it
+ * returns is exactly what `ingestAq` keys its `accountAq` box by.
+ */
+const stubGetOrCreate = (ctx: TestExecutionContext, idByAccount: ReadonlyMap<string, Uint32>): void => {
+  const spy = new ApplicationSpy(FracDelegationRegistryContract)
+  spy.on.getOrCreateAccountWithInstance((itxn) => {
+    const requested = hexOf((itxn as unknown as { appArgs(index: number): unknown }).appArgs(1))
+    itxn.setReturnValue({ accountId: idByAccount.get(requested) ?? u32(0), instanceNumIds: [] })
+  })
+  ctx.addApplicationSpy(spy)
+}
+
+describe('[fast] FracDelegationInstance.ingestAq', () => {
   const ctx = new TestExecutionContext()
 
   beforeEach(() => ctx.reset())
@@ -173,58 +196,110 @@ describe('FracDelegationInstance.ingestAq', () => {
     })
   })
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Ingestion path — everything that needs a NON-EMPTY batch (steps 4a-6). BLOCKED on the pinned
-  // toolchain: `clone(accountAqs)` fails on the Account reference field, and step 4b additionally
-  // clone()s FracInstance { appId: Application } inside the registry inner call. Enable once the
-  // testing lib clones reference-type fields (>= 1.2.0) AND the cross-contract call can be wired to a
-  // seeded FracDelegationRegistryContract. Until then these are covered end-to-end in
-  // fracDelegationInstance.algoquarters.e2e.spec.ts. Kept as executable documentation of intent.
-  // ───────────────────────────────────────────────────────────────────────────
-  describe.skip('ingestion path (needs testing lib >= 1.2.0 + live registry inner call)', () => {
-    // Scenario: a zero-AQ row is rejected (step 4a) before its registry inner call — the pipeline
-    //   floors sub-1-AQ accounts out, so a zero here is bad input and must not cost a box or a call.
-    //   Unreachable on 1.1.0 only because the enclosing clone(accountAqs) throws first.
-    it('rejects a zero-AQ row before making any registry call, with errZeroAq', () => {
-      void errZeroAq
+  // Ingestion path (steps 4a-6). The registry inner call is stubbed, so these exercise the
+  // caller-side box writes, tallies, and guards. The registry-side effects — minting a NEW id vs
+  // reusing an already-registered account's id, and the per-instance link — are not modelled by a
+  // return-value stub and are covered in fracDelegationInstance.algoquarters.e2e.spec.ts.
+  describe('ingestion', () => {
+    // Scenario: a two-account batch writes one accountAq box per resolved id and rolls the sums into
+    // the ledger — ingestedAq += Σ aq, numAccounts += rows.
+    it('writes one accountAq box per account and accumulates ingestedAq / numAccounts', () => {
+      const { contract } = setup(ctx)
+      seedLedger(contract, 1000, 500)
+      const a = ctx.any.account()
+      const b = ctx.any.account()
+      stubGetOrCreate(ctx, idMap([a, u32(11)], [b, u32(22)]))
+
+      contract.ingestAq(NUM, [
+        { account: a, aq: u32(100) },
+        { account: b, aq: u32(250) },
+      ])
+
+      expect(contract.accountAq([u32(11), NUM]).value.asUint64()).toEqual(u32(100).asUint64())
+      expect(contract.accountAq([u32(22), NUM]).value.asUint64()).toEqual(u32(250).asUint64())
+      const ledger = contract.committeeAq(NUM).value
+      expect(ledger.ingestedAq.asUint64()).toEqual(u32(350).asUint64())
+      expect(ledger.numAccounts.asUint64()).toEqual(u32(2).asUint64())
     })
 
-    // Scenario: a batch writes one accountAq box per row and rolls the sums into the ledger —
-    //   ingestedAq += Σ aq, numAccounts += rows. Each address is resolved to a fresh account ID by
-    //   the registry, so afterward tryGetAccountAq(id, NUM) == the row's aq.
-    it('writes one box per account and accumulates ingestedAq / numAccounts', () => {})
+    // Scenario: a zero-AQ row is rejected at step 4a — the pipeline floors sub-1-AQ accounts out, so
+    // a zero here is bad input and must not cost a box.
+    it('rejects a zero-AQ row with errZeroAq', () => {
+      const { contract } = setup(ctx)
+      seedLedger(contract)
+      const a = ctx.any.account()
+      stubGetOrCreate(ctx, idMap([a, u32(1)]))
 
-    // Scenario: the registry side-effect — every ingested address is minted an account ID and linked
-    //   to this instance (getOrCreateAccountWithInstance). An address never seen before gets a new
-    //   id; the instance's numAccounts on the registry bumps once per genuinely-new link.
-    it('mints a registry account ID and links each account to the instance', () => {})
+      expectArc65Error(ctx, () => contract.ingestAq(NUM, [{ account: a, aq: u32(0) }]), errZeroAq)
+    })
 
-    // Scenario: an address the registry already knows keeps its existing id and is not re-linked —
-    //   getOrCreateAccountWithInstance is idempotent in both dimensions.
-    it('reuses the account ID of an already-registered account', () => {})
+    // Scenario: write-once per [account, committee] (step 4c). An account whose box already exists for
+    // this committee is rejected — ingestedAq can never double-count.
+    it('rejects re-ingesting an account already ingested for this committee, with errAccountAqExists', () => {
+      const { contract } = setup(ctx)
+      seedLedger(contract)
+      const a = ctx.any.account()
+      stubGetOrCreate(ctx, idMap([a, u32(5)]))
+      contract.accountAq([u32(5), NUM]).value = u32(100) // already ingested
 
-    // Scenario: write-once per [account, committee] (step 4c). A repeat within a batch, or a replay
-    //   across batches, hits an existing accountAq box and is rejected — ingestedAq can never
-    //   double-count. Expected error: errAccountAqExists.
-    it('rejects a duplicate account with errAccountAqExists', () => {
-      void errAccountAqExists
+      expectArc65Error(ctx, () => contract.ingestAq(NUM, [{ account: a, aq: u32(100) }]), errAccountAqExists)
     })
 
     // Scenario: the AQ overflow guard (step 5). A batch whose Σ aq would push ingestedAq past totalAq
-    //   is rejected whole, leaving the ledger untouched. Expected error: errTotalAqExceeded.
-    it('rejects a batch that would exceed totalAq with errTotalAqExceeded', () => {
-      void errTotalAqExceeded
+    // is rejected (60 + 60 > 100).
+    it('rejects a batch whose AlgoQuarters would exceed totalAq, with errTotalAqExceeded', () => {
+      const { contract } = setup(ctx)
+      seedLedger(contract, 100, 500) // totalAq 100
+      const a = ctx.any.account()
+      const b = ctx.any.account()
+      stubGetOrCreate(ctx, idMap([a, u32(1)], [b, u32(2)]))
+
+      expectArc65Error(
+        ctx,
+        () =>
+          contract.ingestAq(NUM, [
+            { account: a, aq: u32(60) },
+            { account: b, aq: u32(60) },
+          ]),
+        errTotalAqExceeded,
+      )
     })
 
     // Scenario: the account-count guard (step 6). A batch whose row count would push numAccounts past
-    //   the declared totalAccounts is rejected whole, even when its Σ aq still fits under totalAq —
-    //   the two totals are checked independently. Expected error: errTotalGovsExceeded.
-    it('rejects a batch that would exceed totalAccounts with errTotalGovsExceeded', () => {
-      void errTotalGovsExceeded
+    // totalAccounts is rejected even when its Σ aq still fits under totalAq — the two totals are
+    // checked independently.
+    it('rejects a batch whose account count would exceed totalAccounts, with errTotalGovsExceeded', () => {
+      const { contract } = setup(ctx)
+      seedLedger(contract, 1000, 1) // totalAccounts 1
+      const a = ctx.any.account()
+      const b = ctx.any.account()
+      stubGetOrCreate(ctx, idMap([a, u32(1)], [b, u32(2)]))
+
+      expectArc65Error(
+        ctx,
+        () =>
+          contract.ingestAq(NUM, [
+            { account: a, aq: u32(10) },
+            { account: b, aq: u32(10) },
+          ]),
+        errTotalGovsExceeded,
+      )
     })
 
-    // Scenario: successive batches accumulate — ingestedAq/numAccounts sum across calls, and the
-    //   committee is complete exactly when ingestedAq == totalAq.
-    it('accumulates across multiple batches', () => {})
+    // Scenario: successive batches accumulate — ingestedAq/numAccounts sum across calls.
+    it('accumulates ingestedAq / numAccounts across successive batches', () => {
+      const { contract } = setup(ctx)
+      seedLedger(contract, 1000, 500)
+      const a = ctx.any.account()
+      const b = ctx.any.account()
+      stubGetOrCreate(ctx, idMap([a, u32(1)], [b, u32(2)]))
+
+      contract.ingestAq(NUM, [{ account: a, aq: u32(100) }])
+      contract.ingestAq(NUM, [{ account: b, aq: u32(250) }])
+
+      const ledger = contract.committeeAq(NUM).value
+      expect(ledger.ingestedAq.asUint64()).toEqual(u32(350).asUint64())
+      expect(ledger.numAccounts.asUint64()).toEqual(u32(2).asUint64())
+    })
   })
 })

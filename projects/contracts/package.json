@@ -20,7 +20,7 @@
     "check-types": "tsc --noEmit && tsc -p scripts/tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@algorandfoundation/algorand-typescript": "^1.1.0",
+    "@algorandfoundation/algorand-typescript": "^1.2.0",
     "@d13co/superbox": "^2.0.0",
     "frac-delegation-sdk": "link:../frac-delegation-sdk",
     "ggov-sdk": "link:../ggov-sdk"
@@ -29,8 +29,8 @@
     "@algorandfoundation/algokit-client-generator": "^6.0.0",
     "@algorandfoundation/algokit-utils": "^9.0.0",
     "@algorandfoundation/algokit-utils-debug": "^1.0.4",
-    "@algorandfoundation/algorand-typescript-testing": "^1.1.0",
-    "@algorandfoundation/puya-ts": "^1.1.0",
+    "@algorandfoundation/algorand-typescript-testing": "^1.2.0",
+    "@algorandfoundation/puya-ts": "^1.2.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^25.2.1",
