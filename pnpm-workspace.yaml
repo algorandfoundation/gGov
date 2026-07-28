@@ -30,8 +30,7 @@ overrides:
   'brace-expansion@5': ^5.0.8 # eslint>...>minimatch>brace-expansion (GHSA-3jxr-9vmj-r5cp, GHSA-mh99-v99m-4gvg)
 
 minimumReleaseAgeExclude:
-  - fast-uri@3.1.4 # 3 days old at this commit time - remove when minimumReleaseAge is surpassed
-  - brace-expansion@5.0.8 # 4 days old at this commit time - remove when minimumReleaseAge is surpassed
+  - brace-expansion@5.0.8 # 5 days old at this commit time - remove when minimumReleaseAge is surpassed
   # puya-ts 1.2.0 toolchain (ARC-65 logged errors) - newer than the 1-week window; remove when surpassed
   - '@algorandfoundation/algorand-typescript@1.2.0'
   - '@algorandfoundation/puya-ts@1.2.0'
