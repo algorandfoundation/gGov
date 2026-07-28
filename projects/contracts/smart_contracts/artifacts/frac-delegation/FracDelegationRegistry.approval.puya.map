@@ -5,7 +5,7 @@
     "../../base/utils.algo.ts",
     "../../frac-delegation/fracDelegationRegistry.algo.ts"
   ],
-  "mappings": "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",
+  "mappings": "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",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -16,7 +16,7 @@
       "op": "intcblock 0 1 2 32 4096"
     },
     "9": {
-      "op": "bytecblock \"Iap\" 0x151f7c75 \"i\" \"admin\" \"ERR:AUTH\" \"ERR:FI_NX\" \"lastAccountId\" \"lastInstanceNumId\" base64(C4EBQw==) \"defaultOperator\" \"gGovRegistryApp\" 0x711832b9 0x000e 0x00060000"
+      "op": "bytecblock \"Iap\" 0x151f7c75 \"i\" \"admin\" \"ERR:AUTH\" \"ERR:FI_NX\" \"lastAccountId\" \"lastInstanceNumId\" base64(C4EBQw==) \"defaultOperator\" \"gGovRegistryApp\" 0x92d03753 0x000f 0x00060000"
     },
     "129": {
       "op": "txn ApplicationID",
@@ -194,11 +194,11 @@
       "stack_out": []
     },
     "167": {
-      "op": "pushbytess 0x17866912 0xe3bdb11f 0x4bf519cf 0x928ddc5e 0x09be401a 0x27f85b85 0xec402f3c 0xa220b9f9 0xdfdfb84b 0x53f72a3e 0xba0b81c2 0x73e6ec7a 0xe8d8cc9f 0xa22b6a9e 0x4118ecbf // method \"setAdmin(address)void\", method \"setDefaultOperator(address)void\", method \"setGGovRegistryApp(uint64)void\", method \"withdrawALGO(address,uint64)void\", method \"uploadInstanceApprovalPartial(uint64,byte[])void\", method \"createInstance(string,pay)(uint16,uint64)\", method \"getAccount(address)(uint32,uint16[])\", method \"logAccounts(address[])void\", method \"logAccountInstanceAQ(address,byte[32],uint16,uint16)void\", method \"logAccountVotingRecords(address,uint32,uint16,uint16)void\", method \"getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,uint32[][])\", method \"getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[])\", method \"registerEscrow(uint16,address)void\", method \"getEscrow(address)(uint16,uint64)\", method \"increaseBudget(uint64)void\"",
+      "op": "pushbytess 0x17866912 0xe3bdb11f 0x4bf519cf 0x928ddc5e 0x09be401a 0x27f85b85 0xec402f3c 0xa220b9f9 0xdfdfb84b 0x53f72a3e 0xddcf943a 0x73e6ec7a 0xe8d8cc9f 0xa22b6a9e 0x4118ecbf // method \"setAdmin(address)void\", method \"setDefaultOperator(address)void\", method \"setGGovRegistryApp(uint64)void\", method \"withdrawALGO(address,uint64)void\", method \"uploadInstanceApprovalPartial(uint64,byte[])void\", method \"createInstance(string,pay)(uint16,uint64)\", method \"getAccount(address)(uint32,uint16[])\", method \"logAccounts(address[])void\", method \"logAccountInstanceAQ(address,byte[32],uint16,uint16)void\", method \"logAccountVotingRecords(address,uint32,uint16,uint16)void\", method \"getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][])\", method \"getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[])\", method \"registerEscrow(uint16,address)void\", method \"getEscrow(address)(uint16,uint64)\", method \"increaseBudget(uint64)void\"",
       "defined_out": [
         "Method(createInstance(string,pay)(uint16,uint64))",
         "Method(getAccount(address)(uint32,uint16[]))",
-        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,uint32[][]))",
+        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][]))",
         "Method(getEscrow(address)(uint16,uint64))",
         "Method(getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[]))",
         "Method(increaseBudget(uint64)void)",
@@ -223,7 +223,7 @@
         "Method(logAccounts(address[])void)",
         "Method(logAccountInstanceAQ(address,byte[32],uint16,uint16)void)",
         "Method(logAccountVotingRecords(address,uint32,uint16,uint16)void)",
-        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,uint32[][]))",
+        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][]))",
         "Method(getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[]))",
         "Method(registerEscrow(uint16,address)void)",
         "Method(getEscrow(address)(uint16,uint64))",
@@ -235,7 +235,7 @@
       "defined_out": [
         "Method(createInstance(string,pay)(uint16,uint64))",
         "Method(getAccount(address)(uint32,uint16[]))",
-        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,uint32[][]))",
+        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][]))",
         "Method(getEscrow(address)(uint16,uint64))",
         "Method(getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[]))",
         "Method(increaseBudget(uint64)void)",
@@ -261,7 +261,7 @@
         "Method(logAccounts(address[])void)",
         "Method(logAccountInstanceAQ(address,byte[32],uint16,uint16)void)",
         "Method(logAccountVotingRecords(address,uint32,uint16,uint16)void)",
-        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,uint32[][]))",
+        "Method(getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][]))",
         "Method(getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[]))",
         "Method(registerEscrow(uint16,address)void)",
         "Method(getEscrow(address)(uint16,uint64))",
@@ -7070,7 +7070,7 @@
       ]
     },
     "1118": {
-      "op": "cover 2",
+      "op": "cover 3",
       "defined_out": [
         "end#0",
         "instanceNumId#0",
@@ -7087,8 +7087,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "tmp%9#0"
       ]
@@ -7103,8 +7103,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "tmp%9#0",
         "0"
@@ -7120,8 +7120,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "tmp%9#0"
       ]
@@ -7136,15 +7136,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0"
       ]
     },
     "1125": {
-      "op": "bytec 11 // method \"getVotingRecord(uint32,uint32)(uint32[][])\"",
+      "op": "bytec 11 // method \"getVotingRecord(uint32,uint32)(bool,uint32[][])\"",
       "defined_out": [
-        "Method(getVotingRecord(uint32,uint32)(uint32[][]))",
+        "Method(getVotingRecord(uint32,uint32)(bool,uint32[][]))",
         "end#0",
         "instanceNumId#0",
         "instanceNumIds#0",
@@ -7160,10 +7160,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
-        "Method(getVotingRecord(uint32,uint32)(uint32[][]))"
+        "Method(getVotingRecord(uint32,uint32)(bool,uint32[][]))"
       ]
     },
     "1127": {
@@ -7176,8 +7176,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0"
       ]
     },
@@ -7200,8 +7200,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "periodId#0"
       ]
@@ -7216,8 +7216,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0"
       ]
     },
@@ -7241,8 +7241,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "accountId#0"
       ]
@@ -7257,8 +7257,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0"
       ]
     },
@@ -7283,8 +7283,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "appl"
       ]
@@ -7299,8 +7299,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0"
       ]
     },
@@ -7314,8 +7314,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "0"
       ]
@@ -7330,8 +7330,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0"
       ]
     },
@@ -7359,8 +7359,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "awst_tmp%0#0"
       ]
@@ -7387,8 +7387,8 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "awst_tmp%0#0",
         "awst_tmp%0#0 (copy)"
@@ -7416,15 +7416,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "i#0",
         "awst_tmp%0#0",
         "record#0"
       ]
     },
     "1151": {
-      "op": "swap",
+      "op": "dup",
       "stack_out": [
         "aggregate%array_length%1#0",
         "periodId#0",
@@ -7433,14 +7433,63 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "i#0",
+        "awst_tmp%0#0",
+        "record#0",
+        "record#0 (copy)"
+      ]
+    },
+    "1152": {
+      "op": "cover 2",
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "instanceNumId#0",
+        "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "i#0",
+        "record#0",
+        "awst_tmp%0#0",
+        "record#0"
+      ]
+    },
+    "1154": {
+      "op": "cover 3",
+      "defined_out": [
+        "accountId#0",
+        "awst_tmp%0#0",
+        "end#0",
+        "instanceNumId#0",
+        "instanceNumIds#0",
+        "map_prefixed_key%0#0",
+        "periodId#0",
+        "record#0",
+        "tmp%9#0",
+        "total#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "instanceNumId#0",
+        "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "awst_tmp%0#0"
       ]
     },
-    "1152": {
+    "1156": {
       "op": "extract 0 4",
       "defined_out": [
         "accountId#0",
@@ -7462,14 +7511,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "tmp%11#0"
       ]
     },
-    "1155": {
+    "1159": {
       "op": "bytec_1 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -7492,15 +7542,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "tmp%11#0",
         "0x151f7c75"
       ]
     },
-    "1156": {
+    "1160": {
       "op": "==",
       "defined_out": [
         "accountId#0",
@@ -7522,14 +7573,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "tmp%12#0"
       ]
     },
-    "1157": {
+    "1161": {
       "error": "Bytes has valid prefix",
       "op": "assert // Bytes has valid prefix",
       "stack_out": [
@@ -7540,13 +7592,14 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0"
       ]
     },
-    "1158": {
+    "1162": {
       "op": "dup",
       "defined_out": [
         "accountId#0",
@@ -7568,14 +7621,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "record#0 (copy)"
       ]
     },
-    "1159": {
+    "1163": {
       "op": "len",
       "defined_out": [
         "accountId#0",
@@ -7597,14 +7651,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "tuple_len%0#0"
       ]
     },
-    "1160": {
+    "1164": {
       "op": "dup",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -7614,15 +7669,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "record#0",
         "tuple_len%0#0",
         "tuple_len%0#0 (copy)"
       ]
     },
-    "1161": {
+    "1165": {
       "op": "cover 2",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -7632,15 +7688,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "i#0",
         "tuple_len%0#0",
         "record#0",
         "tuple_len%0#0"
       ]
     },
-    "1163": {
+    "1167": {
       "op": "cover 3",
       "defined_out": [
         "accountId#0",
@@ -7662,15 +7719,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
         "record#0"
       ]
     },
-    "1165": {
+    "1169": {
       "op": "dup",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -7680,8 +7738,9 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
@@ -7689,8 +7748,22 @@
         "record#0 (copy)"
       ]
     },
-    "1166": {
-      "op": "intc_0 // 0",
+    "1170": {
+      "op": "intc_1 // 1",
+      "defined_out": [
+        "1",
+        "accountId#0",
+        "end#0",
+        "instanceNumId#0",
+        "instanceNumIds#0",
+        "map_prefixed_key%0#0",
+        "periodId#0",
+        "record#0",
+        "record#0 (copy)",
+        "tmp%9#0",
+        "total#0",
+        "tuple_len%0#0"
+      ],
       "stack_out": [
         "aggregate%array_length%1#0",
         "periodId#0",
@@ -7699,17 +7772,18 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
         "record#0",
         "record#0 (copy)",
-        "0"
+        "1"
       ]
     },
-    "1167": {
+    "1171": {
       "error": "invalid tuple encoding",
       "op": "extract_uint16 // on error: invalid tuple encoding",
       "defined_out": [
@@ -7733,8 +7807,9 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
@@ -7742,7 +7817,7 @@
         "extract_uint16%0#0"
       ]
     },
-    "1168": {
+    "1172": {
       "op": "dup",
       "defined_out": [
         "accountId#0",
@@ -7766,8 +7841,9 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
@@ -7776,8 +7852,23 @@
         "extract_uint16%0#0 (copy)"
       ]
     },
-    "1169": {
-      "op": "intc_2 // 2",
+    "1173": {
+      "op": "pushint 3",
+      "defined_out": [
+        "3",
+        "accountId#0",
+        "end#0",
+        "extract_uint16%0#0",
+        "extract_uint16%0#0 (copy)",
+        "instanceNumId#0",
+        "instanceNumIds#0",
+        "map_prefixed_key%0#0",
+        "periodId#0",
+        "record#0",
+        "tmp%9#0",
+        "total#0",
+        "tuple_len%0#0"
+      ],
       "stack_out": [
         "aggregate%array_length%1#0",
         "periodId#0",
@@ -7786,18 +7877,19 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
         "record#0",
         "extract_uint16%0#0",
         "extract_uint16%0#0 (copy)",
-        "2"
+        "3"
       ]
     },
-    "1170": {
+    "1175": {
       "op": "==",
       "defined_out": [
         "accountId#0",
@@ -7821,8 +7913,9 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
@@ -7831,9 +7924,9 @@
         "eq%0#0"
       ]
     },
-    "1171": {
-      "error": "invalid tail pointer at index 0 of ((len+(len+uint32[])[]))",
-      "op": "assert // invalid tail pointer at index 0 of ((len+(len+uint32[])[]))",
+    "1176": {
+      "error": "invalid tail pointer at index 1 of (bool1,(len+(len+uint32[])[]))",
+      "op": "assert // invalid tail pointer at index 1 of (bool1,(len+(len+uint32[])[]))",
       "stack_out": [
         "aggregate%array_length%1#0",
         "periodId#0",
@@ -7842,8 +7935,9 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "tuple_len%0#0",
@@ -7851,7 +7945,7 @@
         "extract_uint16%0#0"
       ]
     },
-    "1172": {
+    "1177": {
       "op": "uncover 2",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -7861,8 +7955,9 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "record#0",
@@ -7870,7 +7965,7 @@
         "tuple_len%0#0"
       ]
     },
-    "1174": {
+    "1179": {
       "op": "substring3",
       "defined_out": [
         "accountId#0",
@@ -7879,6 +7974,7 @@
         "instanceNumIds#0",
         "map_prefixed_key%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -7892,14 +7988,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0"
       ]
     },
-    "1175": {
+    "1180": {
       "op": "dup",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -7909,16 +8006,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
         "substring3%0#0"
       ]
     },
-    "1176": {
-      "op": "cover 3",
+    "1181": {
+      "op": "cover 4",
       "defined_out": [
         "accountId#0",
         "end#0",
@@ -7926,6 +8024,7 @@
         "instanceNumIds#0",
         "map_prefixed_key%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -7939,15 +8038,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0"
       ]
     },
-    "1178": {
+    "1183": {
       "op": "dup",
       "defined_out": [
         "accountId#0",
@@ -7956,6 +8056,7 @@
         "instanceNumIds#0",
         "map_prefixed_key%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "substring3%0#0 (copy)",
         "tmp%9#0",
@@ -7970,16 +8071,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
         "substring3%0#0 (copy)"
       ]
     },
-    "1179": {
+    "1184": {
       "op": "intc_0 // 0",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -7989,9 +8091,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
@@ -7999,7 +8102,7 @@
         "0"
       ]
     },
-    "1180": {
+    "1185": {
       "error": "invalid array length header",
       "op": "extract_uint16 // on error: invalid array length header",
       "defined_out": [
@@ -8010,6 +8113,7 @@
         "instanceNumIds#0",
         "map_prefixed_key%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -8023,16 +8127,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
         "aggregate%array_length%1#0"
       ]
     },
-    "1181": {
+    "1186": {
       "op": "dup",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8042,9 +8147,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
@@ -8052,8 +8158,8 @@
         "aggregate%array_length%1#0"
       ]
     },
-    "1182": {
-      "op": "bury 14",
+    "1187": {
+      "op": "bury 15",
       "defined_out": [
         "accountId#0",
         "aggregate%array_length%1#0",
@@ -8062,6 +8168,7 @@
         "instanceNumIds#0",
         "map_prefixed_key%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -8075,16 +8182,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
         "aggregate%array_length%1#0"
       ]
     },
-    "1184": {
+    "1189": {
       "op": "intc_2 // 2",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8094,9 +8202,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
@@ -8104,7 +8213,7 @@
         "2"
       ]
     },
-    "1185": {
+    "1190": {
       "op": "*",
       "defined_out": [
         "accountId#0",
@@ -8115,6 +8224,7 @@
         "map_prefixed_key%0#0",
         "num_bytes%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -8128,16 +8238,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "substring3%0#0",
         "num_bytes%0#0"
       ]
     },
-    "1186": {
+    "1191": {
       "op": "swap",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8147,16 +8258,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
         "substring3%0#0"
       ]
     },
-    "1187": {
+    "1192": {
       "op": "extract 2 0",
       "defined_out": [
         "accountId#0",
@@ -8168,6 +8280,7 @@
         "map_prefixed_key%0#0",
         "num_bytes%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -8181,16 +8294,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
         "array_data%0#0"
       ]
     },
-    "1190": {
+    "1195": {
       "op": "intc_0 // 0",
       "defined_out": [
         "accountId#0",
@@ -8203,6 +8317,7 @@
         "map_prefixed_key%0#0",
         "num_bytes%0#0",
         "periodId#0",
+        "record#0",
         "substring3%0#0",
         "tmp%9#0",
         "total#0",
@@ -8216,9 +8331,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8226,7 +8342,7 @@
         "index%0#0"
       ]
     },
-    "1191": {
+    "1196": {
       "block": "logAccountVotingRecords_for_header@6",
       "stack_in": [
         "aggregate%array_length%1#0",
@@ -8236,9 +8352,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8257,9 +8374,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8268,8 +8386,8 @@
         "index%0#0 (copy)"
       ]
     },
-    "1192": {
-      "op": "dig 15",
+    "1197": {
+      "op": "dig 16",
       "defined_out": [
         "aggregate%array_length%1#0",
         "index%0#0 (copy)"
@@ -8282,9 +8400,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8294,7 +8413,7 @@
         "aggregate%array_length%1#0"
       ]
     },
-    "1194": {
+    "1199": {
       "op": "<",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8308,9 +8427,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8319,7 +8439,7 @@
         "continue_looping%0#0"
       ]
     },
-    "1195": {
+    "1200": {
       "op": "bz logAccountVotingRecords_after_for@9",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8329,9 +8449,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8339,7 +8460,7 @@
         "index%0#0"
       ]
     },
-    "1198": {
+    "1203": {
       "op": "dup",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8354,9 +8475,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8365,7 +8487,7 @@
         "index%0#0 (copy)"
       ]
     },
-    "1199": {
+    "1204": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -8381,9 +8503,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8393,7 +8516,7 @@
         "2"
       ]
     },
-    "1200": {
+    "1205": {
       "op": "*",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8408,9 +8531,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8419,7 +8543,7 @@
         "head_offset_bytes%0#0"
       ]
     },
-    "1201": {
+    "1206": {
       "op": "dig 2",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8435,9 +8559,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8447,10 +8572,10 @@
         "array_data%0#0"
       ]
     },
-    "1203": {
+    "1208": {
       "op": "dup"
     },
-    "1204": {
+    "1209": {
       "op": "uncover 2",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8467,9 +8592,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8480,7 +8606,7 @@
         "head_offset_bytes%0#0"
       ]
     },
-    "1206": {
+    "1211": {
       "error": "invalid array encoding",
       "op": "extract_uint16 // on error: invalid array encoding",
       "defined_out": [
@@ -8497,9 +8623,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8509,7 +8636,7 @@
         "item_offset%0#0"
       ]
     },
-    "1207": {
+    "1212": {
       "op": "dup",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8526,9 +8653,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8539,7 +8667,7 @@
         "item_offset%0#0 (copy)"
       ]
     },
-    "1208": {
+    "1213": {
       "op": "uncover 5",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8557,9 +8685,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8570,7 +8699,7 @@
         "num_bytes%0#0"
       ]
     },
-    "1210": {
+    "1215": {
       "op": "dup",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8588,9 +8717,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8602,7 +8732,7 @@
         "num_bytes%0#0 (copy)"
       ]
     },
-    "1211": {
+    "1216": {
       "op": "cover 4",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8612,9 +8742,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8626,7 +8757,7 @@
         "num_bytes%0#0 (copy)"
       ]
     },
-    "1213": {
+    "1218": {
       "op": "==",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8644,9 +8775,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8657,7 +8789,7 @@
         "offset_is_correct%0#0"
       ]
     },
-    "1214": {
+    "1219": {
       "error": "invalid tail pointer for (len+(len+uint32[])[])",
       "op": "assert // invalid tail pointer for (len+(len+uint32[])[])",
       "stack_out": [
@@ -8668,9 +8800,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8680,7 +8813,7 @@
         "item_offset%0#0"
       ]
     },
-    "1215": {
+    "1220": {
       "op": "dig 1",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8690,9 +8823,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8703,7 +8837,7 @@
         "array_data%0#0 (copy)"
       ]
     },
-    "1217": {
+    "1222": {
       "op": "len",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8721,9 +8855,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8734,7 +8869,7 @@
         "total_length%1#0"
       ]
     },
-    "1218": {
+    "1223": {
       "op": "substring3",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8751,9 +8886,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8762,7 +8898,7 @@
         "extract_to_end%0#0"
       ]
     },
-    "1219": {
+    "1224": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -8780,9 +8916,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8792,7 +8929,7 @@
         "0"
       ]
     },
-    "1220": {
+    "1225": {
       "error": "invalid array length header",
       "op": "extract_uint16 // on error: invalid array length header",
       "defined_out": [
@@ -8810,9 +8947,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8821,7 +8959,7 @@
         "aggregate%array_length%2#0"
       ]
     },
-    "1221": {
+    "1226": {
       "op": "pushint 4",
       "defined_out": [
         "4",
@@ -8839,9 +8977,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8851,7 +8990,7 @@
         "4"
       ]
     },
-    "1223": {
+    "1228": {
       "op": "*",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8868,9 +9007,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8879,7 +9019,7 @@
         "mul%0#0"
       ]
     },
-    "1224": {
+    "1229": {
       "op": "intc_2 // 2",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8889,9 +9029,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8901,7 +9042,7 @@
         "2"
       ]
     },
-    "1225": {
+    "1230": {
       "op": "+",
       "defined_out": [
         "add%0#0",
@@ -8918,9 +9059,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8929,7 +9071,7 @@
         "add%0#0"
       ]
     },
-    "1226": {
+    "1231": {
       "op": "+",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -8939,9 +9081,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "array_data%0#0",
@@ -8949,7 +9092,7 @@
         "num_bytes%0#0"
       ]
     },
-    "1227": {
+    "1232": {
       "op": "cover 2",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -8965,9 +9108,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -8975,7 +9119,7 @@
         "index%0#0"
       ]
     },
-    "1229": {
+    "1234": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -8992,9 +9136,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -9003,7 +9148,7 @@
         "1"
       ]
     },
-    "1230": {
+    "1235": {
       "op": "+",
       "defined_out": [
         "aggregate%array_length%1#0",
@@ -9019,9 +9164,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -9029,10 +9175,10 @@
         "index%0#0"
       ]
     },
-    "1231": {
+    "1236": {
       "op": "b logAccountVotingRecords_for_header@6"
     },
-    "1234": {
+    "1239": {
       "block": "logAccountVotingRecords_after_for@9",
       "stack_in": [
         "aggregate%array_length%1#0",
@@ -9042,9 +9188,10 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
@@ -9063,18 +9210,19 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0"
       ]
     },
-    "1236": {
-      "op": "pushint 4",
+    "1241": {
+      "op": "pushint 5",
       "defined_out": [
-        "4",
+        "5",
         "num_bytes%0#0"
       ],
       "stack_out": [
@@ -9085,16 +9233,17 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "num_bytes%0#0",
-        "4"
+        "5"
       ]
     },
-    "1238": {
+    "1243": {
       "op": "+",
       "defined_out": [
         "add%1#0"
@@ -9107,15 +9256,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "i#0",
         "add%1#0"
       ]
     },
-    "1239": {
+    "1244": {
       "op": "uncover 2",
       "defined_out": [
         "add%1#0",
@@ -9129,15 +9279,16 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "add%1#0",
         "tuple_len%0#0"
       ]
     },
-    "1241": {
+    "1246": {
       "op": "==",
       "defined_out": [
         "eq%1#0"
@@ -9150,14 +9301,15 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "eq%1#0"
       ]
     },
-    "1242": {
+    "1247": {
       "error": "invalid number of bytes for smart_contracts/base/types.algo.ts::FracVotingRecord",
       "op": "assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracVotingRecord",
       "stack_out": [
@@ -9168,13 +9320,14 @@
         "total#0",
         "end#0",
         "instanceNumId#0",
-        "map_prefixed_key%0#0",
         "tmp%9#0",
+        "map_prefixed_key%0#0",
         "substring3%0#0",
+        "record#0",
         "i#0"
       ]
     },
-    "1243": {
+    "1248": {
       "op": "uncover 3",
       "defined_out": [
         "map_prefixed_key%0#0"
@@ -9189,11 +9342,12 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1245": {
+    "1250": {
       "op": "dup",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -9209,12 +9363,13 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)"
       ]
     },
-    "1246": {
+    "1251": {
       "op": "pushint 26",
       "defined_out": [
         "26",
@@ -9231,13 +9386,14 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)",
         "26"
       ]
     },
-    "1248": {
+    "1253": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -9255,6 +9411,7 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)",
@@ -9262,7 +9419,7 @@
         "2"
       ]
     },
-    "1249": {
+    "1254": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%1#0",
@@ -9278,12 +9435,13 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "box%box_extract%1#0"
       ]
     },
-    "1250": {
+    "1255": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0",
@@ -9299,12 +9457,13 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "box%btoi%0#0"
       ]
     },
-    "1251": {
+    "1256": {
       "op": "intc_2 // 2",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -9316,13 +9475,14 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "box%btoi%0#0",
         "2"
       ]
     },
-    "1252": {
+    "1257": {
       "op": "+",
       "defined_out": [
         "box%total_bytes%0#0",
@@ -9338,15 +9498,16 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "box%total_bytes%0#0"
       ]
     },
-    "1253": {
+    "1258": {
       "op": "pushint 26"
     },
-    "1255": {
+    "1260": {
       "op": "swap",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -9358,13 +9519,14 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "map_prefixed_key%0#0",
         "26",
         "box%total_bytes%0#0"
       ]
     },
-    "1256": {
+    "1261": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%2#0"
@@ -9379,11 +9541,12 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "box%box_extract%2#0"
       ]
     },
-    "1257": {
+    "1262": {
       "op": "extract 2 0",
       "defined_out": [
         "tmp%14#0"
@@ -9398,13 +9561,80 @@
         "instanceNumId#0",
         "tmp%9#0",
         "substring3%0#0",
+        "record#0",
         "i#0",
         "tmp%14#0"
       ]
     },
-    "1260": {
-      "op": "uncover 3",
+    "1265": {
+      "op": "uncover 2",
       "defined_out": [
+        "record#0",
+        "tmp%14#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "instanceNumId#0",
+        "tmp%9#0",
+        "substring3%0#0",
+        "i#0",
+        "tmp%14#0",
+        "record#0"
+      ]
+    },
+    "1267": {
+      "op": "intc_0 // 0",
+      "defined_out": [
+        "0",
+        "record#0",
+        "tmp%14#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "instanceNumId#0",
+        "tmp%9#0",
+        "substring3%0#0",
+        "i#0",
+        "tmp%14#0",
+        "record#0",
+        "0"
+      ]
+    },
+    "1268": {
+      "op": "getbit",
+      "defined_out": [
+        "aggregate%get_bit%0#0",
+        "tmp%14#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "instanceNumId#0",
+        "tmp%9#0",
+        "substring3%0#0",
+        "i#0",
+        "tmp%14#0",
+        "aggregate%get_bit%0#0"
+      ]
+    },
+    "1269": {
+      "op": "uncover 4",
+      "defined_out": [
+        "aggregate%get_bit%0#0",
         "tmp%14#0",
         "tmp%9#0"
       ],
@@ -9419,12 +9649,14 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "tmp%9#0"
       ]
     },
-    "1262": {
+    "1271": {
       "op": "itob",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0",
         "tmp%14#0"
       ],
@@ -9439,12 +9671,14 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1263": {
-      "op": "uncover 4",
+    "1272": {
+      "op": "uncover 5",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0",
         "instanceNumId#0",
         "tmp%14#0"
@@ -9459,11 +9693,12 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0",
         "instanceNumId#0"
       ]
     },
-    "1265": {
+    "1274": {
       "op": "swap",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -9475,13 +9710,15 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "instanceNumId#0",
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1266": {
+    "1275": {
       "op": "concat",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "tmp%14#0"
       ],
@@ -9495,12 +9732,14 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0"
       ]
     },
-    "1267": {
-      "op": "dig 1",
+    "1276": {
+      "op": "dig 2",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "tmp%14#0",
         "tmp%14#0 (copy)"
@@ -9515,13 +9754,15 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "tmp%14#0 (copy)"
       ]
     },
-    "1269": {
+    "1278": {
       "op": "len",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length%0#0",
         "tmp%14#0"
@@ -9536,14 +9777,16 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length%0#0"
       ]
     },
-    "1270": {
+    "1279": {
       "op": "itob",
       "defined_out": [
         "aggregate%as_bytes%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "tmp%14#0"
       ],
@@ -9557,13 +9800,15 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%as_bytes%0#0"
       ]
     },
-    "1271": {
+    "1280": {
       "op": "extract 6 2",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length_uint16%0#0",
         "tmp%14#0"
@@ -9578,12 +9823,13 @@
         "substring3%0#0",
         "i#0",
         "tmp%14#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length_uint16%0#0"
       ]
     },
-    "1274": {
-      "op": "uncover 2",
+    "1283": {
+      "op": "uncover 3",
       "stack_out": [
         "aggregate%array_length%1#0",
         "periodId#0",
@@ -9593,15 +9839,17 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length_uint16%0#0",
         "tmp%14#0"
       ]
     },
-    "1276": {
+    "1285": {
       "op": "concat",
       "defined_out": [
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0"
       ],
       "stack_out": [
@@ -9613,11 +9861,12 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%encoded_value%0#0"
       ]
     },
-    "1277": {
+    "1286": {
       "op": "swap",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -9628,15 +9877,17 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%1#0"
       ]
     },
-    "1278": {
-      "op": "bytec 12 // 0x000e",
+    "1287": {
+      "op": "bytec 12 // 0x000f",
       "defined_out": [
-        "0x000e",
+        "0x000f",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0"
       ],
       "stack_out": [
@@ -9648,15 +9899,17 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%1#0",
-        "0x000e"
+        "0x000f"
       ]
     },
-    "1280": {
+    "1289": {
       "op": "concat",
       "defined_out": [
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0"
       ],
       "stack_out": [
@@ -9668,15 +9921,17 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0"
       ]
     },
-    "1281": {
+    "1290": {
       "op": "dig 1",
       "defined_out": [
         "aggregate%encoded_value%0#0",
         "aggregate%encoded_value%0#0 (copy)",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0"
       ],
       "stack_out": [
@@ -9688,16 +9943,18 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%encoded_value%0#0 (copy)"
       ]
     },
-    "1283": {
+    "1292": {
       "op": "len",
       "defined_out": [
         "aggregate%data_length%0#0",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0"
       ],
       "stack_out": [
@@ -9709,17 +9966,19 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%data_length%0#0"
       ]
     },
-    "1284": {
-      "op": "pushint 14",
+    "1293": {
+      "op": "pushint 15",
       "defined_out": [
-        "14",
+        "15",
         "aggregate%data_length%0#0",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0"
       ],
       "stack_out": [
@@ -9731,17 +9990,19 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%data_length%0#0",
-        "14"
+        "15"
       ]
     },
-    "1286": {
+    "1295": {
       "op": "+",
       "defined_out": [
         "aggregate%current_tail_offset%0#0",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0"
       ],
       "stack_out": [
@@ -9753,15 +10014,80 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%current_tail_offset%0#0"
       ]
     },
-    "1287": {
-      "op": "itob",
+    "1296": {
+      "op": "pushbytes 0x00",
       "defined_out": [
-        "aggregate%as_bytes%2#0",
+        "0x00",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
+        "aggregate%head%2#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%get_bit%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "0x00"
+      ]
+    },
+    "1299": {
+      "op": "intc_0 // 0",
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%get_bit%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "0x00",
+        "0"
+      ]
+    },
+    "1300": {
+      "op": "uncover 5",
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "0x00",
+        "0",
+        "aggregate%get_bit%0#0"
+      ]
+    },
+    "1302": {
+      "op": "setbit",
+      "defined_out": [
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_bool%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0"
       ],
@@ -9776,16 +10102,12 @@
         "i#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
-        "aggregate%as_bytes%2#0"
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_bool%0#0"
       ]
     },
-    "1288": {
-      "op": "extract 6 2",
-      "defined_out": [
-        "aggregate%encoded_value%0#0",
-        "aggregate%head%2#0",
-        "aggregate%offset_as_uint16%1#0"
-      ],
+    "1303": {
+      "op": "uncover 2",
       "stack_out": [
         "aggregate%array_length%1#0",
         "periodId#0",
@@ -9796,30 +10118,12 @@
         "substring3%0#0",
         "i#0",
         "aggregate%encoded_value%0#0",
-        "aggregate%head%2#0",
-        "aggregate%offset_as_uint16%1#0"
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_bool%0#0",
+        "aggregate%head%2#0"
       ]
     },
-    "1291": {
-      "op": "concat",
-      "defined_out": [
-        "aggregate%encoded_value%0#0",
-        "aggregate%head%3#0"
-      ],
-      "stack_out": [
-        "aggregate%array_length%1#0",
-        "periodId#0",
-        "accountId#0",
-        "instanceNumIds#0",
-        "total#0",
-        "end#0",
-        "substring3%0#0",
-        "i#0",
-        "aggregate%encoded_value%0#0",
-        "aggregate%head%3#0"
-      ]
-    },
-    "1292": {
+    "1305": {
       "op": "swap",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -9830,11 +10134,126 @@
         "end#0",
         "substring3%0#0",
         "i#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%head%2#0",
+        "aggregate%encoded_bool%0#0"
+      ]
+    },
+    "1306": {
+      "op": "concat",
+      "defined_out": [
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%head%3#0"
+      ]
+    },
+    "1307": {
+      "op": "swap",
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%encoded_value%0#0",
         "aggregate%head%3#0",
+        "aggregate%current_tail_offset%0#0"
+      ]
+    },
+    "1308": {
+      "op": "itob",
+      "defined_out": [
+        "aggregate%as_bytes%2#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
+        "aggregate%as_bytes%2#0"
+      ]
+    },
+    "1309": {
+      "op": "extract 6 2",
+      "defined_out": [
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
+        "aggregate%offset_as_uint16%1#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
+        "aggregate%offset_as_uint16%1#0"
+      ]
+    },
+    "1312": {
+      "op": "concat",
+      "defined_out": [
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%4#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%4#0"
+      ]
+    },
+    "1313": {
+      "op": "swap",
+      "stack_out": [
+        "aggregate%array_length%1#0",
+        "periodId#0",
+        "accountId#0",
+        "instanceNumIds#0",
+        "total#0",
+        "end#0",
+        "substring3%0#0",
+        "i#0",
+        "aggregate%head%4#0",
         "aggregate%encoded_value%0#0"
       ]
     },
-    "1293": {
+    "1314": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%0#0"
@@ -9851,7 +10270,7 @@
         "aggregate%concat%0#0"
       ]
     },
-    "1294": {
+    "1315": {
       "op": "uncover 2",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -9869,7 +10288,7 @@
         "substring3%0#0"
       ]
     },
-    "1296": {
+    "1317": {
       "op": "concat",
       "defined_out": [
         "tagged#0"
@@ -9885,7 +10304,7 @@
         "tagged#0"
       ]
     },
-    "1297": {
+    "1318": {
       "op": "log",
       "defined_out": [
         "i#0"
@@ -9900,7 +10319,7 @@
         "i#0"
       ]
     },
-    "1298": {
+    "1319": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -9917,7 +10336,7 @@
         "1"
       ]
     },
-    "1299": {
+    "1320": {
       "op": "+",
       "defined_out": [
         "i#0"
@@ -9932,10 +10351,10 @@
         "i#0"
       ]
     },
-    "1300": {
+    "1321": {
       "op": "b logAccountVotingRecords_while_top@2"
     },
-    "1303": {
+    "1324": {
       "block": "logAccountVotingRecords_after_while@10",
       "stack_in": [
         "aggregate%array_length%1#0",
@@ -9961,7 +10380,7 @@
         "1"
       ]
     },
-    "1304": {
+    "1325": {
       "op": "return",
       "stack_out": [
         "aggregate%array_length%1#0",
@@ -9973,7 +10392,7 @@
         "i#0"
       ]
     },
-    "1305": {
+    "1326": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getAccountVotingRecord[routing]",
       "params": {},
       "block": "getAccountVotingRecord",
@@ -9986,7 +10405,7 @@
         "account#0"
       ]
     },
-    "1308": {
+    "1329": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -9997,7 +10416,7 @@
         "account#0 (copy)"
       ]
     },
-    "1309": {
+    "1330": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -10008,7 +10427,7 @@
         "len%0#0"
       ]
     },
-    "1310": {
+    "1331": {
       "op": "intc_3 // 32",
       "defined_out": [
         "32",
@@ -10021,7 +10440,7 @@
         "32"
       ]
     },
-    "1311": {
+    "1332": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -10032,17 +10451,17 @@
         "eq%0#0"
       ]
     },
-    "1312": {
+    "1333": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "account#0"
       ]
     },
-    "1313": {
+    "1334": {
       "op": "txna ApplicationArgs 2"
     },
-    "1316": {
+    "1337": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -10054,7 +10473,7 @@
         "instanceNumId#0"
       ]
     },
-    "1317": {
+    "1338": {
       "op": "cover 2",
       "defined_out": [
         "account#0",
@@ -10066,7 +10485,7 @@
         "instanceNumId#0"
       ]
     },
-    "1319": {
+    "1340": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -10080,7 +10499,7 @@
         "instanceNumId#0 (copy)"
       ]
     },
-    "1320": {
+    "1341": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -10094,7 +10513,7 @@
         "len%1#0"
       ]
     },
-    "1321": {
+    "1342": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -10110,7 +10529,7 @@
         "2"
       ]
     },
-    "1322": {
+    "1343": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -10124,7 +10543,7 @@
         "eq%1#0"
       ]
     },
-    "1323": {
+    "1344": {
       "error": "invalid number of bytes for arc4.uint16",
       "op": "assert // invalid number of bytes for arc4.uint16",
       "stack_out": [
@@ -10133,10 +10552,10 @@
         "instanceNumId#0"
       ]
     },
-    "1324": {
+    "1345": {
       "op": "txna ApplicationArgs 3"
     },
-    "1327": {
+    "1348": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -10151,7 +10570,7 @@
         "periodId#0"
       ]
     },
-    "1328": {
+    "1349": {
       "op": "cover 3",
       "defined_out": [
         "account#0",
@@ -10166,7 +10585,7 @@
         "periodId#0"
       ]
     },
-    "1330": {
+    "1351": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -10182,7 +10601,7 @@
         "len%2#0"
       ]
     },
-    "1331": {
+    "1352": {
       "op": "pushint 4",
       "defined_out": [
         "4",
@@ -10200,7 +10619,7 @@
         "4"
       ]
     },
-    "1333": {
+    "1354": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -10216,7 +10635,7 @@
         "eq%2#0"
       ]
     },
-    "1334": {
+    "1355": {
       "error": "invalid number of bytes for arc4.uint32",
       "op": "assert // invalid number of bytes for arc4.uint32",
       "stack_out": [
@@ -10226,7 +10645,7 @@
         "instanceNumId#0"
       ]
     },
-    "1335": {
+    "1356": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
@@ -10235,7 +10654,7 @@
         "account#0"
       ]
     },
-    "1336": {
+    "1357": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getAccountIfExists",
       "op": "callsub getAccountIfExists",
       "defined_out": [
@@ -10250,7 +10669,7 @@
         "accountRecord#0"
       ]
     },
-    "1339": {
+    "1360": {
       "op": "extract 0 4",
       "defined_out": [
         "accountId#0",
@@ -10264,7 +10683,7 @@
         "accountId#0"
       ]
     },
-    "1342": {
+    "1363": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
@@ -10273,7 +10692,7 @@
         "instanceNumId#0"
       ]
     },
-    "1343": {
+    "1364": {
       "op": "bytec_2 // \"i\"",
       "defined_out": [
         "\"i\"",
@@ -10289,7 +10708,7 @@
         "\"i\""
       ]
     },
-    "1344": {
+    "1365": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
@@ -10299,7 +10718,7 @@
         "instanceNumId#0"
       ]
     },
-    "1345": {
+    "1366": {
       "op": "concat",
       "defined_out": [
         "accountId#0",
@@ -10314,7 +10733,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1346": {
+    "1367": {
       "op": "dup",
       "defined_out": [
         "accountId#0",
@@ -10330,7 +10749,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1347": {
+    "1368": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -10349,7 +10768,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "1348": {
+    "1369": {
       "op": "bury 1",
       "stack_out": [
         "instanceNumId#0",
@@ -10359,7 +10778,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "1350": {
+    "1371": {
       "op": "bnz getAccountVotingRecord_after_assert@3",
       "stack_out": [
         "instanceNumId#0",
@@ -10368,7 +10787,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1353": {
+    "1374": {
       "op": "bytec 5 // \"ERR:FI_NX\"",
       "defined_out": [
         "\"ERR:FI_NX\"",
@@ -10385,7 +10804,7 @@
         "\"ERR:FI_NX\""
       ]
     },
-    "1355": {
+    "1376": {
       "op": "log",
       "stack_out": [
         "instanceNumId#0",
@@ -10394,11 +10813,11 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1356": {
+    "1377": {
       "error": "ERR:FI_NX",
       "op": "err // ERR:FI_NX"
     },
-    "1357": {
+    "1378": {
       "block": "getAccountVotingRecord_after_assert@3",
       "stack_in": [
         "instanceNumId#0",
@@ -10408,7 +10827,7 @@
       ],
       "op": "itxn_begin"
     },
-    "1358": {
+    "1379": {
       "op": "dup",
       "defined_out": [
         "map_prefixed_key%0#0 (copy)"
@@ -10421,7 +10840,7 @@
         "map_prefixed_key%0#0 (copy)"
       ]
     },
-    "1359": {
+    "1380": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -10436,7 +10855,7 @@
         "0"
       ]
     },
-    "1360": {
+    "1381": {
       "op": "pushint 8",
       "defined_out": [
         "0",
@@ -10453,7 +10872,7 @@
         "8"
       ]
     },
-    "1362": {
+    "1383": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -10467,7 +10886,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "1363": {
+    "1384": {
       "op": "btoi",
       "defined_out": [
         "tmp%1#1"
@@ -10480,7 +10899,7 @@
         "tmp%1#1"
       ]
     },
-    "1364": {
+    "1385": {
       "op": "dup",
       "stack_out": [
         "instanceNumId#0",
@@ -10491,7 +10910,7 @@
         "tmp%1#1"
       ]
     },
-    "1365": {
+    "1386": {
       "op": "cover 2",
       "defined_out": [
         "tmp%1#1"
@@ -10505,7 +10924,7 @@
         "tmp%1#1"
       ]
     },
-    "1367": {
+    "1388": {
       "op": "intc_0 // 0",
       "stack_out": [
         "instanceNumId#0",
@@ -10517,7 +10936,7 @@
         "0"
       ]
     },
-    "1368": {
+    "1389": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "instanceNumId#0",
@@ -10528,7 +10947,7 @@
         "tmp%1#1"
       ]
     },
-    "1370": {
+    "1391": {
       "op": "itxn_field ApplicationID",
       "stack_out": [
         "instanceNumId#0",
@@ -10538,10 +10957,10 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1372": {
-      "op": "bytec 11 // method \"getVotingRecord(uint32,uint32)(uint32[][])\"",
+    "1393": {
+      "op": "bytec 11 // method \"getVotingRecord(uint32,uint32)(bool,uint32[][])\"",
       "defined_out": [
-        "Method(getVotingRecord(uint32,uint32)(uint32[][]))",
+        "Method(getVotingRecord(uint32,uint32)(bool,uint32[][]))",
         "tmp%1#1"
       ],
       "stack_out": [
@@ -10550,10 +10969,10 @@
         "accountId#0",
         "tmp%1#1",
         "map_prefixed_key%0#0",
-        "Method(getVotingRecord(uint32,uint32)(uint32[][]))"
+        "Method(getVotingRecord(uint32,uint32)(bool,uint32[][]))"
       ]
     },
-    "1374": {
+    "1395": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "instanceNumId#0",
@@ -10563,7 +10982,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1376": {
+    "1397": {
       "op": "uncover 3",
       "defined_out": [
         "periodId#0",
@@ -10577,7 +10996,7 @@
         "periodId#0"
       ]
     },
-    "1378": {
+    "1399": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "instanceNumId#0",
@@ -10586,7 +11005,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1380": {
+    "1401": {
       "op": "uncover 2",
       "defined_out": [
         "accountId#0",
@@ -10599,7 +11018,7 @@
         "accountId#0"
       ]
     },
-    "1382": {
+    "1403": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "instanceNumId#0",
@@ -10607,7 +11026,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1384": {
+    "1405": {
       "op": "pushint 6 // appl",
       "defined_out": [
         "appl",
@@ -10620,7 +11039,7 @@
         "appl"
       ]
     },
-    "1386": {
+    "1407": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "instanceNumId#0",
@@ -10628,7 +11047,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1388": {
+    "1409": {
       "op": "intc_0 // 0",
       "stack_out": [
         "instanceNumId#0",
@@ -10637,7 +11056,7 @@
         "0"
       ]
     },
-    "1389": {
+    "1410": {
       "op": "itxn_field Fee",
       "stack_out": [
         "instanceNumId#0",
@@ -10645,10 +11064,10 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1391": {
+    "1412": {
       "op": "itxn_submit"
     },
-    "1392": {
+    "1413": {
       "op": "itxn LastLog",
       "defined_out": [
         "awst_tmp%0#0",
@@ -10661,7 +11080,7 @@
         "awst_tmp%0#0"
       ]
     },
-    "1394": {
+    "1415": {
       "op": "dup",
       "defined_out": [
         "awst_tmp%0#0",
@@ -10676,7 +11095,7 @@
         "awst_tmp%0#0 (copy)"
       ]
     },
-    "1395": {
+    "1416": {
       "op": "extract 4 0",
       "defined_out": [
         "awst_tmp%0#0",
@@ -10691,17 +11110,45 @@
         "record#0"
       ]
     },
-    "1398": {
-      "op": "swap",
+    "1419": {
+      "op": "dup",
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#1",
+        "map_prefixed_key%0#0",
+        "awst_tmp%0#0",
+        "record#0",
+        "record#0 (copy)"
+      ]
+    },
+    "1420": {
+      "op": "cover 2",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "map_prefixed_key%0#0",
         "record#0",
+        "awst_tmp%0#0",
+        "record#0"
+      ]
+    },
+    "1422": {
+      "op": "cover 3",
+      "defined_out": [
+        "awst_tmp%0#0",
+        "record#0",
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#1",
+        "record#0",
+        "map_prefixed_key%0#0",
+        "record#0",
         "awst_tmp%0#0"
       ]
     },
-    "1399": {
+    "1424": {
       "op": "extract 0 4",
       "defined_out": [
         "record#0",
@@ -10711,12 +11158,13 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0",
         "tmp%3#1"
       ]
     },
-    "1402": {
+    "1427": {
       "op": "bytec_1 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -10727,13 +11175,14 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0",
         "tmp%3#1",
         "0x151f7c75"
       ]
     },
-    "1403": {
+    "1428": {
       "op": "==",
       "defined_out": [
         "record#0",
@@ -10743,22 +11192,24 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0",
         "tmp%4#1"
       ]
     },
-    "1404": {
+    "1429": {
       "error": "Bytes has valid prefix",
       "op": "assert // Bytes has valid prefix",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0"
       ]
     },
-    "1405": {
+    "1430": {
       "op": "dup",
       "defined_out": [
         "record#0",
@@ -10768,12 +11219,13 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0",
         "record#0 (copy)"
       ]
     },
-    "1406": {
+    "1431": {
       "op": "len",
       "defined_out": [
         "record#0",
@@ -10783,34 +11235,37 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0",
         "tuple_len%0#0"
       ]
     },
-    "1407": {
+    "1432": {
       "op": "dup",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "record#0",
         "tuple_len%0#0",
         "tuple_len%0#0 (copy)"
       ]
     },
-    "1408": {
+    "1433": {
       "op": "cover 2",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
         "record#0",
         "tuple_len%0#0"
       ]
     },
-    "1410": {
+    "1435": {
       "op": "cover 3",
       "defined_out": [
         "record#0",
@@ -10820,17 +11275,19 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
         "record#0"
       ]
     },
-    "1412": {
+    "1437": {
       "op": "dup",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
@@ -10838,20 +11295,21 @@
         "record#0 (copy)"
       ]
     },
-    "1413": {
-      "op": "intc_0 // 0",
+    "1438": {
+      "op": "intc_1 // 1",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
         "record#0",
         "record#0 (copy)",
-        "0"
+        "1"
       ]
     },
-    "1414": {
+    "1439": {
       "error": "invalid tuple encoding",
       "op": "extract_uint16 // on error: invalid tuple encoding",
       "defined_out": [
@@ -10863,6 +11321,7 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
@@ -10870,7 +11329,7 @@
         "extract_uint16%0#0"
       ]
     },
-    "1415": {
+    "1440": {
       "op": "dup",
       "defined_out": [
         "extract_uint16%0#0",
@@ -10882,6 +11341,7 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
@@ -10890,10 +11350,10 @@
         "extract_uint16%0#0 (copy)"
       ]
     },
-    "1416": {
-      "op": "intc_2 // 2",
+    "1441": {
+      "op": "pushint 3",
       "defined_out": [
-        "2",
+        "3",
         "extract_uint16%0#0",
         "extract_uint16%0#0 (copy)",
         "record#0",
@@ -10903,16 +11363,17 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
         "record#0",
         "extract_uint16%0#0",
         "extract_uint16%0#0 (copy)",
-        "2"
+        "3"
       ]
     },
-    "1417": {
+    "1443": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -10924,6 +11385,7 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
@@ -10932,12 +11394,13 @@
         "eq%0#0"
       ]
     },
-    "1418": {
-      "error": "invalid tail pointer at index 0 of ((len+(len+uint32[])[]))",
-      "op": "assert // invalid tail pointer at index 0 of ((len+(len+uint32[])[]))",
+    "1444": {
+      "error": "invalid tail pointer at index 1 of (bool1,(len+(len+uint32[])[]))",
+      "op": "assert // invalid tail pointer at index 1 of (bool1,(len+(len+uint32[])[]))",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "tuple_len%0#0",
@@ -10945,11 +11408,12 @@
         "extract_uint16%0#0"
       ]
     },
-    "1419": {
+    "1445": {
       "op": "uncover 2",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "record#0",
@@ -10957,9 +11421,10 @@
         "tuple_len%0#0"
       ]
     },
-    "1421": {
+    "1447": {
       "op": "substring3",
       "defined_out": [
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -10967,25 +11432,28 @@
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0"
       ]
     },
-    "1422": {
+    "1448": {
       "op": "dup",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0",
         "substring3%0#0"
       ]
     },
-    "1423": {
-      "op": "cover 3",
+    "1449": {
+      "op": "cover 4",
       "defined_out": [
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -10994,14 +11462,16 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0"
       ]
     },
-    "1425": {
+    "1451": {
       "op": "dup",
       "defined_out": [
+        "record#0",
         "substring3%0#0",
         "substring3%0#0 (copy)",
         "tmp%1#1",
@@ -11011,18 +11481,20 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0",
         "substring3%0#0 (copy)"
       ]
     },
-    "1426": {
+    "1452": {
       "op": "intc_0 // 0",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0",
@@ -11030,11 +11502,12 @@
         "0"
       ]
     },
-    "1427": {
+    "1453": {
       "error": "invalid array length header",
       "op": "extract_uint16 // on error: invalid array length header",
       "defined_out": [
         "aggregate%array_length%0#0",
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -11043,18 +11516,20 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0",
         "aggregate%array_length%0#0"
       ]
     },
-    "1428": {
+    "1454": {
       "op": "dup",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "substring3%0#0",
@@ -11062,10 +11537,11 @@
         "aggregate%array_length%0#0"
       ]
     },
-    "1429": {
+    "1455": {
       "op": "cover 3",
       "defined_out": [
         "aggregate%array_length%0#0",
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -11074,6 +11550,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "map_prefixed_key%0#0",
@@ -11081,12 +11558,21 @@
         "aggregate%array_length%0#0"
       ]
     },
-    "1431": {
+    "1457": {
       "op": "intc_2 // 2",
+      "defined_out": [
+        "2",
+        "aggregate%array_length%0#0",
+        "record#0",
+        "substring3%0#0",
+        "tmp%1#1",
+        "tuple_len%0#0"
+      ],
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "map_prefixed_key%0#0",
@@ -11095,11 +11581,12 @@
         "2"
       ]
     },
-    "1432": {
+    "1458": {
       "op": "*",
       "defined_out": [
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -11108,6 +11595,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "map_prefixed_key%0#0",
@@ -11115,12 +11603,13 @@
         "num_bytes%0#0"
       ]
     },
-    "1433": {
+    "1459": {
       "op": "cover 2",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11128,12 +11617,13 @@
         "substring3%0#0"
       ]
     },
-    "1435": {
+    "1461": {
       "op": "extract 2 0",
       "defined_out": [
         "aggregate%array_length%0#0",
         "array_data%0#0",
         "num_bytes%0#0",
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -11142,6 +11632,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11149,20 +11640,13 @@
         "array_data%0#0"
       ]
     },
-    "1438": {
+    "1464": {
       "op": "swap",
-      "defined_out": [
-        "aggregate%array_length%0#0",
-        "array_data%0#0",
-        "num_bytes%0#0",
-        "substring3%0#0",
-        "tmp%1#1",
-        "tuple_len%0#0"
-      ],
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11170,13 +11654,14 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1439": {
+    "1465": {
       "op": "intc_0 // 0",
       "defined_out": [
         "aggregate%array_length%0#0",
         "array_data%0#0",
         "index%0#0",
         "num_bytes%0#0",
+        "record#0",
         "substring3%0#0",
         "tmp%1#1",
         "tuple_len%0#0"
@@ -11185,6 +11670,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11193,12 +11679,13 @@
         "index%0#0"
       ]
     },
-    "1440": {
+    "1466": {
       "block": "getAccountVotingRecord_for_header@5",
       "stack_in": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11214,6 +11701,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11223,7 +11711,7 @@
         "index%0#0 (copy)"
       ]
     },
-    "1441": {
+    "1467": {
       "op": "dig 5",
       "defined_out": [
         "aggregate%array_length%0#0 (copy)",
@@ -11233,6 +11721,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11243,7 +11732,7 @@
         "aggregate%array_length%0#0 (copy)"
       ]
     },
-    "1443": {
+    "1469": {
       "op": "<",
       "defined_out": [
         "continue_looping%0#0"
@@ -11252,6 +11741,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11261,12 +11751,13 @@
         "continue_looping%0#0"
       ]
     },
-    "1444": {
+    "1470": {
       "op": "bz getAccountVotingRecord_after_for@8",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11275,7 +11766,7 @@
         "index%0#0"
       ]
     },
-    "1447": {
+    "1473": {
       "op": "dup",
       "defined_out": [
         "index%0#0",
@@ -11285,6 +11776,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11294,7 +11786,7 @@
         "index%0#0 (copy)"
       ]
     },
-    "1448": {
+    "1474": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -11305,6 +11797,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11315,7 +11808,7 @@
         "2"
       ]
     },
-    "1449": {
+    "1475": {
       "op": "*",
       "defined_out": [
         "head_offset_bytes%0#0",
@@ -11325,6 +11818,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11334,7 +11828,7 @@
         "head_offset_bytes%0#0"
       ]
     },
-    "1450": {
+    "1476": {
       "op": "dig 3",
       "defined_out": [
         "array_data%0#0",
@@ -11345,6 +11839,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11355,10 +11850,10 @@
         "array_data%0#0"
       ]
     },
-    "1452": {
+    "1478": {
       "op": "dup"
     },
-    "1453": {
+    "1479": {
       "op": "uncover 2",
       "defined_out": [
         "array_data%0#0",
@@ -11370,6 +11865,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11381,7 +11877,7 @@
         "head_offset_bytes%0#0"
       ]
     },
-    "1455": {
+    "1481": {
       "error": "invalid array encoding",
       "op": "extract_uint16 // on error: invalid array encoding",
       "defined_out": [
@@ -11393,6 +11889,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11403,7 +11900,7 @@
         "item_offset%0#0"
       ]
     },
-    "1456": {
+    "1482": {
       "op": "dup",
       "defined_out": [
         "array_data%0#0",
@@ -11415,6 +11912,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11426,7 +11924,7 @@
         "item_offset%0#0 (copy)"
       ]
     },
-    "1457": {
+    "1483": {
       "op": "uncover 6",
       "defined_out": [
         "array_data%0#0",
@@ -11439,6 +11937,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11450,7 +11949,7 @@
         "num_bytes%0#0"
       ]
     },
-    "1459": {
+    "1485": {
       "op": "dup",
       "defined_out": [
         "array_data%0#0",
@@ -11463,6 +11962,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11475,12 +11975,13 @@
         "num_bytes%0#0 (copy)"
       ]
     },
-    "1460": {
+    "1486": {
       "op": "cover 4",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11493,7 +11994,7 @@
         "num_bytes%0#0 (copy)"
       ]
     },
-    "1462": {
+    "1488": {
       "op": "==",
       "defined_out": [
         "array_data%0#0",
@@ -11506,6 +12007,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11517,13 +12019,14 @@
         "offset_is_correct%0#0"
       ]
     },
-    "1463": {
+    "1489": {
       "error": "invalid tail pointer for (len+(len+uint32[])[])",
       "op": "assert // invalid tail pointer for (len+(len+uint32[])[])",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11534,12 +12037,13 @@
         "item_offset%0#0"
       ]
     },
-    "1464": {
+    "1490": {
       "op": "dig 1",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11551,7 +12055,7 @@
         "array_data%0#0 (copy)"
       ]
     },
-    "1466": {
+    "1492": {
       "op": "len",
       "defined_out": [
         "array_data%0#0",
@@ -11564,6 +12068,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11575,7 +12080,7 @@
         "total_length%1#0"
       ]
     },
-    "1467": {
+    "1493": {
       "op": "substring3",
       "defined_out": [
         "array_data%0#0",
@@ -11587,6 +12092,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11596,7 +12102,7 @@
         "extract_to_end%0#0"
       ]
     },
-    "1468": {
+    "1494": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -11609,6 +12115,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11619,7 +12126,7 @@
         "0"
       ]
     },
-    "1469": {
+    "1495": {
       "error": "invalid array length header",
       "op": "extract_uint16 // on error: invalid array length header",
       "defined_out": [
@@ -11632,6 +12139,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11641,7 +12149,7 @@
         "aggregate%array_length%1#0"
       ]
     },
-    "1470": {
+    "1496": {
       "op": "pushint 4",
       "defined_out": [
         "4",
@@ -11654,6 +12162,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11664,7 +12173,7 @@
         "4"
       ]
     },
-    "1472": {
+    "1498": {
       "op": "*",
       "defined_out": [
         "array_data%0#0",
@@ -11676,6 +12185,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11685,12 +12195,13 @@
         "mul%0#0"
       ]
     },
-    "1473": {
+    "1499": {
       "op": "intc_2 // 2",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11701,7 +12212,7 @@
         "2"
       ]
     },
-    "1474": {
+    "1500": {
       "op": "+",
       "defined_out": [
         "add%0#0",
@@ -11713,6 +12224,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11722,12 +12234,13 @@
         "add%0#0"
       ]
     },
-    "1475": {
+    "1501": {
       "op": "+",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "array_data%0#0",
@@ -11736,7 +12249,7 @@
         "num_bytes%0#0"
       ]
     },
-    "1476": {
+    "1502": {
       "op": "cover 3",
       "defined_out": [
         "array_data%0#0",
@@ -11747,6 +12260,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11755,7 +12269,7 @@
         "index%0#0"
       ]
     },
-    "1478": {
+    "1504": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -11767,6 +12281,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11776,7 +12291,7 @@
         "1"
       ]
     },
-    "1479": {
+    "1505": {
       "op": "+",
       "defined_out": [
         "array_data%0#0",
@@ -11787,6 +12302,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11795,15 +12311,16 @@
         "index%0#0"
       ]
     },
-    "1480": {
+    "1506": {
       "op": "b getAccountVotingRecord_for_header@5"
     },
-    "1483": {
+    "1509": {
       "block": "getAccountVotingRecord_after_for@8",
       "stack_in": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11817,6 +12334,7 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
@@ -11824,20 +12342,21 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1484": {
+    "1510": {
       "op": "bury 1",
       "defined_out": [],
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "aggregate%array_length%0#0",
         "num_bytes%0#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1486": {
+    "1512": {
       "op": "uncover 2",
       "defined_out": [
         "aggregate%array_length%0#0"
@@ -11846,24 +12365,26 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "num_bytes%0#0",
         "map_prefixed_key%0#0",
         "aggregate%array_length%0#0"
       ]
     },
-    "1488": {
+    "1514": {
       "op": "pop",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "num_bytes%0#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1489": {
+    "1515": {
       "op": "swap",
       "defined_out": [
         "num_bytes%0#0"
@@ -11872,28 +12393,30 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "num_bytes%0#0"
       ]
     },
-    "1490": {
-      "op": "pushint 4",
+    "1516": {
+      "op": "pushint 5",
       "defined_out": [
-        "4",
+        "5",
         "num_bytes%0#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "num_bytes%0#0",
-        "4"
+        "5"
       ]
     },
-    "1492": {
+    "1518": {
       "op": "+",
       "defined_out": [
         "add%1#0"
@@ -11902,12 +12425,13 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tuple_len%0#0",
         "map_prefixed_key%0#0",
         "add%1#0"
       ]
     },
-    "1493": {
+    "1519": {
       "op": "uncover 2",
       "defined_out": [
         "add%1#0",
@@ -11917,12 +12441,13 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "add%1#0",
         "tuple_len%0#0"
       ]
     },
-    "1495": {
+    "1521": {
       "op": "==",
       "defined_out": [
         "eq%1#0"
@@ -11931,11 +12456,12 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "eq%1#0"
       ]
     },
-    "1496": {
+    "1522": {
       "error": "invalid number of bytes for smart_contracts/base/types.algo.ts::FracVotingRecord",
       "op": "assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracVotingRecord",
       "defined_out": [
@@ -11945,10 +12471,11 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1497": {
+    "1523": {
       "op": "dup",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -11958,11 +12485,12 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)"
       ]
     },
-    "1498": {
+    "1524": {
       "op": "pushint 26",
       "defined_out": [
         "26",
@@ -11973,12 +12501,13 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)",
         "26"
       ]
     },
-    "1500": {
+    "1526": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -11990,13 +12519,14 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)",
         "26",
         "2"
       ]
     },
-    "1501": {
+    "1527": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%1#0",
@@ -12006,11 +12536,12 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "box%box_extract%1#0"
       ]
     },
-    "1502": {
+    "1528": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0",
@@ -12020,22 +12551,24 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "box%btoi%0#0"
       ]
     },
-    "1503": {
+    "1529": {
       "op": "intc_2 // 2",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "box%btoi%0#0",
         "2"
       ]
     },
-    "1504": {
+    "1530": {
       "op": "+",
       "defined_out": [
         "box%total_bytes%0#0",
@@ -12045,25 +12578,27 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "box%total_bytes%0#0"
       ]
     },
-    "1505": {
+    "1531": {
       "op": "pushint 26"
     },
-    "1507": {
+    "1533": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "map_prefixed_key%0#0",
         "26",
         "box%total_bytes%0#0"
       ]
     },
-    "1508": {
+    "1534": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%2#0"
@@ -12072,10 +12607,11 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "box%box_extract%2#0"
       ]
     },
-    "1509": {
+    "1535": {
       "op": "extract 2 0",
       "defined_out": [
         "tmp%6#0"
@@ -12084,12 +12620,58 @@
         "instanceNumId#0",
         "tmp%1#1",
         "substring3%0#0",
+        "record#0",
         "tmp%6#0"
       ]
     },
-    "1512": {
-      "op": "uncover 2",
+    "1538": {
+      "op": "swap",
       "defined_out": [
+        "record#0",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#1",
+        "substring3%0#0",
+        "tmp%6#0",
+        "record#0"
+      ]
+    },
+    "1539": {
+      "op": "intc_0 // 0",
+      "defined_out": [
+        "0",
+        "record#0",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#1",
+        "substring3%0#0",
+        "tmp%6#0",
+        "record#0",
+        "0"
+      ]
+    },
+    "1540": {
+      "op": "getbit",
+      "defined_out": [
+        "aggregate%get_bit%0#0",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "tmp%1#1",
+        "substring3%0#0",
+        "tmp%6#0",
+        "aggregate%get_bit%0#0"
+      ]
+    },
+    "1541": {
+      "op": "uncover 3",
+      "defined_out": [
+        "aggregate%get_bit%0#0",
         "tmp%1#1",
         "tmp%6#0"
       ],
@@ -12097,12 +12679,14 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "tmp%1#1"
       ]
     },
-    "1514": {
+    "1543": {
       "op": "itob",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0",
         "tmp%6#0"
       ],
@@ -12110,12 +12694,14 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1515": {
-      "op": "dig 3",
+    "1544": {
+      "op": "dig 4",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0",
         "instanceNumId#0",
         "tmp%6#0"
@@ -12124,23 +12710,26 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%val_as_bytes%0#0",
         "instanceNumId#0"
       ]
     },
-    "1517": {
+    "1546": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "instanceNumId#0",
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1518": {
+    "1547": {
       "op": "concat",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "instanceNumId#0",
         "tmp%6#0"
@@ -12149,12 +12738,14 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0"
       ]
     },
-    "1519": {
-      "op": "dig 1",
+    "1548": {
+      "op": "dig 2",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "instanceNumId#0",
         "tmp%6#0",
@@ -12164,13 +12755,15 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "tmp%6#0 (copy)"
       ]
     },
-    "1521": {
+    "1550": {
       "op": "len",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length%0#0",
         "instanceNumId#0",
@@ -12180,14 +12773,16 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length%0#0"
       ]
     },
-    "1522": {
+    "1551": {
       "op": "itob",
       "defined_out": [
         "aggregate%as_bytes%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "instanceNumId#0",
         "tmp%6#0"
@@ -12196,13 +12791,15 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%as_bytes%0#0"
       ]
     },
-    "1523": {
+    "1552": {
       "op": "extract 6 2",
       "defined_out": [
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length_uint16%0#0",
         "instanceNumId#0",
@@ -12212,143 +12809,207 @@
         "instanceNumId#0",
         "substring3%0#0",
         "tmp%6#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length_uint16%0#0"
       ]
     },
-    "1526": {
-      "op": "uncover 2",
+    "1555": {
+      "op": "uncover 3",
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%length_uint16%0#0",
         "tmp%6#0"
       ]
     },
-    "1528": {
+    "1557": {
       "op": "concat",
       "defined_out": [
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "aggregate%encoded_value%0#0"
       ]
     },
-    "1529": {
+    "1558": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%1#0"
       ]
     },
-    "1530": {
-      "op": "bytec 12 // 0x000e",
+    "1559": {
+      "op": "bytec 12 // 0x000f",
       "defined_out": [
-        "0x000e",
+        "0x000f",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%1#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%1#0",
-        "0x000e"
+        "0x000f"
       ]
     },
-    "1532": {
+    "1561": {
       "op": "concat",
       "defined_out": [
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0"
       ]
     },
-    "1533": {
+    "1562": {
       "op": "dig 1",
       "defined_out": [
         "aggregate%encoded_value%0#0",
         "aggregate%encoded_value%0#0 (copy)",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%encoded_value%0#0 (copy)"
       ]
     },
-    "1535": {
+    "1564": {
       "op": "len",
       "defined_out": [
         "aggregate%data_length%0#0",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%data_length%0#0"
       ]
     },
-    "1536": {
-      "op": "pushint 14",
+    "1565": {
+      "op": "pushint 15",
       "defined_out": [
-        "14",
+        "15",
         "aggregate%data_length%0#0",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%data_length%0#0",
-        "14"
+        "15"
       ]
     },
-    "1538": {
+    "1567": {
       "op": "+",
       "defined_out": [
         "aggregate%current_tail_offset%0#0",
         "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%head%2#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
+        "aggregate%get_bit%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "aggregate%current_tail_offset%0#0"
       ]
     },
-    "1539": {
-      "op": "itob",
+    "1568": {
+      "op": "pushbytes 0x00",
       "defined_out": [
-        "aggregate%as_bytes%2#0",
+        "0x00",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%get_bit%0#0",
+        "aggregate%head%2#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%get_bit%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "0x00"
+      ]
+    },
+    "1571": {
+      "op": "intc_0 // 0",
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%get_bit%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "0x00",
+        "0"
+      ]
+    },
+    "1572": {
+      "op": "uncover 5",
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "0x00",
+        "0",
+        "aggregate%get_bit%0#0"
+      ]
+    },
+    "1574": {
+      "op": "setbit",
+      "defined_out": [
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_bool%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
         "instanceNumId#0"
@@ -12358,14 +13019,79 @@
         "substring3%0#0",
         "aggregate%encoded_value%0#0",
         "aggregate%head%2#0",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_bool%0#0"
+      ]
+    },
+    "1575": {
+      "op": "uncover 2",
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_bool%0#0",
+        "aggregate%head%2#0"
+      ]
+    },
+    "1577": {
+      "op": "swap",
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%head%2#0",
+        "aggregate%encoded_bool%0#0"
+      ]
+    },
+    "1578": {
+      "op": "concat",
+      "defined_out": [
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%current_tail_offset%0#0",
+        "aggregate%head%3#0"
+      ]
+    },
+    "1579": {
+      "op": "swap",
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
+        "aggregate%current_tail_offset%0#0"
+      ]
+    },
+    "1580": {
+      "op": "itob",
+      "defined_out": [
+        "aggregate%as_bytes%2#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
+        "instanceNumId#0"
+      ],
+      "stack_out": [
+        "instanceNumId#0",
+        "substring3%0#0",
+        "aggregate%encoded_value%0#0",
+        "aggregate%head%3#0",
         "aggregate%as_bytes%2#0"
       ]
     },
-    "1540": {
+    "1581": {
       "op": "extract 6 2",
       "defined_out": [
         "aggregate%encoded_value%0#0",
-        "aggregate%head%2#0",
+        "aggregate%head%3#0",
         "aggregate%offset_as_uint16%1#0",
         "instanceNumId#0"
       ],
@@ -12373,34 +13099,34 @@
         "instanceNumId#0",
         "substring3%0#0",
         "aggregate%encoded_value%0#0",
-        "aggregate%head%2#0",
+        "aggregate%head%3#0",
         "aggregate%offset_as_uint16%1#0"
       ]
     },
-    "1543": {
+    "1584": {
       "op": "concat",
       "defined_out": [
         "aggregate%encoded_value%0#0",
-        "aggregate%head%3#0",
+        "aggregate%head%4#0",
         "instanceNumId#0"
       ],
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
         "aggregate%encoded_value%0#0",
-        "aggregate%head%3#0"
+        "aggregate%head%4#0"
       ]
     },
-    "1544": {
+    "1585": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
         "substring3%0#0",
-        "aggregate%head%3#0",
+        "aggregate%head%4#0",
         "aggregate%encoded_value%0#0"
       ]
     },
-    "1545": {
+    "1586": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -12412,7 +13138,7 @@
         "aggregate%concat%0#0"
       ]
     },
-    "1546": {
+    "1587": {
       "op": "swap",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -12425,7 +13151,7 @@
         "substring3%0#0"
       ]
     },
-    "1547": {
+    "1588": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%1#0",
@@ -12436,7 +13162,7 @@
         "aggregate%concat%1#0"
       ]
     },
-    "1548": {
+    "1589": {
       "op": "bytec_1 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -12449,7 +13175,7 @@
         "0x151f7c75"
       ]
     },
-    "1549": {
+    "1590": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
@@ -12457,7 +13183,7 @@
         "aggregate%concat%1#0"
       ]
     },
-    "1550": {
+    "1591": {
       "op": "concat",
       "defined_out": [
         "instanceNumId#0",
@@ -12468,13 +13194,13 @@
         "tmp%5#0"
       ]
     },
-    "1551": {
+    "1592": {
       "op": "log",
       "stack_out": [
         "instanceNumId#0"
       ]
     },
-    "1552": {
+    "1593": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -12485,13 +13211,13 @@
         "1"
       ]
     },
-    "1553": {
+    "1594": {
       "op": "return",
       "stack_out": [
         "instanceNumId#0"
       ]
     },
-    "1554": {
+    "1595": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getOrCreateAccountWithInstance[routing]",
       "params": {},
       "block": "getOrCreateAccountWithInstance",
@@ -12501,14 +13227,14 @@
         "array#0"
       ]
     },
-    "1555": {
+    "1596": {
       "op": "dup",
       "stack_out": [
         "array#0",
         "box_key#0"
       ]
     },
-    "1556": {
+    "1597": {
       "op": "pushbytes \"\"",
       "stack_out": [
         "array#0",
@@ -12516,7 +13242,7 @@
         "box%btoi%0#0"
       ]
     },
-    "1558": {
+    "1599": {
       "op": "dupn 2",
       "stack_out": [
         "array#0",
@@ -12526,10 +13252,10 @@
         "item_index_internal%0#0"
       ]
     },
-    "1560": {
+    "1601": {
       "op": "txna ApplicationArgs 1"
     },
-    "1563": {
+    "1604": {
       "op": "dup",
       "defined_out": [
         "account#0"
@@ -12544,7 +13270,7 @@
         "account#0"
       ]
     },
-    "1564": {
+    "1605": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -12560,7 +13286,7 @@
         "len%0#0"
       ]
     },
-    "1565": {
+    "1606": {
       "op": "intc_3 // 32",
       "defined_out": [
         "32",
@@ -12578,7 +13304,7 @@
         "32"
       ]
     },
-    "1566": {
+    "1607": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -12594,7 +13320,7 @@
         "eq%0#0"
       ]
     },
-    "1567": {
+    "1608": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
@@ -12606,10 +13332,10 @@
         "account#0"
       ]
     },
-    "1568": {
+    "1609": {
       "op": "txna ApplicationArgs 2"
     },
-    "1571": {
+    "1612": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -12626,7 +13352,7 @@
         "instanceNumId#0"
       ]
     },
-    "1572": {
+    "1613": {
       "op": "cover 2",
       "defined_out": [
         "account#0",
@@ -12643,7 +13369,7 @@
         "instanceNumId#0"
       ]
     },
-    "1574": {
+    "1615": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -12662,7 +13388,7 @@
         "instanceNumId#0 (copy)"
       ]
     },
-    "1575": {
+    "1616": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -12681,7 +13407,7 @@
         "len%1#0"
       ]
     },
-    "1576": {
+    "1617": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -12702,7 +13428,7 @@
         "2"
       ]
     },
-    "1577": {
+    "1618": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -12721,7 +13447,7 @@
         "eq%1#0"
       ]
     },
-    "1578": {
+    "1619": {
       "error": "invalid number of bytes for arc4.uint16",
       "op": "assert // invalid number of bytes for arc4.uint16",
       "stack_out": [
@@ -12735,7 +13461,7 @@
         "instanceNumId#0"
       ]
     },
-    "1579": {
+    "1620": {
       "op": "bytec_2 // \"i\"",
       "defined_out": [
         "\"i\"",
@@ -12754,7 +13480,7 @@
         "\"i\""
       ]
     },
-    "1580": {
+    "1621": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -12768,7 +13494,7 @@
         "instanceNumId#0"
       ]
     },
-    "1581": {
+    "1622": {
       "op": "concat",
       "defined_out": [
         "account#0",
@@ -12786,7 +13512,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1582": {
+    "1623": {
       "op": "dup",
       "stack_out": [
         "array#0",
@@ -12800,7 +13526,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1583": {
+    "1624": {
       "op": "cover 2",
       "defined_out": [
         "account#0",
@@ -12819,7 +13545,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1585": {
+    "1626": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -12841,7 +13567,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "1586": {
+    "1627": {
       "op": "bury 1",
       "stack_out": [
         "array#0",
@@ -12855,7 +13581,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "1588": {
+    "1629": {
       "op": "bnz getOrCreateAccountWithInstance_after_assert@3",
       "stack_out": [
         "array#0",
@@ -12868,7 +13594,7 @@
         "account#0"
       ]
     },
-    "1591": {
+    "1632": {
       "op": "bytec 5 // \"ERR:FI_NX\"",
       "defined_out": [
         "\"ERR:FI_NX\"",
@@ -12888,7 +13614,7 @@
         "\"ERR:FI_NX\""
       ]
     },
-    "1593": {
+    "1634": {
       "op": "log",
       "stack_out": [
         "array#0",
@@ -12901,11 +13627,11 @@
         "account#0"
       ]
     },
-    "1594": {
+    "1635": {
       "error": "ERR:FI_NX",
       "op": "err // ERR:FI_NX"
     },
-    "1595": {
+    "1636": {
       "block": "getOrCreateAccountWithInstance_after_assert@3",
       "stack_in": [
         "array#0",
@@ -12933,7 +13659,7 @@
         "tmp%0#1"
       ]
     },
-    "1597": {
+    "1638": {
       "op": "dig 2",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -12952,7 +13678,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1599": {
+    "1640": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -12973,7 +13699,7 @@
         "0"
       ]
     },
-    "1600": {
+    "1641": {
       "op": "pushint 8",
       "defined_out": [
         "0",
@@ -12996,7 +13722,7 @@
         "8"
       ]
     },
-    "1602": {
+    "1643": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -13017,7 +13743,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "1603": {
+    "1644": {
       "op": "btoi",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -13037,7 +13763,7 @@
         "tmp%1#1"
       ]
     },
-    "1604": {
+    "1645": {
       "op": "app_params_get AppAddress",
       "defined_out": [
         "check%0#0",
@@ -13059,7 +13785,7 @@
         "check%0#0"
       ]
     },
-    "1606": {
+    "1647": {
       "error": "application exists",
       "op": "assert // application exists",
       "stack_out": [
@@ -13075,7 +13801,7 @@
         "value%0#0"
       ]
     },
-    "1607": {
+    "1648": {
       "op": "==",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -13093,7 +13819,7 @@
         "tmp%2#1"
       ]
     },
-    "1608": {
+    "1649": {
       "op": "bnz getOrCreateAccountWithInstance_bool_true@5",
       "stack_out": [
         "array#0",
@@ -13106,7 +13832,7 @@
         "account#0"
       ]
     },
-    "1611": {
+    "1652": {
       "op": "txn Sender",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -13124,7 +13850,7 @@
         "tmp%3#1"
       ]
     },
-    "1613": {
+    "1654": {
       "op": "intc_0 // 0",
       "stack_out": [
         "array#0",
@@ -13139,7 +13865,7 @@
         "0"
       ]
     },
-    "1614": {
+    "1655": {
       "op": "bytec_3 // \"admin\"",
       "defined_out": [
         "\"admin\"",
@@ -13161,7 +13887,7 @@
         "\"admin\""
       ]
     },
-    "1615": {
+    "1656": {
       "op": "app_global_get_ex",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -13183,7 +13909,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "1616": {
+    "1657": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -13199,7 +13925,7 @@
         "maybe_value%0#0"
       ]
     },
-    "1617": {
+    "1658": {
       "op": "==",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -13217,7 +13943,7 @@
         "tmp%4#1"
       ]
     },
-    "1618": {
+    "1659": {
       "op": "bz getOrCreateAccountWithInstance_bool_false@6",
       "stack_out": [
         "array#0",
@@ -13230,7 +13956,7 @@
         "account#0"
       ]
     },
-    "1621": {
+    "1662": {
       "block": "getOrCreateAccountWithInstance_bool_true@5",
       "stack_in": [
         "array#0",
@@ -13258,7 +13984,7 @@
         "or_result%0#0"
       ]
     },
-    "1622": {
+    "1663": {
       "block": "getOrCreateAccountWithInstance_bool_merge@7",
       "stack_in": [
         "array#0",
@@ -13284,7 +14010,7 @@
         "account#0"
       ]
     },
-    "1625": {
+    "1666": {
       "op": "bytec 4 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\""
@@ -13301,7 +14027,7 @@
         "\"ERR:AUTH\""
       ]
     },
-    "1627": {
+    "1668": {
       "op": "log",
       "stack_out": [
         "array#0",
@@ -13314,11 +14040,11 @@
         "account#0"
       ]
     },
-    "1628": {
+    "1669": {
       "error": "ERR:AUTH",
       "op": "err // ERR:AUTH"
     },
-    "1629": {
+    "1670": {
       "block": "getOrCreateAccountWithInstance_after_assert@9",
       "stack_in": [
         "array#0",
@@ -13346,7 +14072,7 @@
         "\"a\""
       ]
     },
-    "1632": {
+    "1673": {
       "op": "swap",
       "defined_out": [
         "\"a\"",
@@ -13364,7 +14090,7 @@
         "account#0"
       ]
     },
-    "1633": {
+    "1674": {
       "op": "concat",
       "defined_out": [
         "box_key#0"
@@ -13380,7 +14106,7 @@
         "box_key#0"
       ]
     },
-    "1634": {
+    "1675": {
       "op": "dup",
       "stack_out": [
         "array#0",
@@ -13394,7 +14120,7 @@
         "box_key#0"
       ]
     },
-    "1635": {
+    "1676": {
       "op": "bury 7",
       "defined_out": [
         "box_key#0"
@@ -13410,7 +14136,7 @@
         "box_key#0"
       ]
     },
-    "1637": {
+    "1678": {
       "op": "box_len",
       "defined_out": [
         "_%1#0",
@@ -13429,7 +14155,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "1638": {
+    "1679": {
       "op": "bury 1",
       "stack_out": [
         "array#0",
@@ -13442,7 +14168,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "1640": {
+    "1681": {
       "op": "bnz getOrCreateAccountWithInstance_after_if_else@11",
       "stack_out": [
         "array#0",
@@ -13454,7 +14180,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1643": {
+    "1684": {
       "op": "intc_0 // 0",
       "stack_out": [
         "array#0",
@@ -13467,7 +14193,7 @@
         "0"
       ]
     },
-    "1644": {
+    "1685": {
       "op": "bytec 6 // \"lastAccountId\"",
       "defined_out": [
         "\"lastAccountId\"",
@@ -13486,7 +14212,7 @@
         "\"lastAccountId\""
       ]
     },
-    "1646": {
+    "1687": {
       "op": "app_global_get_ex",
       "defined_out": [
         "box_key#0",
@@ -13505,7 +14231,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "1647": {
+    "1688": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -13519,7 +14245,7 @@
         "maybe_value%1#0"
       ]
     },
-    "1648": {
+    "1689": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -13538,7 +14264,7 @@
         "1"
       ]
     },
-    "1649": {
+    "1690": {
       "op": "+",
       "defined_out": [
         "box_key#0",
@@ -13555,7 +14281,7 @@
         "tmp%5#0"
       ]
     },
-    "1650": {
+    "1691": {
       "op": "bytec 6 // \"lastAccountId\"",
       "stack_out": [
         "array#0",
@@ -13569,7 +14295,7 @@
         "\"lastAccountId\""
       ]
     },
-    "1652": {
+    "1693": {
       "op": "dig 1",
       "defined_out": [
         "\"lastAccountId\"",
@@ -13590,7 +14316,7 @@
         "tmp%5#0 (copy)"
       ]
     },
-    "1654": {
+    "1695": {
       "op": "app_global_put",
       "stack_out": [
         "array#0",
@@ -13603,7 +14329,7 @@
         "tmp%5#0"
       ]
     },
-    "1655": {
+    "1696": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -13621,7 +14347,7 @@
         "accountId#0"
       ]
     },
-    "1658": {
+    "1699": {
       "op": "bytec 13 // 0x00060000",
       "defined_out": [
         "0x00060000",
@@ -13640,7 +14366,7 @@
         "0x00060000"
       ]
     },
-    "1660": {
+    "1701": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -13657,7 +14383,7 @@
         "aggregate%concat%0#0"
       ]
     },
-    "1661": {
+    "1702": {
       "op": "dig 6",
       "stack_out": [
         "array#0",
@@ -13671,7 +14397,7 @@
         "box_key#0"
       ]
     },
-    "1663": {
+    "1704": {
       "op": "dup",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -13691,7 +14417,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1664": {
+    "1705": {
       "op": "box_del",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -13711,7 +14437,7 @@
         "{box_del}"
       ]
     },
-    "1665": {
+    "1706": {
       "op": "pop",
       "stack_out": [
         "array#0",
@@ -13725,7 +14451,7 @@
         "box_key#0"
       ]
     },
-    "1666": {
+    "1707": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -13739,7 +14465,7 @@
         "aggregate%concat%0#0"
       ]
     },
-    "1667": {
+    "1708": {
       "op": "box_put",
       "stack_out": [
         "array#0",
@@ -13751,7 +14477,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1668": {
+    "1709": {
       "block": "getOrCreateAccountWithInstance_after_if_else@11",
       "stack_in": [
         "array#0",
@@ -13777,7 +14503,7 @@
         "box_key#0"
       ]
     },
-    "1670": {
+    "1711": {
       "op": "dup",
       "defined_out": [
         "box_key#0",
@@ -13795,7 +14521,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1671": {
+    "1712": {
       "op": "box_get",
       "defined_out": [
         "accountRecord#0",
@@ -13815,7 +14541,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "1672": {
+    "1713": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -13830,7 +14556,7 @@
         "accountRecord#0"
       ]
     },
-    "1673": {
+    "1714": {
       "op": "cover 2",
       "defined_out": [
         "accountRecord#0",
@@ -13850,7 +14576,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "1675": {
+    "1716": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "stack_out": [
@@ -13865,7 +14591,7 @@
         "box_key#0"
       ]
     },
-    "1676": {
+    "1717": {
       "op": "intc_0 // 0",
       "defined_out": [
         "accountRecord#0",
@@ -13885,7 +14611,7 @@
         "found#0"
       ]
     },
-    "1677": {
+    "1718": {
       "op": "bury 6",
       "defined_out": [
         "accountRecord#0",
@@ -13904,7 +14630,7 @@
         "box_key#0"
       ]
     },
-    "1679": {
+    "1720": {
       "op": "dup",
       "stack_out": [
         "array#0",
@@ -13919,7 +14645,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1680": {
+    "1721": {
       "op": "pushint 6",
       "defined_out": [
         "6",
@@ -13942,7 +14668,7 @@
         "6"
       ]
     },
-    "1682": {
+    "1723": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -13967,7 +14693,7 @@
         "2"
       ]
     },
-    "1683": {
+    "1724": {
       "op": "box_extract",
       "defined_out": [
         "accountRecord#0",
@@ -13988,7 +14714,7 @@
         "box%box_extract%1#0"
       ]
     },
-    "1684": {
+    "1725": {
       "op": "btoi",
       "defined_out": [
         "accountRecord#0",
@@ -14009,7 +14735,7 @@
         "box%btoi%0#0"
       ]
     },
-    "1685": {
+    "1726": {
       "op": "dup",
       "stack_out": [
         "array#0",
@@ -14025,7 +14751,7 @@
         "box%btoi%0#0"
       ]
     },
-    "1686": {
+    "1727": {
       "op": "bury 8",
       "defined_out": [
         "accountRecord#0",
@@ -14046,7 +14772,7 @@
         "box%btoi%0#0"
       ]
     },
-    "1688": {
+    "1729": {
       "op": "intc_2 // 2",
       "stack_out": [
         "array#0",
@@ -14062,7 +14788,7 @@
         "2"
       ]
     },
-    "1689": {
+    "1730": {
       "op": "*",
       "defined_out": [
         "accountRecord#0",
@@ -14084,7 +14810,7 @@
         "box%data_bytes%0#0"
       ]
     },
-    "1690": {
+    "1731": {
       "op": "intc_2 // 2",
       "stack_out": [
         "array#0",
@@ -14100,7 +14826,7 @@
         "2"
       ]
     },
-    "1691": {
+    "1732": {
       "op": "+",
       "defined_out": [
         "accountRecord#0",
@@ -14122,10 +14848,10 @@
         "box%total_bytes%0#0"
       ]
     },
-    "1692": {
+    "1733": {
       "op": "pushint 6"
     },
-    "1694": {
+    "1735": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -14141,7 +14867,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "1695": {
+    "1736": {
       "op": "box_extract",
       "defined_out": [
         "accountRecord#0",
@@ -14162,7 +14888,7 @@
         "array#0"
       ]
     },
-    "1696": {
+    "1737": {
       "op": "bury 8",
       "defined_out": [
         "accountRecord#0",
@@ -14182,7 +14908,7 @@
         "accountRecord#0"
       ]
     },
-    "1698": {
+    "1739": {
       "op": "intc_0 // 0",
       "defined_out": [
         "accountRecord#0",
@@ -14204,7 +14930,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "1699": {
+    "1740": {
       "op": "bury 4",
       "defined_out": [
         "accountRecord#0",
@@ -14225,7 +14951,7 @@
         "accountRecord#0"
       ]
     },
-    "1701": {
+    "1742": {
       "block": "getOrCreateAccountWithInstance_for_header@12",
       "stack_in": [
         "array#0",
@@ -14253,7 +14979,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "1703": {
+    "1744": {
       "op": "dig 6",
       "defined_out": [
         "box%btoi%0#0",
@@ -14272,7 +14998,7 @@
         "box%btoi%0#0"
       ]
     },
-    "1705": {
+    "1746": {
       "op": "<",
       "defined_out": [
         "box%btoi%0#0",
@@ -14291,7 +15017,7 @@
         "continue_looping%0#0"
       ]
     },
-    "1706": {
+    "1747": {
       "op": "bz getOrCreateAccountWithInstance_block@18",
       "stack_out": [
         "array#0",
@@ -14304,7 +15030,7 @@
         "accountRecord#0"
       ]
     },
-    "1709": {
+    "1750": {
       "op": "dig 3",
       "stack_out": [
         "array#0",
@@ -14318,7 +15044,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "1711": {
+    "1752": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -14338,7 +15064,7 @@
         "2"
       ]
     },
-    "1712": {
+    "1753": {
       "op": "*",
       "defined_out": [
         "box%btoi%0#0",
@@ -14357,7 +15083,7 @@
         "box%element_offset%0#0"
       ]
     },
-    "1713": {
+    "1754": {
       "op": "pushint 8",
       "defined_out": [
         "8",
@@ -14378,7 +15104,7 @@
         "8"
       ]
     },
-    "1715": {
+    "1756": {
       "op": "+",
       "defined_out": [
         "box%btoi%0#0",
@@ -14397,7 +15123,7 @@
         "box%offset%4#0"
       ]
     },
-    "1716": {
+    "1757": {
       "op": "dig 7",
       "defined_out": [
         "box%btoi%0#0",
@@ -14418,7 +15144,7 @@
         "box_key#0"
       ]
     },
-    "1718": {
+    "1759": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -14433,7 +15159,7 @@
         "box%offset%4#0"
       ]
     },
-    "1719": {
+    "1760": {
       "op": "intc_2 // 2",
       "stack_out": [
         "array#0",
@@ -14449,7 +15175,7 @@
         "2"
       ]
     },
-    "1720": {
+    "1761": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -14470,7 +15196,7 @@
         "temp#0"
       ]
     },
-    "1721": {
+    "1762": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0",
@@ -14490,7 +15216,7 @@
         "tmp%8#0"
       ]
     },
-    "1722": {
+    "1763": {
       "op": "dig 3",
       "defined_out": [
         "box%btoi%0#0",
@@ -14512,7 +15238,7 @@
         "instanceNumId#0"
       ]
     },
-    "1724": {
+    "1765": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0",
@@ -14535,7 +15261,7 @@
         "tmp%9#0"
       ]
     },
-    "1725": {
+    "1766": {
       "op": "==",
       "defined_out": [
         "box%btoi%0#0",
@@ -14556,7 +15282,7 @@
         "tmp%10#0"
       ]
     },
-    "1726": {
+    "1767": {
       "op": "bz getOrCreateAccountWithInstance_after_if_else@15",
       "stack_out": [
         "array#0",
@@ -14569,7 +15295,7 @@
         "accountRecord#0"
       ]
     },
-    "1729": {
+    "1770": {
       "op": "intc_1 // 1",
       "defined_out": [
         "box%btoi%0#0",
@@ -14590,7 +15316,7 @@
         "found#0"
       ]
     },
-    "1730": {
+    "1771": {
       "op": "bury 5",
       "defined_out": [
         "box%btoi%0#0",
@@ -14610,7 +15336,7 @@
         "accountRecord#0"
       ]
     },
-    "1732": {
+    "1773": {
       "block": "getOrCreateAccountWithInstance_block@18",
       "stack_in": [
         "array#0",
@@ -14638,7 +15364,7 @@
         "found#0"
       ]
     },
-    "1734": {
+    "1775": {
       "op": "bnz getOrCreateAccountWithInstance_after_if_else@20",
       "stack_out": [
         "array#0",
@@ -14651,7 +15377,7 @@
         "accountRecord#0"
       ]
     },
-    "1737": {
+    "1778": {
       "op": "dig 7",
       "defined_out": [
         "array#0",
@@ -14669,7 +15395,7 @@
         "array#0"
       ]
     },
-    "1739": {
+    "1780": {
       "op": "dup",
       "defined_out": [
         "array#0",
@@ -14689,7 +15415,7 @@
         "array#0 (copy)"
       ]
     },
-    "1740": {
+    "1781": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -14711,7 +15437,7 @@
         "0"
       ]
     },
-    "1741": {
+    "1782": {
       "op": "extract_uint16",
       "defined_out": [
         "array#0",
@@ -14731,7 +15457,7 @@
         "array_length#0"
       ]
     },
-    "1742": {
+    "1783": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -14753,7 +15479,7 @@
         "1"
       ]
     },
-    "1743": {
+    "1784": {
       "op": "+",
       "defined_out": [
         "array#0",
@@ -14773,7 +15499,7 @@
         "new_array_length#0"
       ]
     },
-    "1744": {
+    "1785": {
       "op": "itob",
       "defined_out": [
         "array#0",
@@ -14793,7 +15519,7 @@
         "tmp%0#3"
       ]
     },
-    "1745": {
+    "1786": {
       "op": "extract 6 0",
       "defined_out": [
         "array#0",
@@ -14813,7 +15539,7 @@
         "new_len_u16#0"
       ]
     },
-    "1748": {
+    "1789": {
       "op": "replace2 0",
       "defined_out": [
         "array#0",
@@ -14832,7 +15558,7 @@
         "result#0"
       ]
     },
-    "1750": {
+    "1791": {
       "op": "dig 3",
       "defined_out": [
         "array#0",
@@ -14853,7 +15579,7 @@
         "instanceNumId#0"
       ]
     },
-    "1752": {
+    "1793": {
       "op": "dup",
       "defined_out": [
         "array#0",
@@ -14876,7 +15602,7 @@
         "instanceNumId#0 (copy)"
       ]
     },
-    "1753": {
+    "1794": {
       "op": "cover 2",
       "stack_out": [
         "array#0",
@@ -14892,7 +15618,7 @@
         "instanceNumId#0 (copy)"
       ]
     },
-    "1755": {
+    "1796": {
       "op": "concat",
       "defined_out": [
         "array#0",
@@ -14913,7 +15639,7 @@
         "tmp%4#0"
       ]
     },
-    "1756": {
+    "1797": {
       "op": "uncover 2",
       "defined_out": [
         "accountRecord#0",
@@ -14935,7 +15661,7 @@
         "accountRecord#0"
       ]
     },
-    "1758": {
+    "1799": {
       "op": "dup",
       "defined_out": [
         "accountRecord#0",
@@ -14959,7 +15685,7 @@
         "accountRecord#0 (copy)"
       ]
     },
-    "1759": {
+    "1800": {
       "op": "pushint 4",
       "defined_out": [
         "4",
@@ -14985,7 +15711,7 @@
         "4"
       ]
     },
-    "1761": {
+    "1802": {
       "op": "extract_uint16",
       "defined_out": [
         "accountRecord#0",
@@ -15009,10 +15735,10 @@
         "aggregate%item_offset%0#0"
       ]
     },
-    "1762": {
+    "1803": {
       "op": "intc_0 // 0"
     },
-    "1763": {
+    "1804": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -15029,7 +15755,7 @@
         "aggregate%item_offset%0#0"
       ]
     },
-    "1764": {
+    "1805": {
       "op": "extract3",
       "defined_out": [
         "aggregate%data_up_to_item%0#0",
@@ -15051,7 +15777,7 @@
         "aggregate%data_up_to_item%0#0"
       ]
     },
-    "1765": {
+    "1806": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -15066,7 +15792,7 @@
         "tmp%4#0"
       ]
     },
-    "1766": {
+    "1807": {
       "op": "concat",
       "stack_out": [
         "array#0",
@@ -15080,7 +15806,7 @@
         "accountRecord#0"
       ]
     },
-    "1767": {
+    "1808": {
       "op": "swap",
       "defined_out": [
         "accountRecord#0",
@@ -15100,7 +15826,7 @@
         "instanceNumId#0"
       ]
     },
-    "1768": {
+    "1809": {
       "op": "dig 7",
       "defined_out": [
         "accountRecord#0",
@@ -15122,7 +15848,7 @@
         "box_key#0"
       ]
     },
-    "1770": {
+    "1811": {
       "op": "dup",
       "defined_out": [
         "accountRecord#0",
@@ -15146,7 +15872,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1771": {
+    "1812": {
       "op": "pushint 6",
       "defined_out": [
         "6",
@@ -15172,7 +15898,7 @@
         "6"
       ]
     },
-    "1773": {
+    "1814": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -15200,7 +15926,7 @@
         "2"
       ]
     },
-    "1774": {
+    "1815": {
       "op": "box_extract",
       "defined_out": [
         "accountRecord#0",
@@ -15224,7 +15950,7 @@
         "arr_len_bytes#0"
       ]
     },
-    "1775": {
+    "1816": {
       "op": "btoi",
       "defined_out": [
         "accountRecord#0",
@@ -15248,7 +15974,7 @@
         "arr_len#0"
       ]
     },
-    "1776": {
+    "1817": {
       "op": "dig 1",
       "stack_out": [
         "array#0",
@@ -15265,7 +15991,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1778": {
+    "1819": {
       "op": "box_len",
       "defined_out": [
         "_exists#0",
@@ -15293,7 +16019,7 @@
         "_exists#0"
       ]
     },
-    "1779": {
+    "1820": {
       "op": "pop",
       "stack_out": [
         "array#0",
@@ -15310,7 +16036,7 @@
         "box_size#0"
       ]
     },
-    "1780": {
+    "1821": {
       "op": "intc_2 // 2",
       "stack_out": [
         "array#0",
@@ -15328,7 +16054,7 @@
         "2"
       ]
     },
-    "1781": {
+    "1822": {
       "op": "+",
       "defined_out": [
         "accountRecord#0",
@@ -15354,7 +16080,7 @@
         "new_box_size#0"
       ]
     },
-    "1782": {
+    "1823": {
       "op": "dig 2",
       "stack_out": [
         "array#0",
@@ -15372,7 +16098,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1784": {
+    "1825": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -15390,7 +16116,7 @@
         "new_box_size#0"
       ]
     },
-    "1785": {
+    "1826": {
       "op": "box_resize",
       "stack_out": [
         "array#0",
@@ -15406,7 +16132,7 @@
         "arr_len#0"
       ]
     },
-    "1786": {
+    "1827": {
       "op": "dup",
       "defined_out": [
         "accountRecord#0",
@@ -15432,7 +16158,7 @@
         "arr_len#0 (copy)"
       ]
     },
-    "1787": {
+    "1828": {
       "op": "intc_1 // 1",
       "stack_out": [
         "array#0",
@@ -15450,7 +16176,7 @@
         "1"
       ]
     },
-    "1788": {
+    "1829": {
       "op": "+",
       "defined_out": [
         "accountRecord#0",
@@ -15476,7 +16202,7 @@
         "value#0"
       ]
     },
-    "1789": {
+    "1830": {
       "op": "itob",
       "defined_out": [
         "accountRecord#0",
@@ -15502,7 +16228,7 @@
         "value_bytes#0"
       ]
     },
-    "1790": {
+    "1831": {
       "op": "extract 6 2",
       "defined_out": [
         "accountRecord#0",
@@ -15528,7 +16254,7 @@
         "new_arr_len#0"
       ]
     },
-    "1793": {
+    "1834": {
       "op": "dig 2",
       "stack_out": [
         "array#0",
@@ -15546,7 +16272,7 @@
         "box_key#0 (copy)"
       ]
     },
-    "1795": {
+    "1836": {
       "op": "pushint 6",
       "stack_out": [
         "array#0",
@@ -15565,7 +16291,7 @@
         "6"
       ]
     },
-    "1797": {
+    "1838": {
       "op": "uncover 2",
       "stack_out": [
         "array#0",
@@ -15584,7 +16310,7 @@
         "new_arr_len#0"
       ]
     },
-    "1799": {
+    "1840": {
       "op": "box_replace",
       "stack_out": [
         "array#0",
@@ -15600,7 +16326,7 @@
         "arr_len#0"
       ]
     },
-    "1800": {
+    "1841": {
       "op": "intc_2 // 2",
       "stack_out": [
         "array#0",
@@ -15617,7 +16343,7 @@
         "2"
       ]
     },
-    "1801": {
+    "1842": {
       "op": "*",
       "defined_out": [
         "accountRecord#0",
@@ -15641,7 +16367,7 @@
         "tmp%8#0"
       ]
     },
-    "1802": {
+    "1843": {
       "op": "pushint 8",
       "defined_out": [
         "8",
@@ -15667,7 +16393,7 @@
         "8"
       ]
     },
-    "1804": {
+    "1845": {
       "op": "+",
       "defined_out": [
         "accountRecord#0",
@@ -15691,7 +16417,7 @@
         "end_of_array_offset#0"
       ]
     },
-    "1805": {
+    "1846": {
       "op": "intc_0 // 0",
       "stack_out": [
         "array#0",
@@ -15708,7 +16434,7 @@
         "0"
       ]
     },
-    "1806": {
+    "1847": {
       "op": "uncover 3",
       "stack_out": [
         "array#0",
@@ -15725,7 +16451,7 @@
         "instanceNumId#0"
       ]
     },
-    "1808": {
+    "1849": {
       "op": "box_splice",
       "stack_out": [
         "array#0",
@@ -15738,7 +16464,7 @@
         "accountRecord#0"
       ]
     },
-    "1809": {
+    "1850": {
       "op": "dig 1",
       "defined_out": [
         "accountRecord#0",
@@ -15760,7 +16486,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1811": {
+    "1852": {
       "op": "dup",
       "defined_out": [
         "accountRecord#0",
@@ -15784,7 +16510,7 @@
         "map_prefixed_key%0#0 (copy)"
       ]
     },
-    "1812": {
+    "1853": {
       "op": "pushints 10 8",
       "defined_out": [
         "10",
@@ -15812,7 +16538,7 @@
         "8"
       ]
     },
-    "1816": {
+    "1857": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -15837,7 +16563,7 @@
         "box%box_extract%5#0"
       ]
     },
-    "1817": {
+    "1858": {
       "op": "btoi",
       "defined_out": [
         "accountRecord#0",
@@ -15861,7 +16587,7 @@
         "tmp%14#0"
       ]
     },
-    "1818": {
+    "1859": {
       "op": "intc_1 // 1",
       "stack_out": [
         "array#0",
@@ -15877,7 +16603,7 @@
         "1"
       ]
     },
-    "1819": {
+    "1860": {
       "op": "+",
       "defined_out": [
         "accountRecord#0",
@@ -15901,7 +16627,7 @@
         "tmp%15#0"
       ]
     },
-    "1820": {
+    "1861": {
       "op": "itob",
       "defined_out": [
         "accountRecord#0",
@@ -15925,10 +16651,10 @@
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1821": {
+    "1862": {
       "op": "pushint 10"
     },
-    "1823": {
+    "1864": {
       "op": "swap",
       "stack_out": [
         "array#0",
@@ -15944,7 +16670,7 @@
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1824": {
+    "1865": {
       "error": "index out of bounds",
       "op": "box_replace // on error: index out of bounds",
       "stack_out": [
@@ -15958,7 +16684,7 @@
         "accountRecord#0"
       ]
     },
-    "1825": {
+    "1866": {
       "block": "getOrCreateAccountWithInstance_after_if_else@20",
       "stack_in": [
         "array#0",
@@ -15986,7 +16712,7 @@
         "0x151f7c75"
       ]
     },
-    "1826": {
+    "1867": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -16004,7 +16730,7 @@
         "accountRecord#0"
       ]
     },
-    "1827": {
+    "1868": {
       "op": "concat",
       "defined_out": [
         "tmp%4#0"
@@ -16020,7 +16746,7 @@
         "tmp%4#0"
       ]
     },
-    "1828": {
+    "1869": {
       "op": "log",
       "stack_out": [
         "array#0",
@@ -16032,7 +16758,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1829": {
+    "1870": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1"
@@ -16048,7 +16774,7 @@
         "1"
       ]
     },
-    "1830": {
+    "1871": {
       "op": "return",
       "stack_out": [
         "array#0",
@@ -16060,7 +16786,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1831": {
+    "1872": {
       "block": "getOrCreateAccountWithInstance_after_if_else@15",
       "stack_in": [
         "array#0",
@@ -16088,7 +16814,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "1833": {
+    "1874": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -16107,7 +16833,7 @@
         "1"
       ]
     },
-    "1834": {
+    "1875": {
       "op": "+",
       "stack_out": [
         "array#0",
@@ -16121,7 +16847,7 @@
         "item_index_internal%0#0"
       ]
     },
-    "1835": {
+    "1876": {
       "op": "bury 4",
       "defined_out": [
         "item_index_internal%0#0"
@@ -16137,10 +16863,10 @@
         "accountRecord#0"
       ]
     },
-    "1837": {
+    "1878": {
       "op": "b getOrCreateAccountWithInstance_for_header@12"
     },
-    "1840": {
+    "1881": {
       "block": "getOrCreateAccountWithInstance_bool_false@6",
       "stack_in": [
         "array#0",
@@ -16168,17 +16894,17 @@
         "or_result%0#0"
       ]
     },
-    "1841": {
+    "1882": {
       "op": "b getOrCreateAccountWithInstance_bool_merge@7"
     },
-    "1844": {
+    "1885": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.registerEscrow[routing]",
       "params": {},
       "block": "registerEscrow",
       "stack_in": [],
       "op": "txna ApplicationArgs 1"
     },
-    "1847": {
+    "1888": {
       "op": "dupn 2",
       "defined_out": [
         "instanceNumId#0",
@@ -16190,7 +16916,7 @@
         "instanceNumId#0 (copy)"
       ]
     },
-    "1849": {
+    "1890": {
       "op": "len",
       "defined_out": [
         "instanceNumId#0",
@@ -16202,7 +16928,7 @@
         "len%0#0"
       ]
     },
-    "1850": {
+    "1891": {
       "op": "intc_2 // 2",
       "defined_out": [
         "2",
@@ -16216,7 +16942,7 @@
         "2"
       ]
     },
-    "1851": {
+    "1892": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -16228,7 +16954,7 @@
         "eq%0#0"
       ]
     },
-    "1852": {
+    "1893": {
       "error": "invalid number of bytes for arc4.uint16",
       "op": "assert // invalid number of bytes for arc4.uint16",
       "stack_out": [
@@ -16236,10 +16962,10 @@
         "instanceNumId#0"
       ]
     },
-    "1853": {
+    "1894": {
       "op": "txna ApplicationArgs 2"
     },
-    "1856": {
+    "1897": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -16252,7 +16978,7 @@
         "account#0"
       ]
     },
-    "1857": {
+    "1898": {
       "op": "cover 2",
       "defined_out": [
         "account#0",
@@ -16265,7 +16991,7 @@
         "account#0"
       ]
     },
-    "1859": {
+    "1900": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -16279,7 +17005,7 @@
         "len%1#0"
       ]
     },
-    "1860": {
+    "1901": {
       "op": "intc_3 // 32",
       "defined_out": [
         "32",
@@ -16295,7 +17021,7 @@
         "32"
       ]
     },
-    "1861": {
+    "1902": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -16309,7 +17035,7 @@
         "eq%1#0"
       ]
     },
-    "1862": {
+    "1903": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
@@ -16318,11 +17044,11 @@
         "instanceNumId#0"
       ]
     },
-    "1863": {
+    "1904": {
       "callsub": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.ensureCallerIsAdmin",
       "op": "callsub ensureCallerIsAdmin"
     },
-    "1866": {
+    "1907": {
       "op": "bytec_2 // \"i\"",
       "defined_out": [
         "\"i\"",
@@ -16336,7 +17062,7 @@
         "\"i\""
       ]
     },
-    "1867": {
+    "1908": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
@@ -16345,7 +17071,7 @@
         "instanceNumId#0"
       ]
     },
-    "1868": {
+    "1909": {
       "op": "concat",
       "defined_out": [
         "account#0",
@@ -16358,7 +17084,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1869": {
+    "1910": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -16372,7 +17098,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1870": {
+    "1911": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -16389,7 +17115,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "1871": {
+    "1912": {
       "op": "bury 1",
       "stack_out": [
         "instanceNumId#0",
@@ -16398,7 +17124,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "1873": {
+    "1914": {
       "op": "bnz registerEscrow_after_assert@3",
       "stack_out": [
         "instanceNumId#0",
@@ -16406,7 +17132,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1876": {
+    "1917": {
       "op": "bytec 5 // \"ERR:FI_NX\"",
       "defined_out": [
         "\"ERR:FI_NX\"",
@@ -16421,7 +17147,7 @@
         "\"ERR:FI_NX\""
       ]
     },
-    "1878": {
+    "1919": {
       "op": "log",
       "stack_out": [
         "instanceNumId#0",
@@ -16429,11 +17155,11 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "1879": {
+    "1920": {
       "error": "ERR:FI_NX",
       "op": "err // ERR:FI_NX"
     },
-    "1880": {
+    "1921": {
       "block": "registerEscrow_after_assert@3",
       "stack_in": [
         "instanceNumId#0",
@@ -16451,7 +17177,7 @@
         "\"e\""
       ]
     },
-    "1883": {
+    "1924": {
       "op": "dig 2",
       "defined_out": [
         "\"e\"",
@@ -16465,7 +17191,7 @@
         "account#0 (copy)"
       ]
     },
-    "1885": {
+    "1926": {
       "op": "concat",
       "defined_out": [
         "map_prefixed_key%1#0"
@@ -16477,7 +17203,7 @@
         "map_prefixed_key%1#0"
       ]
     },
-    "1886": {
+    "1927": {
       "op": "dup",
       "defined_out": [
         "map_prefixed_key%1#0"
@@ -16490,7 +17216,7 @@
         "map_prefixed_key%1#0"
       ]
     },
-    "1887": {
+    "1928": {
       "op": "box_len",
       "defined_out": [
         "_%1#0",
@@ -16506,7 +17232,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "1888": {
+    "1929": {
       "op": "bury 1",
       "stack_out": [
         "instanceNumId#0",
@@ -16516,7 +17242,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "1890": {
+    "1931": {
       "op": "bz registerEscrow_after_assert@5",
       "stack_out": [
         "instanceNumId#0",
@@ -16525,7 +17251,7 @@
         "map_prefixed_key%1#0"
       ]
     },
-    "1893": {
+    "1934": {
       "op": "pushbytes \"ERR:FE_AS\"",
       "defined_out": [
         "\"ERR:FE_AS\"",
@@ -16539,7 +17265,7 @@
         "\"ERR:FE_AS\""
       ]
     },
-    "1904": {
+    "1945": {
       "op": "log",
       "stack_out": [
         "instanceNumId#0",
@@ -16548,11 +17274,11 @@
         "map_prefixed_key%1#0"
       ]
     },
-    "1905": {
+    "1946": {
       "error": "ERR:FE_AS",
       "op": "err // ERR:FE_AS"
     },
-    "1906": {
+    "1947": {
       "block": "registerEscrow_after_assert@5",
       "stack_in": [
         "instanceNumId#0",
@@ -16572,20 +17298,20 @@
         "instanceNumId#0"
       ]
     },
-    "1908": {
+    "1949": {
       "op": "box_put",
       "stack_out": [
         "account#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1909": {
+    "1950": {
       "op": "itxn_begin",
       "defined_out": [
         "map_prefixed_key%0#0"
       ]
     },
-    "1910": {
+    "1951": {
       "op": "dup",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -16597,7 +17323,7 @@
         "map_prefixed_key%0#0 (copy)"
       ]
     },
-    "1911": {
+    "1952": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -16611,7 +17337,7 @@
         "0"
       ]
     },
-    "1912": {
+    "1953": {
       "op": "pushint 8",
       "defined_out": [
         "0",
@@ -16627,7 +17353,7 @@
         "8"
       ]
     },
-    "1914": {
+    "1955": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -16640,7 +17366,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "1915": {
+    "1956": {
       "op": "btoi",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -16652,7 +17378,7 @@
         "tmp%2#1"
       ]
     },
-    "1916": {
+    "1957": {
       "op": "intc_0 // 0",
       "stack_out": [
         "account#0",
@@ -16661,7 +17387,7 @@
         "0"
       ]
     },
-    "1917": {
+    "1958": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "account#0",
@@ -16669,14 +17395,14 @@
         "tmp%2#1"
       ]
     },
-    "1919": {
+    "1960": {
       "op": "itxn_field ApplicationID",
       "stack_out": [
         "account#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1921": {
+    "1962": {
       "op": "pushbytes 0x010cfd9f // method \"registerEscrow(address)void\"",
       "defined_out": [
         "Method(registerEscrow(address)void)",
@@ -16688,14 +17414,14 @@
         "Method(registerEscrow(address)void)"
       ]
     },
-    "1927": {
+    "1968": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "account#0",
         "map_prefixed_key%0#0"
       ]
     },
-    "1929": {
+    "1970": {
       "op": "swap",
       "defined_out": [
         "account#0",
@@ -16706,13 +17432,13 @@
         "account#0"
       ]
     },
-    "1930": {
+    "1971": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "map_prefixed_key%0#0"
       ]
     },
-    "1932": {
+    "1973": {
       "op": "pushint 6 // appl",
       "defined_out": [
         "appl",
@@ -16723,36 +17449,36 @@
         "appl"
       ]
     },
-    "1934": {
+    "1975": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "map_prefixed_key%0#0"
       ]
     },
-    "1936": {
+    "1977": {
       "op": "intc_0 // 0",
       "stack_out": [
         "map_prefixed_key%0#0",
         "0"
       ]
     },
-    "1937": {
+    "1978": {
       "op": "itxn_field Fee",
       "stack_out": [
         "map_prefixed_key%0#0"
       ]
     },
-    "1939": {
+    "1980": {
       "op": "itxn_submit"
     },
-    "1940": {
+    "1981": {
       "op": "dup",
       "stack_out": [
         "map_prefixed_key%0#0",
         "map_prefixed_key%0#0 (copy)"
       ]
     },
-    "1941": {
+    "1982": {
       "op": "pushints 18 8",
       "defined_out": [
         "18",
@@ -16767,7 +17493,7 @@
         "8"
       ]
     },
-    "1945": {
+    "1986": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -16779,7 +17505,7 @@
         "box%box_extract%1#0"
       ]
     },
-    "1946": {
+    "1987": {
       "op": "btoi",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -16790,7 +17516,7 @@
         "tmp%3#0"
       ]
     },
-    "1947": {
+    "1988": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -16803,7 +17529,7 @@
         "1"
       ]
     },
-    "1948": {
+    "1989": {
       "op": "+",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -16814,7 +17540,7 @@
         "tmp%4#0"
       ]
     },
-    "1949": {
+    "1990": {
       "op": "itob",
       "defined_out": [
         "aggregate%val_as_bytes%0#0",
@@ -16825,10 +17551,10 @@
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1950": {
+    "1991": {
       "op": "pushint 18"
     },
-    "1952": {
+    "1993": {
       "op": "swap",
       "stack_out": [
         "map_prefixed_key%0#0",
@@ -16836,22 +17562,22 @@
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1953": {
+    "1994": {
       "error": "index out of bounds",
       "op": "box_replace // on error: index out of bounds",
       "stack_out": []
     },
-    "1954": {
+    "1995": {
       "op": "intc_1 // 1",
       "stack_out": [
         "1"
       ]
     },
-    "1955": {
+    "1996": {
       "op": "return",
       "stack_out": []
     },
-    "1956": {
+    "1997": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getEscrow[routing]",
       "params": {},
       "block": "getEscrow",
@@ -16864,7 +17590,7 @@
         "account#0"
       ]
     },
-    "1959": {
+    "2000": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -16875,7 +17601,7 @@
         "account#0 (copy)"
       ]
     },
-    "1960": {
+    "2001": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -16886,7 +17612,7 @@
         "len%0#0"
       ]
     },
-    "1961": {
+    "2002": {
       "op": "intc_3 // 32",
       "defined_out": [
         "32",
@@ -16899,7 +17625,7 @@
         "32"
       ]
     },
-    "1962": {
+    "2003": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -16910,14 +17636,14 @@
         "eq%0#0"
       ]
     },
-    "1963": {
+    "2004": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "account#0"
       ]
     },
-    "1964": {
+    "2005": {
       "op": "pushbytes \"e\"",
       "defined_out": [
         "\"e\"",
@@ -16928,14 +17654,14 @@
         "\"e\""
       ]
     },
-    "1967": {
+    "2008": {
       "op": "swap",
       "stack_out": [
         "\"e\"",
         "account#0"
       ]
     },
-    "1968": {
+    "2009": {
       "op": "concat",
       "defined_out": [
         "escrowBox#0"
@@ -16944,7 +17670,7 @@
         "escrowBox#0"
       ]
     },
-    "1969": {
+    "2010": {
       "op": "dup",
       "defined_out": [
         "escrowBox#0"
@@ -16954,7 +17680,7 @@
         "escrowBox#0"
       ]
     },
-    "1970": {
+    "2011": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -16967,30 +17693,30 @@
         "maybe_exists%0#0"
       ]
     },
-    "1971": {
+    "2012": {
       "op": "bury 1",
       "stack_out": [
         "escrowBox#0",
         "maybe_exists%0#0"
       ]
     },
-    "1973": {
+    "2014": {
       "op": "bnz getEscrow_after_if_else@3",
       "stack_out": [
         "escrowBox#0"
       ]
     },
-    "1976": {
+    "2017": {
       "op": "pop",
       "stack_out": []
     },
-    "1977": {
+    "2018": {
       "op": "intc_0 // 0",
       "stack_out": [
         "0"
       ]
     },
-    "1978": {
+    "2019": {
       "callsub": "smart_contracts/base/utils.algo.ts::u16",
       "op": "callsub u16",
       "defined_out": [
@@ -17000,14 +17726,14 @@
         "tmp%0#1"
       ]
     },
-    "1981": {
+    "2022": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#1",
         "0"
       ]
     },
-    "1982": {
+    "2023": {
       "op": "itob",
       "defined_out": [
         "aggregate%val_as_bytes%0#0",
@@ -17018,7 +17744,7 @@
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "1983": {
+    "2024": {
       "op": "concat",
       "defined_out": [
         "tmp%2#0"
@@ -17027,7 +17753,7 @@
         "tmp%2#0"
       ]
     },
-    "1984": {
+    "2025": {
       "block": "getEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getEscrow@6",
       "stack_in": [
         "tmp%2#0"
@@ -17041,7 +17767,7 @@
         "0x151f7c75"
       ]
     },
-    "1985": {
+    "2026": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -17052,7 +17778,7 @@
         "tmp%2#0"
       ]
     },
-    "1986": {
+    "2027": {
       "op": "concat",
       "defined_out": [
         "tmp%3#0"
@@ -17061,11 +17787,11 @@
         "tmp%3#0"
       ]
     },
-    "1987": {
+    "2028": {
       "op": "log",
       "stack_out": []
     },
-    "1988": {
+    "2029": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1"
@@ -17074,11 +17800,11 @@
         "1"
       ]
     },
-    "1989": {
+    "2030": {
       "op": "return",
       "stack_out": []
     },
-    "1990": {
+    "2031": {
       "block": "getEscrow_after_if_else@3",
       "stack_in": [
         "escrowBox#0"
@@ -17093,14 +17819,14 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "1991": {
+    "2032": {
       "op": "swap",
       "stack_out": [
         "aggregate%box_get%1#0",
         "instanceNumId#0"
       ]
     },
-    "1992": {
+    "2033": {
       "op": "dup",
       "stack_out": [
         "aggregate%box_get%1#0",
@@ -17108,7 +17834,7 @@
         "instanceNumId#0 (copy)"
       ]
     },
-    "1993": {
+    "2034": {
       "op": "uncover 2",
       "defined_out": [
         "aggregate%box_get%1#0",
@@ -17120,7 +17846,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "1995": {
+    "2036": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "stack_out": [
@@ -17128,7 +17854,7 @@
         "instanceNumId#0"
       ]
     },
-    "1996": {
+    "2037": {
       "op": "bytec_2 // \"i\"",
       "defined_out": [
         "\"i\"",
@@ -17140,7 +17866,7 @@
         "\"i\""
       ]
     },
-    "1997": {
+    "2038": {
       "op": "swap",
       "stack_out": [
         "instanceNumId#0",
@@ -17148,7 +17874,7 @@
         "instanceNumId#0"
       ]
     },
-    "1998": {
+    "2039": {
       "op": "concat",
       "defined_out": [
         "instanceBox#0",
@@ -17159,7 +17885,7 @@
         "instanceBox#0"
       ]
     },
-    "1999": {
+    "2040": {
       "op": "dup",
       "defined_out": [
         "instanceBox#0",
@@ -17171,7 +17897,7 @@
         "instanceBox#0"
       ]
     },
-    "2000": {
+    "2041": {
       "op": "box_len",
       "defined_out": [
         "_%1#0",
@@ -17186,7 +17912,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "2001": {
+    "2042": {
       "op": "bury 1",
       "stack_out": [
         "instanceNumId#0",
@@ -17194,14 +17920,14 @@
         "maybe_exists%1#0"
       ]
     },
-    "2003": {
+    "2044": {
       "op": "bnz getEscrow_after_assert@5",
       "stack_out": [
         "instanceNumId#0",
         "instanceBox#0"
       ]
     },
-    "2006": {
+    "2047": {
       "op": "bytec 5 // \"ERR:FI_NX\"",
       "defined_out": [
         "\"ERR:FI_NX\"",
@@ -17214,18 +17940,18 @@
         "\"ERR:FI_NX\""
       ]
     },
-    "2008": {
+    "2049": {
       "op": "log",
       "stack_out": [
         "instanceNumId#0",
         "instanceBox#0"
       ]
     },
-    "2009": {
+    "2050": {
       "error": "ERR:FI_NX",
       "op": "err // ERR:FI_NX"
     },
-    "2010": {
+    "2051": {
       "block": "getEscrow_after_assert@5",
       "stack_in": [
         "instanceNumId#0",
@@ -17242,7 +17968,7 @@
         "0"
       ]
     },
-    "2011": {
+    "2052": {
       "op": "pushint 8",
       "defined_out": [
         "0",
@@ -17256,7 +17982,7 @@
         "8"
       ]
     },
-    "2013": {
+    "2054": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -17267,7 +17993,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "2014": {
+    "2055": {
       "op": "btoi",
       "defined_out": [
         "tmp%2#1"
@@ -17277,7 +18003,7 @@
         "tmp%2#1"
       ]
     },
-    "2015": {
+    "2056": {
       "op": "itob",
       "defined_out": [
         "aggregate%val_as_bytes%1#0",
@@ -17288,7 +18014,7 @@
         "aggregate%val_as_bytes%1#0"
       ]
     },
-    "2016": {
+    "2057": {
       "op": "concat",
       "defined_out": [
         "tmp%2#0"
@@ -17297,10 +18023,10 @@
         "tmp%2#0"
       ]
     },
-    "2017": {
+    "2058": {
       "op": "b getEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getEscrow@6"
     },
-    "2020": {
+    "2061": {
       "subroutine": "smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]",
       "params": {},
       "block": "increaseBudget",
@@ -17313,7 +18039,7 @@
         "tmp%0#0"
       ]
     },
-    "2023": {
+    "2064": {
       "op": "btoi",
       "defined_out": [
         "itxns#0"
@@ -17322,7 +18048,7 @@
         "itxns#0"
       ]
     },
-    "2024": {
+    "2065": {
       "op": "intc_0 // 0",
       "defined_out": [
         "i#0",
@@ -17333,7 +18059,7 @@
         "i#0"
       ]
     },
-    "2025": {
+    "2066": {
       "block": "increaseBudget_while_top@2",
       "stack_in": [
         "itxns#0",
@@ -17349,7 +18075,7 @@
         "i#0 (copy)"
       ]
     },
-    "2026": {
+    "2067": {
       "op": "dig 2",
       "defined_out": [
         "i#0 (copy)",
@@ -17362,7 +18088,7 @@
         "itxns#0 (copy)"
       ]
     },
-    "2028": {
+    "2069": {
       "op": "<",
       "defined_out": [
         "tmp%0#1"
@@ -17373,17 +18099,17 @@
         "tmp%0#1"
       ]
     },
-    "2029": {
+    "2070": {
       "op": "bz increaseBudget_after_while@5",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2032": {
+    "2073": {
       "op": "itxn_begin"
     },
-    "2033": {
+    "2074": {
       "op": "pushint 5",
       "defined_out": [
         "5"
@@ -17394,14 +18120,14 @@
         "5"
       ]
     },
-    "2035": {
+    "2076": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2037": {
+    "2078": {
       "op": "bytec 8 // base64(C4EBQw==)",
       "defined_out": [
         "C4EBQw=="
@@ -17412,14 +18138,14 @@
         "C4EBQw=="
       ]
     },
-    "2039": {
+    "2080": {
       "op": "itxn_field ClearStateProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2041": {
+    "2082": {
       "op": "bytec 8 // base64(C4EBQw==)",
       "stack_out": [
         "itxns#0",
@@ -17427,14 +18153,14 @@
         "C4EBQw=="
       ]
     },
-    "2043": {
+    "2084": {
       "op": "itxn_field ApprovalProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2045": {
+    "2086": {
       "op": "pushint 6",
       "defined_out": [
         "6"
@@ -17445,14 +18171,14 @@
         "6"
       ]
     },
-    "2047": {
+    "2088": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2049": {
+    "2090": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -17463,20 +18189,20 @@
         "0"
       ]
     },
-    "2050": {
+    "2091": {
       "op": "itxn_field Fee",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2052": {
+    "2093": {
       "op": "itxn_submit",
       "defined_out": [
         "i#0"
       ]
     },
-    "2053": {
+    "2094": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -17488,7 +18214,7 @@
         "1"
       ]
     },
-    "2054": {
+    "2095": {
       "op": "+",
       "defined_out": [
         "i#0"
@@ -17498,10 +18224,10 @@
         "i#0"
       ]
     },
-    "2055": {
+    "2096": {
       "op": "b increaseBudget_while_top@2"
     },
-    "2058": {
+    "2099": {
       "block": "increaseBudget_after_while@5",
       "stack_in": [
         "itxns#0",
@@ -17517,14 +18243,14 @@
         "1"
       ]
     },
-    "2059": {
+    "2100": {
       "op": "return",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "2060": {
+    "2101": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.ensureCallerIsAdmin",
       "params": {},
       "block": "ensureCallerIsAdmin",
@@ -17537,7 +18263,7 @@
         "tmp%0#0"
       ]
     },
-    "2062": {
+    "2103": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -17548,7 +18274,7 @@
         "0"
       ]
     },
-    "2063": {
+    "2104": {
       "op": "bytec_3 // \"admin\"",
       "defined_out": [
         "\"admin\"",
@@ -17561,7 +18287,7 @@
         "\"admin\""
       ]
     },
-    "2064": {
+    "2105": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -17574,7 +18300,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "2065": {
+    "2106": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -17582,7 +18308,7 @@
         "maybe_value%0#0"
       ]
     },
-    "2066": {
+    "2107": {
       "op": "==",
       "defined_out": [
         "tmp%1#0"
@@ -17591,11 +18317,11 @@
         "tmp%1#0"
       ]
     },
-    "2067": {
+    "2108": {
       "op": "bnz ensureCallerIsAdmin_after_assert@2",
       "stack_out": []
     },
-    "2070": {
+    "2111": {
       "op": "bytec 4 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\""
@@ -17604,21 +18330,21 @@
         "\"ERR:AUTH\""
       ]
     },
-    "2072": {
+    "2113": {
       "op": "log",
       "stack_out": []
     },
-    "2073": {
+    "2114": {
       "error": "ERR:AUTH",
       "op": "err // ERR:AUTH"
     },
-    "2074": {
+    "2115": {
       "block": "ensureCallerIsAdmin_after_assert@2",
       "stack_in": [],
       "retsub": true,
       "op": "retsub"
     },
-    "2075": {
+    "2116": {
       "subroutine": "smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getAccountIfExists",
       "params": {
         "account#0": "bytes"
@@ -17627,7 +18353,7 @@
       "stack_in": [],
       "op": "proto 1 1"
     },
-    "2078": {
+    "2119": {
       "op": "pushbytes \"a\"",
       "defined_out": [
         "\"a\""
@@ -17636,7 +18362,7 @@
         "\"a\""
       ]
     },
-    "2081": {
+    "2122": {
       "op": "frame_dig -1",
       "defined_out": [
         "\"a\"",
@@ -17647,7 +18373,7 @@
         "account#0 (copy)"
       ]
     },
-    "2083": {
+    "2124": {
       "op": "concat",
       "defined_out": [
         "box#0"
@@ -17656,7 +18382,7 @@
         "box#0"
       ]
     },
-    "2084": {
+    "2125": {
       "op": "dup",
       "defined_out": [
         "box#0"
@@ -17666,7 +18392,7 @@
         "box#0"
       ]
     },
-    "2085": {
+    "2126": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -17679,20 +18405,20 @@
         "maybe_exists%0#0"
       ]
     },
-    "2086": {
+    "2127": {
       "op": "bury 1",
       "stack_out": [
         "box#0",
         "maybe_exists%0#0"
       ]
     },
-    "2088": {
+    "2129": {
       "op": "bz getAccountIfExists_else_body@2",
       "stack_out": [
         "box#0"
       ]
     },
-    "2091": {
+    "2132": {
       "op": "box_get",
       "defined_out": [
         "aggregate%box_get%0#0",
@@ -17703,18 +18429,18 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "2092": {
+    "2133": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "stack_out": [
         "aggregate%box_get%0#0"
       ]
     },
-    "2093": {
+    "2134": {
       "retsub": true,
       "op": "retsub"
     },
-    "2094": {
+    "2135": {
       "block": "getAccountIfExists_else_body@2",
       "stack_in": [
         "box#0"
@@ -17728,7 +18454,7 @@
         "0"
       ]
     },
-    "2095": {
+    "2136": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -17739,7 +18465,7 @@
         "accountId#0"
       ]
     },
-    "2098": {
+    "2139": {
       "op": "bytec 13 // 0x00060000",
       "defined_out": [
         "0x00060000",
@@ -17751,7 +18477,7 @@
         "0x00060000"
       ]
     },
-    "2100": {
+    "2141": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%0#0"
@@ -17761,10 +18487,10 @@
         "aggregate%concat%0#0"
       ]
     },
-    "2101": {
+    "2142": {
       "op": "swap"
     },
-    "2102": {
+    "2143": {
       "retsub": true,
       "op": "retsub"
     }

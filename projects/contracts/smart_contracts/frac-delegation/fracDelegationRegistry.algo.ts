@@ -367,6 +367,7 @@ export class FracDelegationRegistryContract extends BaseContract {
         instanceNumId,
         instanceAppId: instance.appId.id,
         instanceName: instance.name,
+        isDelegated: record.isDelegated,
         topicVotes: clone(record.topicVotes),
       }
       log(encodeArc4(tagged))
@@ -402,6 +403,7 @@ export class FracDelegationRegistryContract extends BaseContract {
       instanceNumId,
       instanceAppId: instance.appId.id,
       instanceName: instance.name,
+      isDelegated: record.isDelegated,
       topicVotes: clone(record.topicVotes),
     }
   }

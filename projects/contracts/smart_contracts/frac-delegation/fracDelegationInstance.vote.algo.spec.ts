@@ -32,7 +32,7 @@ describe('[fast] FracDelegationInstanceContract vote', () => {
     it('rejects a period that was never synced', () => {
       const contract = ctx.contract.create(FracDelegationInstanceContract)
 
-      expectArc65Error(ctx, () => contract.vote(u32(999), []), errGGovPeriodNotExists)
+      expectArc65Error(ctx, () => contract.vote(ctx.defaultSender, u32(999), []), errGGovPeriodNotExists)
     })
   })
 
@@ -55,8 +55,8 @@ describe('[fast] FracDelegationInstanceContract vote', () => {
     //
     // ...plus what the harness cannot provide today: the period app's `ready` / `votingStart` /
     // `votingEnd` / `committeeId` globals readable via op.AppGlobal.getEx* on a foreign app, the
-    // frac registry's `getAccount` answered for Txn.sender, and `GGovPeriod.vote` accepting the
-    // per-escrow inner casts.
+    // frac registry's `getAccount` answered for the voter, the gGov registry's `getDelegate`
+    // answered for a delegated vote, and `GGovPeriod.vote` accepting the per-escrow inner casts.
 
     it.todo(
       'live period gates: ready=0 → ERR:GP_NR; now < votingStart → ERR:GP_NS; now >= votingEnd → ERR:GP_EN; ' +
@@ -66,12 +66,26 @@ describe('[fast] FracDelegationInstanceContract vote', () => {
       'AQ ledger gates: no committeeAq box → ERR:FA_NS; ingestedAq < totalAq → ERR:FA_NC [needs foreign-app globals]',
     )
     it.todo(
-      'sender resolution: getAccount → accountId 0 → ERR:A_NX; known account without an accountAq box → ERR:FA_NX ' +
+      'voter resolution: getAccount → accountId 0 → ERR:A_NX; known account without an accountAq box → ERR:FA_NX ' +
         '[needs getAccount inner-call stub]',
     )
     it.todo(
       'shape and sum validation: wrong topic count / wrong option count → ERR:GV_MM; a topic row not summing to ' +
-        'the sender userAq → ERR:GV_VP [needs getAccount inner-call stub]',
+        'the voter userAq → ERR:GV_VP [needs getAccount inner-call stub]',
+    )
+    it.todo(
+      'delegation: sender != voterAccount and the gGov registry names someone else → ERR:GD_NX; delegation present but ' +
+        'the voter is not at Txn.accounts(1) → ERR:GD_NR; both satisfied → the record is written with isDelegated=true ' +
+        '[needs a gGov registry getDelegate stub]',
+    )
+    it.todo(
+      'override guard: a delegated re-vote over a record with isDelegated=false → ERR:GV_OD, with the tally and the ' +
+        'stored record left untouched; the owner may always overwrite a delegated record (flag flips back to false); ' +
+        'a delegatee may overwrite its own delegated record [needs a getDelegate stub]',
+    )
+    it.todo(
+      'canVote mirrors every gate non-throwingly, returning [false, 0] for each rejection above and [true, userAq] ' +
+        'otherwise — including the override guard, so it agrees with what vote() enforces',
     )
     it.todo(
       'tally: first vote adds the rows into periodVoteCache.internal and writes votingRecords([periodId, accountId]); ' +
@@ -94,7 +108,8 @@ describe('[fast] FracDelegationInstanceContract vote', () => {
         'periodVoteCache.ggovTotals are updated together; an unchanged mapping casts nothing [needs GGovPeriod stub]',
     )
     it.todo(
-      'event: FracVoteCast { voter, accountId, userAq, updateVote, topicVotes } with updateVote=true only on re-vote',
+      'event: FracVoteCast { voter, sender, accountId, userAq, updateVote, topicVotes } with updateVote=true only on ' +
+        're-vote, and voter != sender only on a delegated vote',
     )
   })
 })

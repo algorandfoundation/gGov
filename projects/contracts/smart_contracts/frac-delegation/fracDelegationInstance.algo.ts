@@ -28,7 +28,10 @@ import {
   errAqIncomplete,
   errAqNotStarted,
   errCommitteeNotExists,
+  errGGovCannotOverride,
+  errGGovDelegationNoAcctRef,
   errGGovHasVotes,
+  errGGovNoDelegation,
   errGGovNotReady,
   errGGovPeriodNotExists,
   errGGovVoteMismatch,
@@ -824,7 +827,7 @@ export class FracDelegationInstanceContract extends BaseContract {
 
   /**
    * Internal vote on gGov period `periodId`, open to any account with ingested AlgoQuarters in the
-   * period's committee.
+   * period's committee, cast either by that account or by its delegatee.
    *
    * The vote is tallied into `periodVoteCache.internal` in AlgoQuarters, then mapped onto the
    * committee's total escrow gGov power against the `totalAq` denominator - so AQ that never votes
@@ -841,19 +844,29 @@ export class FracDelegationInstanceContract extends BaseContract {
    * tallies are still all zero, so its operator could still un-ready and edit it out from under the
    * snapshot.
    *
+   * User delegation mirrors `GGovPeriod.vote` and shares its source of truth: when `Txn.sender` is
+   * not `voterAccount`, the gGov registry must name the sender as the voter's delegatee
+   * (`getDelegate`), and the voter must be referenced at `Txn.accounts(1)` so delegated votes are
+   * visible to indexers. Frac-only users (AQ holders with no gGov committee membership) can set
+   * that delegation because the gGov registry's `set_voting_account` accepts frac accounts too.
+   *
    * Re-votes overwrite: the account's previous rows are subtracted from the tally before the new
-   * ones are added, mirroring `GGovPeriod.vote`. Escrows must be gGov accounts that delegated to
-   * this instance's app address and must NEVER vote directly - a direct vote is unoverridable
-   * (`errGGovCannotOverride`) and would brick external casting for the period.
+   * ones are added, mirroring `GGovPeriod.vote` - including its override guard, so a delegatee can
+   * never overwrite a vote the owner cast directly (`errGGovCannotOverride`). Escrows must be gGov
+   * accounts that delegated to this instance's app address and must NEVER vote directly - a direct
+   * vote is unoverridable in the same way and would brick external casting for the period.
    *
    * The instance app account pays the `votingRecords` box MBR on an account's first vote; fees for
-   * the inner calls (1 registry resolve + 3 per re-cast escrow) come from the outer group's pool.
+   * the inner calls (1 registry resolve + 1 when delegated + 3 per re-cast escrow) come from the
+   * outer group's pool.
+   * @param voterAccount The account whose AlgoQuarters are being voted. Either `Txn.sender` itself
+   *   or an account that has delegated to `Txn.sender` on the gGov registry.
    * @param periodId gGov period ID, as synced by `syncPeriod`
    * @param topicVotes [topic][option] AlgoQuarters, parallel to the period's topics/options. Every
-   *   topic's row must sum to the sender's full `accountAq` weight; abstain explicitly via the last
+   *   topic's row must sum to the voter's full `accountAq` weight; abstain explicitly via the last
    *   option.
    */
-  public vote(periodId: Uint32, topicVotes: Uint32[][]): void {
+  public vote(voterAccount: Account, periodId: Uint32, topicVotes: Uint32[][]): void {
     // TODO split out math-heavy sections into subroutines;
     // test them independently with algo-ts-testing
     const periodBox = this.periods(periodId)
@@ -877,11 +890,26 @@ export class FracDelegationInstanceContract extends BaseContract {
     loggedAssert(aqBox.value.ingestedAq === aqBox.value.totalAq, errAqIncomplete)
     const totalAq: uint64 = aqBox.value.totalAq.asUint64()
 
-    // Resolve the sender's weight: readonly registry resolve (inlined - hoisting materialises the
+    // Delegation check (inner-call the gGov registry), a direct port of GGovPeriod.vote: the gGov
+    // registry is the single source of truth for user delegations in both systems.
+    let isDelegated = false
+    if (Txn.sender !== voterAccount) {
+      const expectedDelegatee = compileArc4(GGovRegistryContract).call.getDelegate({
+        appId: this.resolveGGovRegistryApp(),
+        args: [voterAccount],
+      }).returnValue
+      loggedAssert(expectedDelegatee === Txn.sender, errGGovNoDelegation)
+      // Keep the delegator in the foreign-accounts array so delegated voting can be "seen" in
+      // indexers, explorers, etc. Index 0 is the sender, so the first foreign account is accounts(1).
+      loggedAssert(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
+      isDelegated = true
+    }
+
+    // Resolve the voter's weight: readonly registry resolve (inlined - hoisting materialises the
     // registry program and puya rejects the cycle, see ingestAq), then one O(1) box read.
     const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
       appId: this.resolveRegistryApp(),
-      args: [Txn.sender],
+      args: [voterAccount],
     }).returnValue
     loggedAssert(registryAccount.accountId.asUint64() > 0, errAccountNotExists)
     const accountAqBox = this.accountAq([registryAccount.accountId, period.committeeNumId])
@@ -898,6 +926,10 @@ export class FracDelegationInstanceContract extends BaseContract {
     const isRevote = userVoteRecordBox.exists
     if (isRevote) {
       const existing = clone(userVoteRecordBox.value)
+      // A record the owner cast directly is final as far as a delegatee is concerned
+      if (isDelegated && !existing.isDelegated) {
+        loggedErr(errGGovCannotOverride)
+      }
       for (let t: uint64 = 0; t < existing.topicVotes.length; t++) {
         const oldRow = clone(existing.topicVotes[t])
         const tally = clone(cache.internal[t])
@@ -910,7 +942,7 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
 
     // Validate and tally in one pass, as GGovPeriod.vote does. Every topic's row must spend the
-    // sender's exact full weight - that cap is also what bounds each tally cell by totalAq, keeping
+    // voter's exact full weight - that cap is also what bounds each tally cell by totalAq, keeping
     // the mapping's u32*u32 product inside uint64 and its last-option remainder non-negative.
     for (let t: uint64 = 0; t < newVotes.length; t++) {
       const row = clone(newVotes[t])
@@ -1007,15 +1039,81 @@ export class FracDelegationInstanceContract extends BaseContract {
     }
 
     emit<FracVoteCast>({
-      voter: Txn.sender,
+      voter: voterAccount,
+      sender: Txn.sender,
       accountId: registryAccount.accountId,
       userAq: u32(userAq),
       updateVote: isRevote,
       topicVotes: clone(newVotes),
     })
 
-    userVoteRecordBox.value = { topicVotes: clone(newVotes) }
+    userVoteRecordBox.value = { isDelegated, topicVotes: clone(newVotes) }
     this.periodVoteCache(periodId).value = clone(cache)
+  }
+
+  /**
+   * Whether `senderAccount` may cast `voterAccount`'s internal vote on gGov period `periodId`, and
+   * the AlgoQuarters weight it would carry. Readonly, non-throwing mirror of `vote`'s gates - the
+   * counterpart of `GGovPeriod.canVote`, and like it, returns `[false, 0]` for every rejection
+   * rather than distinguishing them.
+   *
+   * Covers the same ground as `vote`: the period must be synced here and live-ready on the gGov side
+   * within its window, the committee's AQ ledger must be complete, the voter must be a frac account
+   * with non-zero AlgoQuarters, and - when the sender is not the voter - the gGov registry must name
+   * the sender as the voter's delegatee AND the voter must not already have cast a direct vote
+   * (`vote`'s override guard). It does NOT check the group-level `Txn.accounts(1)` reference, which
+   * is a property of the submitted transaction rather than of eligibility.
+   * @param voterAccount The account whose AlgoQuarters would be voted
+   * @param senderAccount The account that would submit the call
+   * @param periodId gGov period ID
+   */
+  @abimethod({ readonly: true })
+  public canVote(voterAccount: Account, senderAccount: Account, periodId: Uint32): [boolean, uint64] {
+    const periodBox = this.periods(periodId)
+    if (!periodBox.exists) return [false, 0]
+    const period = clone(periodBox.value)
+
+    // Live period-app state, exactly as vote() reads it (getEx*, no inner call).
+    const [ready, _hasReady] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`ready`)
+    if (ready === 0) return [false, 0]
+    const [votingStart, _hasStart] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`votingStart`)
+    if (Global.latestTimestamp < votingStart) return [false, 0]
+    const [votingEnd, _hasEnd] = op.AppGlobal.getExUint64(period.periodAppId, Bytes`votingEnd`)
+    if (Global.latestTimestamp >= votingEnd) return [false, 0]
+    const [liveCommitteeId, _hasCommittee] = op.AppGlobal.getExBytes(period.periodAppId, Bytes`committeeId`)
+    if (liveCommitteeId !== period.committeeId.bytes) return [false, 0]
+
+    const aqBox = this.committeeAq(period.committeeNumId)
+    // return false if the ledger is incomplete or the committee has no ingested accounts
+    if (!aqBox.exists || aqBox.value.ingestedAq !== aqBox.value.totalAq || aqBox.value.numAccounts !== aqBox.value.totalAccounts) return [false, 0]
+
+    const isDelegated = senderAccount !== voterAccount
+    if (isDelegated) {
+      const delegate = compileArc4(GGovRegistryContract).call.getDelegate({
+        appId: this.resolveGGovRegistryApp(),
+        args: [voterAccount],
+      }).returnValue
+      if (delegate === Global.zeroAddress) return [false, 0]
+      if (delegate !== senderAccount) return [false, 0]
+    }
+
+    const registryAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
+      appId: this.resolveRegistryApp(),
+      args: [voterAccount],
+    }).returnValue
+    if (registryAccount.accountId.asUint64() === 0) return [false, 0]
+
+    // Mirror vote()'s override guard so canVote agrees with what vote() will enforce.
+    if (isDelegated) {
+      const recordBox = this.votingRecords([periodId, registryAccount.accountId])
+      if (recordBox.exists && !recordBox.value.isDelegated) return [false, 0]
+    }
+
+    const accountAqBox = this.accountAq([registryAccount.accountId, period.committeeNumId])
+    if (!accountAqBox.exists) return [false, 0]
+    const userAq: uint64 = accountAqBox.value.asUint64()
+    if (userAq === 0) return [false, 0] // shouldn't happen, but guard against it anyway
+    return [true, userAq]
   }
 
   /**

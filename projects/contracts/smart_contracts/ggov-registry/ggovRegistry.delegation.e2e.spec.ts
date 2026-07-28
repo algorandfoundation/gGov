@@ -128,6 +128,92 @@ describe('GGovRegistry delegation', () => {
     })
   })
 
+  /**
+   * This registry is the single source of truth for fractional-delegation user delegations too, so a
+   * frac account (an AlgoQuarters holder, minted by the instance's ingestAq) may delegate here even
+   * with no gGov committee membership of its own. The gGov `accounts` box is still checked first;
+   * only a miss falls through to a readonly inner call to the frac registry.
+   */
+  describe('setVotingAccount for fractional-delegation accounts', () => {
+    /** A registry + frac registry wired to each other, and one frac-only account (no gGov account). */
+    const deployWithFracAccount = async () => {
+      const { testAccount: deployer } = localnet.context
+      const { sdk } = await deployRegistryWithCommittee(localnet, 1)
+      const { sdk: fracSdk, instanceId } = await deployFracInstanceWithEscrows(localnet, [], deployer)
+      await sdk.setFracRegistryApp({ appId: fracSdk.registry.appId })
+
+      const fracUser = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await fracSdk.registry.writeClient!.send.getOrCreateAccountWithInstance({
+        args: { account: fracUser.toString(), instanceNumId: instanceId },
+      })
+      return { sdk, fracSdk, fracUser }
+    }
+
+    test('a frac-only account can set and clear a voting account', async () => {
+      const { sdk, fracUser } = await deployWithFracAccount()
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const fracUserSdk = createSDK(localnet, sdk.appId, fracUser)
+
+      await fracUserSdk.setVotingAccount({ votingAddress: votingAddress.toString(), fractionalOnly: true })
+
+      const delegation = await sdk.getDelegation(fracUser.toString())
+      expect(delegation.exists).toBe(true)
+      expect(delegation.delegatee).toBe(votingAddress.toString())
+      expect(await sdk.getDelegators(votingAddress.toString())).toEqual([fracUser.toString()])
+
+      // Clearing runs the same delegator gate, so it needs the fallback fee just as much.
+      await fracUserSdk.setVotingAccount({ fractionalOnly: true })
+      expect((await sdk.getDelegation(fracUser.toString())).exists).toBe(false)
+      expect(await sdk.getDelegators(votingAddress.toString())).toEqual([])
+    })
+
+    test('an account in neither registry is still rejected', async () => {
+      const { sdk } = await deployWithFracAccount()
+      const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      // fractionalOnly: the fallback does fire here — it is what reports the miss, so the call has to
+      // pay for it to fail on errAccountNotExists rather than on fee.
+      await expect(
+        createSDK(localnet, sdk.appId, stranger).setVotingAccount({
+          votingAddress: votingAddress.toString(),
+          fractionalOnly: true,
+        }),
+      ).rejects.toThrow(transformedError(errAccountNotExists))
+    })
+
+    test('the auth rule is unchanged: a stranger cannot manage a frac account delegation', async () => {
+      const { sdk, fracUser } = await deployWithFracAccount()
+      const stranger = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      // The delegator is the frac account, so the fallback fires before the auth check it fails on.
+      await expect(
+        createSDK(localnet, sdk.appId, stranger).setVotingAccount({
+          account: fracUser.toString(),
+          votingAddress: votingAddress.toString(),
+          fractionalOnly: true,
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('with no frac registry configured the gGov-only rule still applies', async () => {
+      const { testAccount: deployer } = localnet.context
+      const { sdk } = await deployRegistryWithCommittee(localnet, 1)
+      const { sdk: fracSdk, instanceId } = await deployFracInstanceWithEscrows(localnet, [], deployer)
+      // NOTE: no setFracRegistryApp — the registry has no frac pointer to fall back to.
+      const fracUser = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await fracSdk.registry.writeClient!.send.getOrCreateAccountWithInstance({
+        args: { account: fracUser.toString(), instanceNumId: instanceId },
+      })
+      const votingAddress = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await expect(
+        createSDK(localnet, sdk.appId, fracUser).setVotingAccount({ votingAddress: votingAddress.toString() }),
+      ).rejects.toThrow(transformedError(errAccountNotExists))
+    })
+  })
+
   describe('mirrorXGovDelegation', () => {
     test('refuses to overwrite an existing delegation', async () => {
       const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 2)

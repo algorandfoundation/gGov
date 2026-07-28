@@ -235,6 +235,7 @@ describe('FracDelegationRegistry readers', () => {
           instanceNumId: Number(instanceId),
           instanceAppId: await sdk.getInstanceAppId(instanceId),
           instanceName: (await registrySdk.getInstance(instanceId))!.name,
+          isDelegated: false, // the empty-record default
           topicVotes: [], // no vote record for the period on any instance
         })
       }
@@ -252,6 +253,7 @@ describe('FracDelegationRegistry readers', () => {
         instanceNumId: Number(instanceId),
         instanceAppId: await sdk.getInstanceAppId(instanceId),
         instanceName: (await registrySdk.getInstance(instanceId))!.name,
+        isDelegated: false, // the empty-record default
         topicVotes: [], // account has not voted this period on the instance
       })
     })

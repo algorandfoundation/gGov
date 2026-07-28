@@ -7,6 +7,8 @@ app the registry spawns via inner transaction. Source: `projects/contracts/smart
 A separate **fractional delegation** subsystem (`frac-delegation/`) is designed to operate on top of
 this one to allow LST and staking pools protocols to split gGov voting power among their users. It interacts
 with gGov only through delegation and readonly reads — find its own architecture doc at `FRAC_ARCHITECTURE.md`.
+This registry holds _all_ of that subsystem's delegations too: both escrow → instance and frac user →
+user (see § Delegation).
 
 ## Contracts
 
@@ -142,6 +144,8 @@ body JSON, `T<Uint32>` per-topic body JSON, `v<Account>` `GGovVoteRecord` { isDe
 | Period → Registry                         | `admin` / `operator` global reads (`AppGlobal.getExBytes`)                             | Direct state reads (no inner call); role identity stays authoritative on the registry.                             |
 | Period → Registry                         | `getDelegate` / `getGovVotingPower`                                                    | Readonly inner calls; delegation and voting power stay authoritative on the registry.                              |
 | Registry → Fractional Delegation Registry | `importFracDelegations` which, per escrow: inner-calls `getEscrow` and adds delegation | Readonly reads; each escrow must be registered to a Fractional Delegation Instance.                                |
+| Registry → Fractional Delegation Registry | `setVotingAccount`: `getAccount` fallback when the delegator has no gGov account       | Readonly read; needs `fracRegistryApp` set, else the delegator is simply unknown (`ERR:A_NX`).                     |
+| Fractional Delegation Instance → Registry | `vote` / `canVote`: `getDelegate` when the sender is not the voter                     | Readonly read; user delegation stays authoritative here, shared with gGov period voting.                           |
 
 Deleted periods set their summary `appId` to 0 implicitly by removal, so period-list reads filter them out.
 
@@ -153,6 +157,17 @@ xgovAddress` (or zero) clears the delegation. Only existing accounts may delegat
 zero-address delegation are rejected. Forward (`d`) and reverse (`D`) indexes are kept in lockstep;
 `mirrorXGovDelegation` (admin) seeds a delegation from the xGov registry without overwriting an
 existing local one. `GGovDelegationSet` / `GGovDelegationCleared` events are emitted on change.
+
+**"Existing account" spans both registries.** This registry is also the single source of truth for
+fractional-delegation user delegations, so `setVotingAccount` accepts a delegator known to gGov (the
+`a<addr>` box) **or** to the fractional-delegation registry (`getAccount` returns a non-zero
+`accountId`). The gGov box is read first; only a miss falls through to one readonly inner call, and
+only when `fracRegistryApp` is configured — a registry without it behaves exactly as before. This is
+what lets a frac user who was never ingested onto a gGov committee delegate their AlgoQuarters
+weight. The delegator check lives at the entry points (`setVotingAccount`, `mirrorXGovDelegation`,
+`importFracDelegations`); the private `addDelegation` trusts them rather than paying the inner call
+twice. Because only a frac-only delegator reaches that call, the SDK makes its fee opt-in:
+`setVotingAccount({ fractionalOnly: true })`, on delegating and clearing alike.
 
 Fractional delegation integrated: `importFracDelegations` (admin) wires the fractional-delegation
 subsystem into gGov's delegation model: the so-called escrow accounts delegate¹ to fractional-delegation
