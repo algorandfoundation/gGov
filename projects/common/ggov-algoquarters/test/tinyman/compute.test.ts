@@ -157,6 +157,50 @@ describe('computeAlgoQuarters', () => {
     expect(staking.get(ALICE)).toBe(20n)
   })
 
+  it('does not double-count the boundary round: a full transfer gives the sender [start, T) and the receiver [T, end)', () => {
+    // A balance of exactly MICROALGO_ROUNDS_PER_AQ at rate 1:1 earns precisely 1 AQ per round,
+    // so per-round attribution is visible in whole AQ (a boundary off-by-one would shift a whole AQ).
+    const PER_ROUND = MICROALGO_ROUNDS_PER_AQ // 1 AQ / round at rate 1:1
+
+    // The scenario from the task: ALICE holds from round 1 and sends it ALL to BOB at round 5.
+    // Expected: ALICE is credited [1, 5) (4 rounds), BOB [5, 10) (5 rounds) — round 5 belongs to BOB only.
+    const start = 1
+    const transferRound = 5
+    const end = 10
+    const result = computeAlgoQuarters(
+      balancesOf([ALICE, PER_ROUND, 0n]),
+      [makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: PER_ROUND, round: transferRound })],
+      start,
+      end,
+      RATE_SCALER,
+    )
+
+    expect(result.get(ALICE)).toBe(BigInt(transferRound - start)) // [1, 5) → 4 AQ
+    expect(result.get(BOB)).toBe(BigInt(end - transferRound)) // [5, 10) → 5 AQ
+    // The boundary round is counted exactly once: the two sides sum to the whole window, no more, no less.
+    expect(result.get(ALICE)! + result.get(BOB)!).toBe(BigInt(end - start)) // 9 AQ
+  })
+
+  it('does not double-count when the same balance hops A → B → C, each hop crediting the boundary once', () => {
+    const PER_ROUND = MICROALGO_ROUNDS_PER_AQ
+    const result = computeAlgoQuarters(
+      balancesOf([ALICE, PER_ROUND, 0n]),
+      [
+        makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: PER_ROUND, round: 4 }),
+        makeTagged('talgo', { sender: BOB, receiver: CAROL, amount: PER_ROUND, round: 9 }),
+      ],
+      1,
+      12,
+      RATE_SCALER,
+    )
+
+    expect(result.get(ALICE)).toBe(3n) // [1, 4)
+    expect(result.get(BOB)).toBe(5n) // [4, 9)
+    expect(result.get(CAROL)).toBe(3n) // [9, 12)
+    // Every round of the window is attributed to exactly one holder.
+    expect(result.get(ALICE)! + result.get(BOB)! + result.get(CAROL)!).toBe(11n) // [1, 12)
+  })
+
   it('splitting a window at a boundary preserves every account total when both windows floor cleanly', () => {
     const transfers = [
       makeTagged('talgo', { sender: ALICE, receiver: BOB, amount: 2_000_000n, round: QUARTER }),
