@@ -11,7 +11,7 @@
  *     pnpm seed-localnet-data
  *
  *   Leave period 2 as an editable draft instead of a voted one, to work on it from the Manage UI:
- *     SEED_ACTIVE_PERIOD=draft pnpm seed-localnet-data
+ *     SEED_DRAFT_PERIOD=true pnpm seed-localnet-data
  *
  * REQUIREMENTS
  *   Algokit localnet running, both SDKs built (`algokit project run build` builds all projects).
@@ -65,7 +65,7 @@
  * 8) PERIOD 2 (ACTIVE)
  *   Two elections on one shared ballot — one committee, one window, one vote() — each with its own
  *   candidates, seats and ranking. Deliberately half-voted so there is live work left from the UI,
- *   or left unready and unvoted under SEED_ACTIVE_PERIOD=draft so Manage can still edit it.
+ *   or left unready and unvoted under SEED_DRAFT_PERIOD=true so Manage can still edit it.
  *
  * 9) PERIOD 3 (UPCOMING)
  *   A standard vote, ready and pre-synced by the instances, no votes yet.
@@ -125,10 +125,10 @@ const COMMITTEE_PERIOD_END = 53_000_000
 const ENDED_VOTING_WINDOW_SECONDS = 40
 
 /**
- * How period 2 is left, from SEED_ACTIVE_PERIOD. `voted` (the default) casts its ballots, which
- * locks the period; `draft` stops before `setReady` instead, so stays editable.
+ * How period 2 is left. By default it casts its ballots, which locks the period; this stops
+ * before `setReady` instead, so it stays editable.
  */
-const ACTIVE_PERIOD_MODE = process.env.SEED_ACTIVE_PERIOD === 'draft' ? 'draft' : 'voted'
+const DRAFT_ACTIVE_PERIOD = process.env.SEED_DRAFT_PERIOD === 'true'
 
 /** Persona wallets are unencrypted like the LocalNet default, so switching only needs the name. */
 const PERSONA_WALLET_PASSWORD = ''
@@ -277,6 +277,15 @@ const ACTIVE_CANDIDATE_TOPICS = [
   { title: 'tinyman.algo', body: 'Tinyman AMM liquidity and grants steward.', e: 1 },
 ]
 
+/** Period 3's topics. A standard vote, not an election, so they carry no `e` tag and no candidates. */
+const UPCOMING_TOPICS = [
+  { title: 'Protocol Upgrade v2.0', body: 'Approve deployment of Protocol v2.0 (state proofs, block pipelining).' },
+  {
+    title: 'Ecosystem Development Fund',
+    body: 'Allocate 1M ALGO to an ecosystem development fund for grants and tooling.',
+  },
+]
+
 /** Period 1: 11 of the 15 non-escrow members vote, shaped for a clean descending ranking. */
 const ENDED_BALLOTS: Ballot[] = [
   { voter: 'alice', ballot: 'YYYYN' },
@@ -344,6 +353,14 @@ const hex = (bytes: Uint8Array) =>
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
 const num = (n: number) => n.toLocaleString('en-US')
+
+/** A period's races for the summary: `xGov Council 3 seats/4 cands · EAC 1 seat/3 cands`. */
+const races = (elections: Election[], candidates: { title: string; e?: number }[]) =>
+  elections
+    .map(
+      (e, i) => `${e.t} ${e.s} seat${e.s === 1 ? '' : 's'}/${candidates.filter((c) => (c.e ?? 0) === i).length} cands`,
+    )
+    .join(' · ')
 
 let stepNumber = 0
 /** The only progress output inside the pipeline: one line per step, because the run takes minutes. */
@@ -592,9 +609,9 @@ async function main() {
    * — with `elect`, one entry per election, for an election period — add the topics, set the real
    * window, mark it ready, fund its vote-record boxes, and sync it on both frac-delegation instances.
    *
-   * `ready: false` stops after funding, leaving an editable draft: setReady is what freezes the topic
-   * set, and syncPeriod refuses an unready period (ERR:GP_NOTREADY) precisely because a snapshot
-   * taken while topics can still change would cache a shape that then drifts out from under it.
+   * `draft` leaves the period editable: `setReady` is what freezes the topic set, and `syncPeriod`
+   * refuses an unready period (ERR:GP_NOTREADY) precisely because a snapshot taken while topics
+   * can still change would cache a shape that then drifts out from under it.
    */
   async function createPeriodHelper(opts: {
     title: string
@@ -603,9 +620,8 @@ async function main() {
     topics: { title: string; body: string; options?: string[]; e?: number }[]
     votingStart: bigint
     votingEnd: bigint
-    ready?: boolean
+    draft?: boolean
   }): Promise<bigint> {
-    const ready = opts.ready ?? true
     const periodId = (await sdk.registry.addPeriod({
       committeeId,
       votingStart: now + 100000n,
@@ -634,7 +650,7 @@ async function main() {
       })
     }
     await sdk.editPeriod({ periodId, committeeId, votingStart: opts.votingStart, votingEnd: opts.votingEnd })
-    if (ready) await sdk.setReady({ periodId, ready: true })
+    if (!opts.draft) await sdk.setReady({ periodId, ready: true })
 
     // The period app pays MBR for one vote-record box per voter, so needs funding.
     // TODO: this extra payment won't be needed in the future. See `FUNDING`.
@@ -647,7 +663,7 @@ async function main() {
     })
 
     // Snapshot the now-ready period on both instances. Without this an instance's vote() has nothing to write into (ERR:GP_NX).
-    if (ready) {
+    if (!opts.draft) {
       for (const instance of INSTANCES) {
         await fracSdk.syncPeriod({ instanceNumId: instanceNumIds.get(instance.label)!, periodApp: periodAppId })
       }
@@ -735,7 +751,7 @@ async function main() {
   // 8. PERIOD 2 — ACTIVE two-election period
   // =========================================================
 
-  step(`Period 2 — ACTIVE two-election period (${ACTIVE_PERIOD_MODE})…`)
+  step(`Period 2 — ${DRAFT_ACTIVE_PERIOD ? 'DRAFT' : 'ACTIVE'} two-election period…`)
 
   const activePeriodId = await createPeriodHelper({
     title: 'gGov Council — Term 2 elections',
@@ -744,9 +760,9 @@ async function main() {
     topics: ACTIVE_CANDIDATE_TOPICS,
     votingStart: now - 3600n,
     votingEnd: now + 86400n * 7n,
-    ready: ACTIVE_PERIOD_MODE === 'voted',
+    draft: DRAFT_ACTIVE_PERIOD,
   })
-  if (ACTIVE_PERIOD_MODE === 'voted') {
+  if (!DRAFT_ACTIVE_PERIOD) {
     await castBallots(activePeriodId, ACTIVE_BALLOTS)
     await castFracBallots(activePeriodId, ACTIVE_FRAC_BALLOTS)
   }
@@ -762,13 +778,7 @@ async function main() {
   const upcomingPeriodId = await createPeriodHelper({
     title: 'Q2 2026 Governance',
     body: 'Upcoming governance period covering protocol upgrades and ecosystem strategy.',
-    topics: [
-      { title: 'Protocol Upgrade v2.0', body: 'Approve deployment of Protocol v2.0 (state proofs, block pipelining).' },
-      {
-        title: 'Ecosystem Development Fund',
-        body: 'Allocate 1M ALGO to an ecosystem development fund for grants and tooling.',
-      },
-    ],
+    topics: UPCOMING_TOPICS,
     votingStart: now + 86400n * 14n,
     votingEnd: now + 86400n * 28n,
   })
@@ -785,6 +795,13 @@ async function main() {
   const directVotes = ENDED_BALLOTS.reduce((sum, b) => sum + GOV_VOTES[b.voter], 0)
   const escrowVotes = escrowLabels.reduce((sum, label) => sum + GOV_VOTES[label], 0)
   const endedPeriod = await sdk.getPeriod(endedPeriodId)
+  // getPeriod turns a failed read into an empty period rather than throwing, and a period with no
+  // topics passes the tally loop below without checking anything. Count them first.
+  if (endedPeriod.topics.length !== ENDED_CANDIDATE_TOPICS.length) {
+    throw new Error(
+      `Period ${endedPeriodId}: read back ${endedPeriod.topics.length} topics, expected ${ENDED_CANDIDATE_TOPICS.length}.`,
+    )
+  }
   for (const [i, [, votes]] of endedPeriod.topics.entries()) {
     const tallied = votes.reduce((a, b) => a + b, 0)
     if (tallied !== directVotes + escrowVotes) {
@@ -893,21 +910,15 @@ async function main() {
         `over ${Object.keys(i.aq).length} accounts`,
     ),
   )
-  const races = ACTIVE_ELECTIONS.map(
-    (e, i) =>
-      `${e.t} ${e.s} seat${e.s === 1 ? '' : 's'}/${ACTIVE_CANDIDATE_TOPICS.filter((t) => t.e === i).length} cands`,
-  ).join(' · ')
+  const activeRaces = races(ACTIVE_ELECTIONS, ACTIVE_CANDIDATE_TOPICS)
 
   section(
     'PERIODS',
-    `#${endedPeriodId} ENDED     ${ENDED_ELECTIONS[0].t} ${ENDED_ELECTIONS[0].s} seats/${ENDED_CANDIDATE_TOPICS.length} cands · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
-    ACTIVE_PERIOD_MODE === 'voted'
-      ? `#${activePeriodId} ACTIVE    ${races} · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`
-      : `#${activePeriodId} DRAFT     ${races} · unready and unvoted — edit it under /manage`,
-    ...(ACTIVE_PERIOD_MODE === 'draft'
-      ? ['draft period 2 is unsynced on both instances: once ready, frac voting on it needs a syncPeriod']
-      : []),
-    `#${upcomingPeriodId} UPCOMING  standard vote · 2 topics · opens in 14 days`,
+    `#${endedPeriodId} ENDED     ${races(ENDED_ELECTIONS, ENDED_CANDIDATE_TOPICS)} · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
+    DRAFT_ACTIVE_PERIOD
+      ? `#${activePeriodId} DRAFT     ${activeRaces} · unready and unvoted — edit it under /manage, then syncPeriod it to frac-vote`
+      : `#${activePeriodId} ACTIVE    ${activeRaces} · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`,
+    `#${upcomingPeriodId} UPCOMING  standard vote · ${UPCOMING_TOPICS.length} topics · opens in 14 days`,
   )
   section(
     'WALLETS',
