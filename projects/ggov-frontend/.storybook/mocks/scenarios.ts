@@ -61,6 +61,11 @@ export interface MockScenario {
   pooled?: Record<string, PooledPosition[]>
   /** Producer rank per `${committeeB64}:${account}` (`useProducerRank`). */
   producerRanks?: Record<string, ProducerRank | null>
+  /**
+   * Escrow app id per account (`useAppEscrow`). An account listed here is an
+   * application's escrow, which the account page titles "Application Account".
+   */
+  appEscrows?: Record<string, bigint>
   /** Global registry state (`useGlobalState`, PeriodStatsCard). */
   globalState?: { lastPeriodId?: bigint }
   /** Force loading/error UIs without real async. */
@@ -73,6 +78,10 @@ export interface MockScenario {
      * merged voting-power card shows its pooled chrome with skeleton amounts.
      */
     pooledLoading?: boolean
+    /** Account page: the delegation card / delegator list / vote history skeletons. */
+    delegationLoading?: boolean
+    delegatorsLoading?: boolean
+    votesLoading?: boolean
   }
 }
 
@@ -175,7 +184,13 @@ export interface PeriodConfig {
  */
 export function buildScenario(
   periods: PeriodConfig[],
-  opts?: { globalLastPeriodId?: number; delegations?: Array<[string, string]>; flags?: MockScenario['flags'] },
+  opts?: {
+    globalLastPeriodId?: number
+    delegations?: Array<[string, string]>
+    /** Accounts that are application escrows, mapped to their owning app id. */
+    appEscrows?: Record<string, bigint | number>
+    flags?: MockScenario['flags']
+  },
 ): MockScenario {
   const scenario: MockScenario = {
     periods: [],
@@ -187,6 +202,9 @@ export function buildScenario(
     votingPowers: {},
     producerRanks: {},
     pooled: {},
+    appEscrows: Object.fromEntries(
+      Object.entries(opts?.appEscrows ?? {}).map(([address, appId]) => [address, BigInt(appId)]),
+    ),
     globalState: {
       lastPeriodId: BigInt(opts?.globalLastPeriodId ?? Math.max(0, ...periods.map((p) => p.id))),
     },
@@ -467,6 +485,107 @@ export function detailScenario(o: DetailOptions): MockScenario {
     ],
     { globalLastPeriodId: id, delegations },
   )
+}
+
+// --- Account page ------------------------------------------------------------
+
+/** One committee window the viewed account appears in, newest first. */
+export interface AccountPeriodConfig {
+  /** Direct voting power from blocks the account produced in this committee. */
+  power?: number
+  /** Pooled positions held in this committee; present (even empty) = pool member. */
+  pooled?: PooledPosition[]
+  /** The account voted in this period — seeds a vote record ("Votes cast"). */
+  voted?: boolean
+  /** The vote was cast by a delegate ("↪ Voted by a delegate" tag). */
+  votedByDelegate?: boolean
+  /** Spread the vote across the first two options instead of all on the first. */
+  split?: boolean
+  phase?: Phase
+  title?: string
+}
+
+export interface AccountOptions {
+  /** Address the page is viewing (the `address` route param). */
+  account?: string
+  /** Committee windows / periods for this account, newest first. */
+  periods?: AccountPeriodConfig[]
+  /** Address this account delegates its voting power to. */
+  delegatesTo?: string
+  /** Accounts that delegate their voting power to this account. */
+  delegators?: string[]
+  /** Owning app id — makes the page render as an "Application Account". */
+  appEscrow?: bigint | number
+  flags?: MockScenario['flags']
+}
+
+const ACCOUNT_PERIOD_TITLES = ['Reward policy', 'Treasury direction', 'Protocol upgrade', 'Grants framework']
+
+/**
+ * Account-page scenario: a per-committee power history for one account, plus its
+ * delegation, incoming delegators and vote history.
+ *
+ * Every committee is carried by a period (that's how {@link buildScenario} models
+ * them), so one entry in `periods` is both a committee window on the voting-power
+ * card and a candidate row in "Votes cast". Ids/block windows descend from the
+ * newest entry, so index 0 is the current committee.
+ */
+export function accountScenario(o: AccountOptions = {}): MockScenario {
+  const account = o.account ?? alice.address
+  const configs = o.periods ?? [{ power: 12_480, voted: true }, { power: 11_920, voted: true }, { power: 9_640 }]
+
+  const periods: PeriodConfig[] = configs.map((cfg, i) => {
+    const id = 9 - i
+    const phase = cfg.phase ?? (i === 0 ? 'active' : 'ended')
+    const topics = phase === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS
+    const power = cfg.power ?? 0
+    const voted = !!cfg.voted || !!cfg.votedByDelegate
+    // A pool member votes with its pooled share, so a ballot is weighted by whichever
+    // power the account actually has. It must be non-zero: "Votes cast" hides every
+    // all-zero topic, which would otherwise render as an empty card.
+    const ballotWeight = Math.round(power || (cfg.pooled ?? []).reduce((sum, p) => sum + p.votes, 0)) || 1
+    // The card reads each topic's percentage off the account's own allocation, so
+    // an all-on-one-option record reads "100.0%" and a split one reads "N votes".
+    const voteRecord = voted
+      ? topics.map((t) =>
+          Array.from({ length: t.options.length }, (_, oi) => {
+            if (cfg.split)
+              return oi === 0 ? Math.round(ballotWeight * 0.6) : oi === 1 ? Math.round(ballotWeight * 0.4) : 0
+            return oi === 0 ? ballotWeight : 0
+          }),
+        )
+      : undefined
+
+    return {
+      id,
+      phase,
+      title: `Period ${id} · ${cfg.title ?? ACCOUNT_PERIOD_TITLES[i % ACCOUNT_PERIOD_TITLES.length]}`,
+      topics,
+      committee: { periodStart: 48_200_000 - i * 3_200_000, periodEnd: 51_200_000 - i * 3_200_000 },
+      voters: voted ? [account] : [],
+      accounts: {
+        [account]: {
+          power,
+          votingPower: BigInt(power),
+          voteRecord,
+          isDelegated: cfg.votedByDelegate,
+          ...(cfg.pooled ? { pooled: cfg.pooled } : {}),
+        },
+      },
+    }
+  })
+
+  const delegations: Array<[string, string]> = [
+    ...(o.delegatesTo ? ([[account, o.delegatesTo]] as Array<[string, string]>) : []),
+    ...(o.delegators ?? []).map((d): [string, string] => [d, account]),
+  ]
+
+  return buildScenario(periods, {
+    globalLastPeriodId: 9,
+    delegations,
+    appEscrows: o.appEscrow != null ? { [account]: o.appEscrow } : undefined,
+    flags: o.flags,
+  })
 }
 
 /**

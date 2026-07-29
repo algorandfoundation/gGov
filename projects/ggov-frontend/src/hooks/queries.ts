@@ -489,7 +489,7 @@ export function useGovVotingPowers(
   return out
 }
 
-interface VoteEntry {
+export interface VoteEntry {
   periodId: number
   period: GGovPeriod
   record: GGovVoteRecord
