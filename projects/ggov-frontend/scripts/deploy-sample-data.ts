@@ -916,7 +916,7 @@ async function main() {
     'PERIODS',
     `#${endedPeriodId} ENDED     ${races(ENDED_ELECTIONS, ENDED_CANDIDATE_TOPICS)} · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
     DRAFT_ACTIVE_PERIOD
-      ? `#${activePeriodId} DRAFT     ${activeRaces} · unready and unvoted — edit it under /manage, then syncPeriod it to frac-vote`
+      ? `#${activePeriodId} DRAFT     ${activeRaces} · unready and unvoted`
       : `#${activePeriodId} ACTIVE    ${activeRaces} · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`,
     `#${upcomingPeriodId} UPCOMING  standard vote · ${UPCOMING_TOPICS.length} topics · opens in 14 days`,
   )
