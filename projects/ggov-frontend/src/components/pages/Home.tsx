@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Droplets, History } from 'lucide-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { usePeriods, usePeriodBody, type PeriodWithId } from '@/hooks/queries'
 import { periodStatus, formatDateRange, type PeriodStatus } from '@/utils/time'
-import { Button } from '@/components/ui/button'
+import { Eyebrow } from '@/components/ui/eyebrow'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 import FocusedPeriodHero from '@/components/vote/FocusedPeriodHero'
 import { PeriodStatusTag } from '@/components/vote/PeriodRow'
 
@@ -31,18 +31,31 @@ function OtherPeriodRow({ periodId, period }: { periodId: number; period: GGovPe
 }
 
 const STEPS = [
-  { n: '01', title: 'One block, one vote', body: 'Your weight equals the blocks you produced.' },
-  { n: '02', title: '3M-block window', body: 'Each window spans 3M blocks, advancing 1M at a time.' },
-  { n: '03', title: 'No opt-in required', body: 'No ALGO committed — just vote.' },
-  { n: '04', title: 'Pooled stake counts', body: 'Pool & liquid stakers vote their share pro-rata.' },
+  {
+    n: '01',
+    title: 'One block, one vote',
+    body: 'Your weight equals the blocks you produced over the voting committee window.',
+  },
+  { n: '02', title: '3M-block window', body: 'Committee windows span 3M blocks, advancing 1M at a time.' },
+  {
+    n: '03',
+    title: 'Pooled stake counts',
+    body: 'Hold xALGO or tALGO, or stake with a Reti pool? Vote your prorated share.',
+    // The one step that isn't about producing blocks yourself — third rather than
+    // last, so it reads as part of "who can vote" instead of an afterthought. It
+    // carries the only teal in the grid: tinted cell, teal number, POOLED pill.
+    pooled: true,
+  },
+  { n: '04', title: 'No opt-in required', body: "Nothing to register or commit. If you're eligible, come and vote." },
 ]
 
 /**
  * gGov homepage — a focused single-column ballot. One featured period (the active
  * one, else the soonest upcoming, else the latest closed) leads with a progress
  * dial and CTA; the rest collapse into a quiet "Other periods" list (with a link
- * through to the full list), then a "How Governance works" explainer and a quiet
- * pointer to the legacy (periods 1–15) portal.
+ * through to the full list), and finally one card carrying the "How Governance
+ * works" primer over a legacy-portal (periods 1–15) footer strip. Pooled voting
+ * gets no callout of its own here — step 03 of the primer carries it.
  */
 export default function Home() {
   const { data: periods = [], isLoading } = usePeriods()
@@ -103,72 +116,80 @@ export default function Home() {
         </section>
       )}
 
-      <section className="mx-auto w-full max-w-[860px] bg-muted/40 p-7">
-        <h2 className="mb-4 text-center font-display text-base font-bold">How Governance works</h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
-          {STEPS.map((s) => (
-            <div key={s.n}>
-              <div className="font-display text-sm font-bold text-algo-blue dark:text-algo-teal">{s.n}</div>
-              <div className="mt-1 text-[13.5px] font-semibold">{s.title}</div>
-              <div className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground">{s.body}</div>
+      {/* One card for the page's two closing blocks — the "how it works" primer and
+          the legacy-portal pointer — which used to be separate stacked sections. */}
+      <section className="mx-auto w-full max-w-[860px] pb-10">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="flex flex-col gap-2 border-b border-border px-[18px] py-4 md:flex-row md:items-end md:justify-between md:gap-5 md:px-6 md:pb-[18px] md:pt-5">
+            <div>
+              <Eyebrow>The basics</Eyebrow>
+              <h2 className="mt-2 font-display text-lg font-bold md:text-[21px]">How Governance works</h2>
             </div>
-          ))}
-        </div>
-        <div className="mt-6 flex justify-center">
-          <Button asChild variant="secondary">
-            <Link to="/docs">Read the Governance docs</Link>
-          </Button>
-        </div>
-      </section>
+            <Link
+              to="/docs"
+              className="shrink-0 whitespace-nowrap text-[13px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+            >
+              Read the Governance docs →
+            </Link>
+          </div>
 
-      {/* Pooled voting is invisible to a staker who doesn't know it exists — their
-          power sits with the pool's escrows, not their own account — so this is
-          unconditional rather than gated on wallet state. Sits after the "how it
-          works" primer: it reads as a follow-on for stakers who just learned the
-          basics, rather than interrupting the period list with an edge case. */}
-      <section className="mx-auto w-full max-w-[680px]">
-        <div className="flex items-start gap-4 rounded-lg border border-algo-teal/20 bg-algo-teal/10 px-5 py-[18px]">
-          <span className="grid size-[42px] shrink-0 place-items-center rounded-full bg-card text-algo-teal">
-            <Droplets className="size-[21px]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="font-display text-[15.5px] font-bold">Staking through a pool? You vote here too.</div>
-            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-              If you hold xALGO or tALGO, or stake with a Reti pool, your share of the pool's voting power is yours to
-              cast.
-            </p>
-            <div className="mt-2.5 text-right">
-              <Link
-                to="/docs/pooled-voting"
-                className="text-[13px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+          {/* Two states only, matching the design: stacked, or the full 4-up row.
+              An intermediate 2-up would need its own hairline rules for cells that
+              start a row, and buys nothing at these copy lengths. */}
+          <div className="grid grid-cols-1 md:grid-cols-4">
+            {STEPS.map((s) => (
+              <div
+                key={s.n}
+                className={cn(
+                  // Hairlines run *between* cells: above each while stacked, beside
+                  // each once they sit in a row. The first cell has neither — the
+                  // header's own bottom border already closes it off.
+                  'border-t border-border px-[18px] py-[15px] first:border-t-0',
+                  'md:border-l md:border-t-0 md:px-5 md:pb-5 md:pt-[18px] md:first:border-l-0',
+                  s.pooled && 'bg-algo-teal/10',
+                )}
               >
-                How it works →
-              </Link>
-            </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'font-display text-sm font-bold',
+                      s.pooled ? 'text-teal-strong' : 'text-algo-blue dark:text-algo-teal',
+                    )}
+                  >
+                    {s.n}
+                  </span>
+                  {/* Stacked, the title shares the number's line to keep four steps
+                      from dominating the page; in the grid it gets its own line.
+                      Rendered twice rather than reordered — flex `order` can't move
+                      it past the number on one axis and the pill on the other. */}
+                  <span className="text-[14px] font-semibold md:hidden">{s.title}</span>
+                  {s.pooled && (
+                    <span className="rounded-full bg-card px-[7px] py-[2px] text-[9.5px] font-bold uppercase tracking-[0.06em] text-teal-strong">
+                      Pooled
+                    </span>
+                  )}
+                </div>
+                <div className="mt-[7px] hidden text-[14.5px] font-semibold md:block">{s.title}</div>
+                <div className="mt-1 text-[12.5px] leading-snug text-muted-foreground md:text-[13px]">{s.body}</div>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
 
-      <section className="mx-auto w-full max-w-[760px] pb-10">
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-[18px]">
-          <div className="flex w-full items-center gap-[18px] sm:flex-1">
-            <History className="size-[22px] shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1">
-              <div className="font-display text-[15px] font-bold">Periods 1–15 · Legacy governance</div>
-              <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-                The 2021–2025 ALGO-commitment rounds ran on a separate portal. Results and historical votes remain
-                available there.
-              </p>
-            </div>
+          <div className="flex flex-col gap-1 border-t border-border bg-muted/50 px-[18px] py-3.5 md:flex-row md:items-center md:justify-between md:gap-5 md:px-6">
+            <p className="text-[12.5px] leading-snug text-muted-foreground">
+              Looking for <strong className="font-semibold text-foreground">Periods 1–15</strong>?{' '}
+              <span className="hidden md:inline">The 2021–2025 ALGO-commitment rounds</span>
+              <span className="md:hidden">Those rounds</span> ran on a separate portal.
+            </p>
+            <a
+              href="https://governance.algorand.foundation/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 whitespace-nowrap text-[13px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+            >
+              Open legacy portal →
+            </a>
           </div>
-          <a
-            href="https://governance.algorand.foundation/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 whitespace-nowrap text-[13.5px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
-          >
-            Open legacy portal →
-          </a>
         </div>
       </section>
     </div>
