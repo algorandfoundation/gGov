@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { useAddressName } from '@/hooks/use-nfd'
 import { ellipseAddress } from '@/utils/ellipseAddress'
@@ -87,8 +88,16 @@ export default function PooledSharePanel({
           ))}
         </div>
       </div>
+      {/* Kept to the plain-language version — AlgoQuarters and the exact division
+          are the docs' job, not a footnote's. */}
       <div className="border-t border-border bg-muted/40 px-5 py-[11px] text-[11.5px] leading-snug text-muted-foreground">
-        Your share is your AlgoQuarters (stake × time) ÷ the pool's total, applied to the pool's snapshotted power.
+        These represent your prorated share of pooled staking based on your contributions.{' '}
+        <Link
+          to="/docs/pooled-voting"
+          className="font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+        >
+          Learn more
+        </Link>
       </div>
     </div>
   )

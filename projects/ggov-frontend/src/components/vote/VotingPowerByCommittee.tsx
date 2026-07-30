@@ -203,8 +203,13 @@ export default function VotingPowerByCommittee({ account }: { account: string })
       </Surface>
       {showPooled && (
         <p className="mt-2 text-[11.5px] leading-snug text-muted-foreground">
-          Pooled shares are this account's AlgoQuarters (stake × time, derived from staking operations) ÷ the pool's
-          total, applied per committee.
+          These represent your prorated share of pooled staking based on your contributions.{' '}
+          <Link
+            to="/docs/pooled-voting"
+            className="font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+          >
+            Learn more
+          </Link>
         </p>
       )}
     </div>
