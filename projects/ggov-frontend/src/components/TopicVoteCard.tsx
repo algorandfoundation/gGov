@@ -2,6 +2,7 @@ import * as React from 'react'
 import { ClampedMarkdown } from '@/components/ui/clamped-markdown'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { Badge } from '@/components/ui/badge'
+import { formatApprox } from '@/utils/format'
 import { cn } from '@/lib/utils'
 
 export type TopicVoteMode = 'upcoming' | 'results' | 'select' | 'advanced'
@@ -21,6 +22,19 @@ interface TopicVoteCardProps {
   onAdvancedChange?: (optionIdx: number, value: number) => void
   /** Voting power of the active voter — drives advanced allocation % and the simple "All N votes" note. */
   votingPower?: number
+  /**
+   * Unit `votingPower` is expressed in. Defaults to "votes"; a pooled ballot passes
+   * "AQ", since a staking pool's ballot is weighted in AlgoQuarters and converted to
+   * votes by the pool when it casts.
+   */
+  unit?: string
+  /**
+   * gGov votes the full weight is worth, shown in `select` mode in place of
+   * `votingPower`/`unit`. A pooled ballot's simple mode labels the choice in votes
+   * ("All ≈ 1,204.50 votes") and leaves AlgoQuarters to the advanced ballot, where
+   * the voter is allocating them by hand.
+   */
+  approxVotes?: number
   /** Option the connected voter recorded a vote for (`results` mode "YOUR VOTE" tag). */
   votedOptionIdx?: number
   /** Footer node, e.g. an allocation summary in `advanced` mode. */
@@ -65,6 +79,8 @@ export default function TopicVoteCard({
   advancedVotes,
   onAdvancedChange,
   votingPower,
+  unit = 'votes',
+  approxVotes,
   votedOptionIdx,
   footer,
   outcome,
@@ -188,9 +204,11 @@ export default function TopicVoteCard({
                     </span>
                     <span className="truncate font-medium text-foreground">{option}</span>
                   </div>
-                  {isSelected && votingPower != null && (
+                  {isSelected && (approxVotes != null || votingPower != null) && (
                     <span className="shrink-0 text-[12.5px] font-semibold text-primary dark:text-algo-teal">
-                      All {votingPower.toLocaleString()} votes
+                      {approxVotes != null
+                        ? `All ≈ ${formatApprox(approxVotes)} votes`
+                        : `All ${votingPower!.toLocaleString()} ${unit}`}
                     </span>
                   )}
                 </button>
@@ -221,12 +239,12 @@ export default function TopicVoteCard({
                       name={`votes-${topicIdx}-${optIdx}`}
                       type="number"
                       min={0}
-                      aria-label={`Votes for ${option}`}
+                      aria-label={`${unit === 'votes' ? 'Votes' : unit} for ${option}`}
                       className="w-full border-none bg-transparent text-right font-mono text-[13px] tabular-nums text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       value={alloc}
                       onChange={(e) => onAdvancedChange?.(optIdx, Number(e.target.value))}
                     />
-                    <span className="shrink-0 text-[11px] text-muted-foreground">votes</span>
+                    <span className="shrink-0 text-[11px] text-muted-foreground">{unit}</span>
                   </div>
                 </div>
               )

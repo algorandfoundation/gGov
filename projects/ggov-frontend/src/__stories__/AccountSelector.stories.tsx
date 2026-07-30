@@ -14,11 +14,13 @@ function Selectable({
   initial = null,
   connectedCount,
   delegatedCount,
+  pooledCount,
 }: {
   accounts: AccountSelectorItem[]
   initial?: string | null
   connectedCount?: number
   delegatedCount?: number
+  pooledCount?: number
 }) {
   const [selected, setSelected] = useState<string | null>(initial)
   return (
@@ -29,9 +31,20 @@ function Selectable({
         onSelect={setSelected}
         connectedCount={connectedCount}
         delegatedCount={delegatedCount}
+        pooledCount={pooledCount}
       />
     </div>
   )
+}
+
+/** A pooled row fixture; `sharePct`/`votes` are consistent the way the hook derives them. */
+function pool(id: string, instanceName: string, userAq: number, totalAq: number, poolVotes: number) {
+  return {
+    id,
+    instanceName,
+    sharePct: (userAq / totalAq) * 100,
+    votes: (userAq / totalAq) * poolVotes,
+  }
 }
 
 const meta: Meta<typeof AccountSelector> = {
@@ -138,6 +151,63 @@ export const ResolvedNfdName: Story = {
       accounts={[
         { address: alice.address, votingPower: 4200n, canVote: true },
         { address: bob.address, votingPower: 2100n, canVote: true },
+      ]}
+    />
+  ),
+}
+
+export const PooledPositions: Story = {
+  name: 'Pooled positions (nested · every status)',
+  render: () => (
+    <Selectable
+      connectedCount={1}
+      delegatedCount={1}
+      pooledCount={4}
+      initial={alice.address}
+      accounts={[
+        {
+          address: alice.address,
+          votingPower: 4200n,
+          canVote: true,
+          pooled: [
+            { ...pool('1:a', 'Folks Finance xALGO', 4_120, 512_400, 509_800), canVote: true },
+            // Already cast through this pool.
+            { ...pool('2:a', 'Reti pool #42', 1_730, 91_050, 90_600), canVote: true, hasVoted: true },
+            // Pool hasn't snapshotted the period / is still ingesting AQ.
+            { ...pool('3:a', 'Tinyman tALGO', 900, 240_000, 238_000), canVote: false, poolNotReady: true },
+          ],
+        },
+        {
+          address: bob.address,
+          votingPower: 2100n,
+          canVote: true,
+          // A delegator's own pool: reads "<bob>'s share" and nests two levels deep.
+          pooled: [{ ...pool('2:b', 'Reti pool #17', 640, 91_050, 90_600), viaAddress: bob.address, canVote: true }],
+        },
+      ]}
+    />
+  ),
+}
+
+export const PooledOnlyAccount: Story = {
+  name: 'Pooled only (account has no direct power)',
+  // The account row is dimmed and unselectable, but survives as the header its
+  // pools nest under — otherwise the only votable positions would vanish.
+  render: () => (
+    <Selectable
+      connectedCount={1}
+      pooledCount={2}
+      initial="1:a"
+      accounts={[
+        {
+          address: carol.address,
+          votingPower: 0n,
+          canVote: false,
+          pooled: [
+            { ...pool('1:a', 'Folks Finance xALGO', 4_120, 512_400, 509_800), canVote: true },
+            { ...pool('2:a', 'Reti pool #42', 1_730, 91_050, 90_600), canVote: true },
+          ],
+        },
       ]}
     />
   ),

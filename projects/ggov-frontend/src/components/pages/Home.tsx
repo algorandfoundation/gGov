@@ -103,32 +103,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Pooled voting is invisible to a staker who doesn't know it exists — their
-          power sits with the pool's escrows, not their own account — so this is
-          unconditional rather than gated on wallet state. */}
-      <section className="mx-auto w-full max-w-[680px]">
-        <div className="flex items-start gap-4 rounded-lg border border-algo-teal/20 bg-algo-teal/10 px-5 py-[18px]">
-          <span className="grid size-[42px] shrink-0 place-items-center rounded-full bg-card text-algo-teal">
-            <Droplets className="size-[21px]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="font-display text-[15.5px] font-bold">Staking through a pool? You vote here too.</div>
-            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-              If you hold xALGO or tALGO, or stake with a Reti pool, your share of the pool's voting power is yours to
-              cast — no unstaking required.
-            </p>
-            <div className="mt-2.5 text-right">
-              <Link
-                to="/docs/pooled-voting"
-                className="text-[13px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
-              >
-                How it works →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="mx-auto w-full max-w-[860px] bg-muted/40 p-7">
         <h2 className="mb-4 text-center font-display text-base font-bold">How Governance works</h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
@@ -144,6 +118,34 @@ export default function Home() {
           <Button asChild variant="secondary">
             <Link to="/docs">Read the Governance docs</Link>
           </Button>
+        </div>
+      </section>
+
+      {/* Pooled voting is invisible to a staker who doesn't know it exists — their
+          power sits with the pool's escrows, not their own account — so this is
+          unconditional rather than gated on wallet state. Sits after the "how it
+          works" primer: it reads as a follow-on for stakers who just learned the
+          basics, rather than interrupting the period list with an edge case. */}
+      <section className="mx-auto w-full max-w-[680px]">
+        <div className="flex items-start gap-4 rounded-lg border border-algo-teal/20 bg-algo-teal/10 px-5 py-[18px]">
+          <span className="grid size-[42px] shrink-0 place-items-center rounded-full bg-card text-algo-teal">
+            <Droplets className="size-[21px]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-[15.5px] font-bold">Staking through a pool? You vote here too.</div>
+            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
+              If you hold xALGO or tALGO, or stake with a Reti pool, your share of the pool's voting power is yours to
+              cast.
+            </p>
+            <div className="mt-2.5 text-right">
+              <Link
+                to="/docs/pooled-voting"
+                className="text-[13px] font-semibold text-algo-blue transition-colors hover:opacity-80 dark:text-algo-teal"
+              >
+                How it works →
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

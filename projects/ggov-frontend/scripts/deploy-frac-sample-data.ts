@@ -148,6 +148,11 @@ const GOV_VOTES: Record<string, number> = {
  * Note the deliberate overlap with the committee: g1/g4 hold tALGO and g5 stakes in a Réti pool, so
  * the gov and AQ-holder sets intersect without being the same set. u1..u10 are pure staking
  * protocol users with no gGov voting power of their own.
+ *
+ * `bob` holds tALGO *and* delegates to alice, which is what puts a pooled position two levels deep
+ * on the ballot — alice > "bob, delegated to you" > his Tinyman share — and makes the delegated frac
+ * vote reachable (alice signs, bob's AlgoQuarters are cast). His AQ comes out of u1's rather than
+ * being added on top, so each instance's total still matches the convention above.
  */
 const INSTANCES = [
   {
@@ -155,10 +160,11 @@ const INSTANCES = [
     escrows: ['x1'],
     aq: {
       alice: 120_000,
+      bob: 70_000,
       carol: 85_000,
       g1: 240_000,
       g4: 60_000,
-      u1: 310_000,
+      u1: 240_000,
       u2: 145_000,
       u3: 95_000,
       u4: 260_000,

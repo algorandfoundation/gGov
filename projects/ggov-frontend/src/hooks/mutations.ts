@@ -46,6 +46,54 @@ export function useVoteMutation() {
 }
 
 /**
+ * Cast a pooled ballot: an internal vote on one staking pool's frac *instance*,
+ * weighted in AlgoQuarters rather than gGov votes.
+ *
+ * `voterAccount` is whose AlgoQuarters are cast — the signer itself, or an account
+ * that delegated to the signer (the frac contract honours the same gGov delegation
+ * as a direct vote). The instance maps its internal tally onto its escrows' gGov
+ * power and **re-casts externally inside the same group**, which is why the gGov
+ * period's own tallies and voter set are invalidated here alongside the frac
+ * record: a pooled vote moves the period's numbers too.
+ */
+export function useFracVoteMutation() {
+  const { getFracSDK } = useGGovSDK()
+  const queryClient = useQueryClient()
+  const { showError } = useErrorDialog()
+
+  return useMutation({
+    mutationFn: async (args: {
+      instanceNumId: number
+      periodId: number
+      voterAccount: string
+      /** [topic][option] AlgoQuarters; every topic must total the voter's full AQ weight. */
+      topicVotes: number[][]
+    }) => {
+      const sdk = await getFracSDK()
+      // Unreachable from the UI (pooled rows only render when a frac registry is
+      // configured and a wallet is connected), but a clear message beats a crash.
+      if (!sdk) throw new Error('Pooled voting is not available on this network.')
+      return sdk.vote({
+        instanceNumId: args.instanceNumId,
+        periodId: args.periodId,
+        voterAccount: args.voterAccount,
+        topicVotes: args.topicVotes,
+      })
+    },
+    onSuccess: (data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.fracVotingRecords(vars.voterAccount, vars.periodId) })
+      // Eligibility can flip on this vote (a delegate's cast is now overridable
+      // only by the owner), so drop every canVote entry for the period.
+      void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'fracCanVote' })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.voters(vars.periodId) })
+      txnSuccessToast('Pooled vote submitted', data)
+    },
+    onError: (err) => showError(err, { transaction: true }),
+  })
+}
+
+/**
  * Whether a `set_voting_account` for `account` needs the `fractionalOnly` flag.
  *
  * The registry's `ensureDelegatorRegistered` accepts a delegator known to *either*

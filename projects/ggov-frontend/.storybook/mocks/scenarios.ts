@@ -58,7 +58,7 @@ export interface MockScenario {
    * array still marks the account a pool member, which is what the merged
    * voting-power card commits its layout on.
    */
-  pooled?: Record<string, PooledPosition[]>
+  pooled?: Record<string, MockPooledPosition[]>
   /** Producer rank per `${committeeB64}:${account}` (`useProducerRank`). */
   producerRanks?: Record<string, ProducerRank | null>
   /**
@@ -136,6 +136,22 @@ export interface TopicConfig {
   e?: number
 }
 
+/**
+ * A pooled position in a scenario, plus the ballot-only state the vote page needs.
+ * The extra fields are ignored by the account-page surfaces (which only read
+ * `PooledPosition`), so one fixture drives both.
+ */
+export type MockPooledPosition = PooledPosition & {
+  /** Ballot eligibility (the contract's `canVote`); defaults to true. */
+  canVote?: boolean
+  /** Recorded pooled ballot, [topic][option] AlgoQuarters; present = this position voted. */
+  voteRecord?: number[][]
+  /** The owner cast it directly, so a delegate can't override. */
+  votedDirectly?: boolean
+  /** Has stake, but the pool hasn't synced this period / is still ingesting AQ. */
+  poolNotReady?: boolean
+}
+
 /** Per-account state within one period. */
 export interface AccountState {
   /** Registry xGov voting power (also the default eligibility gate). */
@@ -155,7 +171,7 @@ export interface AccountState {
    * still marks the account a pool member — useful for the "member, amounts not in
    * yet" state the merged voting-power card renders with skeletons.
    */
-  pooled?: PooledPosition[]
+  pooled?: MockPooledPosition[]
 }
 
 export interface PeriodConfig {
@@ -418,7 +434,16 @@ export interface DetailOptions {
   /** Elections this period runs; presence makes it an election period. */
   elect?: Election[]
   /** Delegators that point at `account` (shown nested in the selector). */
-  delegators?: Array<{ address: string; power?: number; voted?: boolean; votedDirectly?: boolean }>
+  delegators?: Array<{
+    address: string
+    power?: number
+    voted?: boolean
+    votedDirectly?: boolean
+    /** This delegator's own pools — the two-levels-deep rows in the selector. */
+    pooled?: MockPooledPosition[]
+  }>
+  /** Pooled positions `account` holds, nested under it in the selector. */
+  pooled?: MockPooledPosition[]
 }
 
 /** Full detail-page scenario for one period with eligibility/vote permutations. */
@@ -447,6 +472,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
       votingPower: BigInt(power),
       voteRecord,
       producerRank: eligible ? rank(4) : undefined,
+      pooled: o.pooled,
     }
     if (voteRecord) voters.push(account)
 
@@ -464,6 +490,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
         // A delegator that voted directly cannot be overridden by its delegate.
         isDelegated: d.votedDirectly ? false : true,
         producerRank: rank(18),
+        pooled: d.pooled,
       }
       delegations.push([d.address, account])
       if (dRecord) voters.push(d.address)
@@ -494,7 +521,7 @@ export interface AccountPeriodConfig {
   /** Direct voting power from blocks the account produced in this committee. */
   power?: number
   /** Pooled positions held in this committee; present (even empty) = pool member. */
-  pooled?: PooledPosition[]
+  pooled?: MockPooledPosition[]
   /** The account voted in this period — seeds a vote record ("Votes cast"). */
   voted?: boolean
   /** The vote was cast by a delegate ("↪ Voted by a delegate" tag). */

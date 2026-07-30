@@ -53,6 +53,15 @@ export const queryKeys = {
     ['fracInstanceCommittees', instanceNumId, count] as const,
   fracAccountCommitteeAq: (account: string, committeeId: string) =>
     ['fracAccountCommitteeAq', account, committeeId] as const,
+  // Several accounts' frac registry records in one read. Sorted+joined so the key
+  // is order-independent; overlaps `fracAccount` for a single account by design,
+  // since the two callers batch differently (see hooks/fracQueries.ts).
+  fracAccounts: (accounts: string[]) => ['fracAccounts', [...accounts].sort().join(',')] as const,
+  // Whether `sender` may cast `voter`'s pooled ballot on one instance, and its AQ weight.
+  fracCanVote: (periodId: number, instanceNumId: number, voter: string, sender: string) =>
+    ['fracCanVote', periodId, instanceNumId, voter, sender] as const,
+  // One account's pooled vote records for a period, across every instance it's in.
+  fracVotingRecords: (account: string, periodId: number) => ['fracVotingRecords', account, periodId] as const,
 }
 
 export function useGlobalState() {

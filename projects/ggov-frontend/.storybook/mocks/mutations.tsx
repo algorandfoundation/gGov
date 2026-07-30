@@ -94,6 +94,8 @@ export const useAddTopicMutation = useFakeMutation
 export const useDelegateMutation = useFakeMutation
 export const useUndelegateMutation = useFakeMutation
 export const useVoteMutation = useFakeMutation
+/** Pooled ballot cast on a staking pool's frac instance — same fake phase timeline. */
+export const useFracVoteMutation = useFakeMutation
 
 /**
  * Typed payload because the account page's delegator rows read `variables` to tell

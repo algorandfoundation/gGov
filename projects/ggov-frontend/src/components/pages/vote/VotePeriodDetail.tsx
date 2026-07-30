@@ -16,11 +16,13 @@ import {
   useCommittee,
   useGovVotingPowers,
 } from '@/hooks/queries'
-import { useVoteMutation } from '@/hooks/mutations'
+import { usePooledBallot, type PooledBallotPosition } from '@/hooks/fracQueries'
+import { useFracVoteMutation, useVoteMutation } from '@/hooks/mutations'
 import { Check } from 'lucide-react'
 import { Callout } from '@/components/ui/callout'
 import Address from '@/components/Address'
-import AccountSelector, { AccountSelectorItem } from '@/components/AccountSelector'
+import AccountSelector, { AccountSelectorItem, PooledSelectorItem } from '@/components/AccountSelector'
+import PooledSharePanel from '@/components/vote/PooledSharePanel'
 import TopicVoteCard from '@/components/TopicVoteCard'
 import SidebarLayout from '@/components/SidebarLayout'
 import CollectiveStatusCard from '@/components/CollectiveStatusCard'
@@ -41,20 +43,36 @@ import { ClampedMarkdown } from '@/components/ui/clamped-markdown'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import TechnicalInfoCard from '@/components/TechnicalInfoCard'
 import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } from '@/utils/time'
+import { formatApprox } from '@/utils/format'
 import { singleChoiceIndex } from '@/utils/vote'
 import { toBase64Url } from '@/hooks/queries'
 import { TxButton } from '@/components/TxButtonContent'
 
-function VoteAllocationSummary({ allocated, power }: { allocated: number; power: number }) {
+function VoteAllocationSummary({
+  allocated,
+  power,
+  unit = 'votes',
+  approxVotes,
+}: {
+  allocated: number
+  power: number
+  /** Allocation unit — "AQ" for a pooled ballot, which is denominated in AlgoQuarters. */
+  unit?: string
+  /** What `allocated` is worth in gGov votes, for a pooled ballot. */
+  approxVotes?: number
+}) {
   const remaining = power - allocated
   const balanced = remaining === 0
   return (
     <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-dashed border-input pt-3">
       <span className="text-[12.5px] text-muted-foreground">
         <strong className="text-foreground tabular-nums">{allocated.toLocaleString()}</strong> /{' '}
-        {power.toLocaleString()} votes allocated
+        {power.toLocaleString()} {unit} allocated
         {!balanced &&
           (remaining > 0 ? ` (${remaining.toLocaleString()} remaining)` : ` (${(-remaining).toLocaleString()} over)`)}
+        {approxVotes !== undefined && balanced && (
+          <span className="text-teal-strong"> · ≈ {formatApprox(approxVotes)} votes</span>
+        )}
       </span>
       {balanced ? (
         <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] font-semibold text-success">
@@ -69,6 +87,25 @@ function VoteAllocationSummary({ allocated, power }: { allocated: number; power:
       )}
     </div>
   )
+}
+
+/**
+ * Project pooled positions onto the selector's row shape. `viaAddress` is set only
+ * for a delegator's pools, which is what makes those rows read "<account>'s share"
+ * and nest a level deeper.
+ */
+function pooledSelectorItems(positions: PooledBallotPosition[] | undefined, viaAddress?: string): PooledSelectorItem[] {
+  return (positions ?? []).map((p) => ({
+    id: p.id,
+    instanceName: p.instanceName,
+    sharePct: p.sharePct,
+    votes: p.votes,
+    viaAddress,
+    canVote: p.canVote,
+    hasVoted: p.hasVoted,
+    votedDirectly: p.votedDirectly,
+    poolNotReady: p.poolNotReady,
+  }))
 }
 
 /**
@@ -114,7 +151,10 @@ export default function VotePeriodDetail() {
   const { activeAddress, activeWallet, activeWalletAccounts } = useWallet()
   const walletAddresses = (activeWalletAccounts ?? []).map((a) => a.address)
 
-  // Account being voted for: yourself by default, or an account that delegated to you.
+  // What the ballot is being cast for: an account (yourself, or one that delegated
+  // to you) identified by address, or a pooled position identified by its
+  // `{instanceNumId}:{owner}` id. The two share one namespace because they share
+  // one radio group — see `AccountSelector`.
   const [selectedVoter, setSelectedVoter] = useState<string | null>(activeAddress ?? null)
   // When we switch the active account in order to vote as one of its delegators,
   // remember that delegator so the reset-on-switch below keeps it selected.
@@ -184,13 +224,48 @@ export default function VotePeriodDetail() {
   // voter); each delegator is checked against the account it delegated to.
   const walletEligibility = useCanVoteMany(periodId, walletAddresses)
   const delegatorEligibility = useCanVoteMany(periodId, allDelegators, delegateeOf)
+  // Recomputed here rather than reusing the `status` below, which is derived after
+  // this component's early returns — and hooks must run unconditionally. Pure and
+  // cheap, so the duplicate costs nothing.
+  const isActivePeriod = period ? periodStatus(period.votingStart, period.votingEnd) === 'active' : false
+
+  // Who signs for whom: an own account signs for itself, a delegator's ballot is
+  // signed by the account it delegated to. This is what lets a pooled position
+  // held by a delegator be cast at all — the frac contract honours the same gGov
+  // delegation as a direct vote.
+  //
+  // Wallet accounts are applied last, so an account that is *both* in the wallet
+  // and a delegator to another wallet account signs for itself. Going through the
+  // delegation instead would be needlessly strict: a delegated cast is blocked once
+  // the owner has voted directly, and it forces a signer switch for no gain.
+  const senderOf: Record<string, string> = {}
+  for (const [delegator, delegatee] of Object.entries(delegateeOf)) senderOf[delegator] = delegatee
+  for (const addr of walletAddresses) senderOf[addr] = addr
+
+  // Staking-pool positions this wallet can act on for the period's committee.
+  // Empty (and free — no reads) on a network with no frac registry.
+  const pooled = usePooledBallot({
+    periodId,
+    committeeIdBase64Url: committeeIdB64,
+    voters: voterAccounts,
+    senderOf,
+    isActive: isActivePeriod,
+  })
+  const pooledByOwner: Record<string, PooledBallotPosition[]> = {}
+  for (const position of pooled.positions) (pooledByOwner[position.owner] ??= []).push(position)
+  // The current selection, when it's a pooled position rather than an account.
+  const selectedPooled = selectedVoter ? pooled.byId[selectedVoter] : undefined
+
   // For delegated voting, the connected wallet (activeAddress) is the sender; selectedVoter is the voter.
-  const { data: canVoteResult } = useCanVote(periodId, selectedVoter, activeAddress)
+  // A pooled selection has its own eligibility (`position.canVote`), so the gGov
+  // check is skipped — its id is not an address and would fail the lookup.
+  const { data: canVoteResult } = useCanVote(periodId, selectedPooled ? null : selectedVoter, activeAddress)
   // Whether the connected wallet has voting power of its own; if not, hide the "Yourself" option.
   const { data: selfCanVoteResult } = useCanVote(periodId, activeAddress, activeAddress)
   const selfCanVote = (selfCanVoteResult?.votingPower ?? 0n) > 0n
-  const { data: voteRecord } = useVoteRecord(periodId, selectedVoter)
+  const { data: voteRecord } = useVoteRecord(periodId, selectedPooled ? null : selectedVoter)
   const voteMutation = useVoteMutation()
+  const fracVoteMutation = useFracVoteMutation()
 
   // If the connected wallet has no voting power of its own, fall back to the first
   // selectable delegator so we never leave the (now hidden) "Yourself" option selected.
@@ -199,18 +274,18 @@ export default function VotePeriodDetail() {
     const eligibility = delegatorEligibility[addr]
     return eligibility?.canVote === true && eligibility.votingPower > 0n
   })
+  // Failing that, an eligible pooled position: an account whose only power is
+  // pooled (no blocks produced, nothing delegated to it) would otherwise sit on a
+  // dimmed, unselectable "Yourself" row with no way to reach its own pools.
+  const firstSelectablePooled = pooled.positions.find((p) => p.canVote === true)?.id
+  const selectionFallback = firstSelectableDelegator ?? firstSelectablePooled
   useEffect(() => {
-    if (
-      selfCanVoteResult &&
-      !selfCanVote &&
-      selectedVoter === activeAddress &&
-      firstSelectableDelegator !== undefined
-    ) {
-      setSelectedVoter(firstSelectableDelegator)
+    if (selfCanVoteResult && !selfCanVote && selectedVoter === activeAddress && selectionFallback !== undefined) {
+      setSelectedVoter(selectionFallback)
     }
-  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, firstSelectableDelegator])
+  }, [selfCanVoteResult, selfCanVote, selectedVoter, activeAddress, selectionFallback])
 
-  const votingForSelf = selectedVoter === activeAddress
+  const votingForSelf = !selectedPooled && selectedVoter === activeAddress
 
   // Logged-out "connect a wallet to vote" CTA on active periods opens the picker.
   const [connectOpen, setConnectOpen] = useState(false)
@@ -252,14 +327,33 @@ export default function VotePeriodDetail() {
   // Elections (period body carries `elect`) expose their live
   // ranked standings while active; any ended period exposes its full results.
   const isElection = periodBody?.elect !== undefined
-  const showVoteForm = isActive && canVoteResult?.canVote && sdk
+  const showVoteForm = isActive && (selectedPooled ? selectedPooled.canVote : canVoteResult?.canVote) && sdk
   const votingPower = canVoteResult?.votingPower ?? 0n
+  // A pooled ballot is denominated in AlgoQuarters, not gGov votes: each topic must
+  // allocate the position's full AQ weight, and the pool converts that to votes when
+  // it re-casts through its escrows. Only the unit label differs — the allocation
+  // rule ("every topic totals your weight") is the same one the gGov ballot uses.
+  const ballotUnit = selectedPooled ? 'AQ' : 'votes'
+  // Votes per AQ for this position, for the approximate equivalents alongside AQ figures.
+  const votesPerAq = selectedPooled ? selectedPooled.poolVotes / selectedPooled.totalAq : 0
 
   // Selecting one of the wallet's own accounts switches the active (signing)
   // account — the activeAddress effect then points selectedVoter at it.
   // Selecting a delegator votes on its behalf; its delegatee must be the active
   // (signing) account, so switch to that delegatee first if needed.
   function handleSelectVoter(addr: string) {
+    // A pooled position: whoever signs for its owner must be the active account,
+    // same rule as a delegated vote — so switch the signer first if it differs.
+    const position = pooled.byId[addr]
+    if (position) {
+      if (position.sender !== activeAddress && activeWallet) {
+        pendingVoterRef.current = addr
+        activeWallet.setActiveAccount(position.sender)
+      } else {
+        setSelectedVoter(addr)
+      }
+      return
+    }
     if (walletAddresses.includes(addr)) {
       if (addr !== activeAddress) activeWallet?.setActiveAccount(addr)
       setSelectedVoter(addr)
@@ -299,30 +393,41 @@ export default function VotePeriodDetail() {
     if (advancedMode) {
       return topicVotes.map((t) => t[0])
     }
-    // Simple mode: all voting power to the selected option
+    // Simple mode: all of the selection's weight to the chosen option. For a pooled
+    // position that weight is its AlgoQuarters, not gGov votes.
+    const weight = selectedPooled ? Number(selectedPooled.aqWeight ?? 0n) : Number(votingPower)
     return period!.topics.map(([options], topicIdx) => {
       const selected = simpleSelections[topicIdx]
-      return options.map((_, optIdx) => (optIdx === selected ? Number(votingPower) : 0))
+      return options.map((_, optIdx) => (optIdx === selected ? weight : 0))
     })
   }
 
   function submitVote() {
     if (!selectedVoter) return
-    voteMutation.mutate(
-      { periodId, voterAccount: selectedVoter, topicVotes: buildVotes() },
-      {
-        onSuccess: () => {
-          // Return to simple mode once an advanced-mode vote lands, and arm the
-          // post-vote banner to scroll into view when it next renders.
-          setAdvancedMode(false)
-          justVotedRef.current = true
+    const onSuccess = () => {
+      // Return to simple mode once an advanced-mode vote lands, and arm the
+      // post-vote banner to scroll into view when it next renders.
+      setAdvancedMode(false)
+      justVotedRef.current = true
+    }
+    if (selectedPooled) {
+      fracVoteMutation.mutate(
+        {
+          instanceNumId: selectedPooled.instanceNumId,
+          periodId,
+          voterAccount: selectedPooled.owner,
+          topicVotes: buildVotes(),
         },
-      },
-    )
+        { onSuccess },
+      )
+      return
+    }
+    voteMutation.mutate({ periodId, voterAccount: selectedVoter, topicVotes: buildVotes() }, { onSuccess })
   }
 
   const canSubmitSimple = simpleSelections.length > 0 && simpleSelections.every((s) => s >= 0)
-  const power = Number(votingPower)
+  // The weight every topic must allocate — AlgoQuarters for a pooled selection.
+  const power = selectedPooled ? Number(selectedPooled.aqWeight ?? 0n) : Number(votingPower)
   const advancedTopicTotals = topicVotes.map((t) => t[0]?.reduce((a, b) => a + b, 0) ?? 0)
   const advancedValid = advancedTopicTotals.length > 0 && advancedTopicTotals.every((t) => t === power)
   const canSubmit = advancedMode ? advancedValid : canSubmitSimple
@@ -360,9 +465,11 @@ export default function VotePeriodDetail() {
   // Eligibility wording: during the active window canVote is authoritative (it
   // also reflects delegation/override rules); outside it canVote returns false
   // for everyone, so fall back to registry voting power.
-  const selectedVoterPower = selectedVoter ? (govPowers[selectedVoter] ?? 0) : 0
+  // A pooled id is not an address, so it has no entry here — its weight comes off
+  // the position itself.
+  const selectedVoterPower = selectedVoter && !selectedPooled ? (govPowers[selectedVoter] ?? 0) : 0
   const eligibleToVote = isActive ? !!canVoteResult?.canVote : selectedVoterPower > 0
-  const eligibility = canVoteResult ? eligibilityCopy(status, eligibleToVote) : null
+  const eligibility = !selectedPooled && canVoteResult ? eligibilityCopy(status, eligibleToVote) : null
 
   // Total voting power exercised in the period. A voter spreads their full power
   // across each topic, so any topic's tally sum reflects total participation; we
@@ -426,7 +533,10 @@ export default function VotePeriodDetail() {
       votingPower: govPowers[addr] ?? 0,
       delegated: !walletAddresses.includes(addr),
     }))
-  const showPendingBanner = isActive && !!voteRecord && !!selectedVoter && pendingAccounts.length > 0
+  // Accounts only — the banner names an address and its gGov power, neither of
+  // which a pooled position has. (The design's post-vote banners carry no pooled
+  // content either.)
+  const showPendingBanner = isActive && !selectedPooled && !!voteRecord && !!selectedVoter && pendingAccounts.length > 0
 
   function switchAndVote(addr: string) {
     handleSelectVoter(addr)
@@ -436,11 +546,13 @@ export default function VotePeriodDetail() {
   // One-line hint beside the submit button: what's still missing, else the
   // change-your-vote deadline once a ballot is valid.
   const missingSeats = simpleSelections.filter((s) => s < 0).length
+  // A pooled selection has its own record (`hasVoted`); `voteRecord` is the gGov one.
+  const selectionHasVoted = selectedPooled ? selectedPooled.hasVoted : !!voteRecord
   const submitHint = !canSubmit
     ? advancedMode
-      ? `Allocate exactly ${power.toLocaleString()} votes in every topic`
+      ? `Allocate exactly ${power.toLocaleString()} ${ballotUnit} in every topic`
       : `${missingSeats} of ${period.topics.length} topic${period.topics.length === 1 ? '' : 's'} still need a choice`
-    : voteRecord
+    : selectionHasVoted
       ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
       : ''
 
@@ -488,70 +600,143 @@ export default function VotePeriodDetail() {
       )}
 
       {isActive && activeAddress && voterAccounts.length >= 1 && (
-        <div ref={votingAsRef} className="scroll-mt-6 rounded-xl border border-border bg-card px-5 py-[18px]">
-          <AccountSelector
-            selected={selectedVoter}
-            onSelect={handleSelectVoter}
-            connectedCount={walletAddresses.length}
-            delegatedCount={allDelegators.length}
-            accounts={walletAddresses.map<AccountSelectorItem>((addr) => ({
-              address: addr,
-              votingPower: walletEligibility[addr]?.votingPower,
-              canVote: walletEligibility[addr]?.canVote,
-              hasVoted: voteStatuses[addr],
-              // Accounts that delegated to this one nest under it as children.
-              delegated: (delegatorsByDelegatee[addr] ?? []).map<AccountSelectorItem>((d) => {
-                const record = allRecords[d]
-                return {
-                  address: d,
-                  votingPower: delegatorEligibility[d]?.votingPower,
-                  canVote: delegatorEligibility[d]?.canVote,
-                  hasVoted: voteStatuses[d],
-                  // Voted for itself (not via a delegate) → the delegate can't override.
-                  votedDirectly: record != null && record.topicVotes != null && !record.isDelegated,
-                }
-              }),
-            }))}
-          />
+        <div className="space-y-2.5">
+          <div ref={votingAsRef} className="scroll-mt-6 rounded-xl border border-border bg-card px-5 py-[18px]">
+            <AccountSelector
+              selected={selectedVoter}
+              onSelect={handleSelectVoter}
+              connectedCount={walletAddresses.length}
+              delegatedCount={allDelegators.length}
+              pooledCount={pooled.positions.length}
+              accounts={walletAddresses.map<AccountSelectorItem>((addr) => ({
+                address: addr,
+                votingPower: walletEligibility[addr]?.votingPower,
+                canVote: walletEligibility[addr]?.canVote,
+                hasVoted: voteStatuses[addr],
+                pooled: pooledSelectorItems(pooledByOwner[addr]),
+                // Accounts that delegated to this one nest under it as children.
+                delegated: (delegatorsByDelegatee[addr] ?? []).map<AccountSelectorItem>((d) => {
+                  const record = allRecords[d]
+                  return {
+                    address: d,
+                    votingPower: delegatorEligibility[d]?.votingPower,
+                    canVote: delegatorEligibility[d]?.canVote,
+                    hasVoted: voteStatuses[d],
+                    // Voted for itself (not via a delegate) → the delegate can't override.
+                    votedDirectly: record != null && record.topicVotes != null && !record.isDelegated,
+                    // A delegator's own pools, which this wallet can cast on its behalf.
+                    // Skipped when the delegator is itself one of the wallet's accounts:
+                    // it already has a top-level row carrying the same positions, and a
+                    // second copy would share their ids and highlight in two places.
+                    pooled: walletAddresses.includes(d) ? undefined : pooledSelectorItems(pooledByOwner[d], d),
+                  }
+                }),
+              }))}
+            />
 
-          {(voteRecord || eligibility) && (
-            <div className="mt-4 flex items-start gap-2.5 text-[13.5px] leading-relaxed">
-              {(voteRecord || !eligibility!.muted) && (
-                <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-success text-white">
-                  <Check className="size-2.5" strokeWidth={3} />
-                </span>
-              )}
-              <span className={voteRecord || !eligibility!.muted ? 'text-foreground' : 'text-muted-foreground'}>
-                {voteRecord ? (
-                  <>
-                    You can change your vote any time until voting closes on{' '}
-                    <strong>{formatTimestamp(period.votingEnd)}</strong>.
-                  </>
-                ) : votingForSelf ? (
-                  // Name the active account explicitly when it can't vote, rather than
-                  // the generic "You cannot vote in this period". (This block is
-                  // active-only, so ineligible here means !canVote in the open window.)
-                  eligibleToVote ? (
-                    eligibility!.self
+            {/* Pooled counterpart of the eligibility sentence below: names the pool
+              rather than an address, since a position has no address of its own. */}
+            {selectedPooled && selectedPooled.canVote !== undefined && (
+              <div className="mt-4 flex items-start gap-2.5 text-[13.5px] leading-relaxed">
+                {selectedPooled.canVote && (
+                  <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-success text-white">
+                    <Check className="size-2.5" strokeWidth={3} />
+                  </span>
+                )}
+                <span className={selectedPooled.canVote ? 'text-foreground' : 'text-muted-foreground'}>
+                  {selectedPooled.canVote ? (
+                    <>
+                      {/* Share-of-the-pool framing, not AlgoQuarters: the member's own
+                        AQ number means nothing without the pool's total, whereas the
+                        percentage and the votes it buys are directly meaningful. AQ
+                        belongs to the advanced ballot, which allocates in that unit. */}
+                      You're voting with <strong>{selectedPooled.sharePct.toFixed(2)}%</strong> of{' '}
+                      <strong>{selectedPooled.instanceName}</strong>'s ballot, about{' '}
+                      <strong>{formatApprox(selectedPooled.votes)} votes</strong>
+                      {selectedPooled.ownerIsSelf ? (
+                        ''
+                      ) : (
+                        <>
+                          {' '}
+                          on behalf of <Address address={selectedPooled.owner} width={6} copy={false} tooltip={false} />
+                        </>
+                      )}
+                      .
+                      {/* Own line: it's a separate fact about the ballot, not part of
+                          the weight sentence. (The span's parent is a flex item, so
+                          `block` here breaks the line cleanly.) */}
+                      {selectionHasVoted && (
+                        <span className="mt-1 block">
+                          You can change it any time until voting closes on {formatTimestamp(period.votingEnd)}.
+                        </span>
+                      )}
+                    </>
+                  ) : selectedPooled.poolNotReady ? (
+                    <>
+                      <strong>{selectedPooled.instanceName}</strong> hasn't finished preparing for this period yet — its
+                      snapshot or AlgoQuarters ledger is still being published. Your share is unaffected; check back
+                      before voting closes.
+                    </>
                   ) : (
                     <>
-                      <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> is not eligible to
-                      vote in this period
+                      <Address address={selectedPooled.owner} width={6} copy={false} tooltip={false} /> already cast
+                      this pool's vote directly, so you cannot override it.
                     </>
-                  )
-                ) : (
-                  <>
-                    <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility!.suffix}
-                  </>
-                )}
-              </span>
-            </div>
-          )}
+                  )}
+                </span>
+              </div>
+            )}
 
-          {!votingForSelf && voteRecord && !voteRecord.isDelegated && (
-            <Callout variant="danger" className="mt-2.5">
-              <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly, so
-              you cannot vote on their behalf. A delegate cannot override a vote the account holder cast themselves.
+            {(voteRecord || eligibility) && (
+              <div className="mt-4 flex items-start gap-2.5 text-[13.5px] leading-relaxed">
+                {(voteRecord || !eligibility!.muted) && (
+                  <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-success text-white">
+                    <Check className="size-2.5" strokeWidth={3} />
+                  </span>
+                )}
+                <span className={voteRecord || !eligibility!.muted ? 'text-foreground' : 'text-muted-foreground'}>
+                  {voteRecord ? (
+                    <>
+                      You can change your vote any time until voting closes on{' '}
+                      <strong>{formatTimestamp(period.votingEnd)}</strong>.
+                    </>
+                  ) : votingForSelf ? (
+                    // Name the active account explicitly when it can't vote, rather than
+                    // the generic "You cannot vote in this period". (This block is
+                    // active-only, so ineligible here means !canVote in the open window.)
+                    eligibleToVote ? (
+                      eligibility!.self
+                    ) : (
+                      <>
+                        <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> is not eligible to
+                        vote in this period
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> {eligibility!.suffix}
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
+
+            {!votingForSelf && voteRecord && !voteRecord.isDelegated && (
+              <Callout variant="danger" className="mt-2.5">
+                <Address address={selectedVoter!} width={6} copy={false} tooltip={false} /> has already voted directly,
+                so you cannot vote on their behalf. A delegate cannot override a vote the account holder cast
+                themselves.
+              </Callout>
+            )}
+          </div>
+
+          {/* Below the card rather than inside it: the note explains what the pooled
+              rows are in general, so keeping it out of the card stops it reading as
+              context for the current selection. */}
+          {pooled.positions.length > 0 && (
+            <Callout variant="pooled">
+              Pooled positions vote your prorated share of the pool's power. Members' votes are combined and cast
+              on-chain by the pool.
             </Callout>
           )}
         </div>
@@ -608,9 +793,28 @@ export default function VotePeriodDetail() {
         </div>
         {showVoteForm && (
           <p className="mt-2 text-[13px] text-muted-foreground">
-            {advancedMode
-              ? 'Split your votes across the options as you like — each topic must use your full voting power.'
-              : 'Pick one option per topic; all of your votes go to that choice.'}
+            {selectedPooled ? (
+              advancedMode ? (
+                // The only ballot that exposes AlgoQuarters, so the only one that
+                // links out to what they are and how the pool converts them.
+                <>
+                  Split your AlgoQuarters across the options as you like — each topic must use your full weight. The
+                  pool converts your AlgoQuarters to votes when it casts.{' '}
+                  <Link
+                    to="/docs/pooled-voting"
+                    className="inline-flex items-center font-semibold text-primary hover:underline dark:text-algo-teal"
+                  >
+                    How pooled voting works
+                  </Link>
+                </>
+              ) : (
+                'Pick one option per topic; your whole pooled share goes to that choice.'
+              )
+            ) : advancedMode ? (
+              'Split your votes across the options as you like — each topic must use your full voting power.'
+            ) : (
+              'Pick one option per topic; all of your votes go to that choice.'
+            )}
           </p>
         )}
       </div>
@@ -640,12 +844,21 @@ export default function VotePeriodDetail() {
                 advancedVotes={topicVotes[topicIdx]?.[0]}
                 onAdvancedChange={(optIdx, value) => handleAdvancedVoteChange(topicIdx, optIdx, value)}
                 votingPower={power}
+                unit={ballotUnit}
+                // Consumed in `select` mode only: a pooled simple ballot labels the
+                // chosen option with what the whole position is worth in votes.
+                approxVotes={selectedPooled ? selectedPooled.votes : undefined}
                 votedOptionIdx={votedOptionIdx}
                 outcome={isEnded ? 'Final' : undefined}
                 voters={voters?.length}
                 footer={
                   showVoteForm && advancedMode ? (
-                    <VoteAllocationSummary allocated={advancedTopicTotals[topicIdx]} power={power} />
+                    <VoteAllocationSummary
+                      allocated={advancedTopicTotals[topicIdx]}
+                      power={power}
+                      unit={ballotUnit}
+                      approxVotes={selectedPooled ? advancedTopicTotals[topicIdx] * votesPerAq : undefined}
+                    />
                   ) : undefined
                 }
               />
@@ -659,8 +872,8 @@ export default function VotePeriodDetail() {
           <TxButton
             onClick={submitVote}
             disabled={!canSubmit}
-            pending={voteMutation.isPending}
-            success={voteMutation.isSuccess}
+            pending={selectedPooled ? fracVoteMutation.isPending : voteMutation.isPending}
+            success={selectedPooled ? fracVoteMutation.isSuccess : voteMutation.isSuccess}
             idleLabel="Submit vote"
             pendingLabel="Voting…"
             confirmedLabel="Voted"
@@ -708,6 +921,43 @@ export default function VotePeriodDetail() {
         ) : (
           <Skeleton className="h-40" />
         ))}
+      {activeAddress && <PooledSharePanel positions={pooled.positions} activeAddress={activeAddress} />}
+      {selectedPooled?.topicVotes && !isEnded && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{selectedPooled.instanceName} vote record</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!selectedPooled.ownerIsSelf && (
+              <p className="mb-2 text-sm text-muted-foreground">
+                Cast on behalf of <Address address={selectedPooled.owner} width={6} copy={false} tooltip={false} />.
+              </p>
+            )}
+            {selectedPooled.topicVotes.map((votes, ti) => {
+              const options = period.topics[ti]?.[0] ?? []
+              const total = votes.reduce((a, b) => a + b, 0)
+              const nonZero = votes
+                .map((v, oi) => ({ label: options[oi] ?? `Option ${oi + 1}`, aq: v }))
+                .filter((entry) => entry.aq > 0)
+              if (nonZero.length === 0) return null
+              return (
+                <div key={ti} className="mb-2">
+                  <span className="text-sm font-medium">{topicBodies[ti]?.title}:</span>{' '}
+                  <span className="text-sm text-muted-foreground">
+                    {nonZero
+                      .map((e) => {
+                        const pct = total > 0 ? ((e.aq / total) * 100).toFixed(1) : '0.0'
+                        // AlgoQuarters as submitted, with what the pool turns them into.
+                        return `${e.label} (≈ ${formatApprox(e.aq * votesPerAq)} votes, ${pct}%)`
+                      })
+                      .join(', ')}
+                  </span>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
       {voteRecord && !isEnded && (
         <Card>
           <CardHeader className="pb-2">

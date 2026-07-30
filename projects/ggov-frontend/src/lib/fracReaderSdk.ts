@@ -1,4 +1,4 @@
-import type { FracDelegationReaderSDK } from 'frac-delegation-sdk'
+import type { FracDelegationReaderSDK, FracDelegationSDK, SenderWithSigner } from 'frac-delegation-sdk'
 import { createAlgorandClient } from './readerSdk'
 
 /**
@@ -42,4 +42,29 @@ export function getFracReaderSDK(): Promise<FracDelegationReaderSDK> | null {
       }),
   )
   return cached
+}
+
+/**
+ * Writer-enabled counterpart, for casting a pooled ballot (`sdk.vote`). Returns
+ * null on a network with no frac registry, exactly like the reader.
+ *
+ * Not cached here: the writer is tied to a wallet identity, so the caching
+ * belongs where that identity is tracked — `useGGovSDK` memoises the promise on
+ * `[activeAddress, transactionSigner]`. The dynamic import resolves to the same
+ * already-loaded module as the reader, so a writer costs no extra download.
+ *
+ * `FracDelegationSDK` extends the reader and could serve both, but the reader
+ * stays separate on purpose: pooled *reads* must work with no wallet connected.
+ */
+export function createFracSDK(writerAccount: SenderWithSigner): Promise<FracDelegationSDK> | null {
+  if (fracRegistryAppId === undefined) return null
+  return import('frac-delegation-sdk').then(
+    ({ FracDelegationSDK }) =>
+      new FracDelegationSDK({
+        algorand: createAlgorandClient(),
+        registryAppId: fracRegistryAppId,
+        concurrency: 8,
+        writerAccount,
+      }),
+  )
 }

@@ -15,9 +15,9 @@ import { useMockScenario } from './queries'
 import { cakey } from './scenarios'
 
 // Public types — single source of truth in the real module.
-export type { PooledPosition, PooledPositions } from '../../src/hooks/fracQueries'
+export type { PooledPosition, PooledPositions, PooledBallotPosition, PooledBallot } from '../../src/hooks/fracQueries'
 
-import type { PooledPosition, PooledPositions } from '../../src/hooks/fracQueries'
+import type { PooledPosition, PooledPositions, PooledBallotPosition, PooledBallot } from '../../src/hooks/fracQueries'
 
 export function usePooledPositions(
   account: string | null | undefined,
@@ -44,6 +44,67 @@ export function usePooledPositions(
   }
 
   return { byCommittee, isPoolMember, isLoading, fracEnabled: true }
+}
+
+/**
+ * Ballot-side mock. Reads the same `pooled` fixture, but resolves it against the
+ * accounts the page can act for and folds in the ballot-only state
+ * ({@link MockPooledPosition}'s `canVote` / `voteRecord` / `votedDirectly` /
+ * `poolNotReady`) that decides each row's status.
+ *
+ * `senderOf` comes straight from the page, so the "is this position mine or a
+ * delegator's" split is driven by the same mapping the real hook uses.
+ */
+export function usePooledBallot({
+  committeeIdBase64Url,
+  voters,
+  senderOf,
+  isActive,
+}: {
+  periodId: number
+  committeeIdBase64Url?: string
+  voters: string[]
+  senderOf: Record<string, string>
+  isActive: boolean
+}): PooledBallot {
+  const s = useMockScenario()
+  const pooled = s.pooled ?? {}
+  const isLoading = !!s.flags?.pooledLoading
+
+  const positions: PooledBallotPosition[] = []
+  if (committeeIdBase64Url && !isLoading) {
+    for (const owner of voters) {
+      for (const p of pooled[cakey(committeeIdBase64Url, owner)] ?? []) {
+        const sender = senderOf[owner] ?? owner
+        const canVote = p.canVote ?? true
+        const votedDirectly = p.votedDirectly ?? false
+        positions.push({
+          instanceNumId: p.instanceNumId,
+          instanceName: p.instanceName,
+          userAq: p.userAq,
+          totalAq: p.totalAq,
+          sharePct: p.sharePct,
+          poolVotes: p.poolVotes,
+          votes: p.votes,
+          id: `${p.instanceNumId}:${owner}`,
+          owner,
+          ownerIsSelf: sender === owner,
+          sender,
+          canVote,
+          // The contract returns the member's AlgoQuarters as the ballot weight.
+          aqWeight: BigInt(p.userAq),
+          hasVoted: !!p.voteRecord,
+          topicVotes: p.voteRecord,
+          votedDirectly,
+          poolNotReady: p.poolNotReady ?? (isActive && !canVote && !(sender !== owner && votedDirectly)),
+        })
+      }
+    }
+  }
+
+  const byId: Record<string, PooledBallotPosition> = {}
+  for (const position of positions) byId[position.id] = position
+  return { positions, byId, isLoading, fracEnabled: true }
 }
 
 /** Present for completeness; the pages only use {@link usePooledPositions}. */
