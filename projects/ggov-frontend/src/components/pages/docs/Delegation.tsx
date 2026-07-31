@@ -41,7 +41,7 @@ export default function Delegation() {
 
         <H2>Pooled power is included</H2>
         <P>
-          If you stake through xALGO, tALGO or a Reti pool, one delegation covers that too — there's no separate setting
+          If you stake through xALGO, tALGO or a Réti pool, one delegation covers that too — there's no separate setting
           for your <InlineLink to="/docs/pooled-voting">pooled share</InlineLink>. Your delegate votes it alongside any
           power you hold directly, and this works even when all of your power is pooled. If they don't vote, your share
           counts as <Strong>Abstain</Strong>, just as it would if you hadn't voted yourself.

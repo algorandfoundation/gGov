@@ -172,7 +172,7 @@ export const PooledPositions: Story = {
           pooled: [
             { ...pool('1:a', 'Folks Finance xALGO', 4_120, 512_400, 509_800), canVote: true },
             // Already cast through this pool.
-            { ...pool('2:a', 'Reti pool #42', 1_730, 91_050, 90_600), canVote: true, hasVoted: true },
+            { ...pool('2:a', 'Réti pool #42', 1_730, 91_050, 90_600), canVote: true, hasVoted: true },
             // Pool hasn't snapshotted the period / is still ingesting AQ.
             { ...pool('3:a', 'Tinyman tALGO', 900, 240_000, 238_000), canVote: false, poolNotReady: true },
           ],
@@ -182,7 +182,7 @@ export const PooledPositions: Story = {
           votingPower: 2100n,
           canVote: true,
           // A delegator's own pool: reads "<bob>'s share" and nests two levels deep.
-          pooled: [{ ...pool('2:b', 'Reti pool #17', 640, 91_050, 90_600), viaAddress: bob.address, canVote: true }],
+          pooled: [{ ...pool('2:b', 'Réti pool #17', 640, 91_050, 90_600), viaAddress: bob.address, canVote: true }],
         },
       ]}
     />
@@ -205,7 +205,7 @@ export const PooledOnlyAccount: Story = {
           canVote: false,
           pooled: [
             { ...pool('1:a', 'Folks Finance xALGO', 4_120, 512_400, 509_800), canVote: true },
-            { ...pool('2:a', 'Reti pool #42', 1_730, 91_050, 90_600), canVote: true },
+            { ...pool('2:a', 'Réti pool #42', 1_730, 91_050, 90_600), canVote: true },
           ],
         },
       ]}

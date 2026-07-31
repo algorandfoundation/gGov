@@ -10,7 +10,7 @@ import type {
 
 /**
  * Pooled voting power — an account's share of the gGov power held by the staking
- * pools it belongs to (xALGO, tALGO, Reti). Kept in its own module rather than
+ * pools it belongs to (xALGO, tALGO, Réti). Kept in its own module rather than
  * `queries.ts` so a network with no frac registry never pulls in the frac SDK.
  *
  * The model (see `FRAC_ARCHITECTURE.md`): each pool is a frac *instance* whose

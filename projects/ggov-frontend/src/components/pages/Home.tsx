@@ -40,7 +40,7 @@ const STEPS = [
   {
     n: '03',
     title: 'Pooled stake counts',
-    body: 'Hold xALGO or tALGO, or stake with a Reti pool? Vote your prorated share.',
+    body: 'Hold xALGO or tALGO, or stake with a Réti pool? Vote your prorated share.',
     // The one step that isn't about producing blocks yourself — third rather than
     // last, so it reads as part of "who can vote" instead of an afterthought. It
     // carries the only teal in the grid: tinted cell, teal number, POOLED pill.

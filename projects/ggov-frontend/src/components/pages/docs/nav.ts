@@ -73,7 +73,7 @@ export const docsPages: DocsPage[] = [
     eyebrow: 'Core concept',
     navGroup: 'Core concepts',
     homeGroup: 'Participating',
-    desc: 'Stake through xALGO, tALGO or a Reti pool? Vote your share.',
+    desc: 'Stake through xALGO, tALGO or a Réti pool? Vote your share.',
   },
   {
     to: '/docs/faq',

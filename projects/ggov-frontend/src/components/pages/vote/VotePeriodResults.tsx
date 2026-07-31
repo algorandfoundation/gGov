@@ -25,6 +25,8 @@ import { periodStatus, formatMonthDayYear } from '@/utils/time'
 import { formatBlockRange } from '@/utils/format'
 import { periodCountLabel, periodTerms, plural } from '@/utils/periodTerms'
 import { tallyBallot, singleChoiceIndex } from '@/utils/vote'
+import { orderByNonce } from '@/utils/ballotOrder'
+import { useBallotNonce } from '@/hooks/useBallotNonce'
 import { cn } from '@/lib/utils'
 
 /** "How scoring works" sidebar card (elections only). */
@@ -97,6 +99,8 @@ export default function VotePeriodResults() {
   const { data: committee } = useCommittee(committeeIdB64)
   const { data: voters } = useVoters(periodId)
   const { data: voteRecord } = useVoteRecord(periodId, activeAddress)
+  // Only breaks ties here — the ranking itself is by net score (see below).
+  const ballotNonce = useBallotNonce()
 
   if (isLoading) {
     return (
@@ -157,7 +161,14 @@ export default function VotePeriodResults() {
   // Bucket the candidates into their elections by each topic body's `e` tag. Candidates whose
   // tag is missing or names no declared election are left out of every group on purpose — they
   // surface below as "unassigned" rather than silently ranking in the first election.
-  const groups = elect ? groupCandidates(period.topics, topicBodies, elect) : []
+  //
+  // Results rank by net score, so the per-browser order only decides candidates the
+  // voters tied — but a tie broken by on-chain order would still favour whoever was
+  // added first, so it gets the same treatment the ballot does.
+  const groups = (elect ? groupCandidates(period.topics, topicBodies, elect) : []).map((g) => ({
+    ...g,
+    candidates: orderByNonce(g.candidates, ballotNonce, `${periodId}:e${g.electionIndex}`, (c) => c.topicIndex),
+  }))
   const toCandidate = ({
     name,
     options,

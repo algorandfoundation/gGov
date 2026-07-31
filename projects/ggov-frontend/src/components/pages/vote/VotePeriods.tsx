@@ -74,7 +74,7 @@ export default function VotePeriods() {
         <h1 className="mt-2 text-[40px] leading-none">Voting periods</h1>
         <p className="mt-3 max-w-[62ch] text-base leading-[1.45] text-muted-foreground">
           Review the questions in front of the community and cast your vote. Your weight is the number of blocks you
-          produced in the current window. Reti and liquid staking users can vote based on their contributions. No
+          produced in the current window. Réti and liquid staking users can vote based on their contributions. No
           commitment or opt-in required.
         </p>
 

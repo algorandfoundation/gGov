@@ -21,7 +21,7 @@ export default function PooledVoting() {
       <ArticleHeader to="/docs/pooled-voting" />
       <div className="mt-[22px]">
         <Lead>
-          Liquid staking tokens (xALGO, tALGO) and Reti pools produce blocks from shared accounts — so the voting power
+          Liquid staking tokens (xALGO, tALGO) and Réti pools produce blocks from shared accounts — so the voting power
           lands with the pool, not with you. Pooled voting gives it back: you vote your prorated share, and the combined
           result is cast on-chain.
         </Lead>

@@ -50,6 +50,8 @@ import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } 
 import { formatApprox } from '@/utils/format'
 import { periodCountLabel, periodTerms, plural } from '@/utils/periodTerms'
 import { classifyOption, singleChoiceIndex, tallyBallot, type OptionSentiment } from '@/utils/vote'
+import { orderByNonce } from '@/utils/ballotOrder'
+import { useBallotNonce } from '@/hooks/useBallotNonce'
 import { cn } from '@/lib/utils'
 import { toBase64Url } from '@/hooks/queries'
 import { TxButton } from '@/components/TxButtonContent'
@@ -204,6 +206,8 @@ export default function VotePeriodDetail() {
   const { data: period, isLoading } = usePeriod(periodId)
   const { data: periodBody } = usePeriodBody(periodId)
   const { data: topicBodies = [] } = useTopicBodies(periodId, period?.topics.length ?? 0)
+  // Seeds this browser's own candidate order (see `orderByNonce`). Null until mounted.
+  const ballotNonce = useBallotNonce()
   // The period's committee drives the eligible-governor count and the
   // window-independent voting power used for non-active display.
   const committeeIdB64 = period ? toBase64Url(period.committeeId) : undefined
@@ -581,14 +585,28 @@ export default function VotePeriodDetail() {
   // Which race each candidate runs in. Presentation only — the ballot state and
   // the `vote()` payload stay flat and indexed by the on-chain topic index, which
   // is what `GroupedCandidate.topicIndex` carries.
-  const groups = elect ? groupCandidates(period.topics, topicBodies, elect) : []
+  //
+  // Within a race the candidates are then reordered per browser so no one is
+  // permanently top of the ballot; each race scopes its own permutation, so two
+  // races on one ballot don't shuffle in lockstep.
+  const groups = (elect ? groupCandidates(period.topics, topicBodies, elect) : []).map((g) => ({
+    ...g,
+    candidates: orderByNonce(g.candidates, ballotNonce, `${periodId}:e${g.electionIndex}`, (c) => c.topicIndex),
+  }))
   const groupedIdx = new Set(groups.flatMap((g) => g.candidates.map((c) => c.topicIndex)))
   // `groupCandidates` drops candidates whose `e` tag is missing or names no
   // declared election. They still have to appear on the ballot: the contract
   // requires *every* topic row to allocate the voter's full power, so leaving one
   // out would make the period unvotable. (The operator sees them flagged in
   // /manage; a voter just needs to be able to vote on them.)
-  const ungroupedIdx = period.topics.map((_, i) => i).filter((i) => !groupedIdx.has(i))
+  const ungroupedIdx = orderByNonce(
+    period.topics.map((_, i) => i).filter((i) => !groupedIdx.has(i)),
+    // Standard periods list topics in the operator's authored order; only an
+    // election's candidates get shuffled.
+    isElection ? ballotNonce : null,
+    `${periodId}:unassigned`,
+    (i) => i,
+  )
 
   /**
    * One ballot card, addressed by its **on-chain topic index** — the same index the

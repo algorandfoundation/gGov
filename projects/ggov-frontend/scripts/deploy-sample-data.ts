@@ -313,7 +313,7 @@ async function main() {
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
     { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
     { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
-    { title: 'reti.algo', body: 'Reti staking pool collective.' },
+    { title: 'reti.algo', body: 'Réti staking pool collective.' },
     { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
   ]
 
@@ -327,7 +327,7 @@ async function main() {
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.', e: 0 },
     { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.', e: 0 },
     { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.', e: 0 },
-    { title: 'reti.algo', body: 'Reti staking pool collective.', e: 0 },
+    { title: 'reti.algo', body: 'Réti staking pool collective.', e: 0 },
     { title: 'gard.algo', body: 'GARD stablecoin protocol team.', e: 1 },
     { title: 'pact.algo', body: 'Pact AMM protocol and treasury tooling.', e: 1 },
     { title: 'tinyman.algo', body: 'Tinyman AMM liquidity and grants steward.', e: 1 },

@@ -364,7 +364,7 @@ export const MULTI_ELECTION_TOPICS: TopicConfig[] = [
 /** Landing/index list with one period of every phase (alice connected & eligible). */
 /**
  * Two pooled positions for the stories that exercise pooled voting: a liquid-staking
- * token and a Reti pool, with the shares/AQ that produce "≈ 5,820.44 via 2 pools".
+ * token and a Réti pool, with the shares/AQ that produce "≈ 5,820.44 via 2 pools".
  * `votes` is `userAq / totalAq * poolVotes`, as the real hook derives it.
  */
 export const SAMPLE_POOLED: PooledPosition[] = [
@@ -379,7 +379,7 @@ export const SAMPLE_POOLED: PooledPosition[] = [
   },
   {
     instanceNumId: 2,
-    instanceName: 'Reti pool #42',
+    instanceName: 'Réti pool #42',
     userAq: 1_730,
     totalAq: 91_050,
     sharePct: (1_730 / 91_050) * 100,

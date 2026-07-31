@@ -41,6 +41,23 @@ export default function Periods() {
           pick <Strong>Abstain</Strong> — it leaves every candidate's score untouched.
         </Callout>
 
+        <H2>Candidates are listed in a random order</H2>
+        <P>
+          Being first on a ballot is an advantage nobody earned, so within each election{' '}
+          <Strong>every browser gets its own order</Strong> of the candidates. Spread across all the voters, no
+          candidate sits at the top for everyone.
+        </P>
+        <P>
+          Your order is <Strong>fixed</Strong>, not reshuffled on each visit: refresh the page, close the tab, or come
+          back tomorrow to change your vote, and the candidates are exactly where you left them. It's drawn from a
+          random value your browser saves the first time you open an election, so a different browser, a different
+          device, or clearing this site's data gives you a different order.
+        </P>
+        <Callout variant="info">
+          Order is presentation only. Every candidate is ranked by the same net score, and where they appeared on your
+          ballot has no effect on the result.
+        </Callout>
+
         <H2>Votes are weighted by your power</H2>
         <P>
           When you vote, your choice carries the weight of your voting power for that period's committee. More blocks

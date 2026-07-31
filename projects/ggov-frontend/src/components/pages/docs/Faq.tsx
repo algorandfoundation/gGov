@@ -22,8 +22,12 @@ const faqs = [
     a: 'A direct vote always wins. If an account votes on its own, its power is locked for that period and a delegate cannot override it.',
   },
   {
-    q: 'I stake through a pool (xALGO, tALGO, Reti). Can I vote?',
+    q: 'I stake through a pool (xALGO, tALGO, Réti). Can I vote?',
     a: "Yes. Your share of the pool's voting power is yours to cast — pooled positions appear next to your own accounts on any open period. If you don't vote, your share counts as Abstain.",
+  },
+  {
+    q: 'Why are an election’s candidates in a different order on my other device?',
+    a: "Because each browser gets its own candidate order, so that being listed first isn't an advantage. Your order stays the same every time you come back on that browser, and it never affects the result — candidates are ranked by net score alone.",
   },
   {
     q: 'When can I vote?',
