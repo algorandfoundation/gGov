@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "seed-localnet-data": "tsx scripts/deploy-sample-data.ts",
     "dev:testnet": "vite --mode testnet",
     "dev:mainnet": "vite --mode mainnet",
     "build": "vite build",
@@ -14,7 +15,6 @@
     "storybook": "STORYBOOK=true storybook dev -p 6006",
     "build-storybook": "STORYBOOK=true storybook build",
     "generate-routes": "tsr generate",
-    "seed-localnet-frac": "tsx scripts/deploy-frac-sample-data.ts",
     "typecheck": "tsr generate && tsc --noEmit",
     "deploy": "pnpm typecheck && vite build && wrangler deploy",
     "deploy:testnet": "pnpm typecheck && pnpm build:testnet && wrangler deploy",

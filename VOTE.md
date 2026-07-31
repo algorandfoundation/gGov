@@ -23,8 +23,8 @@ all inside the one `vote()` app call. First consumer of the scaffolding `syncPer
 
 1. **No rounding in the escrow spread.** The greedy fill (options consume escrow capacity in order)
    involves no division: per topic `Σ gGovVotes === Σ escrow powers` by construction of the mapping
-   stage, so the packing is exact. The "sum + round_down issue in last escrow" doesn't exist —
-   rounding lives only in the internal→gGov mapping. Greedy fill is also _required_ shape: it makes
+   stage, so the packing is exact. The "sum + round*down issue in last escrow" doesn't exist —
+   rounding lives only in the internal→gGov mapping. Greedy fill is also \_required* shape: it makes
    every escrow row sum to that escrow's full power, which gGov `vote()` demands per topic.
 2. **"Last option is abstain" is a convention, not a gGov feature.** Nothing on-chain marks an
    option as abstain; the mapping remainder lands on whatever option is last. Operational invariant:
