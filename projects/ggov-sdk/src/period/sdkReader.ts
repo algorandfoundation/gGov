@@ -283,8 +283,9 @@ export class GGovReaderSDK {
 
   /**
    * Read the body JSON for a topic from its per-period app. Parsed with the
-   * topic-shaped validator so the candidate's election tag (`e`) survives the read —
-   * the period-shaped one would reject nothing but also carries no knowledge of `e`.
+   * topic-shaped validator so the candidate's election tag (`e`) is typed on the
+   * result — the period-shaped parser accepts the very same JSON (neither strips
+   * unknown keys), but hands back a type that knows nothing about `e`.
    */
   async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<TopicBodyJson | null> {
     // Validate outside the try so a bad id/index throws clearly instead of being swallowed as null.
