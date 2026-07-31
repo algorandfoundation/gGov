@@ -23,7 +23,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { periodStatus, formatMonthDayYear } from '@/utils/time'
 import { formatBlockRange } from '@/utils/format'
+import { periodCountLabel, periodTerms, plural } from '@/utils/periodTerms'
 import { tallyBallot, singleChoiceIndex } from '@/utils/vote'
+import { orderByNonce } from '@/utils/ballotOrder'
+import { useBallotNonce } from '@/hooks/useBallotNonce'
 import { cn } from '@/lib/utils'
 
 /** "How scoring works" sidebar card (elections only). */
@@ -48,7 +51,7 @@ function ScoringCard({ elect }: { elect: Election[] }) {
             −1
           </span>
           <span className="text-[13.5px] text-muted-foreground">
-            Each <strong className="text-foreground">Against</strong> vote subtracts from it
+            Each <strong className="text-foreground">Veto</strong> vote subtracts from it
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -96,6 +99,8 @@ export default function VotePeriodResults() {
   const { data: committee } = useCommittee(committeeIdB64)
   const { data: voters } = useVoters(periodId)
   const { data: voteRecord } = useVoteRecord(periodId, activeAddress)
+  // Only breaks ties here — the ranking itself is by net score (see below).
+  const ballotNonce = useBallotNonce()
 
   if (isLoading) {
     return (
@@ -110,7 +115,8 @@ export default function VotePeriodResults() {
   const status = periodStatus(period.votingStart, period.votingEnd)
   const isEnded = status === 'ended'
   const elect = periodBody?.elect
-  const isElection = elect !== undefined
+  const terms = periodTerms(elect)
+  const isElection = terms.isElection
   // Elections expose the in-progress order while active; standard results
   // are post-close only.
   const live = isElection && status === 'active'
@@ -155,7 +161,14 @@ export default function VotePeriodResults() {
   // Bucket the candidates into their elections by each topic body's `e` tag. Candidates whose
   // tag is missing or names no declared election are left out of every group on purpose — they
   // surface below as "unassigned" rather than silently ranking in the first election.
-  const groups = elect ? groupCandidates(period.topics, topicBodies, elect) : []
+  //
+  // Results rank by net score, so the per-browser order only decides candidates the
+  // voters tied — but a tie broken by on-chain order would still favour whoever was
+  // added first, so it gets the same treatment the ballot does.
+  const groups = (elect ? groupCandidates(period.topics, topicBodies, elect) : []).map((g) => ({
+    ...g,
+    candidates: orderByNonce(g.candidates, ballotNonce, `${periodId}:e${g.electionIndex}`, (c) => c.topicIndex),
+  }))
   const toCandidate = ({
     name,
     options,
@@ -163,19 +176,16 @@ export default function VotePeriodResults() {
     topicIndex,
   }: (typeof groups)[number]['candidates'][number]): ElectionCandidate => {
     // tallyBallot classifies free-form labels into yes/no/abstain sentiment;
-    // for an election those map to Support / Against / Abstain.
+    // for an election those map to Support / Veto / Abstain.
     const { yes, no, abstain } = tallyBallot(options, tallies)
     // Trim-based, not `??`: a body's title is only validated as a string, so a blank one would
     // otherwise render as an empty candidate name. Matches `describeAssignmentReport`'s labelling.
-    return { name: name?.trim() || `Candidate ${topicIndex + 1}`, support: yes, against: no, abstain }
+    return { name: name?.trim() || `Candidate ${topicIndex + 1}`, support: yes, veto: no, abstain }
   }
   const groupedCount = groups.reduce((n, g) => n + g.candidates.length, 0)
   const unassignedCount = isElection ? period.topics.length - groupedCount : 0
 
-  const metaCount = isElection
-    ? `${period.topics.length} candidate${period.topics.length === 1 ? '' : 's'}` +
-      (elect.length > 1 ? ` · ${elect.length} elections` : '')
-    : `${period.topics.length} topic${period.topics.length === 1 ? '' : 's'}`
+  const metaCount = periodCountLabel(period.topics.length, elect)
 
   const sidebar = (
     <div className="space-y-4">
@@ -212,7 +222,7 @@ export default function VotePeriodResults() {
                   <InfoRow label="Seats">
                     <span className="font-display text-[15px] font-bold tabular-nums">{elect[0].s}</span>
                   </InfoRow>
-                  <InfoRow label="Candidates">
+                  <InfoRow label={terms.Items}>
                     <span className="font-display text-[15px] font-bold tabular-nums">{groupedCount}</span>
                   </InfoRow>
                 </>
@@ -220,7 +230,7 @@ export default function VotePeriodResults() {
                 groups.map((g) => (
                   <InfoRow key={g.electionIndex} label={g.election.t}>
                     <span className="text-sm font-medium tabular-nums">
-                      {g.election.s} seat{g.election.s === 1 ? '' : 's'} · {g.candidates.length} cand.
+                      {plural(g.election.s, 'seat')} · {g.candidates.length} cand.
                     </span>
                   </InfoRow>
                 ))
@@ -232,7 +242,7 @@ export default function VotePeriodResults() {
               )}
             </>
           ) : (
-            <InfoRow label="Topics">
+            <InfoRow label={terms.Items}>
               <span className="font-display text-[15px] font-bold tabular-nums">{period.topics.length}</span>
             </InfoRow>
           )}
@@ -260,9 +270,7 @@ export default function VotePeriodResults() {
           {elect.length > 1 && (
             <h2 className="mb-3.5 font-display text-lg font-bold">
               {g.election.t}
-              <span className="ml-2 text-[13px] font-medium text-muted-foreground">
-                {g.election.s} seat{g.election.s === 1 ? '' : 's'}
-              </span>
+              <span className="ml-2 text-[13px] font-medium text-muted-foreground">{plural(g.election.s, 'seat')}</span>
             </h2>
           )}
           {g.candidates.length === 0 ? (
@@ -282,7 +290,7 @@ export default function VotePeriodResults() {
       )}
     </div>
   ) : period.topics.length === 0 ? (
-    <p className="text-muted-foreground">No topics in this period.</p>
+    <p className="text-muted-foreground">No {terms.items} in this period.</p>
   ) : (
     <div className="flex flex-col gap-[18px]">
       {period.topics.map(([options, tallies], ti) => (

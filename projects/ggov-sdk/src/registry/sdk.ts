@@ -464,21 +464,37 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    *  - manage another account (as its current delegatee): `setVotingAccount({ account, votingAddress })`
    *
    * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
+   *
+   * The delegator may be a gGov account or a fractional-delegation account — this registry is the
+   * single source of truth for both. A gGov delegator is settled by a box read and needs no extra
+   * fee; only a delegator absent from the gGov `accounts` box falls through to a readonly inner call
+   * to the frac registry, so that call's fee is opt-in via `fractionalOnly`. Set it when the
+   * delegator is known to hold AlgoQuarters but no gGov committee membership — omitting it there
+   * fails the group on fee, and setting it for a gGov delegator merely overpays by 0.001 ALGO.
    */
   @requireWriterWithClient()
   @wrapErrors()
   makeSetVotingAccountTxns({
     votingAddress,
     account,
+    fractionalOnly = false,
     note,
     sender,
     builder,
-  }: { votingAddress?: string; account?: string } & CommonMethodBuilderArgs & { sender?: string }) {
+  }: { votingAddress?: string; account?: string; fractionalOnly?: boolean } & CommonMethodBuilderArgs & {
+      sender?: string
+    }) {
     builder = builder ?? this.writeClient!.newGroup()
     const self = sender ?? String(this.writerAccount!.sender)
-    const xgovAddress = account ?? self
-    const target = votingAddress ?? xgovAddress // omitted target == clear ("vote for self")
-    const opts: any = { args: { xgovAddress, votingAddress: target }, note }
+    const govAddress = account ?? self
+    const target = votingAddress ?? govAddress // omitted target == clear ("vote for self")
+    const opts: any = {
+      args: { govAddress, votingAddress: target },
+      note,
+      // The frac fallback fires on the delegator, whichever way this call is going: clearing runs the
+      // same gate as delegating, so a frac-only account pays it to undelegate too.
+      ...(fractionalOnly ? { extraFee: (1000).microAlgo() } : {}),
+    }
     if (sender) {
       opts.sender = sender
       opts.signer = this.algorand.account.getSigner(sender)

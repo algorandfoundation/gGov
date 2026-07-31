@@ -22,6 +22,14 @@ const faqs = [
     a: 'A direct vote always wins. If an account votes on its own, its power is locked for that period and a delegate cannot override it.',
   },
   {
+    q: 'I stake through a pool (xALGO, tALGO, Réti). Can I vote?',
+    a: "Yes. Your share of the pool's voting power is yours to cast — pooled positions appear next to your own accounts on any open period. If you don't vote, your share counts as Abstain.",
+  },
+  {
+    q: 'Why are an election’s candidates in a different order on my other device?',
+    a: "Because each browser gets its own candidate order, so that being listed first isn't an advantage. Your order stays the same every time you come back on that browser, and it never affects the result — candidates are ranked by net score alone.",
+  },
+  {
     q: 'When can I vote?',
     a: 'While a period is active. Upcoming periods can be read in advance, and ended periods show final results.',
   },
@@ -50,15 +58,31 @@ const glossary = [
   },
   {
     term: 'Period',
-    def: 'A round of governance with a start and end, containing one or more topics to decide.',
+    def: 'A round of governance with a start and end, containing one or more topics to decide — or, in an election period, candidates to rank.',
   },
   {
     term: 'Topic',
-    def: 'A single decision within a period — a seat to fill or a question to answer.',
+    def: 'A single decision within a period — a question to answer. In an election period the same thing is called a candidate.',
+  },
+  {
+    term: 'Election',
+    def: 'A period that fills seats instead of answering questions. Candidates are ranked by net score and the top few lead for the seats. One period can run several elections at once.',
+  },
+  {
+    term: 'Candidate',
+    def: 'Someone standing in an election. You vote Support, Veto or Abstain on each one, and each candidate runs in exactly one of the period’s elections.',
   },
   {
     term: 'Delegation',
     def: 'Letting another account vote with your voting power, or voting on behalf of others.',
+  },
+  {
+    term: 'Pooled voting',
+    def: "Voting your prorated share of a staking pool's power. Members' votes are weighted, combined and cast on-chain.",
+  },
+  {
+    term: 'AlgoQuarter (AQ)',
+    def: "A pool's unit of member contribution: 1 ALGO staked for the full 3M-block window equals 1 AQ. Your AQ share is your share of the pool's voting power.",
   },
   {
     term: 'Governor',

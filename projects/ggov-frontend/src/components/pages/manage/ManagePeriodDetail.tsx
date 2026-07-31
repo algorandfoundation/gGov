@@ -29,6 +29,7 @@ import { type ElectionDraft, electToDrafts, draftsToElect, draftsValid } from '@
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
+import { periodTerms } from '@/utils/periodTerms'
 import { TxButton, TxButtonContent } from '@/components/TxButtonContent'
 
 export default function ManagePeriodDetail() {
@@ -166,27 +167,34 @@ export default function ManagePeriodDetail() {
   }
 
   const status = periodStatus(period.votingStart, period.votingEnd)
-  const canEdit = status === 'upcoming' && !ready && !!sdk
-  // Election topic options are fixed (Support / Against / Abstain), so the per-topic
+  // Whether the *period* still accepts edits, as against whether this visitor can
+  // make them — `canEdit` also needs a connected wallet, so it can't be used to
+  // tell an operator whether a problem is still fixable.
+  const editable = status === 'upcoming' && !ready
+  const canEdit = editable && !!sdk
+  // Election topic options are fixed (Support / Veto / Abstain), so the per-topic
   // options editor is suppressed for elections even while the period is otherwise editable.
   const elect = periodBody?.elect
-  const isElection = elect !== undefined
+  const terms = periodTerms(elect)
+  const isElection = terms.isElection
   const hasVotes = period.topics.some(([, tallies]) => tallies.some((t) => t > 0))
   const readyWarnings: string[] = []
   // Every topic body readable and accounted for: still fetching (the query resolves the whole
   // array at once, so it's empty until then) and unreadable-box both land here as "not present".
   const allBodiesPresent = topicBodies.length === period.topics.length && topicBodies.every((b) => b)
   if (!periodBody) readyWarnings.push('period body is missing')
-  if (period.topics.length === 0) readyWarnings.push('no topics added')
-  else if (!allBodiesPresent) readyWarnings.push('one or more topics are missing a body')
+  if (period.topics.length === 0) readyWarnings.push(`no ${terms.items} added`)
+  else if (!allBodiesPresent) readyWarnings.push(`one or more ${terms.items} are missing a body`)
   // An election period also needs every candidate pointing at a declared election. Worth
   // blocking on now: once the period is ready and a vote lands, the topic set is frozen and a
   // mis-tagged candidate can no longer be moved. Only once every body is in hand, though — the
   // tag rides *in* the body, so judging a half-fetched or unreadable list would report candidates
   // as unassigned whose tag is merely unknown, on top of the missing-body warning just above.
-  if (elect && period.topics.length > 0 && allBodiesPresent) {
-    readyWarnings.push(...describeAssignmentReport(validateAssignment(topicBodies, elect), elect))
-  }
+  const assignmentWarnings =
+    elect && period.topics.length > 0 && allBodiesPresent
+      ? describeAssignmentReport(validateAssignment(topicBodies, elect), elect)
+      : []
+  readyWarnings.push(...assignmentWarnings)
   if (status === 'ended') readyWarnings.push('voting window has already ended')
 
   return (
@@ -360,17 +368,39 @@ export default function ManagePeriodDetail() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">
-          {isElection ? 'Candidates' : 'Topics'} ({period.topics.length})
+          {terms.Items} ({period.topics.length})
         </h2>
         <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
           <Button variant="outline" size="sm">
-            {isElection ? 'Add candidate' : 'Add topic'}
+            Add {terms.item}
           </Button>
         </Link>
       </div>
 
+      {/* Assignment problems belong on the page, not only in the Mark-ready dialog:
+          an operator who never opens that dialog would otherwise have no idea a
+          candidate is running in no race — and after the first vote lands the topic
+          set is frozen and it can't be fixed. */}
+      {assignmentWarnings.length > 0 && (
+        <Callout variant="warning" title="This ballot isn't ready to freeze">
+          <ul className="list-disc space-y-0.5 pl-5">
+            {assignmentWarnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+          {editable ? (
+            <p className="mt-2">Fix each one below before marking the period ready.</p>
+          ) : (
+            <p className="mt-2">
+              This period is no longer editable, so these can't be corrected. Unassigned candidates still collect votes,
+              but they are left out of every ranking on the results page.
+            </p>
+          )}
+        </Callout>
+      )}
+
       {period.topics.length === 0 ? (
-        <p className="text-muted-foreground">No topics yet. Add one to get started.</p>
+        <p className="text-muted-foreground">No {terms.items} yet. Add one to get started.</p>
       ) : (
         <div className="space-y-4">
           {period.topics.map(([options, tallies], topicIdx) => {
@@ -494,6 +524,7 @@ export default function ManagePeriodDetail() {
           periodId={periodId}
           topicIndex={editingTopic}
           initialOptions={period.topics[editingTopic][0]}
+          itemNoun={terms.Item}
           onClose={() => setEditingTopic(null)}
         />
       )}
@@ -509,7 +540,7 @@ export default function ManagePeriodDetail() {
               <p>Reverting to Draft will:</p>
               <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                 <li>Hide this period from voters again</li>
-                <li>Re-enable edits to the committee, voting window, topics, and options</li>
+                <li>Re-enable edits to the committee, voting window, {terms.items}, and options</li>
               </ul>
               <p className="text-muted-foreground">
                 This is only possible because no votes have been cast yet. Once any vote is recorded, the period is
@@ -524,7 +555,7 @@ export default function ManagePeriodDetail() {
                 <li>Allow voting once the voting window opens</li>
                 <li>
                   <span className="text-foreground font-medium">Once a vote is cast, lock all edits</span> to the
-                  committee, voting window, topics, and options
+                  committee, voting window, {terms.items}, and options
                 </li>
               </ul>
               <p className="text-muted-foreground">
@@ -569,9 +600,9 @@ export default function ManagePeriodDetail() {
         onOpenChange={(o) => {
           if (!o) setRemovingTopic(null)
         }}
-        title={removingTopic !== null ? `Remove topic ${removingTopic + 1}?` : 'Remove topic?'}
-        description="This can't be undone. The topic and its options will be permanently deleted from this draft. Every later topic shifts down one index, so its stored body is moved to match — expect more than one wallet signature."
-        confirmLabel="Remove topic"
+        title={removingTopic !== null ? `Remove ${terms.item} ${removingTopic + 1}?` : `Remove ${terms.item}?`}
+        description={`This can't be undone. The ${terms.item} and its options will be permanently deleted from this draft. Every later ${terms.item} shifts down one index, so its stored body is moved to match — expect more than one wallet signature. If a later signature fails, the remaining bodies stay one index high and have to be re-uploaded by hand.`}
+        confirmLabel={`Remove ${terms.item}`}
         onConfirm={() => {
           if (removingTopic !== null) removeTopicMutation.mutate({ periodId, topicIndex: removingTopic })
           setRemovingTopic(null)
@@ -584,7 +615,7 @@ export default function ManagePeriodDetail() {
           <DialogContent onClose={() => setEditingTopicBody(null)}>
             <DialogHeader>
               <DialogTitle>
-                {topicBodies[editingTopicBody] ? 'Edit' : 'Add'} Topic {editingTopicBody + 1} Body
+                {topicBodies[editingTopicBody] ? 'Edit' : 'Add'} {terms.Item} {editingTopicBody + 1} body
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
@@ -595,7 +626,7 @@ export default function ManagePeriodDetail() {
                   name="edit-topic-title"
                   value={editTopicTitle}
                   onChange={(e) => setEditTopicTitle(e.target.value)}
-                  placeholder="Topic title"
+                  placeholder={isElection ? 'Candidate name' : 'Topic title'}
                   required
                 />
               </div>
@@ -605,7 +636,7 @@ export default function ManagePeriodDetail() {
                   id="edit-topic-body"
                   value={editTopicBody}
                   onChange={setEditTopicBody}
-                  placeholder="Topic description..."
+                  placeholder={`${terms.Item} description...`}
                 />
               </div>
             </div>

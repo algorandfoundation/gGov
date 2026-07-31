@@ -414,6 +414,34 @@ export class FracDelegationReaderSDK {
   }
 
   /**
+   * Whether `senderAccount` may cast `voterAccount`'s internal vote on a gGov period, and the
+   * AlgoQuarters weight it would carry — the read-only mirror of `vote`'s gates, like
+   * `GGovReaderSDK.canVote` is for the period contract. `senderAccount` defaults to `voterAccount`
+   * (self-vote); pass a delegatee to check a delegated vote, which also applies the override guard
+   * (a delegatee cannot overwrite a vote the owner cast directly).
+   *
+   * Returns `[false, 0n]` for every rejection — the contract does not distinguish them.
+   */
+  async canVote(
+    instanceNumId: bigint | number,
+    periodId: bigint | number,
+    voterAccount: string,
+    senderAccount?: string,
+  ): Promise<[boolean, bigint]> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    const client = await this.getInstanceReadClient(instanceNumId)
+    const { returns } = await client
+      .newGroup()
+      .canVote({
+        args: { voterAccount, senderAccount: senderAccount ?? voterAccount, periodId: periodIdArg },
+        // outer call + up to 2 inner calls (gGov registry getDelegate when delegated, frac registry getAccount)
+        staticFee: (3 * 1000).microAlgo(),
+      })
+      .simulate(SIMULATE_PARAMS)
+    return returns[0]!
+  }
+
+  /**
    * One escrow's external gGov votes for a gGov period ([topic][option]), or undefined if that
    * escrow has no box for the period. `escrowIndex` is the index into `getEscrows()`.
    */

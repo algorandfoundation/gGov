@@ -1,13 +1,16 @@
 import { AccountAvatar } from '@/components/AccountAvatar'
 import AccountVoteRecord, { type AccountVoteRecordProps } from '@/components/AccountVoteRecord'
+import { plural } from '@/utils/periodTerms'
 
 interface VotingRecordSectionProps {
   /** The connected wallet, shown on the summary banner. */
   activeAddress: string
   /** One per account the wallet can act for that cast a vote (own + delegated). */
   records: AccountVoteRecordProps[]
-  /** Number of topics in the period (the "across M topics" figure). */
+  /** Number of ballot items in the period (the "across M topics" figure). */
   topicCount: number
+  /** Singular noun for one ballot item — `candidate` on an election period. */
+  topicNoun?: string
 }
 
 /**
@@ -16,13 +19,18 @@ interface VotingRecordSectionProps {
  * act for (its own accounts plus any delegated to it). Render only when the
  * wallet is connected and at least one of those accounts voted.
  */
-export default function VotingRecordSection({ activeAddress, records, topicCount }: VotingRecordSectionProps) {
+export default function VotingRecordSection({
+  activeAddress,
+  records,
+  topicCount,
+  topicNoun = 'topic',
+}: VotingRecordSectionProps) {
   const n = records.length
   const recordTotal = records.reduce((sum, r) => sum + r.total, 0)
   const delegatedVoted = records.filter((r) => r.role !== 'self').length
   const ownVoted = records.some((r) => r.role === 'self')
 
-  const topicsLabel = `${topicCount} topic${topicCount === 1 ? '' : 's'}`
+  const topicsLabel = plural(topicCount, topicNoun)
   // `recordTotal` is the combined voting power exercised — not a count of ballots
   // summed across topics (each topic re-spends the same power), so frame it as a weight.
   const weightLabel = n === 1 ? 'a weight of' : 'a combined weight of'

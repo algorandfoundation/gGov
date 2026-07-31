@@ -45,6 +45,9 @@ const config: StorybookConfig = {
       // Mock the data layer so the data-driven pages render from scenario fixtures
       // (see mocks/queries.tsx + mocks/scenarios.ts) without an SDK or network.
       { find: '@/hooks/queries', replacement: path.resolve(dirname, 'mocks/queries.tsx') },
+      // Pooled-voting reads go through a lazily-imported network SDK; mock them so
+      // the pooled surfaces render from scenario fixtures (see mocks/fracQueries.tsx).
+      { find: '@/hooks/fracQueries', replacement: path.resolve(dirname, 'mocks/fracQueries.tsx') },
       // The query hooks (and the detail page) read the SDK context; stub it so it
       // never throws or builds network clients. `sdk` tracks the mock wallet.
       { find: '@/hooks/useGGovSDK', replacement: path.resolve(dirname, 'mocks/useGGovSDK.tsx') },

@@ -7,6 +7,7 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { usePeriodBody, useCommittee, toBase64Url } from '@/hooks/queries'
 import { formatMonthDay, formatMonthDayYear, daysUntil } from '@/utils/time'
 import { formatBlockRange, toPlainText } from '@/utils/format'
+import { periodCountLabel } from '@/utils/periodTerms'
 import { periodTurnoutPct } from '@/lib/turnout'
 
 interface Props {
@@ -26,7 +27,7 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
 
   const turnoutPct = periodTurnoutPct(period, committee?.totalVotes)
   const closesInDays = daysUntil(period.votingEnd)
-  const topicCount = period.topics.length
+  const countLabel = periodCountLabel(period.topics.length, body?.elect)
 
   return (
     <div className="mt-6 flex flex-col overflow-hidden rounded-xl border border-border border-t-[3px] border-t-algo-blue bg-card shadow-sm dark:border-t-algo-teal md:flex-row">
@@ -36,9 +37,7 @@ export default function ActivePeriodHero({ periodId, period }: Props) {
           <Badge className="border-transparent bg-algo-teal text-[#001324]">Active</Badge>
           <span>Period {periodId}</span>
           <span aria-hidden>·</span>
-          <span>
-            {topicCount} topic{topicCount !== 1 ? 's' : ''}
-          </span>
+          <span>{countLabel}</span>
         </div>
         <h2 className="mt-3.5 text-[27px] leading-[1.08]">{body?.title ?? `Period ${periodId}`}</h2>
         {body?.body && (

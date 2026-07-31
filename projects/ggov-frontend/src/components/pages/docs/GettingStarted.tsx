@@ -22,7 +22,8 @@ export default function GettingStarted() {
         <H2>3. Find an open period</H2>
         <P>
           Governance happens in <Strong>periods</Strong>. Each open period lists its <Strong>topics</Strong> — the
-          things being decided. Open one to read the details.
+          things being decided — or, if it's an election, the <Strong>candidates</Strong> running. Open one to read the
+          details.
         </P>
 
         <H2>4. Cast your vote</H2>
