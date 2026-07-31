@@ -1,6 +1,13 @@
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import type { GGovPeriod, BodyJson, PeriodBodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
+import type {
+  GGovPeriod,
+  PeriodBodyJson,
+  TopicBodyJson,
+  GGovVoteRecord,
+  AccountWithVotes,
+  GGovReaderSDK,
+} from 'ggov-sdk'
 
 export interface PeriodWithId {
   id: number
@@ -332,7 +339,7 @@ export function fetchTopicBodies(
   readerSDK: GGovReaderSDK,
   periodId: number,
   topicCount: number,
-): Promise<(BodyJson | null)[]> {
+): Promise<(TopicBodyJson | null)[]> {
   assertNonNegativeInt(periodId, 'period id')
   assertNonNegativeInt(topicCount, 'topic count')
   return Promise.all(Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))))
@@ -451,8 +458,8 @@ interface VoteEntry {
   periodId: number
   period: GGovPeriod
   record: GGovVoteRecord
-  body: BodyJson | null
-  topicBodies: (BodyJson | null)[]
+  body: PeriodBodyJson | null
+  topicBodies: (TopicBodyJson | null)[]
 }
 
 export function useMyVotes(account: string | null | undefined) {

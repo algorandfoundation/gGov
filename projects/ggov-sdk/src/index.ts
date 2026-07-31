@@ -2,6 +2,7 @@ export * from './period/sdk'
 export * from './period/sdkReader'
 export * from './constants'
 export * from './period/types'
+export * from './period/elections'
 export { GGovRegistryFactory, GGovRegistryClient } from './generated/GGovRegistryClient'
 export {
   GGovPeriodFactory,

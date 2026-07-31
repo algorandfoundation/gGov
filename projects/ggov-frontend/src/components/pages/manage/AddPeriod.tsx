@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { fromDatetimeLocalUTC } from '@/utils/time'
 import { TxButton } from '@/components/TxButtonContent'
+import ElectionsEditor from '@/components/pages/manage/ElectionsEditor'
+import { type ElectionDraft, emptyElectionDraft, draftsToElect, draftsValid } from '@/utils/electionDrafts'
 
 export default function AddPeriod() {
   const { sdk } = useGGovSDK()
@@ -22,15 +24,14 @@ export default function AddPeriod() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [isElection, setIsElection] = useState(false)
-  const [electSeats, setElectSeats] = useState('')
+  const [elections, setElections] = useState<ElectionDraft[]>([emptyElectionDraft()])
 
-  const electSeatsNum = Number(electSeats)
-  const electSeatsValid = !isElection || (Number.isSafeInteger(electSeatsNum) && electSeatsNum >= 1)
+  const electionsValid = draftsValid(isElection, elections)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedCommittee || !votingStart || !votingEnd || !title.trim() || !body.trim()) return
-    if (!electSeatsValid) return
+    if (!electionsValid) return
 
     const committee = committees.find((c) => c.idBase64Url === selectedCommittee)
     if (!committee) return
@@ -41,7 +42,7 @@ export default function AddPeriod() {
       votingEnd: BigInt(fromDatetimeLocalUTC(votingEnd)),
       title: title.trim(),
       body: body.trim(),
-      electSeats: isElection ? electSeatsNum : undefined,
+      elect: isElection ? draftsToElect(elections) : undefined,
     })
 
     void navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
@@ -133,44 +134,17 @@ export default function AddPeriod() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-input"
-                  checked={isElection}
-                  onChange={(e) => setIsElection(e.target.checked)}
-                />
-                Election type
-              </label>
-              {isElection && (
-                <div className="space-y-2">
-                  <Label htmlFor="elect-seats">Seats to elect</Label>
-                  <Input
-                    id="elect-seats"
-                    name="elect-seats"
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={electSeats}
-                    onChange={(e) => setElectSeats(e.target.value)}
-                    placeholder="Number of seats being elected"
-                    required
-                  />
-                  {!electSeatsValid && (
-                    <p className="text-sm text-destructive">Enter a whole number of seats (1 or more).</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Each candidate you add will be a fixed Support / Against / Abstain ballot, ranked by net score
-                    (Support − Against).
-                  </p>
-                </div>
-              )}
-            </div>
+            <ElectionsEditor
+              isElection={isElection}
+              onIsElectionChange={setIsElection}
+              rows={elections}
+              onRowsChange={setElections}
+              idPrefix="add-period"
+            />
 
             <TxButton
               type="submit"
-              disabled={!electSeatsValid}
+              disabled={!electionsValid}
               pending={addPeriodMutation.isPending}
               success={addPeriodMutation.isSuccess}
               idleLabel="Create period"
