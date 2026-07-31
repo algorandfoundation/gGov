@@ -23,7 +23,7 @@
  *
  *     deployer  admin + operator of both registries; not a gov                        (ggov-deployer)
  *     alice     gov · delegatee of bob and g2 · holds AQ in both instances            (ggov-alice)
- *     bob       gov only, a plain block producer · delegated his power to alice       (ggov-bob)
+ *     bob       gov · holds AQ in Tinyman · delegated his power to alice              (ggov-bob)
  *     carol     AlgoQuarters only, not a committee member                             (ggov-carol)
  *
  *   Between them they cover every governance stance: runs the show, votes and is voted for, hands
@@ -53,11 +53,12 @@
  *
  * 5) INSTANCES & AQ
  *   Create the `Tinyman tALGO` (1 escrow) and `Réti #42` (2 escrows) instances, register their
- *   escrows, upload an AlgoQuarters manifest to each, then point every escrow's gGov delegation at
+ *   escrows, upload an AlgoQuarters manifest to each, then point every escrow's delegation at
  *   its instance app via `importFracDelegations`.
  *
  * 6)  DELEGATIONS
- *   Account-level gGov delegations between govs.
+ *   Account-level delegations — one registry map serves both voting paths. Runs after the ingest
+ *   above, since a delegator with no committee voting power is only registered by it.
  *
  * 7) PERIOD 1 (ENDED)
  *   A council election voted in full through both paths, inside a short window we then wait out so it
@@ -173,7 +174,7 @@ const GOV_VOTES: Record<string, number> = {
 /**
  * The two frac instances. The implied AQ-per-vote differs between these two, as it would on reality.
  *
- * Note the deliberate overlap with the committee: g1/g2/g4 hold tALGO and g5 stakes in a Réti pool,
+ * Note the deliberate overlap with the committee: bob/g1/g2/g4 hold tALGO and g5 stakes in a Réti pool,
  * so the gov and AQ-holder sets intersect without being the same set. u1..u10 are pure staking
  * protocol users with no gGov voting power of their own.
  */
@@ -183,6 +184,7 @@ const INSTANCES = [
     escrows: ['x1'],
     aq: {
       alice: 118_420,
+      bob: 73_180,
       carol: 84_115,
       g1: 236_780,
       g2: 97_650,
@@ -215,12 +217,11 @@ const INSTANCES = [
 ]
 
 /**
- * gGov account-level delegations: delegator → delegatee. Both sides are personas you can connect
- * as: alice receives, bob hands his power over — a block producer who would rather a representative
- * voted for him, which is the ordinary reason to delegate.
+ * Account-level delegations: delegator → delegatee. One map covers both voting paths, so bob hands
+ * alice his committee power *and* his Tinyman position in a single delegation.
  */
 const DELEGATIONS: [string, string][] = [
-  ['bob', 'alice'], // alice casts bob's ballot
+  ['bob', 'alice'], // alice casts bob's ballot, and his pooled one
   ['g2', 'alice'], // g2 delegates but will vote directly
 ]
 
@@ -611,17 +612,22 @@ async function main() {
     })
   }
 
-  // Point every escrow's gGov delegation at the instance it belongs to.
+  // Point every escrow's delegation at the instance it belongs to.
   await sdk.registry.importFracDelegationsAll({ escrowAccounts: escrowLabels.map(addr) })
 
   // =========================================================
   // 6. DELEGATIONS
   // =========================================================
 
-  step('Setting gGov delegations…')
+  step('Setting delegations…')
 
   for (const [delegator, delegatee] of DELEGATIONS) {
-    await voterSdk(delegator).registry.setVotingAccount({ votingAddress: addr(delegatee) })
+    await voterSdk(delegator).registry.setVotingAccount({
+      votingAddress: addr(delegatee),
+      // Without committee power the registry misses its accounts box and resolves through a frac
+      // registry inner call, whose fee the group pays up front.
+      fractionalOnly: GOV_VOTES[delegator] === undefined,
+    })
   }
 
   // =========================================================
@@ -887,7 +893,7 @@ async function main() {
   const personaNotes: Record<string, string> = {
     deployer: 'admin + operator — unlocks the Manage UI',
     alice: 'gov · delegatee of bob, g2 · AQ in both instances',
-    bob: "gov · delegated to alice · the delegator's view",
+    bob: "gov + AQ · delegated both to alice · the delegator's view",
     carol: 'AQ only, no gGov voting power',
   }
 
