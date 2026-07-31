@@ -40,7 +40,8 @@
  *
  * 2) REGISTRIES
  *   Deploy the gGov registry and the frac registry, wired to each other in both directions.
- *   The deployer is admin + operator of both.
+ *   The deployer is admin + operator of both. Write both app ids to .env straight away, so vite can
+ *   be pointed at the seed while the rest of it is still running.
  *
  * 3) FUNDING
  *   Dispenser → personas, govs, escrows and AlgoQuarter holders.
@@ -51,9 +52,9 @@
  *   vote with it themselves.
  *
  * 5) INSTANCES & AQ
- *   Create the `tinyman` (1 escrow) and `reti` (2 escrows) instances, register their escrows, upload
- *   an AlgoQuarters manifest to each, then point every escrow's gGov delegation at its instance app
- *   via `importFracDelegations`.
+ *   Create the `Tinyman tALGO` (1 escrow) and `Réti #42` (2 escrows) instances, register their
+ *   escrows, upload an AlgoQuarters manifest to each, then point every escrow's gGov delegation at
+ *   its instance app via `importFracDelegations`.
  *
  * 6)  DELEGATIONS
  *   Account-level gGov delegations between govs.
@@ -71,7 +72,7 @@
  *   A standard vote, ready and pre-synced by the instances, no votes yet.
  *
  * 10) OUTPUT
- *   Self-check the on-chain result, rewrite .env, write the accounts manifest, print the summary.
+ *   Self-check the on-chain result, write the accounts manifest, print the summary.
  *
  * CONSTRAINTS
  *   - The first vote of either kind locks a period against setReady(false)/editPeriod, so all
@@ -164,51 +165,51 @@ const GOV_VOTES: Record<string, number> = {
   g11: 45,
   g12: 60,
   g13: 435,
-  x1: 1600, // e.g LST escrow
-  x2: 900, // reti escrow
-  x3: 500, // reti escrow
+  x1: 1600, // Tinyman tALGO escrow
+  x2: 900, // Réti #42 pool
+  x3: 500, // Réti #42 pool
 }
 
 /**
- * The two frac instances. Each one's AQ total is its escrows' combined gGov votes × 1000
- * (`tinyman` 1600 → 1.6M, `reti` 900+500 → 1.4M) — a seed convention, not a system rule.
+ * The two frac instances. The implied AQ-per-vote differs between these two, as it would on reality.
  *
- * Note the deliberate overlap with the committee: g1/g4 hold tALGO and g5 stakes in a Réti pool, so
- * the gov and AQ-holder sets intersect without being the same set. u1..u10 are pure staking
+ * Note the deliberate overlap with the committee: g1/g2/g4 hold tALGO and g5 stakes in a Réti pool,
+ * so the gov and AQ-holder sets intersect without being the same set. u1..u10 are pure staking
  * protocol users with no gGov voting power of their own.
  */
 const INSTANCES = [
   {
-    label: 'tinyman',
+    label: 'Tinyman tALGO',
     escrows: ['x1'],
     aq: {
-      alice: 120_000,
-      carol: 85_000,
-      g1: 240_000,
-      g4: 60_000,
-      u1: 310_000,
-      u2: 145_000,
-      u3: 95_000,
-      u4: 260_000,
-      u5: 175_000,
-      u6: 110_000,
+      alice: 118_420,
+      carol: 84_115,
+      g1: 236_780,
+      g2: 97_650,
+      g4: 61_240,
+      u1: 305_910,
+      u2: 142_300,
+      u3: 93_475,
+      u4: 258_060,
+      u5: 171_890,
+      u6: 108_530,
     } as Record<string, number>,
   },
   {
-    label: 'reti',
+    label: 'Réti #42',
     escrows: ['x2', 'x3'],
     aq: {
-      alice: 90_000,
-      carol: 130_000,
-      g5: 40_000,
-      u1: 210_000,
-      u2: 75_000,
-      u4: 165_000,
-      u6: 120_000,
-      u7: 280_000,
-      u8: 95_000,
-      u9: 115_000,
-      u10: 80_000,
+      alice: 88_650,
+      carol: 127_310,
+      g5: 39_425,
+      u1: 206_140,
+      u2: 73_580,
+      u4: 161_290,
+      u6: 117_845,
+      u7: 274_600,
+      u8: 92_130,
+      u9: 112_470,
+      u10: 78_255,
     } as Record<string, number>,
   },
 ]
@@ -301,14 +302,14 @@ const ENDED_BALLOTS: Ballot[] = [
   { voter: 'g9', ballot: 'YNYNA' },
 ]
 
-/** Period 1 frac votes: 670k of tinyman's 1.6M AQ and 525k of reti's 1.4M turn out; the rest abstains. */
+/** Period 1 frac votes: a bit under 40% of each pool's AQ turns out; the rest abstains. */
 const ENDED_FRAC_BALLOTS: FracBallot[] = [
-  { instance: 'tinyman', voter: 'alice', ballot: 'YYYAN' },
-  { instance: 'tinyman', voter: 'g1', ballot: 'YYNYN' },
-  { instance: 'tinyman', voter: 'u1', ballot: 'YYYNA' },
-  { instance: 'reti', voter: 'carol', ballot: 'YYYYN' },
-  { instance: 'reti', voter: 'u7', ballot: 'YNYNA' },
-  { instance: 'reti', voter: 'u9', ballot: 'YYNAN' },
+  { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYAN' },
+  { instance: 'Tinyman tALGO', voter: 'g1', ballot: 'YYNYN' },
+  { instance: 'Tinyman tALGO', voter: 'u1', ballot: 'YYYNA' },
+  { instance: 'Réti #42', voter: 'carol', ballot: 'YYYYN' },
+  { instance: 'Réti #42', voter: 'u7', ballot: 'YNYNA' },
+  { instance: 'Réti #42', voter: 'u9', ballot: 'YYNAN' },
 ]
 
 /**
@@ -326,10 +327,10 @@ const ACTIVE_BALLOTS: Ballot[] = [
   { voter: 'g9', ballot: 'YYNA|YNY' },
 ]
 
-/** Period 2 frac votes: tinyman has started, reti has not — carol's reti position is yours to cast. */
+/** Period 2 frac votes: Tinyman has started, Réti has not — carol's Réti position is yours to cast. */
 const ACTIVE_FRAC_BALLOTS: FracBallot[] = [
-  { instance: 'tinyman', voter: 'alice', ballot: 'YYYN|YYN' },
-  { instance: 'tinyman', voter: 'u1', ballot: 'YYNA|YYN' },
+  { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYN|YYN' },
+  { instance: 'Tinyman tALGO', voter: 'u1', ballot: 'YYNA|YYN' },
 ]
 
 // =========================================================
@@ -397,6 +398,18 @@ async function createPersonaWallet(kmd: Kmd, name: string, password: string, acc
   const addresses: string[] = (await kmd.listKeys(handle)).addresses ?? []
   if (!addresses.includes(account.address)) await kmd.importKey(handle, account.sk)
   await kmd.releaseWalletHandle(handle)
+}
+
+/** Rewrite each var in place, or append it when absent. False when there is no .env to write. */
+function setEnvVars(envPath: string, vars: Record<string, bigint>): boolean {
+  if (!fs.existsSync(envPath)) return false
+  let env = fs.readFileSync(envPath, 'utf-8')
+  for (const [key, value] of Object.entries(vars)) {
+    const line = new RegExp(`^${key}=.*$`, 'm')
+    env = line.test(env) ? env.replace(line, `${key}=${value}`) : `${env.trimEnd()}\n${key}=${value}\n`
+  }
+  fs.writeFileSync(envPath, env)
+  return true
 }
 
 async function main() {
@@ -494,6 +507,19 @@ async function main() {
       registryAppId: fracRegistryApp.appId,
       writerAccount: { sender: addr(label), signer: algorand.account.getSigner(addr(label)) },
     })
+
+  // The two app ids are all the frontend needs, so write .env here: vite can be pointed at the deployed registries
+  // while the slow data work below is still running.
+  const envPath = path.resolve(__dirname, '../.env')
+  const envWritten = setEnvVars(envPath, {
+    VITE_GGOV_REGISTRY_APP_ID: gGovRegistryApp.appId,
+    VITE_FRAC_REGISTRY_APP_ID: fracRegistryApp.appId,
+  })
+  console.log(
+    envWritten
+      ? `        wrote .env → gGov ${gGovRegistryApp.appId} · frac ${fracRegistryApp.appId} — start vite whenever, the seed keeps running`
+      : `        no .env found — set VITE_GGOV_REGISTRY_APP_ID=${gGovRegistryApp.appId} and VITE_FRAC_REGISTRY_APP_ID=${fracRegistryApp.appId} by hand`,
+  )
 
   // =========================================================
   // 3. FUNDING
@@ -743,7 +769,7 @@ async function main() {
   // Wait for the voting window to lapse so the period reads as ENDED in the UI.
   const waitMs = Number(endedVotingEnd) * 1000 + 2000 - Date.now()
   if (waitMs > 0) {
-    console.log(`        Waiting ${Math.ceil(waitMs / 1000)}s for the voting window to close…`)
+    console.log(`        waiting ${Math.ceil(waitMs / 1000)}s for the voting window to close…`)
     await new Promise((r) => setTimeout(r, waitMs))
   }
 
@@ -810,20 +836,6 @@ async function main() {
           `(${directVotes} direct + ${escrowVotes} re-cast by escrows).`,
       )
     }
-  }
-
-  const envPath = path.resolve(__dirname, '../.env')
-  const envWritten = fs.existsSync(envPath)
-  if (envWritten) {
-    let env = fs.readFileSync(envPath, 'utf-8')
-    // Replace in place, or append when absent
-    const setVar = (body: string, key: string, value: bigint) => {
-      const line = new RegExp(`^${key}=.*$`, 'm')
-      return line.test(body) ? body.replace(line, `${key}=${value}`) : `${body.trimEnd()}\n${key}=${value}\n`
-    }
-    env = setVar(env, 'VITE_GGOV_REGISTRY_APP_ID', gGovRegistryApp.appId)
-    env = setVar(env, 'VITE_FRAC_REGISTRY_APP_ID', fracRegistryApp.appId)
-    fs.writeFileSync(envPath, env)
   }
 
   /** What the seed made an account responsible for, as greppable tags. */
@@ -905,7 +917,7 @@ async function main() {
     'INSTANCES',
     ...INSTANCES.map(
       (i) =>
-        `#${instanceNumIds.get(i.label)} ${i.label.padEnd(8)} app ${instanceAppIds.get(i.label)}  ` +
+        `#${instanceNumIds.get(i.label)} ${i.label.padEnd(13)} app ${instanceAppIds.get(i.label)}  ` +
         `escrows ${i.escrows.join(',').padEnd(6)}  ${num(Object.values(i.aq).reduce((a, b) => a + b, 0))} AQ ` +
         `over ${Object.keys(i.aq).length} accounts`,
     ),
