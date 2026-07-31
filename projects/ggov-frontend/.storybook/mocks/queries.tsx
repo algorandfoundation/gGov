@@ -229,7 +229,7 @@ export function useCanVoteMany(
   return out
 }
 
-export function useXGovVotingPowers(
+export function useGovVotingPowers(
   committeeIdBase64Url: string | undefined,
   accounts: string[],
 ): Record<string, number | undefined> {
