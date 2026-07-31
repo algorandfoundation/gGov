@@ -24,6 +24,9 @@ import Address from '@/components/Address'
 import AccountSelector, { AccountSelectorItem, PooledSelectorItem } from '@/components/AccountSelector'
 import PooledSharePanel from '@/components/vote/PooledSharePanel'
 import TopicVoteCard from '@/components/TopicVoteCard'
+import ElectionCard from '@/components/ElectionCard'
+import CandidateBallotCard from '@/components/CandidateBallotCard'
+import ElectionStandings from '@/components/ElectionStandings'
 import SidebarLayout from '@/components/SidebarLayout'
 import CollectiveStatusCard from '@/components/CollectiveStatusCard'
 import ConnectedWalletsEligibility from '@/components/ConnectedWalletsEligibility'
@@ -46,7 +49,8 @@ import { groupCandidates } from 'ggov-sdk'
 import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } from '@/utils/time'
 import { formatApprox } from '@/utils/format'
 import { periodCountLabel, periodTerms, plural } from '@/utils/periodTerms'
-import { singleChoiceIndex } from '@/utils/vote'
+import { classifyOption, singleChoiceIndex, tallyBallot, type OptionSentiment } from '@/utils/vote'
+import { cn } from '@/lib/utils'
 import { toBase64Url } from '@/hooks/queries'
 import { TxButton } from '@/components/TxButtonContent'
 
@@ -89,6 +93,20 @@ function VoteAllocationSummary({
       )}
     </div>
   )
+}
+
+/**
+ * A race's own labels for the three ballot sentiments, read off a candidate's
+ * on-chain options.
+ *
+ * Options are free-form, and every candidate in a race carries the same three, so
+ * any one of them names the race's vocabulary. The fallbacks are what the Manage UI
+ * writes today; a period seeded before the Veto rename reads "Against" instead, and
+ * the legend and standings should say what the voter is actually choosing between.
+ */
+function sentimentLabels(options: string[] | undefined) {
+  const find = (s: OptionSentiment) => options?.find((o) => classifyOption(o) === s)
+  return { yes: find('yes') ?? 'Support', no: find('no') ?? 'Veto', abstain: find('abstain') ?? 'Abstain' }
 }
 
 /**
@@ -585,6 +603,21 @@ export default function VotePeriodDetail() {
     // (exactly one non-zero option). Split/advanced votes get no tag rather than
     // misleadingly highlighting just the largest allocation.
     const votedOptionIdx = mode === 'results' ? singleChoiceIndex(voteRecord?.topicVotes[topicIdx]) : undefined
+    // A candidate is scored, not chosen between, so the simple ballot gives each one
+    // sentiment chips instead of a radio list of "options". Applies to every candidate
+    // on an election ballot, including the ones no declared race claimed.
+    if (isElection && mode === 'select') {
+      return (
+        <CandidateBallotCard
+          key={topicIdx}
+          name={tb?.title ?? `Candidate ${topicIdx + 1}`}
+          statement={tb?.body}
+          options={options}
+          selectedOption={simpleSelections[topicIdx] ?? -1}
+          onSelect={(optIdx) => handleSimpleSelect(topicIdx, optIdx)}
+        />
+      )
+    }
     return (
       <TopicVoteCard
         key={topicIdx}
@@ -620,6 +653,79 @@ export default function VotePeriodDetail() {
           ) : undefined
         }
       />
+    )
+  }
+
+  /**
+   * One race on an election ballot: the {@link ElectionCard} shell around whichever
+   * view the current state calls for.
+   *
+   * - scoring (active, eligible, simple) → a {@link CandidateBallotCard} per candidate
+   * - advanced → the plain {@link TopicVoteCard} allocation inputs, which elections
+   *   still support: the contract wants every topic row to spend the voter's full
+   *   power, and splitting it across Support/Veto/Abstain is a legitimate way to do
+   *   that. The scoring chips are single-choice by construction, so they can't
+   *   express it.
+   * - otherwise → read-only {@link ElectionStandings}, or the bare option list before
+   *   voting opens and there is nothing to rank.
+   */
+  function renderElection(g: (typeof groups)[number]) {
+    const scoring = showVoteForm && !advancedMode
+    const labels = sentimentLabels(g.candidates[0]?.options)
+    const body = (() => {
+      if (g.candidates.length === 0) {
+        return <p className="px-[18px] py-5 text-muted-foreground">No candidates are standing in this election.</p>
+      }
+      if (showVoteForm || isUpcoming) {
+        return (
+          <div className={cn('px-[18px] py-3.5', scoring ? 'space-y-2.5' : 'space-y-4')}>
+            {g.candidates.map((c) => renderBallotItem(c.topicIndex))}
+          </div>
+        )
+      }
+      return (
+        <ElectionStandings
+          seats={g.election.s}
+          labels={labels}
+          candidates={g.candidates.map((c) => {
+            const { yes, no, abstain } = tallyBallot(c.options, c.tallies)
+            return {
+              name: c.name ?? `Candidate ${c.topicIndex + 1}`,
+              support: yes,
+              veto: no,
+              abstain,
+            }
+          })}
+        />
+      )
+    })()
+
+    return (
+      <ElectionCard
+        key={g.electionIndex}
+        electionIndex={g.electionIndex}
+        title={g.election.t}
+        seats={g.election.s}
+        candidateCount={g.candidates.length}
+        scoring={
+          scoring
+            ? {
+                scored: g.candidates.filter((c) => (simpleSelections[c.topicIndex] ?? -1) >= 0).length,
+                options: g.candidates[0]?.options ?? [],
+              }
+            : undefined
+        }
+        note={
+          !scoring && !showVoteForm && !isUpcoming && g.candidates.length > 0 ? (
+            <>
+              Top {g.election.s} by net score ({labels.yes} − {labels.no}) take the seats.{' '}
+              {isEnded ? 'Final tallies recorded on-chain.' : 'Standings are provisional until voting closes.'}
+            </>
+          ) : undefined
+        }
+      >
+        {body}
+      </ElectionCard>
     )
   }
 
@@ -844,7 +950,9 @@ export default function VotePeriodDetail() {
 
       <div>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">{terms.Items}</h2>
+          {/* Each election card carries its own name and seat count, so the section
+              heading names what the ballot is rather than repeating "Candidates". */}
+          <h2 className="text-xl font-semibold">{isElection ? 'Elections' : terms.Items}</h2>
           {showVoteForm && (
             <div className="flex shrink-0 items-center gap-2.5">
               {/* Dropped on narrow screens: "Candidates" leaves the row too tight for
@@ -896,30 +1004,18 @@ export default function VotePeriodDetail() {
 
       {period.topics.length === 0 ? (
         <p className="text-muted-foreground">No {terms.items} in this period.</p>
-      ) : elect && elect.length > 1 ? (
-        // Several races on one ballot: label each, in `elect` order, so a voter can
-        // tell which seat a candidate is standing for. A period running one election
-        // keeps the plain list — its title already names the race.
-        <div className="flex flex-col gap-8">
-          {groups.map((g) => (
-            <section key={g.electionIndex}>
-              <h3 className="mb-3.5 font-display text-lg font-bold">
-                {g.election.t}
-                <span className="ml-2 text-[13px] font-medium text-muted-foreground">
-                  {plural(g.election.s, 'seat')}
-                </span>
-              </h3>
-              {g.candidates.length === 0 ? (
-                <p className="text-muted-foreground">No candidates are standing in this election.</p>
-              ) : (
-                <div className="space-y-4">{g.candidates.map((c) => renderBallotItem(c.topicIndex))}</div>
-              )}
-            </section>
-          ))}
+      ) : isElection ? (
+        // Each race gets its own card, in `elect` order, so a voter can tell which
+        // seats a candidate is standing for — a candidate is only ever ranked
+        // against the others in its own race.
+        <div className="flex flex-col gap-[18px]">
+          {groups.map((g) => renderElection(g))}
           {ungroupedIdx.length > 0 && (
             <section>
               <h3 className="mb-3.5 font-display text-lg font-bold">Other candidates</h3>
-              <div className="space-y-4">{ungroupedIdx.map(renderBallotItem)}</div>
+              <div className={cn(showVoteForm && !advancedMode ? 'space-y-2.5' : 'space-y-4')}>
+                {ungroupedIdx.map(renderBallotItem)}
+              </div>
             </section>
           )}
         </div>
