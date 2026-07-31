@@ -64,7 +64,7 @@ Box:
 
 ```
 AccountVotingRecord {
-  byDelegator: bool
+  isDelegated: bool
   topicVotes: votes[][] # e.g. [[topic 1 option 1, topic 1 option 2, topic 1 option 3],[topic 2 option 1, topic 2 option 2, topic 2 option 3]]
 }
 ```
@@ -115,7 +115,7 @@ TopicBig {
 - `t` — topics array (`GGovTopic[]` with inlined vote tallies)
 - `P` — period body JSON (single box)
 - `T<topicIndex(uint32)>` — topic body JSON
-- `v<address>` — `GGovVoteRecord { byDelegator, topicVotes[][] }`
+- `v<address>` — `GGovVoteRecord { isDelegated, topicVotes[][] }`
 
 ## Methods
 

@@ -1,7 +1,7 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
-import { generateAccount, getApplicationAddress } from 'algosdk'
-import { FracDelegationSDK } from 'frac-delegation-sdk'
+import { Address, generateAccount, getApplicationAddress } from 'algosdk'
+import { FracDelegationInstanceClient, FracDelegationSDK } from 'frac-delegation-sdk'
 import { GGovCommitteeFile, GGovSDK } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -11,6 +11,7 @@ import {
   errAqIncomplete,
   errAqNotStarted,
   errGGovCannotOverride,
+  errGGovDelegationNoAcctRef,
   errGGovNoDelegation,
   errGGovNotReady,
   errGGovPeriodNotExists,
@@ -94,6 +95,10 @@ const setupVoting = async (
   const { appId: instanceAppId, instanceId, sdk } = await deployFracInstance(localnet, testAccount)
   const registrySdk = sdk.registry
   await registrySdk.setGGovRegistryApp({ appId: ggovRegistrySdk.appId })
+  // The reverse pointer: it lets the gGov registry accept a frac-only account (an AQ holder with no
+  // gGov committee membership) as a delegator in set_voting_account, which is what makes user
+  // delegation available to frac voters at all.
+  await ggovSdk.registry.setFracRegistryApp({ appId: registrySdk.appId })
   // A powerless escrow is one that is not a committee member: it snapshots 0 votes. Registered
   // first so the greedy spread has to step over it at index 0, not just past the end.
   if (powerlessFirstEscrow) {
@@ -140,6 +145,8 @@ const setupVoting = async (
       sdk.getPeriodEscrowVotes(instanceId, periodId, escrowIndex),
     getVotingRecord: (periodId: bigint | number, accountId: bigint | number) =>
       sdk.getVotingRecord(instanceId, periodId, accountId),
+    canVote: (periodId: bigint | number, voterAccount: string, senderAccount?: string) =>
+      sdk.canVote(instanceId, periodId, voterAccount, senderAccount),
   }
 
   return {
@@ -173,6 +180,24 @@ const addVoter = async (localnet: AlgorandFixture, ctx: VotingCtx, aq: number) =
   await ctx.instanceSdk.ingestAq({ committeeNumId: ctx.committeeNumId, accountAqs: [[account.toString(), aq]] })
   return { account, sdk: bindVote(sdk, ctx.instanceId) }
 }
+
+/** A funded account with a vote() signing as it, but no AlgoQuarters of its own — a pure delegatee. */
+const addDelegatee = async (localnet: AlgorandFixture, ctx: VotingCtx) => {
+  const { account, sdk } = await generateAccountWithFracSDK(localnet, ctx.sdk.appId, (2).algos())
+  return { account, sdk: bindVote(sdk, ctx.instanceId) }
+}
+
+/**
+ * Point `delegator` at `delegatee` on the gGov registry — the single source of truth for gGov and
+ * frac delegations alike. `delegator` here is a frac-only account (AQ holder, no gGov committee
+ * membership), so this also exercises the gGov registry's frac-registry fallback — hence
+ * `fractionalOnly`, which pays for that fallback's inner call.
+ */
+const delegateTo = (localnet: AlgorandFixture, ctx: VotingCtx, delegator: Address, delegatee: Address) =>
+  createSDK(localnet, ctx.ggovRegistrySdk.appId, delegator).setVotingAccount({
+    votingAddress: delegatee.toString(),
+    fractionalOnly: true,
+  })
 
 /** Ingest `aq` AlgoQuarters for a fresh address that never votes (and never signs). */
 const ingestNonVoter = async (ctx: VotingCtx, aq: number) => {
@@ -517,6 +542,222 @@ describe('FracDelegationInstance vote', () => {
     })
   })
 
+  // User (voter -> delegatee) delegation, mirroring GGovPeriod.vote's model and reading the same
+  // source of truth: the gGov registry's `delegations` box. Distinct from the escrow -> instance
+  // delegation the fixture always sets up, which is what lets the instance cast externally.
+  describe('user delegation', () => {
+    test('a delegatee casts the delegator internal vote', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+
+      const result = await delegatee.sdk.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.account.toString(),
+        topicVotes: [[50, 30, 20]],
+      })
+
+      // Tallied against the delegator's AQ weight, exactly as if they had voted themselves.
+      expect((await ctx.instanceSdk.getPeriodVoteCache(ctx.periodId))!.internal).toEqual([[50, 30, 20]])
+      expect(await ggovTallies(ctx)).toEqual([[25, 15, 10]])
+
+      // The record is keyed by the delegator's account ID and flagged as delegated.
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      const record = (await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!
+      expect(record.isDelegated).toBe(true)
+      expect(record.topicVotes).toEqual([[50, 30, 20]])
+      // Voting for someone else does not make the delegatee a frac account (0 = unregistered), so it
+      // has no AQ ledger entry and no record of its own.
+      expect(await accountIdOf(ctx, delegatee.account.toString())).toBe(0)
+
+      // 5 inners = gGov getDelegate + frac registry getAccount + 3 escrow casts.
+      expect(voteInnerTxnCount(result)).toBe(5)
+    })
+
+    test('a delegatee cannot override a vote the owner cast directly', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+
+      await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[100, 0, 0]] })
+      await expect(
+        delegatee.sdk.vote({
+          periodId: ctx.periodId,
+          voterAccount: voter.account.toString(),
+          topicVotes: [[0, 0, 100]],
+        }),
+      ).rejects.toThrow(transformedError(errGGovCannotOverride))
+
+      // Rejected before anything was mutated: tally, record and gGov tallies all still the direct vote.
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      const record = (await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!
+      expect(record.isDelegated).toBe(false)
+      expect(record.topicVotes).toEqual([[100, 0, 0]])
+      expect((await ctx.instanceSdk.getPeriodVoteCache(ctx.periodId))!.internal).toEqual([[100, 0, 0]])
+      expect(await ggovTallies(ctx)).toEqual([[50, 0, 0]])
+    })
+
+    test('the owner can always override a delegated vote', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+
+      await delegatee.sdk.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.account.toString(),
+        topicVotes: [[100, 0, 0]],
+      })
+      await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[0, 0, 100]] })
+
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      const record = (await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!
+      expect(record.isDelegated).toBe(false) // flips back, and locks the delegatee out from here on
+      expect(record.topicVotes).toEqual([[0, 0, 100]])
+      expect((await ctx.instanceSdk.getPeriodVoteCache(ctx.periodId))!.internal).toEqual([[0, 0, 100]])
+      expect(await ggovTallies(ctx)).toEqual([[0, 0, 50]])
+
+      await expect(
+        delegatee.sdk.vote({
+          periodId: ctx.periodId,
+          voterAccount: voter.account.toString(),
+          topicVotes: [[100, 0, 0]],
+        }),
+      ).rejects.toThrow(transformedError(errGGovCannotOverride))
+    })
+
+    test('a delegatee can override its own earlier delegated vote', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+
+      const voteAs = (topicVotes: number[][]) =>
+        delegatee.sdk.vote({ periodId: ctx.periodId, voterAccount: voter.account.toString(), topicVotes })
+      await voteAs([[100, 0, 0]])
+      await voteAs([[0, 100, 0]])
+
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      const record = (await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!
+      expect(record.isDelegated).toBe(true)
+      expect(record.topicVotes).toEqual([[0, 100, 0]])
+      expect((await ctx.instanceSdk.getPeriodVoteCache(ctx.periodId))!.internal).toEqual([[0, 100, 0]])
+      expect(await ggovTallies(ctx)).toEqual([[0, 50, 0]])
+    })
+
+    test('a sender the voter has not delegated to is rejected', async () => {
+      const ctx = await setupVoting(localnet, { totalAccounts: 2 })
+      const voter = await addVoter(localnet, ctx, 60)
+      const otherVoter = await addVoter(localnet, ctx, 40)
+      const stranger = await addDelegatee(localnet, ctx)
+      const strangerVotesVoter = () =>
+        stranger.sdk.vote({
+          periodId: ctx.periodId,
+          voterAccount: voter.account.toString(),
+          topicVotes: [[60, 0, 0]],
+        })
+
+      // No delegation at all.
+      await expect(strangerVotesVoter()).rejects.toThrow(transformedError(errGGovNoDelegation))
+
+      // Delegated, but from somebody else.
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+      await expect(strangerVotesVoter()).rejects.toThrow(transformedError(errGGovNoDelegation))
+
+      // Holding a delegation is not a licence to vote for anyone: the stranger is now somebody's
+      // delegatee, but the gate matches getDelegate(voterAccount) against the sender, so a
+      // delegation received from `otherVoter` buys nothing against `voter`.
+      await delegateTo(localnet, ctx, otherVoter.account, stranger.account)
+      await expect(strangerVotesVoter()).rejects.toThrow(transformedError(errGGovNoDelegation))
+      expect((await ctx.instanceSdk.getPeriodVoteCache(ctx.periodId))!.internal).toEqual([[0, 0, 0]])
+
+      // ...and that delegation really is live, so the rejections above are about the delegator, not
+      // a fixture that failed to delegate: the same sender casts `otherVoter`'s weight fine.
+      await stranger.sdk.vote({
+        periodId: ctx.periodId,
+        voterAccount: otherVoter.account.toString(),
+        topicVotes: [[0, 40, 0]],
+      })
+      expect((await ctx.instanceSdk.getPeriodVoteCache(ctx.periodId))!.internal).toEqual([[0, 40, 0]])
+    })
+
+    test('a delegated vote without the delegator account reference is rejected', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+
+      // Call the instance client directly so we can omit the account reference the SDK adds for
+      // delegated votes. The contract must reject it (Txn.accounts(1) !== the delegator).
+      const rawClient = new FracDelegationInstanceClient({
+        algorand: localnet.algorand,
+        appId: await ctx.sdk.getInstanceAppId(ctx.instanceId),
+        defaultSender: delegatee.account.toString(),
+        defaultSigner: localnet.algorand.account.getSigner(delegatee.account),
+      })
+      await expect(
+        rawClient.send.vote({
+          args: { voterAccount: voter.account.toString(), periodId: ctx.periodId, topicVotes: [[100, 0, 0]] },
+          extraFee: (5000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errGGovDelegationNoAcctRef))
+    })
+
+    test('the registry-side record readers carry the delegated flag through', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+
+      await delegatee.sdk.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.account.toString(),
+        topicVotes: [[50, 30, 20]],
+      })
+
+      const expected = {
+        instanceNumId: Number(ctx.instanceId),
+        instanceAppId: await ctx.sdk.getInstanceAppId(ctx.instanceId),
+        instanceName: (await ctx.registrySdk.getInstance(ctx.instanceId))!.name,
+        isDelegated: true,
+        topicVotes: [[50, 30, 20]],
+      }
+      const voterAddress = voter.account.toString()
+      expect(await ctx.registrySdk.getAccountVotingRecord(voterAddress, ctx.instanceId, ctx.periodId)).toEqual(expected)
+      expect(await ctx.registrySdk.getAccountVotingRecords(voterAddress, ctx.periodId)).toEqual([expected])
+    }, 120_000)
+
+    test('canVote mirrors the delegated gates, including the override guard', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      const voterAddress = voter.account.toString()
+      const delegateeAddress = delegatee.account.toString()
+
+      // Self-vote is fine; the delegatee is not yet authorised, and has no AQ of its own either.
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, voterAddress)).toEqual([true, 100n])
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, voterAddress, delegateeAddress)).toEqual([false, 0n])
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, delegateeAddress)).toEqual([false, 0n])
+
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, voterAddress, delegateeAddress)).toEqual([true, 100n])
+
+      // A delegated vote leaves the delegatee eligible; a direct one locks it out, exactly as vote()
+      // enforces.
+      await delegatee.sdk.vote({ periodId: ctx.periodId, voterAccount: voterAddress, topicVotes: [[100, 0, 0]] })
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, voterAddress, delegateeAddress)).toEqual([true, 100n])
+      await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[0, 100, 0]] })
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, voterAddress, delegateeAddress)).toEqual([false, 0n])
+      expect(await ctx.instanceSdk.canVote(ctx.periodId, voterAddress)).toEqual([true, 100n])
+
+      // An unsynced period is never votable.
+      expect(await ctx.instanceSdk.canVote(999, voterAddress)).toEqual([false, 0n])
+    })
+  })
+
   // The reader/algoquarters specs cover these getters only against empty topicVotes; here a real vote
   // is cast so the nested Uint32[][] payload is exercised end-to-end
   describe('cross-instance voting record readers', () => {
@@ -529,6 +770,7 @@ describe('FracDelegationInstance vote', () => {
         instanceNumId: Number(ctx.instanceId),
         instanceAppId: await ctx.sdk.getInstanceAppId(ctx.instanceId),
         instanceName: (await ctx.registrySdk.getInstance(ctx.instanceId))!.name,
+        isDelegated: false, // cast by the owner, not a delegatee
         topicVotes: [[50, 30, 20]], // exactly what was submitted, decoded via the generated struct
       }
 

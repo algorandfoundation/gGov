@@ -647,9 +647,15 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
 
   /**
    * Internal vote on gGov period `periodId`, callable by any account with ingested AlgoQuarters in
-   * the period's committee. `topicVotes` is [topic][option] AlgoQuarters, parallel to the period's
-   * topics; every topic's row must sum to the sender's full AQ weight (abstain explicitly via each
-   * topic's last option). Re-votes overwrite.
+   * the period's committee, or by that account's delegatee. `topicVotes` is [topic][option]
+   * AlgoQuarters, parallel to the period's topics; every topic's row must sum to the voter's full AQ
+   * weight (abstain explicitly via each topic's last option). Re-votes overwrite.
+   *
+   * `voterAccount` defaults to this SDK's `writerAccount` — a plain self-vote. To cast a delegated
+   * vote, give the SDK a `writerAccount` whose signer is the delegatee and pass the delegator as
+   * `voterAccount`; the delegation itself lives on the gGov registry (`set_voting_account`), which
+   * is the single source of truth for gGov and frac delegations alike. A delegatee can never
+   * overwrite a vote the owner cast directly (`ERR:GV_OD`).
    *
    * Whenever the vote moves the instance's mapped gGov target, the contract re-casts the delta
    * externally through its escrows inside this same group — the first vote on a period always
@@ -664,19 +670,27 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   async makeVoteTxns({
     instanceNumId,
     periodId,
+    voterAccount,
     topicVotes,
     note,
     client,
     builder,
-  }: FracDelegationInstanceContractArgs['vote(uint32,uint32[][])void'] & {
+  }: Omit<FracDelegationInstanceContractArgs['vote(address,uint32,uint32[][])void'], 'voterAccount'> & {
+    /** Defaults to this SDK's writerAccount (self-vote) */
+    voterAccount?: string
     instanceNumId: bigint | number
     client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
     const numEscrows = await this.escrowCountUpperBound(instanceNumId)
-    // Worst-case inner calls: 1 registry getAccount, plus per re-cast escrow the period vote() and
-    // the two registry reads it makes itself (getDelegate + getGovVotingPower).
-    const innerCalls = 1 + numEscrows * 3
+    // The sender is always this SDK's writerAccount; the voter defaults to it (self-vote).
+    const effectiveSender = String(this.writerAccount!.sender)
+    const voter = voterAccount === undefined ? effectiveSender : String(voterAccount)
+    const isDelegated = voter !== effectiveSender
+    // Worst-case inner calls: 1 registry getAccount, 1 gGov registry getDelegate when delegated,
+    // plus per re-cast escrow the period vote() and the two registry reads it makes itself
+    // (getDelegate + getGovVotingPower).
+    const innerCalls = 1 + (isDelegated ? 1 : 0) + numEscrows * 3
     // Slots, worst case (every escrow re-cast): 5 per escrow (the escrow's account ref — the inner
     // vote() passes it in its foreign-accounts array, so it must be available to the group — plus
     // this instance's periodEscrowVotes box, the period app's per-escrow vote record, and the gGov
@@ -686,12 +700,19 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // box; the gGov registry's committee metadata + member superbox). Each pad also adds 16
     // inner-txn allowance and 700 opcodes, both of which the ref demand dominates. Validated
     // against simulate in the e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
-    builder = padForRefSlots(builder, numEscrows * 5 + 20, 'vote')
-    return builder.vote({
-      args: { periodId, topicVotes },
+    // A delegated vote adds 2: the voter's account ref and the gGov registry's delegations box.
+    builder = padForRefSlots(builder, numEscrows * 5 + 20 + (isDelegated ? 2 : 0), 'vote')
+    const opts: Parameters<typeof builder.vote>[0] = {
+      args: { voterAccount: voter, periodId, topicVotes },
       note,
       extraFee: (innerCalls * 1000).microAlgo(),
-    })
+    }
+    if (isDelegated) {
+      // The contract requires the delegator at Txn.accounts(1) so delegated votes are visible to
+      // indexers/explorers. Setting it explicitly keeps it first; resource population appends.
+      opts.accountReferences = [voter]
+    }
+    return builder.vote(opts)
   }
 
   vote = this.makeInstanceTxnExecutor({ maker: this.makeVoteTxns })

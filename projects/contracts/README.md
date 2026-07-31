@@ -274,7 +274,7 @@ key: voter address
 
 value: GGovVoteRecord struct
 
-- `byDelegator`: boolean - whether the record was cast by a delegatee on the voter's behalf
+- `isDelegated`: boolean - whether the record was cast by a delegatee on the voter's behalf
 - `topicVotes`: uint32[][] - the voter's per-topic vote allocation (used to subtract old votes when re-voting)
 
 ## Methods
@@ -312,7 +312,7 @@ if a record already exists:
   reject if a delegatee tries to override a direct vote
   subtract the old allocation from the tallies
 add the new allocation to the tallies
-store vote record { byDelegator, topicVotes }
+store vote record { isDelegated, topicVotes }
 ```
 
 - `canVote(voterAccount, senderAccount)` -> [boolean, uint64] - Whether the account can vote and the resulting voting power; returns `[false, 0]` in any rejection case (mirrors `vote`'s checks, non-throwing)

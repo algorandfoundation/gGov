@@ -159,6 +159,7 @@ All actions are pinned to commit SHAs. Secrets are scoped to the step that needs
 ## Key Patterns
 
 - **Registry-as-factory**: One durable `GGovRegistry` app; each voting period is a separate `GGovPeriod` app spawned via inner-txn. Registry is the trust root for committees, operator identity, and delegations.
+- **One delegation map for both systems**: `GGovRegistry.delegations` is the single source of truth for gGov period voting _and_ frac-delegation instance voting (escrow → instance and user → user alike), so `set_voting_account` accepts a delegator known to the gGov registry or to the frac registry. See `ARCHITECTURE.md` § Delegation.
 - **Period summary mirror**: Registry holds `periodId → { appId, votingStart, votingEnd, numTopics }`. Period contract mirrors edits back via `registry.updatePeriodSummary` (gated on `Global.callerApplicationId === storedAppId`). One round trip lists all periods.
 - **Account ID system**: uint32 IDs assigned to addresses to save storage (28 bytes/ref).
 - **Superbox**: Efficient large-array box storage via `@d13co/superbox`.

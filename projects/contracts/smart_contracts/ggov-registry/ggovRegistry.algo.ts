@@ -340,19 +340,22 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * `set_voting_account(address,address)void`, so callers/tooling built for the xGov registry work
    * unchanged against gGov. Maps xGov's (xgov_address, voting_address) onto gGov's (delegator,
    * delegatee):
-   *  - `votingAddress === xgovAddress` is xGov's "vote for self" (no external delegation) and clears
+   *  - `votingAddress === govAddress` is xGov's "vote for self" (no external delegation) and clears
    *    any existing gGov delegation.
-   *  - otherwise records the delegation `xgovAddress → votingAddress`.
+   *  - otherwise records the delegation `govAddress → votingAddress`.
    * Authorization matches xGov: the xgov_address itself OR its current delegatee may set it.
+   *
+   * This registry is the single source of truth for fractional-delegation user delegations too, so
+   * the delegator may be known to gGov or to the frac registry - see `ensureDelegatorRegistered`.
    */
   @abimethod({ name: 'set_voting_account' })
-  public setVotingAccount(xgovAddress: Account, votingAddress: Account): void {
-    loggedAssert(this.accounts(xgovAddress).exists, errAccountNotExists) // xGov NOT_XGOV analog
-    this.ensureCallerCanManageDelegation(xgovAddress)
-    if (votingAddress === xgovAddress || votingAddress === Global.zeroAddress) {
-      this.removeDelegation(xgovAddress)
+  public setVotingAccount(govAddress: Account, votingAddress: Account): void {
+    this.ensureDelegatorRegistered(govAddress) // xGov NOT_XGOV analog
+    this.ensureCallerCanManageDelegation(govAddress)
+    if (votingAddress === govAddress || votingAddress === Global.zeroAddress) {
+      this.removeDelegation(govAddress)
     } else {
-      this.addDelegation(xgovAddress, votingAddress)
+      this.addDelegation(govAddress, votingAddress)
     }
   }
 
@@ -360,6 +363,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   public mirrorXGovDelegation(account: Account): void {
     this.ensureCallerIsAdmin()
     loggedAssert(this.xGovRegistryApp.value.id > 0, errRegistryMissing)
+    // Mirroring is an xGov-account-only path, so the delegator gate stays strict here rather than
+    // going through ensureDelegatorRegistered (addDelegation trusts its callers to have checked).
+    loggedAssert(this.accounts(account).exists, errAccountNotExists)
     // never overwrite an existing gGov delegation; mirroring only seeds delegations not yet set locally
     loggedAssert(!this.delegations(account).exists, errGGovDelegationExists)
 
@@ -398,9 +404,6 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
         loggedErr(errAccountNotExists)
       }
 
-      // Do NOT hoist compileArc4 out of the loop: hoisting materialises the frac registry's program
-      // and puya rejects the resulting compile cycle (fracRegistry compiles fracInstance, which
-      // compiles this registry). Inline with an explicit appId, only the method selector is needed.
       const escrowInstance = compileArc4(FracDelegationRegistryContract).call.getEscrow({
         appId: this.fracRegistryApp.value,
         args: [escrow],
@@ -421,12 +424,16 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * reverse (`reverseDelegations`) indexes in sync. Single entry point for adding a delegation —
    * reused by `setVotingAccount` and `mirrorXGovDelegation`. Re-delegating moves the delegator's address
    * off the previous delegatee's reverse list onto the new one.
+   *
+   * PRECONDITION: callers must have already established that `delegator` is a known account, so the
+   * reverse index can't be spammed from random addresses. `setVotingAccount` goes through
+   * `ensureDelegatorRegistered` (gGov OR frac registry); `mirrorXGovDelegation` and
+   * `importFracDelegations` each assert `accounts(delegator).exists` themselves. The check is not
+   * repeated here because the frac fallback costs an inner call.
    */
   private addDelegation(delegator: Account, delegatee: Account): void {
     loggedAssert(delegator !== delegatee, errGGovSelfDelegate)
     loggedAssert(delegator !== Global.zeroAddress, errGGovSelfDelegate)
-    // only existing accounts can delegate; prevents spamming delegations from random addresses and keeps reverse index clean
-    loggedAssert(this.accounts(delegator).exists, errAccountNotExists)
     let previousDelegatee = Global.zeroAddress
     const fwdBox = this.delegations(delegator)
     if (fwdBox.exists) {
@@ -437,6 +444,32 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     fwdBox.value = delegatee
     this.addReverseDelegation(delegatee, delegator)
     emit<GGovDelegationSet>({ delegator, previousDelegatee, delegatee })
+  }
+
+  /**
+   * A delegator must be known to this registry (`accounts` box, i.e. ingested onto some committee)
+   * OR to the fractional-delegation registry (`FracRegAccount.accountId !== 0`). This registry is
+   * the single source of truth for both kinds of delegation, and a frac user - someone holding
+   * AlgoQuarters in an instance - may have no gGov committee membership at all, so gating on the
+   * gGov account alone would leave them unable to delegate their frac voting weight.
+   *
+   * The frac branch costs one readonly inner call and is only reached when the cheap gGov box read
+   * misses; a registry with no `fracRegistryApp` configured behaves exactly as before. Frac accounts
+   * are minted by the instance's `ingestAq` (→ frac registry `getOrCreateAccountWithInstance`), so
+   * any AQ holder qualifies and random addresses still cannot spam the reverse index.
+   */
+  private ensureDelegatorRegistered(delegator: Account): void {
+    if (this.accounts(delegator).exists) return
+    // No frac registry wired up: the account is simply unknown.
+    loggedAssert(this.fracRegistryApp.value.id > 0, errAccountNotExists)
+
+    const fracAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
+      appId: this.fracRegistryApp.value,
+      args: [delegator],
+    }).returnValue
+
+    // getAccount returns the zero sentinel (accountId 0) instead of throwing for an unknown account
+    loggedAssert(fracAccount.accountId.asUint64() > 0, errAccountNotExists)
   }
 
   /**

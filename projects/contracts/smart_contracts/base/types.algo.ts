@@ -453,7 +453,7 @@ export function getEmptyFracCommitteeAq(): FracCommitteeAq {
  * `votingRecords` box key: [gGov period ID, frac registry account ID].
  *
  * Keyed by the registry's numeric account ID for the same reason `FracAccountAqKey` is: 4 bytes
- * instead of 32 of address, and `vote` resolves the sender through the registry anyway.
+ * instead of 32 of address, and `vote` resolves the voter through the registry anyway.
  */
 export type FracPeriodAccountKey = [Uint32, Uint32]
 
@@ -464,6 +464,12 @@ export type FracPeriodAccountKey = [Uint32, Uint32]
  * before the new rows are added, mirroring `GGovVoteRecord`.
  */
 export type FracVotingRecord = {
+  /**
+   * True when the record was written by a delegatee on the voter's behalf (`Txn.sender !==
+   * voterAccount`), false when the voter cast it themselves. Mirrors `GGovVoteRecord.isDelegated`,
+   * and carries the same guard: a delegatee may not overwrite a record with `isDelegated === false`.
+   */
+  isDelegated: boolean
   /** [topic][option] internal votes, in AlgoQuarters */
   topicVotes: Uint32[][]
 }
@@ -474,6 +480,7 @@ export type FracVotingRecord = {
  */
 export function getEmptyFracVotingRecord(): FracVotingRecord {
   return {
+    isDelegated: false,
     topicVotes: [] as Uint32[][],
   }
 }
@@ -522,6 +529,8 @@ export type FracAccountVotingRecord = {
   instanceAppId: uint64
   /** Human-readable instance label */
   instanceName: string
+  /** Whether the record was cast by a delegatee on the voter's behalf */
+  isDelegated: boolean
   /** [topic][option] internal votes, in AlgoQuarters; empty if the account has not voted */
   topicVotes: Uint32[][]
 }
@@ -529,13 +538,15 @@ export type FracAccountVotingRecord = {
 /**
  * ARC-28 event emitted by `FracDelegationInstance.vote`, mirroring `GGovVoteCast`.
  *
- * Encoded size is `49 + Σ(4 + 4·options)` bytes - a smaller fixed head than `GGovVoteCast`'s 81,
- * whose payload `GGovPeriod.setReady` already caps at 943, so this event always fits the 1024-byte
- * log limit for any period that is votable at all.
+ * Encoded size is `81 + Σ(4 + 4·options)` bytes - the same fixed head as `GGovVoteCast`, whose
+ * payload `GGovPeriod.setReady` already caps at 943, so this event always fits the 1024-byte log
+ * limit for any period that is votable at all.
  */
 export type FracVoteCast = {
-  /** The voting account (`Txn.sender`) */
+  /** The account whose AlgoQuarters were voted */
   voter: Account
+  /** The account that submitted the call - equals `voter` unless a delegatee cast it */
+  sender: Account
   /** The voter's frac registry numeric account ID */
   accountId: Uint32
   /** The voter's AlgoQuarters weight in the period's committee */
