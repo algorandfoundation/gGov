@@ -63,7 +63,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
-import type { GGovCommitteeFile } from 'ggov-sdk'
+import type { Election, GGovCommitteeFile } from 'ggov-sdk'
 import type { AlgoQuartersFile } from 'frac-delegation-sdk'
 
 const require = createRequire(import.meta.url)
@@ -220,15 +220,42 @@ type Ballot = { voter: string; ballot: string; castBy?: string }
 type FracBallot = { voter: string; ballot: string; instance: string }
 
 /**
- * Council candidates, shared by periods 1 and 2. Each is a Support/Veto/Abstain ballot;
- * candidates rank by net score (Support − Veto) for the available seats.
+ * Candidate blurbs, drawn on by both election periods. Each candidate is a Support/Veto/Abstain
+ * ballot; candidates rank by net score (Support − Veto) for the seats of the race they stand in.
  */
-const CANDIDATE_TOPICS = [
-  { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
-  { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
-  { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
-  { title: 'reti.algo', body: 'Reti staking pool collective.' },
-  { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
+const CANDIDATE_BODIES: Record<string, string> = {
+  'txnlab.algo': 'AlgoKit core maintainer and developer tooling.',
+  'folks.algo': 'Folks Finance lending protocol contributor.',
+  'nodely.algo': 'Infrastructure, indexer and node operator.',
+  'reti.algo': 'Réti staking pool collective.',
+  'gard.algo': 'GARD stablecoin protocol team.',
+  'pact.algo': 'Pact AMM protocol and treasury tooling.',
+  'tinyman.algo': 'Tinyman AMM liquidity and grants steward.',
+}
+
+/**
+ * A candidate topic: its blurb plus `e`, the index of the race it stands in. A period holds one
+ * shared ballot, so which election a candidate belongs to is off-chain metadata — the period body
+ * declares the races in `elect` and every candidate names one by index. An untagged candidate on an
+ * election period is an authoring error, not an implicit entry into the first race.
+ */
+const candidates = (titles: string[], e: number) => titles.map((title) => ({ title, body: CANDIDATE_BODIES[title], e }))
+
+/** Period 1: a single race, so `elect` is the one-entry form and every candidate carries `e: 0`. */
+const TERM_ONE_ELECTIONS: Election[] = [{ t: 'gGov Council', s: 3 }]
+const TERM_ONE_CANDIDATES = candidates(['txnlab.algo', 'folks.algo', 'nodely.algo', 'reti.algo', 'gard.algo'], 0)
+
+/**
+ * Period 2 runs two races on one ballot — 4 candidates for 3 council seats, 3 for 2 treasury seats —
+ * which is what exercises the multi-election views. Voters still cast one ballot covering all 7.
+ */
+const TERM_TWO_ELECTIONS: Election[] = [
+  { t: 'gGov Council', s: 3 },
+  { t: 'Treasury committee', s: 2 },
+]
+const TERM_TWO_CANDIDATES = [
+  ...candidates(['txnlab.algo', 'folks.algo', 'nodely.algo', 'reti.algo'], 0),
+  ...candidates(['gard.algo', 'pact.algo', 'tinyman.algo'], 1),
 ]
 
 /** Period 1: 11 of the 15 non-escrow members vote, shaped for a clean descending ranking. */
@@ -246,7 +273,7 @@ const ENDED_BALLOTS: Ballot[] = [
   { voter: 'g9', ballot: 'YNYNA' },
 ]
 
-/** Period 1 frac votes: 670k of tinyman's 1.6M AQ and 525k of reti's 1.4M turn out; the rest abstains. */
+/** Period 1 frac votes: 600k of tinyman's 1.6M AQ and 525k of reti's 1.4M turn out; the rest abstains. */
 const ENDED_FRAC_BALLOTS: FracBallot[] = [
   { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYAN' },
   { instance: 'Tinyman tALGO', voter: 'g1', ballot: 'YYNYN' },
@@ -258,22 +285,24 @@ const ENDED_FRAC_BALLOTS: FracBallot[] = [
 
 /**
  * Period 2: only 7 direct voters so far, and bob's delegated power is untouched — connect as alice
- * to cast his ballot for him, or as bob to override by voting directly.
+ * to cast his ballot for him, or as bob to override by voting directly. Each ballot covers all 7
+ * candidates: council first (4), then the treasury committee (3), in `TERM_TWO_CANDIDATES` order.
+ * Each race is shaped to rank cleanly with its last candidate below the seat cutoff.
  */
 const ACTIVE_BALLOTS: Ballot[] = [
-  { voter: 'alice', ballot: 'YYYYN' },
-  { voter: 'g1', ballot: 'YYYYN' },
-  { voter: 'g2', ballot: 'YYYAN' },
-  { voter: 'g4', ballot: 'YYYNA' },
-  { voter: 'g6', ballot: 'YYNNA' },
-  { voter: 'g8', ballot: 'YNNNY' },
-  { voter: 'g9', ballot: 'YYYNN' },
+  { voter: 'alice', ballot: 'YYYNYYN' },
+  { voter: 'g1', ballot: 'YYYNYYN' },
+  { voter: 'g2', ballot: 'YYANYAN' },
+  { voter: 'g4', ballot: 'YYNAYNA' },
+  { voter: 'g6', ballot: 'YAANYNY' },
+  { voter: 'g8', ballot: 'YNNYANY' },
+  { voter: 'g9', ballot: 'YYYNYYA' },
 ]
 
 /** Period 2 frac votes: tinyman has started, reti has not — carol's reti position is yours to cast. */
 const ACTIVE_FRAC_BALLOTS: FracBallot[] = [
-  { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYYN' },
-  { instance: 'Tinyman tALGO', voter: 'u1', ballot: 'YYYNA' },
+  { instance: 'Tinyman tALGO', voter: 'alice', ballot: 'YYYNYYN' },
+  { instance: 'Tinyman tALGO', voter: 'u1', ballot: 'YYYNYNA' },
 ]
 
 // =========================================================
@@ -633,17 +662,21 @@ async function main() {
   // =========================================================
 
   /**
-   * Fill in an already-created period: body — with `electSeats` for a council election — topics, the
-   * real voting window, ready, then snapshot it on both instances. Must run before any ballot,
-   * because the first vote of either kind locks the period against editPeriod/setReady(false).
+   * Fill in an already-created period: body — carrying `elect` when the period runs elections —
+   * topics, the real voting window, ready, then snapshot it on both instances. Must run before any
+   * ballot, because the first vote of either kind locks the period against editPeriod/setReady(false).
+   *
+   * The body's `elect` is what makes a period an election period; each candidate topic then names
+   * its race in its own body's `e`. Both halves are required — declaring `elect` without tagging the
+   * candidates leaves every one of them unassigned, and the results view has no race to rank them in.
    */
   async function populatePeriod(
     periodId: bigint,
     opts: {
       title: string
       body: string
-      electSeats?: number
-      topics: { title: string; body: string; options?: string[] }[]
+      elect?: Election[]
+      topics: { title: string; body: string; e?: number; options?: string[] }[]
       votingStart: bigint
       votingEnd: bigint
     },
@@ -653,7 +686,7 @@ async function main() {
       body: {
         title: opts.title,
         body: opts.body,
-        ...(opts.electSeats !== undefined ? { electSeats: opts.electSeats } : {}),
+        ...(opts.elect !== undefined ? { elect: opts.elect } : {}),
       },
     })
     for (const topic of opts.topics) {
@@ -663,8 +696,8 @@ async function main() {
       await sdk.addTopicWithBody({
         periodId,
         options:
-          opts.electSeats !== undefined ? ['Support', 'Veto', 'Abstain'] : (topic.options ?? ['Yes', 'No', 'Abstain']),
-        body: { title: topic.title, body: topic.body },
+          opts.elect !== undefined ? ['Support', 'Veto', 'Abstain'] : (topic.options ?? ['Yes', 'No', 'Abstain']),
+        body: { title: topic.title, body: topic.body, ...(topic.e !== undefined ? { e: topic.e } : {}) },
         note: randomNote(),
       })
     }
@@ -700,10 +733,10 @@ async function main() {
   })
 
   await populatePeriod(activePeriodId, {
-    title: 'gGov Council — Term 2 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top 3 lead for the available seats.',
-    electSeats: 3,
-    topics: CANDIDATE_TOPICS,
+    title: 'gGov — Term 2 elections',
+    body: 'Elect 3 council members and a 2-seat treasury committee. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) within their own election and the top scorers lead for its available seats.',
+    elect: TERM_TWO_ELECTIONS,
+    topics: TERM_TWO_CANDIDATES,
     votingStart: now - 3600n,
     votingEnd: now + 86400n * 7n,
   })
@@ -717,8 +750,8 @@ async function main() {
   await populatePeriod(endedPeriodId, {
     title: 'gGov Council — Term 1 election',
     body: 'Elect 3 council members. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top 3 took the available seats.',
-    electSeats: 3,
-    topics: CANDIDATE_TOPICS,
+    elect: TERM_ONE_ELECTIONS,
+    topics: TERM_ONE_CANDIDATES,
     votingStart: endedVotingStart - 3600n,
     votingEnd: endedVotingEnd,
   })
@@ -758,6 +791,24 @@ async function main() {
       })
     }
   }
+
+  /**
+   * The two election periods run different numbers of candidates, so a ballot written to the wrong
+   * width is an easy edit to make. Catch it here rather than as an opaque contract rejection —
+   * period 1's short window leaves no time to work out what a mid-ballot failure meant.
+   */
+  const checkBallotWidths = (label: string, topics: number, ballots: { voter: string; ballot: string }[]) => {
+    const wrong = ballots.filter((b) => b.ballot.length !== topics)
+    if (wrong.length > 0) {
+      throw new Error(
+        `${label}: ${wrong.map((b) => `${b.voter}'s ballot is ${b.ballot.length} long`).join(', ')}, ` +
+          `but the period has ${topics} topics — every ballot needs one choice per topic.`,
+      )
+    }
+  }
+
+  checkBallotWidths('Period 1 ballots', TERM_ONE_CANDIDATES.length, [...ENDED_BALLOTS, ...ENDED_FRAC_BALLOTS])
+  checkBallotWidths('Period 2 ballots', TERM_TWO_CANDIDATES.length, [...ACTIVE_BALLOTS, ...ACTIVE_FRAC_BALLOTS])
 
   step('Casting ballots…')
 
@@ -897,8 +948,10 @@ async function main() {
   )
   section(
     'PERIODS',
-    `#${endedPeriodId} ENDED     council election · ${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
-    `#${activePeriodId} ACTIVE    council election · ${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`,
+    `#${endedPeriodId} ENDED     1 election · ${TERM_ONE_CANDIDATES.length} candidates for ${TERM_ONE_ELECTIONS[0].s} seats · ` +
+      `${ENDED_BALLOTS.length} direct ballots · ${ENDED_FRAC_BALLOTS.length} frac votes`,
+    `#${activePeriodId} ACTIVE    ${TERM_TWO_ELECTIONS.length} elections · ${TERM_TWO_ELECTIONS.map((e) => `${e.t} ${e.s} seats`).join(' · ')} · ` +
+      `${ACTIVE_BALLOTS.length} direct · ${ACTIVE_FRAC_BALLOTS.length} frac · bob and carol still to vote`,
     `#${upcomingPeriodId} UPCOMING  standard vote · 2 topics · opens in 14 days`,
   )
   section(
