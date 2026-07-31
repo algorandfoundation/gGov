@@ -3,7 +3,15 @@ import { within, userEvent, expect } from 'storybook/test'
 import VotePeriodDetail from '@/components/pages/vote/VotePeriodDetail'
 import { formatApprox } from '@/utils/format'
 import { demoAccounts } from '../../.storybook/mocks/use-wallet-react'
-import { detailScenario, emptyScenario, COUNCIL_ELECTION, SAMPLE_POOLED } from '../../.storybook/mocks/scenarios'
+import {
+  detailScenario,
+  emptyScenario,
+  COUNCIL_ELECTION,
+  ELECTION_TOPICS,
+  MULTI_ELECTIONS,
+  MULTI_ELECTION_TOPICS,
+  SAMPLE_POOLED,
+} from '../../.storybook/mocks/scenarios'
 
 const [alice, bob] = demoAccounts
 const [xalgo, reti] = SAMPLE_POOLED
@@ -76,7 +84,64 @@ export const EndedElection: Story = {
   name: 'Ended — election (ranked results)',
   parameters: {
     wallet: connected,
-    scenario: detailScenario({ phase: 'ended', eligible: true, voted: true, elect: COUNCIL_ELECTION }),
+    scenario: detailScenario({
+      phase: 'ended',
+      eligible: true,
+      voted: true,
+      elect: COUNCIL_ELECTION,
+      topics: ELECTION_TOPICS,
+    }),
+  },
+}
+
+// --- Multi-election ballots --------------------------------------------------
+//
+// One period, one committee, one vote() — several races, told apart only by each
+// candidate's `e` tag. The ballot groups by race; the payload stays flat and
+// indexed by on-chain topic index.
+
+export const ActiveMultiElection: Story = {
+  name: 'Active — two elections on one ballot',
+  parameters: {
+    wallet: connected,
+    scenario: detailScenario({
+      phase: 'active',
+      eligible: true,
+      elect: MULTI_ELECTIONS,
+      topics: MULTI_ELECTION_TOPICS,
+      title: 'Period 7 · Term 2 elections',
+      body: 'Elect the xGov Council and the treasury committee. Each candidate is a Support / Against / Abstain ballot, ranked by net score within its own election.',
+    }),
+  },
+}
+
+export const EndedMultiElection: Story = {
+  name: 'Ended — two elections on one ballot',
+  parameters: {
+    wallet: connected,
+    scenario: detailScenario({
+      phase: 'ended',
+      eligible: true,
+      voted: true,
+      elect: MULTI_ELECTIONS,
+      topics: MULTI_ELECTION_TOPICS,
+    }),
+  },
+}
+
+export const ActiveMultiElectionUnassigned: Story = {
+  name: 'Active — candidate in no election',
+  // A candidate whose `e` tag is missing is excluded from every race, but must
+  // still be votable: the contract requires every topic row to carry the voter's
+  // full power, so dropping one would make the period unvotable.
+  parameters: {
+    wallet: connected,
+    scenario: detailScenario({
+      phase: 'active',
+      eligible: true,
+      elect: MULTI_ELECTIONS,
+      topics: MULTI_ELECTION_TOPICS.map((t, i) => (i === 2 ? { ...t, e: undefined } : t)),
+    }),
   },
 }
 

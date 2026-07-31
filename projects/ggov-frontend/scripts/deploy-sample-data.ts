@@ -321,7 +321,7 @@ async function main() {
   // (`e`) of the race it stands in: 4 candidates for 3 council seats, 3 for 2 treasury seats.
   const termTwoElections: Election[] = [
     { t: 'xGov Council', s: 3 },
-    { t: 'EAC', s: 1 },
+    { t: 'EAC', s: 2 },
   ]
   const termTwoTopics = [
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.', e: 0 },

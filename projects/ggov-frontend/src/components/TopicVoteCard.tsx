@@ -44,6 +44,12 @@ interface TopicVoteCardProps {
   /** Distinct voters in the period, appended to the results footer ("… · N voters"). */
   voters?: number
   topicIdx: number
+  /**
+   * Show the mono `T.0N` ordinal chip. Off for an election's candidates: they are
+   * identified by name, and a period running several elections ranks each one
+   * separately, so a ballot-wide ordinal would number across races.
+   */
+  showIndex?: boolean
 }
 
 /** Small uppercase pill used for LEADING / YOUR VOTE tags in results mode. */
@@ -86,6 +92,7 @@ export default function TopicVoteCard({
   outcome,
   voters,
   topicIdx,
+  showIndex = true,
 }: TopicVoteCardProps) {
   const totalVotes = tallies.reduce((a, b) => a + b, 0)
   // Highlight the leading option even when it's under 50%; if several options
@@ -97,9 +104,11 @@ export default function TopicVoteCard({
     <section className="overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary/30">
       <div className="flex items-baseline justify-between gap-3 border-b bg-muted/50 px-[18px] py-[14px]">
         <div className="flex min-w-0 items-center gap-[9px]">
-          <span className="shrink-0 rounded-[5px] bg-primary/10 px-[7px] py-[3px] font-mono text-[11px] font-semibold tracking-[0.04em] text-primary dark:bg-algo-teal/15 dark:text-algo-teal">
-            {indexLabel}
-          </span>
+          {showIndex && (
+            <span className="shrink-0 rounded-[5px] bg-primary/10 px-[7px] py-[3px] font-mono text-[11px] font-semibold tracking-[0.04em] text-primary dark:bg-algo-teal/15 dark:text-algo-teal">
+              {indexLabel}
+            </span>
+          )}
           {title && <h2 className="min-w-0 truncate text-[17px] font-semibold text-foreground">{title}</h2>}
         </div>
         {mode === 'results' && outcome != null ? (

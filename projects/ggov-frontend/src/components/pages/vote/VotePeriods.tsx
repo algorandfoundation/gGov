@@ -113,7 +113,9 @@ export default function VotePeriods() {
               <span>ID</span>
               <span>Period</span>
               <span>Dates</span>
-              <span>Topics</span>
+              {/* Not "Topics": an election period's rows count candidates, or
+                  its elections when it runs more than one. */}
+              <span>Ballot</span>
               <span className="text-right">Status</span>
             </div>
 

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import BackButton from '@/components/BackButton'
+import { periodTerms } from '@/utils/periodTerms'
 import { TxButton } from '@/components/TxButtonContent'
 
 /**
@@ -28,6 +29,9 @@ export default function AddTopic() {
   // Support / Against / Abstain; only standard periods expose the free-form editor.
   const { data: periodBody } = usePeriodBody(periodId)
   const elect = periodBody?.elect
+  const terms = periodTerms(elect)
+  // Kept as the direct check rather than `terms.isElection` so TS narrows `elect`
+  // for the seat/race lookups below.
   const isElection = elect !== undefined
 
   const [options, setOptions] = useState<string[]>(['', ''])
@@ -66,8 +70,8 @@ export default function AddTopic() {
   if (!sdk) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Add topic</h1>
-        <p className="text-muted-foreground">Connect your wallet to add a topic.</p>
+        <h1 className="text-2xl font-bold">Add {terms.item}</h1>
+        <p className="text-muted-foreground">Connect your wallet to add a {terms.item}.</p>
       </div>
     )
   }
@@ -77,13 +81,13 @@ export default function AddTopic() {
       <div className="flex items-center gap-3">
         <BackButton to={`/manage/period/${periodId}`} />
         <h1 className="text-2xl font-bold">
-          Add {isElection ? 'candidate' : 'topic'} to period #{periodId}
+          Add {terms.item} to period #{periodId}
         </h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{isElection ? 'New candidate' : 'New topic'}</CardTitle>
+          <CardTitle className="text-base">New {terms.item}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -129,7 +133,7 @@ export default function AddTopic() {
               <Label htmlFor="topic-description">Description</Label>
               <MarkdownEditor
                 id="topic-description"
-                placeholder="Topic description..."
+                placeholder={isElection ? 'Candidate biography...' : 'Topic description...'}
                 value={body}
                 onChange={setBody}
               />
@@ -210,7 +214,7 @@ export default function AddTopic() {
               }
               pending={addTopicMutation.isPending}
               success={addTopicMutation.isSuccess}
-              idleLabel={isElection ? 'Add candidate' : 'Add topic'}
+              idleLabel={`Add ${terms.item}`}
               pendingLabel="Adding…"
               confirmedLabel="Added"
             />

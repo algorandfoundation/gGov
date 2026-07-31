@@ -54,11 +54,19 @@ const glossary = [
   },
   {
     term: 'Period',
-    def: 'A round of governance with a start and end, containing one or more topics to decide.',
+    def: 'A round of governance with a start and end, containing one or more topics to decide — or, in an election period, candidates to rank.',
   },
   {
     term: 'Topic',
-    def: 'A single decision within a period — a seat to fill or a question to answer.',
+    def: 'A single decision within a period — a question to answer. In an election period the same thing is called a candidate.',
+  },
+  {
+    term: 'Election',
+    def: 'A period that fills seats instead of answering questions. Candidates are ranked by net score and the top few lead for the seats. One period can run several elections at once.',
+  },
+  {
+    term: 'Candidate',
+    def: 'Someone standing in an election. You vote Support, Against or Abstain on each one, and each candidate runs in exactly one of the period’s elections.',
   },
   {
     term: 'Delegation',

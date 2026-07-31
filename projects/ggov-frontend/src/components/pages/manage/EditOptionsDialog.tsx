@@ -12,6 +12,12 @@ interface EditOptionsDialogProps {
   topicIndex: number
   /** Current on-chain options, used to seed the form. */
   initialOptions: string[]
+  /**
+   * Capitalised noun for the thing being edited. An election period's options are
+   * fixed, so today the caller only opens this for a standard period's topics —
+   * the prop keeps the title honest if that ever changes.
+   */
+  itemNoun?: string
   onClose: () => void
 }
 
@@ -26,7 +32,13 @@ const MIN_OPTIONS = 2
  * before saving, but a blank entry is surfaced as an error rather than silently
  * dropped — the operator decides whether to fill it in or remove the row.
  */
-export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClose }: EditOptionsDialogProps) {
+export function EditOptionsDialog({
+  periodId,
+  topicIndex,
+  initialOptions,
+  itemNoun = 'Topic',
+  onClose,
+}: EditOptionsDialogProps) {
   const editTopicMutation = useEditTopicMutation()
   const [options, setOptions] = useState<string[]>(() =>
     initialOptions.length >= MIN_OPTIONS ? [...initialOptions] : [...initialOptions, '', ''].slice(0, MIN_OPTIONS),
@@ -80,7 +92,9 @@ export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClos
     <Dialog open onOpenChange={onClose}>
       <DialogContent onClose={onClose}>
         <DialogHeader>
-          <DialogTitle>Edit Topic {topicIndex + 1} Options</DialogTitle>
+          <DialogTitle>
+            Edit {itemNoun} {topicIndex + 1} options
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-2">

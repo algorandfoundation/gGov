@@ -8,8 +8,7 @@ import { usePooledPositions } from '@/hooks/fracQueries'
 import { periodTurnoutPct } from '@/lib/turnout'
 import { daysUntil, formatMonthDayYear, type PeriodStatus } from '@/utils/time'
 import { formatApprox, toPlainText } from '@/utils/format'
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+import { periodCountLabel, plural } from '@/utils/periodTerms'
 
 /**
  * Circular progress dial (the hero centrepiece). `pct` (0–100) fills the arc
@@ -82,7 +81,7 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   const directVotes = power ?? 0
   const totalVotes = directVotes + pooledVotes
 
-  const topicCount = period.topics.length
+  const countLabel = periodCountLabel(period.topics.length, body?.elect)
   const windowSecs = Math.max(1, period.votingEnd - period.votingStart)
   const nowSecs = Math.floor(Date.now() / 1000)
 
@@ -118,7 +117,7 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
       <div className="inline-flex items-center gap-2.5 text-[13px] text-muted-foreground">
         <PeriodStatusTag status={status} />
         <span>
-          Period {periodId} · {plural(topicCount, 'topic')}
+          Period {periodId} · {countLabel}
         </span>
       </div>
 

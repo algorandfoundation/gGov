@@ -5,7 +5,10 @@ export default function Periods() {
     <div>
       <ArticleHeader to="/docs/periods" />
       <div className="mt-[22px]">
-        <Lead>Governance happens in periods. Each period has one or more topics for you to vote on.</Lead>
+        <Lead>
+          Governance happens in periods. Each period has one or more topics for you to vote on — or, if it's an
+          election, candidates to rank.
+        </Lead>
 
         <H2>Periods have a start and end</H2>
         <P>
@@ -16,9 +19,27 @@ export default function Periods() {
 
         <H2>Topics are what you decide</H2>
         <P>
-          A topic is a single decision — it might be a seat to fill or a yes/no question. A period can bundle several
-          topics together, and you vote on each one.
+          A topic is a single decision — usually a yes/no question. A period can bundle several topics together, and you
+          vote on each one.
         </P>
+
+        <H2>Some periods are elections</H2>
+        <P>
+          An election period fills <Strong>seats</Strong> rather than answering questions. Its ballot lists{' '}
+          <Strong>candidates</Strong> instead of topics, and you vote <Strong>Support</Strong>, <Strong>Against</Strong>{' '}
+          or <Strong>Abstain</Strong> on each one. Candidates are ranked by net score: Support minus Against, with
+          Abstain counting for nothing. The highest-scoring candidates lead for the seats on offer.
+        </P>
+        <P>
+          One period can run <Strong>several elections at once</Strong>: a council and a committee, say, sharing a
+          single ballot and a single voting window. Each candidate stands in exactly one of them, and each election is
+          ranked separately against its own seat count — so a candidate only ever competes with the others in their
+          race.
+        </P>
+        <Callout variant="info">
+          You cast a vote on every candidate on the ballot, including races you don't have a view on. To sit one out,
+          pick <Strong>Abstain</Strong> — it leaves every candidate's score untouched.
+        </Callout>
 
         <H2>Votes are weighted by your power</H2>
         <P>

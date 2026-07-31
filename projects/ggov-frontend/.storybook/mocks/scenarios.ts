@@ -410,6 +410,24 @@ export function listScenario(opts: { connected?: boolean; account?: string } = {
         topics: SAMPLE_TOPICS_TALLIED,
         committee: { totalVotes: 84_500 },
       },
+      // One of each election shape, so the list's ballot column shows every label
+      // it can produce: "2 elections", "5 candidates" and "2 topics".
+      {
+        id: 5,
+        phase: 'ended',
+        title: 'Period 5 · Term 2 elections',
+        body: 'Council and treasury committee, elected together.',
+        elect: MULTI_ELECTIONS,
+        topics: MULTI_ELECTION_TOPICS,
+      },
+      {
+        id: 4,
+        phase: 'ended',
+        title: 'Period 4 · Council election',
+        body: 'A single-election period.',
+        elect: COUNCIL_ELECTION,
+        topics: ELECTION_TOPICS,
+      },
       {
         id: 6,
         phase: 'ended',
@@ -433,6 +451,16 @@ export interface DetailOptions {
   voted?: boolean
   /** Elections this period runs; presence makes it an election period. */
   elect?: Election[]
+  /**
+   * Ballot contents. Defaults to the standard reward-policy topics — pass the
+   * election fixtures alongside `elect`, or the period is flagged an election
+   * while its topics carry no `e` tag and every one reads as unassigned.
+   */
+  topics?: TopicConfig[]
+  /** Period title; defaults to a reward-policy or council-election name to match `elect`. */
+  title?: string
+  /** Period body prose; defaults alongside {@link title}. */
+  body?: string
   /** Delegators that point at `account` (shown nested in the selector). */
   delegators?: Array<{
     address: string
@@ -453,7 +481,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
   const connected = o.connected ?? true
   const eligible = o.eligible ?? connected
   const tallied = o.phase === 'ended'
-  const topics = tallied ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS
+  const topics = o.topics ?? (tallied ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS)
   const allOptionCounts = topics.map((t) => t.options.length)
 
   const accounts: Record<string, AccountState> = {}
@@ -502,8 +530,12 @@ export function detailScenario(o: DetailOptions): MockScenario {
       {
         id,
         phase: o.phase,
-        title: `Period ${id} · Reward policy`,
-        body: 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.',
+        title: o.title ?? (o.elect ? `Period ${id} · Council election` : `Period ${id} · Reward policy`),
+        body:
+          o.body ??
+          (o.elect
+            ? 'Governors rank the candidates standing in this period. Each is a Support / Against / Abstain ballot; the highest net scores lead for the seats on offer.'
+            : 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.'),
         elect: o.elect,
         topics,
         voters,

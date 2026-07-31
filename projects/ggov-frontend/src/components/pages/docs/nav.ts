@@ -55,7 +55,7 @@ export const docsPages: DocsPage[] = [
     eyebrow: 'Core concept',
     navGroup: 'Core concepts',
     homeGroup: 'Participating',
-    desc: 'How periods open and close, and what topics are.',
+    desc: 'How periods open and close, what topics are, and how elections work.',
   },
   {
     to: '/docs/delegation',

@@ -18,7 +18,7 @@ import {
 } from '@/hooks/queries'
 import { usePooledBallot, type PooledBallotPosition } from '@/hooks/fracQueries'
 import { useFracVoteMutation, useVoteMutation } from '@/hooks/mutations'
-import { Check } from 'lucide-react'
+import { Check, Shield } from 'lucide-react'
 import { Callout } from '@/components/ui/callout'
 import Address from '@/components/Address'
 import AccountSelector, { AccountSelectorItem, PooledSelectorItem } from '@/components/AccountSelector'
@@ -42,8 +42,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ClampedMarkdown } from '@/components/ui/clamped-markdown'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import TechnicalInfoCard from '@/components/TechnicalInfoCard'
+import { groupCandidates } from 'ggov-sdk'
 import { formatTimestamp, formatMonthDayYear, periodStatus, type PeriodStatus } from '@/utils/time'
 import { formatApprox } from '@/utils/format'
+import { periodCountLabel, periodTerms, plural } from '@/utils/periodTerms'
 import { singleChoiceIndex } from '@/utils/vote'
 import { toBase64Url } from '@/hooks/queries'
 import { TxButton } from '@/components/TxButtonContent'
@@ -326,7 +328,9 @@ export default function VotePeriodDetail() {
   const isEnded = status === 'ended'
   // Elections (period body carries `elect`) expose their live
   // ranked standings while active; any ended period exposes its full results.
-  const isElection = periodBody?.elect !== undefined
+  const elect = periodBody?.elect
+  const terms = periodTerms(elect)
+  const isElection = terms.isElection
   const showVoteForm = isActive && (selectedPooled ? selectedPooled.canVote : canVoteResult?.canVote) && sdk
   const votingPower = canVoteResult?.votingPower ?? 0n
   // A pooled ballot is denominated in AlgoQuarters, not gGov votes: each topic must
@@ -550,11 +554,74 @@ export default function VotePeriodDetail() {
   const selectionHasVoted = selectedPooled ? selectedPooled.hasVoted : !!voteRecord
   const submitHint = !canSubmit
     ? advancedMode
-      ? `Allocate exactly ${power.toLocaleString()} ${ballotUnit} in every topic`
-      : `${missingSeats} of ${period.topics.length} topic${period.topics.length === 1 ? '' : 's'} still need a choice`
+      ? `Allocate exactly ${power.toLocaleString()} ${ballotUnit} in every ${terms.item}`
+      : `${missingSeats} of ${plural(period.topics.length, terms.item)} still need a choice`
     : selectionHasVoted
       ? `You can change your vote until ${formatTimestamp(period.votingEnd)}`
       : ''
+
+  // Which race each candidate runs in. Presentation only — the ballot state and
+  // the `vote()` payload stay flat and indexed by the on-chain topic index, which
+  // is what `GroupedCandidate.topicIndex` carries.
+  const groups = elect ? groupCandidates(period.topics, topicBodies, elect) : []
+  const groupedIdx = new Set(groups.flatMap((g) => g.candidates.map((c) => c.topicIndex)))
+  // `groupCandidates` drops candidates whose `e` tag is missing or names no
+  // declared election. They still have to appear on the ballot: the contract
+  // requires *every* topic row to allocate the voter's full power, so leaving one
+  // out would make the period unvotable. (The operator sees them flagged in
+  // /manage; a voter just needs to be able to vote on them.)
+  const ungroupedIdx = period.topics.map((_, i) => i).filter((i) => !groupedIdx.has(i))
+
+  /**
+   * One ballot card, addressed by its **on-chain topic index** — the same index the
+   * ballot state arrays and `buildVotes()` use. Grouping only changes the order the
+   * cards are emitted in, never how they are keyed.
+   */
+  function renderBallotItem(topicIdx: number) {
+    const [options, tallies] = period!.topics[topicIdx]
+    const tb = topicBodies[topicIdx]
+    const mode = isUpcoming ? 'upcoming' : showVoteForm ? (advancedMode ? 'advanced' : 'select') : 'results'
+    // Tag an option "YOUR VOTE" only when the recorded vote was single-choice
+    // (exactly one non-zero option). Split/advanced votes get no tag rather than
+    // misleadingly highlighting just the largest allocation.
+    const votedOptionIdx = mode === 'results' ? singleChoiceIndex(voteRecord?.topicVotes[topicIdx]) : undefined
+    return (
+      <TopicVoteCard
+        key={topicIdx}
+        topicIdx={topicIdx}
+        // A candidate is identified by name and, in the results, by rank — the
+        // ordinal chip would number straight through races that are ranked apart.
+        showIndex={!isElection}
+        title={tb?.title}
+        body={tb?.body}
+        options={options}
+        tallies={tallies}
+        mode={mode}
+        selectedOption={mode === 'select' ? (simpleSelections[topicIdx] ?? -1) : -1}
+        onSelect={(optIdx) => handleSimpleSelect(topicIdx, optIdx)}
+        advancedVotes={topicVotes[topicIdx]?.[0]}
+        onAdvancedChange={(optIdx, value) => handleAdvancedVoteChange(topicIdx, optIdx, value)}
+        votingPower={power}
+        unit={ballotUnit}
+        // Consumed in `select` mode only: a pooled simple ballot labels the
+        // chosen option with what the whole position is worth in votes.
+        approxVotes={selectedPooled ? selectedPooled.votes : undefined}
+        votedOptionIdx={votedOptionIdx}
+        outcome={isEnded ? 'Final' : undefined}
+        voters={voters?.length}
+        footer={
+          showVoteForm && advancedMode ? (
+            <VoteAllocationSummary
+              allocated={advancedTopicTotals[topicIdx]}
+              power={power}
+              unit={ballotUnit}
+              approxVotes={selectedPooled ? advancedTopicTotals[topicIdx] * votesPerAq : undefined}
+            />
+          ) : undefined
+        }
+      />
+    )
+  }
 
   const mainContent = (
     <div className="space-y-6">
@@ -567,9 +634,7 @@ export default function VotePeriodDetail() {
         <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
           <span>Period {periodId}</span>
           <span>·</span>
-          <span>
-            {period.topics.length} topic{period.topics.length === 1 ? '' : 's'}
-          </span>
+          <span>{periodCountLabel(period.topics.length, elect)}</span>
           <span>·</span>
           <span>
             {isUpcoming ? 'Opens' : isActive ? 'Closes' : 'Closed'}{' '}
@@ -579,16 +644,6 @@ export default function VotePeriodDetail() {
       </div>
 
       {periodBody?.body && <ClampedMarkdown lines={9}>{periodBody.body}</ClampedMarkdown>}
-
-      {isEnded && isElection && (
-        <div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
-              View Ranked Results
-            </Link>
-          </Button>
-        </div>
-      )}
 
       {isActive && !activeAddress && (
         <Callout variant="info" title="Connect a wallet to vote">
@@ -742,18 +797,31 @@ export default function VotePeriodDetail() {
         </div>
       )}
 
-      {/* Active elections expose their live ranked standings — shown to
-          everyone (connected or not), below the account selector / connect CTA. */}
-      {isActive && isElection && (
-        <div className="mt-4 flex justify-end items-center gap-3 text-[13px] text-muted-foreground">
-          {/* One race → its seat count; several → the per-election breakdown. */}
-          {periodBody?.elect?.length === 1
-            ? `Election seats: ${periodBody.elect[0].s}`
-            : periodBody?.elect?.map((e) => `${e.t}: ${e.s}`).join(' · ')}{' '}
-          &nbsp;·&nbsp;
-          <Button asChild variant="outline" size="sm">
+      {/* What's being elected, and the way through to the standings. Active
+          elections expose their live ranked order; ended ones their final
+          result — so one strip serves both, rather than the two near-identical
+          blocks (one right-aligned, one not) this replaces. */}
+      {isElection && elect && (isActive || isEnded) && (
+        <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-muted/40 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]">
+            <span className="inline-flex shrink-0 items-center gap-1.5 font-semibold text-algo-blue dark:text-algo-teal">
+              <Shield className="size-3.5" />
+              {elect.length > 1 ? plural(elect.length, 'election') : 'Election'}
+            </span>
+            {elect.map((e, i) => (
+              <span key={i} className="flex items-center gap-2.5 text-muted-foreground">
+                {i > 0 && <span aria-hidden>·</span>}
+                <span>
+                  {/* One race needs no name here — the period title already is it. */}
+                  {elect.length > 1 && <span className="text-foreground">{e.t} </span>}
+                  {plural(e.s, 'seat')}
+                </span>
+              </span>
+            ))}
+          </div>
+          <Button asChild variant="outline" size="sm" className="shrink-0 self-start sm:self-auto">
             <Link to="/vote/period/$periodId/results" params={{ periodId: String(periodId) }}>
-              View Ranked Results
+              {isActive ? 'View live standings' : 'View ranked results'}
             </Link>
           </Button>
         </div>
@@ -764,17 +832,24 @@ export default function VotePeriodDetail() {
       )}
 
       {isEnded && activeAddress && accountRecords.length > 0 && (
-        <VotingRecordSection activeAddress={activeAddress} records={accountRecords} topicCount={period.topics.length} />
+        <VotingRecordSection
+          activeAddress={activeAddress}
+          records={accountRecords}
+          topicCount={period.topics.length}
+          topicNoun={terms.item}
+        />
       )}
 
       <Separator />
 
       <div>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Topics</h2>
+          <h2 className="text-xl font-semibold">{terms.Items}</h2>
           {showVoteForm && (
-            <div className="flex items-center gap-2.5">
-              <span className="text-[12.5px] text-muted-foreground">Ballot mode</span>
+            <div className="flex shrink-0 items-center gap-2.5">
+              {/* Dropped on narrow screens: "Candidates" leaves the row too tight for
+                  it, and the two tabs already read as a mode switch without it. */}
+              <span className="hidden text-[12.5px] text-muted-foreground sm:inline">Ballot mode</span>
               <Tabs
                 value={advancedMode ? 'advanced' : 'simple'}
                 onValueChange={(v) => setAdvancedMode(v === 'advanced')}
@@ -798,8 +873,8 @@ export default function VotePeriodDetail() {
                 // The only ballot that exposes AlgoQuarters, so the only one that
                 // links out to what they are and how the pool converts them.
                 <>
-                  Split your AlgoQuarters across the options as you like — each topic must use your full weight. The
-                  pool converts your AlgoQuarters to votes when it casts.{' '}
+                  Split your AlgoQuarters across the options as you like — each {terms.item} must use your full weight.
+                  The pool converts your AlgoQuarters to votes when it casts.{' '}
                   <Link
                     to="/docs/pooled-voting"
                     className="inline-flex items-center font-semibold text-primary hover:underline dark:text-algo-teal"
@@ -808,63 +883,48 @@ export default function VotePeriodDetail() {
                   </Link>
                 </>
               ) : (
-                'Pick one option per topic; your whole pooled share goes to that choice.'
+                `Pick one option per ${terms.item}; your whole pooled share goes to that choice.`
               )
             ) : advancedMode ? (
-              'Split your votes across the options as you like — each topic must use your full voting power.'
+              `Split your votes across the options as you like — each ${terms.item} must use your full voting power.`
             ) : (
-              'Pick one option per topic; all of your votes go to that choice.'
+              `Pick one option per ${terms.item}; all of your votes go to that choice.`
             )}
           </p>
         )}
       </div>
 
       {period.topics.length === 0 ? (
-        <p className="text-muted-foreground">No topics in this period.</p>
-      ) : (
-        <div className="space-y-4">
-          {period.topics.map(([options, tallies], topicIdx) => {
-            const tb = topicBodies[topicIdx]
-            const mode = isUpcoming ? 'upcoming' : showVoteForm ? (advancedMode ? 'advanced' : 'select') : 'results'
-            // Tag an option "YOUR VOTE" only when the recorded vote was single-choice
-            // (exactly one non-zero option). Split/advanced votes get no tag rather than
-            // misleadingly highlighting just the largest allocation.
-            const votedOptionIdx = mode === 'results' ? singleChoiceIndex(voteRecord?.topicVotes[topicIdx]) : undefined
-            return (
-              <TopicVoteCard
-                key={topicIdx}
-                topicIdx={topicIdx}
-                title={tb?.title}
-                body={tb?.body}
-                options={options}
-                tallies={tallies}
-                mode={mode}
-                selectedOption={mode === 'select' ? (simpleSelections[topicIdx] ?? -1) : -1}
-                onSelect={(optIdx) => handleSimpleSelect(topicIdx, optIdx)}
-                advancedVotes={topicVotes[topicIdx]?.[0]}
-                onAdvancedChange={(optIdx, value) => handleAdvancedVoteChange(topicIdx, optIdx, value)}
-                votingPower={power}
-                unit={ballotUnit}
-                // Consumed in `select` mode only: a pooled simple ballot labels the
-                // chosen option with what the whole position is worth in votes.
-                approxVotes={selectedPooled ? selectedPooled.votes : undefined}
-                votedOptionIdx={votedOptionIdx}
-                outcome={isEnded ? 'Final' : undefined}
-                voters={voters?.length}
-                footer={
-                  showVoteForm && advancedMode ? (
-                    <VoteAllocationSummary
-                      allocated={advancedTopicTotals[topicIdx]}
-                      power={power}
-                      unit={ballotUnit}
-                      approxVotes={selectedPooled ? advancedTopicTotals[topicIdx] * votesPerAq : undefined}
-                    />
-                  ) : undefined
-                }
-              />
-            )
-          })}
+        <p className="text-muted-foreground">No {terms.items} in this period.</p>
+      ) : elect && elect.length > 1 ? (
+        // Several races on one ballot: label each, in `elect` order, so a voter can
+        // tell which seat a candidate is standing for. A period running one election
+        // keeps the plain list — its title already names the race.
+        <div className="flex flex-col gap-8">
+          {groups.map((g) => (
+            <section key={g.electionIndex}>
+              <h3 className="mb-3.5 font-display text-lg font-bold">
+                {g.election.t}
+                <span className="ml-2 text-[13px] font-medium text-muted-foreground">
+                  {plural(g.election.s, 'seat')}
+                </span>
+              </h3>
+              {g.candidates.length === 0 ? (
+                <p className="text-muted-foreground">No candidates are standing in this election.</p>
+              ) : (
+                <div className="space-y-4">{g.candidates.map((c) => renderBallotItem(c.topicIndex))}</div>
+              )}
+            </section>
+          ))}
+          {ungroupedIdx.length > 0 && (
+            <section>
+              <h3 className="mb-3.5 font-display text-lg font-bold">Other candidates</h3>
+              <div className="space-y-4">{ungroupedIdx.map(renderBallotItem)}</div>
+            </section>
+          )}
         </div>
+      ) : (
+        <div className="space-y-4">{period.topics.map((_, topicIdx) => renderBallotItem(topicIdx))}</div>
       )}
 
       {showVoteForm && (
@@ -995,6 +1055,8 @@ export default function VotePeriodDetail() {
         votingStart={period.votingStart}
         votingEnd={period.votingEnd}
         topics={period.topics.length}
+        topicsLabel={terms.Items}
+        elections={terms.electionCount}
         votesCast={periodVotesCast}
         eligibleGovernors={eligibleGovernors}
         committeeHref={committeeIdB64 ? `/committees/${committeeIdB64}` : undefined}
