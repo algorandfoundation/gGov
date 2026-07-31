@@ -49,7 +49,7 @@ function ScoringCard({ elect }: { elect: Election[] }) {
             −1
           </span>
           <span className="text-[13.5px] text-muted-foreground">
-            Each <strong className="text-foreground">Against</strong> vote subtracts from it
+            Each <strong className="text-foreground">Veto</strong> vote subtracts from it
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -165,9 +165,9 @@ export default function VotePeriodResults() {
     topicIndex,
   }: (typeof groups)[number]['candidates'][number]): ElectionCandidate => {
     // tallyBallot classifies free-form labels into yes/no/abstain sentiment;
-    // for an election those map to Support / Against / Abstain.
+    // for an election those map to Support / Veto / Abstain.
     const { yes, no, abstain } = tallyBallot(options, tallies)
-    return { name: name ?? `Candidate ${topicIndex + 1}`, support: yes, against: no, abstain }
+    return { name: name ?? `Candidate ${topicIndex + 1}`, support: yes, veto: no, abstain }
   }
   const groupedCount = groups.reduce((n, g) => n + g.candidates.length, 0)
   const unassignedCount = isElection ? period.topics.length - groupedCount : 0

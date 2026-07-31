@@ -66,7 +66,7 @@ const glossary = [
   },
   {
     term: 'Candidate',
-    def: 'Someone standing in an election. You vote Support, Against or Abstain on each one, and each candidate runs in exactly one of the period’s elections.',
+    def: 'Someone standing in an election. You vote Support, Veto or Abstain on each one, and each candidate runs in exactly one of the period’s elections.',
   },
   {
     term: 'Delegation',

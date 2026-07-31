@@ -220,8 +220,8 @@ type Ballot = { voter: string; ballot: string; castBy?: string }
 type FracBallot = { voter: string; ballot: string; instance: string }
 
 /**
- * Council candidates, shared by periods 1 and 2. Each is a Support/Against/Abstain ballot;
- * candidates rank by net score (Support − Against) for the available seats.
+ * Council candidates, shared by periods 1 and 2. Each is a Support/Veto/Abstain ballot;
+ * candidates rank by net score (Support − Veto) for the available seats.
  */
 const CANDIDATE_TOPICS = [
   { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
@@ -658,14 +658,12 @@ async function main() {
     })
     for (const topic of opts.topics) {
       // addTopicWithBody packs addTopic + the body chunks into one atomic, single-signature group.
-      // Election candidates are always Support/Against/Abstain (mirroring the Manage UI); standard
+      // Election candidates are always Support/Veto/Abstain (mirroring the Manage UI); standard
       // topics use their own options. Either way Abstain is last, as frac voting requires.
       await sdk.addTopicWithBody({
         periodId,
         options:
-          opts.electSeats !== undefined
-            ? ['Support', 'Against', 'Abstain']
-            : (topic.options ?? ['Yes', 'No', 'Abstain']),
+          opts.electSeats !== undefined ? ['Support', 'Veto', 'Abstain'] : (topic.options ?? ['Yes', 'No', 'Abstain']),
         body: { title: topic.title, body: topic.body },
         note: randomNote(),
       })
@@ -703,7 +701,7 @@ async function main() {
 
   await populatePeriod(activePeriodId, {
     title: 'gGov Council — Term 2 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 lead for the available seats.',
+    body: 'Elect 3 council members. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top 3 lead for the available seats.',
     electSeats: 3,
     topics: CANDIDATE_TOPICS,
     votingStart: now - 3600n,
@@ -718,7 +716,7 @@ async function main() {
   const endedVotingEnd = endedVotingStart + BigInt(ENDED_VOTING_WINDOW_SECONDS)
   await populatePeriod(endedPeriodId, {
     title: 'gGov Council — Term 1 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
+    body: 'Elect 3 council members. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top 3 took the available seats.',
     electSeats: 3,
     topics: CANDIDATE_TOPICS,
     votingStart: endedVotingStart - 3600n,

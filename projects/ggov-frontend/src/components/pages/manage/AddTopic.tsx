@@ -14,10 +14,10 @@ import { TxButton } from '@/components/TxButtonContent'
 
 /**
  * Fixed ballot for an election candidate. Election periods score candidates by
- * net (Support − Against), so every candidate topic must use exactly these
+ * net (Support − Veto), so every candidate topic must use exactly these
  * options — the operator gets no choice (see `isElection` below).
  */
-const ELECTION_OPTIONS = ['Support', 'Against', 'Abstain']
+const ELECTION_OPTIONS = ['Support', 'Veto', 'Abstain']
 
 export default function AddTopic() {
   const { periodId: pidParam } = useParams({ strict: false })
@@ -26,7 +26,7 @@ export default function AddTopic() {
   const navigate = useNavigate()
   const addTopicMutation = useAddTopicMutation()
   // An election period (body carries `elect`) hardcodes its topic options to
-  // Support / Against / Abstain; only standard periods expose the free-form editor.
+  // Support / Veto / Abstain; only standard periods expose the free-form editor.
   const { data: periodBody } = usePeriodBody(periodId)
   const elect = periodBody?.elect
   const terms = periodTerms(elect)
@@ -144,7 +144,7 @@ export default function AddTopic() {
               {periodBody === undefined ? (
                 <p className="text-xs text-muted-foreground">Loading period type…</p>
               ) : isElection ? (
-                // Election candidate ballot: fixed Support / Against / Abstain, no editing.
+                // Election candidate ballot: fixed Support / Veto / Abstain, no editing.
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {ELECTION_OPTIONS.map((opt) => (
@@ -157,8 +157,8 @@ export default function AddTopic() {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Election candidates are voted Support / Against / Abstain. Options are fixed so candidates can be
-                    ranked by net score (Support − Against).
+                    Election candidates are voted Support / Veto / Abstain. Options are fixed so candidates can be
+                    ranked by net score (Support − Veto).
                   </p>
                 </div>
               ) : (

@@ -172,7 +172,7 @@ export default function ManagePeriodDetail() {
   // tell an operator whether a problem is still fixable.
   const editable = status === 'upcoming' && !ready
   const canEdit = editable && !!sdk
-  // Election topic options are fixed (Support / Against / Abstain), so the per-topic
+  // Election topic options are fixed (Support / Veto / Abstain), so the per-topic
   // options editor is suppressed for elections even while the period is otherwise editable.
   const elect = periodBody?.elect
   const terms = periodTerms(elect)

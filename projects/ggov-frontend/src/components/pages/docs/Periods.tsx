@@ -26,9 +26,9 @@ export default function Periods() {
         <H2>Some periods are elections</H2>
         <P>
           An election period fills <Strong>seats</Strong> rather than answering questions. Its ballot lists{' '}
-          <Strong>candidates</Strong> instead of topics, and you vote <Strong>Support</Strong>, <Strong>Against</Strong>{' '}
-          or <Strong>Abstain</Strong> on each one. Candidates are ranked by net score: Support minus Against, with
-          Abstain counting for nothing. The highest-scoring candidates lead for the seats on offer.
+          <Strong>candidates</Strong> instead of topics, and you vote <Strong>Support</Strong>, <Strong>Veto</Strong> or{' '}
+          <Strong>Abstain</Strong> on each one. Candidates are ranked by net score: Support minus Veto, with Abstain
+          counting for nothing. The highest-scoring candidates lead for the seats on offer.
         </P>
         <P>
           One period can run <Strong>several elections at once</Strong>: a council and a committee, say, sharing a

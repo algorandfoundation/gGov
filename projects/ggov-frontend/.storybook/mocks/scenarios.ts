@@ -309,8 +309,8 @@ export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 ]
 
 /**
- * Election ballot: one topic PER candidate, each a Support/Against/Abstain vote.
- * The results page derives a net score (Support − Against) per candidate via
+ * Election ballot: one topic PER candidate, each a Support/Veto/Abstain vote.
+ * The results page derives a net score (Support − Veto) per candidate via
  * `tallyBallot`, buckets candidates by their `e` tag and ranks each election
  * separately against its own seat count. Carries tallies so the (live or final)
  * ranked results render. Candidate name = the topic-body title.
@@ -318,15 +318,15 @@ export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 const candidate = (
   name: string,
   support: number,
-  against: number,
+  veto: number,
   abstain: number,
   e = 0,
   seat = 'a governance council seat',
 ): TopicConfig => ({
   title: name,
   body: `Candidate for ${seat}.`,
-  options: ['Support', 'Against', 'Abstain'],
-  tallies: [support, against, abstain],
+  options: ['Support', 'Veto', 'Abstain'],
+  tallies: [support, veto, abstain],
   e,
 })
 
@@ -534,7 +534,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
         body:
           o.body ??
           (o.elect
-            ? 'Governors rank the candidates standing in this period. Each is a Support / Against / Abstain ballot; the highest net scores lead for the seats on offer.'
+            ? 'Governors rank the candidates standing in this period. Each is a Support / Veto / Abstain ballot; the highest net scores lead for the seats on offer.'
             : 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.'),
         elect: o.elect,
         topics,
@@ -673,7 +673,7 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
     phase: p,
     title: election ? 'Period 7 · Council election' : 'Period 7 · Reward policy',
     body: election
-      ? 'Elect the next governance council — vote Support/Against/Abstain on each candidate; the top 3 are seated.'
+      ? 'Elect the next governance council — vote Support/Veto/Abstain on each candidate; the top 3 are seated.'
       : 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
     elect: election ? COUNCIL_ELECTION : undefined,
     topics: election ? ELECTION_TOPICS : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,

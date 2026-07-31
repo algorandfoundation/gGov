@@ -106,8 +106,8 @@ export default function ElectionsEditor({
 
           <p className="text-xs text-muted-foreground">
             {rows.length > 1
-              ? 'Each candidate picks which election it runs in. Elections are ranked separately by net score (Support − Against), each filling its own seats.'
-              : 'Every candidate you add will be a fixed Support / Against / Abstain ballot, ranked by net score (Support − Against).'}
+              ? 'Each candidate picks which election it runs in. Elections are ranked separately by net score (Support − Veto), each filling its own seats.'
+              : 'Every candidate you add will be a fixed Support / Veto / Abstain ballot, ranked by net score (Support − Veto).'}
           </p>
 
           {candidateCount !== undefined && candidateCount > 0 && (

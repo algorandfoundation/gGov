@@ -110,7 +110,7 @@ export const ActiveMultiElection: Story = {
       elect: MULTI_ELECTIONS,
       topics: MULTI_ELECTION_TOPICS,
       title: 'Period 7 · Term 2 elections',
-      body: 'Elect the xGov Council and the treasury committee. Each candidate is a Support / Against / Abstain ballot, ranked by net score within its own election.',
+      body: 'Elect the xGov Council and the treasury committee. Each candidate is a Support / Veto / Abstain ballot, ranked by net score within its own election.',
     }),
   },
 }
