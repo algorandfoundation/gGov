@@ -22,6 +22,12 @@ if (getAlgodConfigFromViteEnvironment().network === 'localnet') {
         baseServer: kmdConfig.server,
         token: String(kmdConfig.token),
         port: String(kmdConfig.port),
+        // Which KMD wallet to open. Without this, use-wallet falls back to
+        // `unencrypted-default-wallet` and `VITE_KMD_WALLET` is silently ignored —
+        // so pointing at a single-persona wallet (the localnet seeder makes one per
+        // persona) had no effect. Every account in the opened wallet is treated as a
+        // voter, so a one-account wallet is what gives a persona-in-isolation view.
+        wallet: kmdConfig.wallet,
       },
     },
     { id: WalletId.LUTE, options: { siteName: 'gGov' } },

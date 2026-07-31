@@ -36,7 +36,7 @@ export interface AccountVoteRecordProps {
 
 /**
  * Maps an option label to its sentiment swatch/bar colour (a Tailwind `bg-*`
- * class): For/approve → green, Against → orange, Abstain/neutral → navy-40,
+ * class): For/approve → green, Veto/against → orange, Abstain/neutral → navy-40,
  * everything else (candidate names) → algo-blue.
  */
 export function sentimentTone(label: string): string {

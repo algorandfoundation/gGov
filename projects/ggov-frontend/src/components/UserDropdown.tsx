@@ -17,8 +17,8 @@ import { cn } from '@/lib/utils'
 
 /**
  * Connected-wallet control: an avatar pill that opens a dropdown with the active
- * account's identity, an account switcher (only when the wallet exposes more than
- * one account), a link to the account page, and a disconnect action. Inspired by
+ * account's identity, a link to its account page, an account switcher (only when
+ * the wallet exposes more than one account), and a disconnect action. Inspired by
  * TxnLab's use-wallet-ui, styled within the Algorand design system.
  *
  * `small` drops the inline address label so the trigger collapses to just the
@@ -63,6 +63,15 @@ export default function UserDropdown({ small = false }: { small?: boolean }) {
           </div>
         </div>
 
+        {/* The identity's own page sits directly under it — the menu's primary action. */}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/account/$address" params={{ address: activeAddress }}>
+            <UserCircle />
+            <span>Go to my account</span>
+          </Link>
+        </DropdownMenuItem>
+
         {/* Account switcher — only when there's more than one account to switch between. */}
         {accounts.length > 1 && (
           <>
@@ -86,12 +95,6 @@ export default function UserDropdown({ small = false }: { small?: boolean }) {
         )}
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/account/$address" params={{ address: activeAddress }}>
-            <UserCircle />
-            <span>Go to my account</span>
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuItem variant="destructive" onSelect={() => activeWallet.disconnect()}>
           <LogOut />
           <span>Disconnect</span>

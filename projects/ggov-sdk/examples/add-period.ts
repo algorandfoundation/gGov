@@ -15,7 +15,7 @@
  *   3. addPeriod (creates a child GGovPeriod app via inner txn)
  *   4. uploadPeriodBody — title + description, plus `elect` (one `{ t, s }` entry per election)
  *      for a council election; the presence of `elect` is what marks the period as an election
- *   5. addTopic (+ uploadTopicBody) — one Support/Against/Abstain ballot per candidate for an election
+ *   5. addTopic (+ uploadTopicBody) — one Support/Veto/Abstain ballot per candidate for an election
  *      (the candidate handle is the topic title, `e` is the index of the election it runs in),
  *      otherwise a single topic
  *   6. getPeriod (reads from the per-period app)
@@ -77,7 +77,7 @@ void (async () => {
     body: {
       title: isElection ? 'gGov Council — Term 2 election' : 'Protocol parameter review',
       body: isElection
-        ? `Elect ${seats} council member${seats === 1 ? '' : 's'}. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top ${seats} lead for the available seats.`
+        ? `Elect ${seats} council member${seats === 1 ? '' : 's'}. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top ${seats} lead for the available seats.`
         : 'A standard governance vote on the proposed change.',
       ...(elect ? { elect } : {}),
     },
@@ -86,13 +86,13 @@ void (async () => {
     isElection ? `Period body uploaded (council election, ${seats} seats)` : 'Period body uploaded (standard vote)',
   )
 
-  // 5. addTopic. For an election, one Support/Against/Abstain ballot per candidate — one more
+  // 5. addTopic. For an election, one Support/Veto/Abstain ballot per candidate — one more
   // than the seat count, so at least one candidate sits below the cutoff — with the candidate
   // handle as the topic title and `e: 0` entering it in the sole election. Otherwise, a single topic.
   if (isElection) {
     const candidateCount = seats + 1
     for (let i = 0; i < candidateCount; i++) {
-      const topicIndex = await sdk.addTopic({ periodId, options: ['Support', 'Against', 'Abstain'] })
+      const topicIndex = await sdk.addTopic({ periodId, options: ['Support', 'Veto', 'Abstain'] })
       await sdk.uploadTopicBody({
         periodId,
         topicIndex,

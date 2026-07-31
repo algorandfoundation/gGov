@@ -42,6 +42,26 @@ export const queryKeys = {
   govVotingPower: (committeeId: string, account: string) => ['govVotingPower', committeeId, account] as const,
   producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
   blockHeader: (round: number) => ['blockHeader', round] as const,
+  // Whether the gGov registry knows this account — the gate `set_voting_account`
+  // applies, so it decides whether a delegation needs the frac-registry fallback.
+  isGGovAccount: (account: string) => ['isGGovAccount', account] as const,
+  // Pooled voting (fractional delegation) — see hooks/fracQueries.ts.
+  fracAccount: (account: string) => ['fracAccount', account] as const,
+  // `count` is part of the key so adding a committee refetches the batch, same
+  // rationale as topicBodies above.
+  fracInstanceCommittees: (instanceNumId: number, count: number) =>
+    ['fracInstanceCommittees', instanceNumId, count] as const,
+  fracAccountCommitteeAq: (account: string, committeeId: string) =>
+    ['fracAccountCommitteeAq', account, committeeId] as const,
+  // Several accounts' frac registry records in one read. Sorted+joined so the key
+  // is order-independent; overlaps `fracAccount` for a single account by design,
+  // since the two callers batch differently (see hooks/fracQueries.ts).
+  fracAccounts: (accounts: string[]) => ['fracAccounts', [...accounts].sort().join(',')] as const,
+  // Whether `sender` may cast `voter`'s pooled ballot on one instance, and its AQ weight.
+  fracCanVote: (periodId: number, instanceNumId: number, voter: string, sender: string) =>
+    ['fracCanVote', periodId, instanceNumId, voter, sender] as const,
+  // One account's pooled vote records for a period, across every instance it's in.
+  fracVotingRecords: (account: string, periodId: number) => ['fracVotingRecords', account, periodId] as const,
 }
 
 export function useGlobalState() {
@@ -271,6 +291,30 @@ export function useAllDelegations() {
   })
 }
 
+/**
+ * Whether the gGov registry has an `accounts` box for this address — i.e. whether
+ * it has ever produced blocks in a committee.
+ *
+ * This is exactly the gate `set_voting_account` applies (`ensureDelegatorRegistered`
+ * in `contracts/smart_contracts/ggov-registry/ggovRegistry.algo.ts`): a delegator
+ * the gGov registry doesn't know is looked up in the *frac* registry instead, via
+ * an extra inner call that the caller has to fund. So a `false` here means the
+ * delegation must be sent with `fractionalOnly` — see `hooks/mutations.ts`.
+ */
+export function fetchIsGGovAccount(readerSDK: GGovReaderSDK, account: string): Promise<boolean> {
+  return readerSDK.registry.getAccountIdMap([account]).then((map) => (map.get(account) ?? 0) > 0)
+}
+
+export function useIsGGovAccount(account: string | null | undefined) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.isGGovAccount(account ?? ''),
+    queryFn: () => fetchIsGGovAccount(readerSDK, account!),
+    enabled: !!account,
+    staleTime: 300_000,
+  })
+}
+
 /** Addresses that have delegated to `account` — a single reverse-index box read (`getDelegators`). */
 export function useDelegatedToMe(account: string | null | undefined) {
   const { readerSDK } = useGGovSDK()
@@ -454,7 +498,7 @@ export function useGovVotingPowers(
   return out
 }
 
-interface VoteEntry {
+export interface VoteEntry {
   periodId: number
   period: GGovPeriod
   record: GGovVoteRecord

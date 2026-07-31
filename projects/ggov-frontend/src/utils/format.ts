@@ -11,6 +11,15 @@ export function formatBlockRange(start: number, end: number): string {
 }
 
 /**
+ * A pooled/approximate vote figure, e.g. 4099.36 → "4,099.36". Always two
+ * decimals, because a pooled share is a fraction of a pool's power rather than a
+ * whole-block count — see `hooks/fracQueries.ts`. Render it behind a "≈".
+ */
+export function formatApprox(n: number): string {
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/**
  * Flatten markdown to a single line of plain text for clipped previews (hero +
  * table rows), where rendered block elements would break the layout. Strips the
  * common inline/heading/list/link/code tokens and collapses whitespace.

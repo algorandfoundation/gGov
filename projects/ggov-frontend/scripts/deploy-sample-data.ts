@@ -252,10 +252,10 @@ async function main() {
     for (const t of opts.topics) {
       const topicIndex = (await sdk.addTopic({
         periodId,
-        // Election candidates are fixed Support / Against / Abstain ballots (mirrors the
+        // Election candidates are fixed Support / Veto / Abstain ballots (mirrors the
         // Manage UI), so the election ballot always wins over any per-topic override;
         // standard-vote topics use their `options` or default to Yes / No / Abstain.
-        options: opts.elect !== undefined ? ['Support', 'Against', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
+        options: opts.elect !== undefined ? ['Support', 'Veto', 'Abstain'] : (t.options ?? ['Yes', 'No', 'Abstain']),
         note: randomNote(),
       })) as bigint
       await sdk.uploadTopicBody({
@@ -284,7 +284,7 @@ async function main() {
   }
 
   // One-hot ballot row: full voting power on the chosen option. The Y/N/A shorthand selects
-  // option index 0/1/2 — for these elections that's Support/Against/Abstain (Y→Support, N→Against).
+  // option index 0/1/2 — for these elections that's Support/Veto/Abstain (Y→Support, N→Veto).
   const oneHot = (choice: string, power: number): number[] => {
     const idx = choice === 'Y' ? 0 : choice === 'N' ? 1 : 2
     return [0, 1, 2].map((i) => (i === idx ? power : 0))
@@ -308,12 +308,12 @@ async function main() {
   await delegate(C, A) // C delegates to A but votes directly → locked ("Voted directly")
 
   // Council candidates (5) for the past term's single election. Each is a
-  // Support/Against/Abstain ballot; candidates rank by net score (Support − Against) for the seats.
+  // Support/Veto/Abstain ballot; candidates rank by net score (Support − Veto) for the seats.
   const councilTopics = [
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.' },
     { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.' },
     { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.' },
-    { title: 'reti.algo', body: 'Reti staking pool collective.' },
+    { title: 'reti.algo', body: 'Réti staking pool collective.' },
     { title: 'gard.algo', body: 'GARD stablecoin protocol team.' },
   ]
 
@@ -321,13 +321,13 @@ async function main() {
   // (`e`) of the race it stands in: 4 candidates for 3 council seats, 3 for 2 treasury seats.
   const termTwoElections: Election[] = [
     { t: 'xGov Council', s: 3 },
-    { t: 'EAC', s: 1 },
+    { t: 'EAC', s: 2 },
   ]
   const termTwoTopics = [
     { title: 'txnlab.algo', body: 'AlgoKit core maintainer and developer tooling.', e: 0 },
     { title: 'folks.algo', body: 'Folks Finance lending protocol contributor.', e: 0 },
     { title: 'nodely.algo', body: 'Infrastructure, indexer and node operator.', e: 0 },
-    { title: 'reti.algo', body: 'Reti staking pool collective.', e: 0 },
+    { title: 'reti.algo', body: 'Réti staking pool collective.', e: 0 },
     { title: 'gard.algo', body: 'GARD stablecoin protocol team.', e: 1 },
     { title: 'pact.algo', body: 'Pact AMM protocol and treasury tooling.', e: 1 },
     { title: 'tinyman.algo', body: 'Tinyman AMM liquidity and grants steward.', e: 1 },
@@ -343,7 +343,7 @@ async function main() {
   const endedVotingEnd = endedStart + 90n // short window: cast within it, then it lapses
   const endedId = await createPeriod({
     title: 'gGov Council — Term 1 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
+    body: 'Elect 3 council members. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top 3 took the available seats.',
     elect: [{ t: 'Council', s: 3 }],
     topics: councilTopics,
     votingStart: endedStart - 3600n,
@@ -377,7 +377,7 @@ async function main() {
   console.log('\nCreating ACTIVE two-election period (id 2; council 3 seats, treasury 2 seats, 7 candidates)...')
   const activeId = await createPeriod({
     title: 'gGov Council — Term 2 elections',
-    body: 'Elect 3 council members and a 2-seat treasury committee. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) within their own election and the top scorers lead for its available seats.',
+    body: 'Elect 3 council members and a 2-seat treasury committee. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) within their own election and the top scorers lead for its available seats.',
     elect: termTwoElections,
     topics: termTwoTopics,
     votingStart: now - 3600n,

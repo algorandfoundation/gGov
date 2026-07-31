@@ -5,6 +5,7 @@ import { ClampedMarkdown } from '@/components/ui/clamped-markdown'
 import { usePeriodBody } from '@/hooks/queries'
 import { periodStatus, formatDateRange, type PeriodStatus } from '@/utils/time'
 import { toPlainText } from '@/utils/format'
+import { periodCountLabel } from '@/utils/periodTerms'
 import { cn } from '@/lib/utils'
 
 /** Design status tones. "ended" reads as "Closed" — pass/reject outcome isn't
@@ -23,8 +24,10 @@ export function PeriodStatusTag({ status, className }: { status: PeriodStatus; c
   return <Badge className={cn(cfg.className, className)}>{cfg.label}</Badge>
 }
 
-/** Shared desktop column template for the periods table header + rows. */
-export const PERIOD_ROW_GRID = 'grid-cols-[50px_1fr_150px_70px_110px]'
+/** Shared desktop column template for the periods table header + rows. The
+ *  ballot column is wide enough for "2 elections", the longest label
+ *  {@link periodCountLabel} produces at realistic counts. */
+export const PERIOD_ROW_GRID = 'grid-cols-[50px_1fr_150px_118px_110px]'
 
 interface Props {
   periodId: number
@@ -38,7 +41,9 @@ interface Props {
 export default function PeriodRow({ periodId, period }: Props) {
   const { data: body } = usePeriodBody(periodId)
   const status = periodStatus(period.votingStart, period.votingEnd)
-  const topicCount = period.topics.length
+  // The list mixes standard periods with elections, so a bare number under one
+  // heading would mean a different thing per row — carry the noun in the cell.
+  const countLabel = periodCountLabel(period.topics.length, body?.elect)
 
   return (
     <Link
@@ -54,7 +59,7 @@ export default function PeriodRow({ periodId, period }: Props) {
           {body?.body && <div className="truncate text-[13px] text-muted-foreground">{toPlainText(body.body)}</div>}
         </div>
         <span className="text-[13px]">{formatDateRange(period.votingStart, period.votingEnd)}</span>
-        <span className="text-[13px]">{topicCount}</span>
+        <span className="text-[13px]">{countLabel}</span>
         <span className="justify-self-end">
           <PeriodStatusTag status={status} />
         </span>
@@ -67,9 +72,7 @@ export default function PeriodRow({ periodId, period }: Props) {
             <PeriodStatusTag status={status} />
             <span>Period {periodId}</span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {topicCount} topic{topicCount !== 1 ? 's' : ''}
-          </span>
+          <span className="text-xs text-muted-foreground">{countLabel}</span>
         </div>
         <h4 className="mt-2.5 text-base leading-[1.15]">{body?.title ?? `Period ${periodId}`}</h4>
         {body?.body && (

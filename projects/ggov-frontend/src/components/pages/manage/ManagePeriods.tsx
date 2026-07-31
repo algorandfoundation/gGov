@@ -1,12 +1,28 @@
 import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import { usePeriods, useCommittees } from '@/hooks/queries'
+import type { GGovPeriod } from 'ggov-sdk'
+import { usePeriods, useCommittees, usePeriodBody } from '@/hooks/queries'
+import { periodCountLabel } from '@/utils/periodTerms'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import { formatTimestampUTC } from '@/utils/time'
 import { toBase64Url } from '@/hooks/queries'
+
+/**
+ * A period's ballot summary — "2 elections", "5 candidates", "3 topics".
+ *
+ * Its own component because the noun lives in the period *body*, which the list
+ * query doesn't carry: the registry summary knows `numTopics` but nothing about
+ * `elect`. TODO(perf): one body read per row. A batched period-body reader on
+ * the SDK (alongside `getAllPeriodSummaries`) would collapse this to one call,
+ * as would folding the election count into the summary itself.
+ */
+function BallotCell({ periodId, period }: { periodId: number; period: GGovPeriod }) {
+  const { data: body } = usePeriodBody(periodId)
+  return <>{periodCountLabel(period.topics.length, body?.elect)}</>
+}
 
 export default function ManagePeriods() {
   const { data: periods = [], isLoading } = usePeriods()
@@ -45,7 +61,7 @@ export default function ManagePeriods() {
               <TableHead>ID</TableHead>
               <TableHead>Committee (rounds)</TableHead>
               <TableHead>Voting window</TableHead>
-              <TableHead>Topics</TableHead>
+              <TableHead>Ballot</TableHead>
               <TableHead>Ready</TableHead>
               <TableHead>Status</TableHead>
               <TableHead></TableHead>
@@ -59,7 +75,9 @@ export default function ManagePeriods() {
                 <TableCell className="text-sm">
                   {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
                 </TableCell>
-                <TableCell>{period.topics.length}</TableCell>
+                <TableCell className="text-sm">
+                  <BallotCell periodId={id} period={period} />
+                </TableCell>
                 <TableCell>
                   <span
                     className={

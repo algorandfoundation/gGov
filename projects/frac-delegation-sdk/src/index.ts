@@ -1,6 +1,20 @@
 export * from './constants'
-export { FracDelegationRegistryFactory, FracDelegationRegistryClient } from './generated/FracDelegationRegistryClient'
-export { FracDelegationInstanceFactory, FracDelegationInstanceClient } from './generated/FracDelegationInstanceClient'
+export {
+  FracDelegationRegistryFactory,
+  FracDelegationRegistryClient,
+  type FracRegAccount,
+  type FracInstance,
+  type FracEscrowInstance,
+} from './generated/FracDelegationRegistryClient'
+export {
+  FracDelegationInstanceFactory,
+  FracDelegationInstanceClient,
+  type FracAccountCommitteeAq,
+  type FracCommitteeAq,
+  type FracInstanceCommittee,
+  type FracInstancePeriod,
+  type FracVotingRecord,
+} from './generated/FracDelegationInstanceClient'
 
 // Registry SDK surface.
 export {
