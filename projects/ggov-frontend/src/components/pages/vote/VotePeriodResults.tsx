@@ -178,7 +178,9 @@ export default function VotePeriodResults() {
     // tallyBallot classifies free-form labels into yes/no/abstain sentiment;
     // for an election those map to Support / Veto / Abstain.
     const { yes, no, abstain } = tallyBallot(options, tallies)
-    return { name: name ?? `Candidate ${topicIndex + 1}`, support: yes, veto: no, abstain }
+    // Trim-based, not `??`: a body's title is only validated as a string, so a blank one would
+    // otherwise render as an empty candidate name. Matches `describeAssignmentReport`'s labelling.
+    return { name: name?.trim() || `Candidate ${topicIndex + 1}`, support: yes, veto: no, abstain }
   }
   const groupedCount = groups.reduce((n, g) => n + g.candidates.length, 0)
   const unassignedCount = isElection ? period.topics.length - groupedCount : 0

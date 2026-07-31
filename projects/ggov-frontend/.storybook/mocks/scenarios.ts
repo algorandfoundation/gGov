@@ -154,7 +154,7 @@ export type MockPooledPosition = PooledPosition & {
 
 /** Per-account state within one period. */
 export interface AccountState {
-  /** Registry xGov voting power (also the default eligibility gate). */
+  /** Registry gov voting power (also the default eligibility gate). */
   power?: number
   /** Active-window `canVote` flag; defaults to `power > 0`. */
   canVote?: boolean

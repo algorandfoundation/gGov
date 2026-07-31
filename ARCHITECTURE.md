@@ -172,7 +172,7 @@ twice. Because only a frac-only delegator reaches that call, the SDK makes its f
 Fractional delegation integrated: `importFracDelegations` (admin) wires the fractional-delegation
 subsystem into gGov's delegation model: the so-called escrow accounts delegate¹ to fractional-delegation
 instance apps. The instances represent the staking products, and the escrows are the product-owned accounts
-that accrue gGov voting power. This way, the instance can cast pooled gGov votes on the escrows' behalf.
+that accrue gGov voting power. This way, the instance can cast pooled gGov votes on the escrows' behalf. \
 ¹ Unlike `mirrorXGovDelegation`, this overwrites any existing delegation.
 
 ## Voting mechanics
