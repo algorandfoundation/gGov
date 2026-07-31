@@ -771,7 +771,10 @@ export default function VotePeriodDetail() {
 
       {isActive && !activeAddress && (
         <Callout variant="info" title="Connect a wallet to vote">
-          <p>Connect your Algorand wallet to cast your vote in this period.</p>
+          <p>
+            To cast votes in this period, connect your Algorand wallets that have produced blocks or contributed to
+            pooled staking. You can vote for multiple accounts at the same time.
+          </p>
           <Button className="mt-3" onClick={() => setConnectOpen(true)}>
             Connect wallet
           </Button>
