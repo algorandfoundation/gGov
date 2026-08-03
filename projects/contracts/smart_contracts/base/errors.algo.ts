@@ -72,6 +72,7 @@ export const errGGovUnvotable = 'GP_UV' // Cannot ready: vote event would exceed
 // gGov topic
 export const errGGovTopicIndexOOB = 'GT_OB' // Topic index out of bounds
 export const errGGovNoOptions = 'GT_NO' // Topic must have at least one option
+export const errGGovLastOptionAbstain = 'GT_OA' // 'Abstain' must be the last option and appear only once
 
 // gGov voting
 export const errGGovVoteMismatch = 'GV_MM' // Vote array length mismatch
