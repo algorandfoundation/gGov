@@ -13,8 +13,8 @@ export default function Committees() {
 
         <H2>What a committee is</H2>
         <P>
-          Think of a committee as the guest list for a vote. It records who was eligible and how much voting power each
-          account had, all based on block production over a set stretch of time.
+          Think of a committee as the guest list for a vote. It records who is eligible and how much voting power each
+          account has, all based on block production over a set stretch of time.
         </P>
 
         <H2>The window of rounds</H2>

@@ -22,11 +22,11 @@ export default function PooledVoting() {
       <div className="mt-[22px]">
         <Lead>
           Liquid staking tokens (xALGO, tALGO) and Réti pools produce blocks from shared accounts — so the voting power
-          lands with the pool, not with you. Pooled voting gives it back: you vote your prorated share, and the combined
-          result is cast on-chain.
+          lands with the pool, not with you. Pooled voting gives it back: you vote your share, and it's carried into the
+          pool's vote on-chain.
         </Lead>
 
-        <H2>Your share of the pool</H2>
+        <H2>Your prorated share of the pool</H2>
         <P>
           Your contributions to pools are measured in <Strong>AlgoQuarters</Strong> — stake over time across the
           committee window. Your AQ share of the pool's total AQ is exactly your share of the pool's voting power.
@@ -39,13 +39,14 @@ export default function PooledVoting() {
         <P>
           Pooled positions appear next to your own accounts on any open period, and you vote the same way any direct
           voter does. Your choices are weighted by your AQ and tallied with every other pool member's vote; the combined
-          tally is mapped onto the pool's full voting power and the resulting vote is cast on-chain.
+          tally is mapped onto the pool's full voting power and cast on-chain as a single vote. Your own ballot is
+          recorded on-chain too — in the pool's internal records, weighted in AQ.
         </P>
 
         <H2>If you don't vote</H2>
         <P>
-          Your share votes <Strong>Abstain</Strong> on every option — no preference is ever invented on your behalf. And
-          like any vote, you can change yours until the period closes.
+          Your share votes <Strong>Abstain</Strong> on every option. The pool can't vote it for you — only you, or an
+          account you delegate to, can. And like any vote, you can change yours until the period closes.
         </P>
 
         <H2>Why the pool's full weight appears at once</H2>
@@ -59,9 +60,8 @@ export default function PooledVoting() {
         <H2>Delegation applies</H2>
         <P>
           <InlineLink to="/docs/delegation">Delegating</InlineLink> your governance power applies to pooled voting as
-          well. The delegated party will be able to vote with your share of the pool, and you can revoke delegation at
-          any time. If you delegate to a party that doesn't vote, your share will score <Strong>Abstain</Strong> just
-          like if you didn't vote yourself.
+          well. Your delegate can vote your share of the pool, and you can revoke delegation at any time. If they don't
+          vote, your share counts as <Strong>Abstain</Strong>, just as if you hadn't voted yourself.
         </P>
       </div>
       <Pager from="/docs/pooled-voting" />
