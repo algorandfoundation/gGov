@@ -71,8 +71,8 @@ const setupWithSyncedCommittee = async (localnet: AlgorandFixture, numEscrows = 
 
 /** Two topics of differing width, so an option-count mixup can't pass unnoticed. */
 const TOPICS = [
-  ['Yes', 'No'],
-  ['A', 'B', 'C', 'D'],
+  ['Yes', 'No', 'Abstain'],
+  ['A', 'B', 'C', 'D', 'Abstain'],
 ]
 
 describe('FracDelegationInstance periods', () => {
@@ -99,7 +99,7 @@ describe('FracDelegationInstance periods', () => {
       expect(period.committeeNumId).toBe(1)
       expect(period.numEscrows).toBe(2)
       // One entry per topic, holding that topic's option count.
-      expect(period.topicOptionLengths).toEqual([2, 4])
+      expect(period.topicOptionLengths).toEqual([3, 5])
 
       // The window agrees with what the period app itself reports.
       const short = await ggovSdk.getPeriodShort(periodId)
@@ -114,12 +114,12 @@ describe('FracDelegationInstance periods', () => {
 
       const cache = (await fracSdk.getPeriodVoteCache(instanceId, periodId))!
       expect(cache.internal).toEqual([
-        [0, 0],
-        [0, 0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0, 0, 0],
       ])
       expect(cache.ggovTotals).toEqual([
-        [0, 0],
-        [0, 0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0, 0, 0],
       ])
     })
 
@@ -130,8 +130,8 @@ describe('FracDelegationInstance periods', () => {
 
       for (const i of [0, 1, 2]) {
         expect((await fracSdk.getPeriodEscrowVotes(instanceId, periodId, i))!.votes).toEqual([
-          [0, 0],
-          [0, 0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0, 0, 0],
         ])
       }
       // Exactly numEscrows boxes: index 3 was never stood up.
@@ -141,12 +141,12 @@ describe('FracDelegationInstance periods', () => {
     test('keeps a separate record per period', async () => {
       const { ggovSdk, committeeId, fracSdk, instanceId } = await setupWithSyncedCommittee(localnet)
       const firstId = await createReadyPeriod(ggovSdk, committeeId, TOPICS)
-      const secondId = await createReadyPeriod(ggovSdk, committeeId, [['Only']])
+      const secondId = await createReadyPeriod(ggovSdk, committeeId, [['Abstain']])
 
       await fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(firstId) })
       await fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(secondId) })
 
-      expect((await fracSdk.getPeriod(instanceId, firstId))!.topicOptionLengths).toEqual([2, 4])
+      expect((await fracSdk.getPeriod(instanceId, firstId))!.topicOptionLengths).toEqual([3, 5])
       expect((await fracSdk.getPeriod(instanceId, secondId))!.topicOptionLengths).toEqual([1])
       expect((await fracSdk.getPeriodVoteCache(instanceId, secondId))!.internal).toEqual([[0]])
     })
@@ -154,7 +154,7 @@ describe('FracDelegationInstance periods', () => {
     test('getPeriods batch-reads synced periods, undefined for unknown ids', async () => {
       const { ggovSdk, committeeId, fracSdk, instanceId } = await setupWithSyncedCommittee(localnet)
       const firstId = await createReadyPeriod(ggovSdk, committeeId, TOPICS)
-      const secondId = await createReadyPeriod(ggovSdk, committeeId, [['Only']])
+      const secondId = await createReadyPeriod(ggovSdk, committeeId, [['Abstain']])
       await fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(firstId) })
       await fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(secondId) })
 
@@ -183,8 +183,8 @@ describe('FracDelegationInstance periods', () => {
 
       expect((await fracSdk.getPeriod(instanceId, periodId))!.numEscrows).toBe(2)
       expect((await fracSdk.getPeriodEscrowVotes(instanceId, periodId, 1))!.votes).toEqual([
-        [0, 0],
-        [0, 0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0, 0, 0],
       ])
     })
 
@@ -205,8 +205,8 @@ describe('FracDelegationInstance periods', () => {
       const state = (await fracSdk.getPeriodVotingState(instanceId, periodId))!
       expect(state.escrowVotes).toEqual(
         Array.from({ length: numEscrows }, () => [
-          [0, 0],
-          [0, 0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0, 0, 0],
         ]),
       )
     })
@@ -223,21 +223,21 @@ describe('FracDelegationInstance periods', () => {
 
       expect(state.period.periodAppId).toBe(periodAppId)
       expect(state.period.committeeId).toEqual(committeeId)
-      expect(state.period.topicOptionLengths).toEqual([2, 4])
+      expect(state.period.topicOptionLengths).toEqual([3, 5])
       expect(state.internal).toEqual([
-        [0, 0],
-        [0, 0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0, 0, 0],
       ])
       expect(state.ggovTotals).toEqual([
-        [0, 0],
-        [0, 0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0, 0, 0],
       ])
       // One entry per escrow, index-aligned with getEscrows().
       expect(state.escrowVotes).toHaveLength(3)
       expect(state.escrowVotes).toEqual(
         Array.from({ length: 3 }, () => [
-          [0, 0],
-          [0, 0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0, 0, 0],
         ]),
       )
     })
@@ -298,7 +298,7 @@ describe('FracDelegationInstance periods', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await ggovSdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await ggovSdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
 
       await expect(
         fracSdk.syncPeriod({ instanceNumId: instanceId, periodApp: await ggovSdk.getPeriodAppId(periodId) }),

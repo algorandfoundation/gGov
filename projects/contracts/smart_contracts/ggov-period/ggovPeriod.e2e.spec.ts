@@ -9,6 +9,7 @@ import {
   errGGovCannotOverride,
   errGGovDelegationNoAcctRef,
   errGGovHasVotes,
+  errGGovLastOptionAbstain,
   errGGovNoOptions,
   errGGovNotReady,
   errGGovReady,
@@ -338,8 +339,8 @@ describe('GGovPeriod contract', () => {
       const id3 = await sdk.registry.addPeriod({ committeeId, votingStart: now + 300n, votingEnd: now + 3900n })
       expect([id1, id2, id3]).toEqual([1n, 2n, 3n])
       // give period 2 two topics
-      await sdk.addTopic({ periodId: id2, options: ['Yes', 'No'] })
-      await sdk.addTopic({ periodId: id2, options: ['A', 'B', 'C'] })
+      await sdk.addTopic({ periodId: id2, options: ['Yes', 'No', 'Abstain'] })
+      await sdk.addTopic({ periodId: id2, options: ['A', 'B', 'C', 'Abstain'] })
 
       const summaries = await sdk.registry.getAllPeriodSummaries()
       expect(summaries.map((s) => s.id)).toEqual([1n, 2n, 3n])
@@ -409,7 +410,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 100n,
         votingEnd: now + 3700n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       await sdk.setReady({ periodId, ready: true })
 
       await expect(sdk.deletePeriodApp({ periodId })).rejects.toThrow(transformedError(errGGovReady))
@@ -592,7 +593,7 @@ describe('GGovPeriod contract', () => {
       const summary1 = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
       expect(summary1.return!.numTopics).toBe(1)
 
-      const idx1 = await sdk.addTopic({ periodId, options: ['A', 'B'] })
+      const idx1 = await sdk.addTopic({ periodId, options: ['A', 'B', 'Abstain'] })
       expect(idx1).toBe(1n)
       const summary2 = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
       expect(summary2.return!.numTopics).toBe(2)
@@ -611,6 +612,20 @@ describe('GGovPeriod contract', () => {
         votingEnd: now + 5000n,
       })
       await expect(sdk.addTopic({ periodId, options: [] })).rejects.toThrow(transformedError(errGGovNoOptions))
+    })
+
+    test('Rejects a topic whose last option is not Abstain', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      await expect(sdk.addTopic({ periodId, options: ['Yes', 'No'] })).rejects.toThrow(
+        transformedError(errGGovLastOptionAbstain),
+      )
     })
   })
 
@@ -657,10 +672,10 @@ describe('GGovPeriod contract', () => {
       const periodId = await sdk.registry.addPeriod({ committeeId, votingStart: now + 1000n, votingEnd: now + 5000n })
 
       // A pre-existing (body-less) topic shifts the next index to 1.
-      await sdk.addTopic({ periodId, options: ['A', 'B'] })
+      await sdk.addTopic({ periodId, options: ['A', 'B', 'Abstain'] })
 
       const body = { title: 'Second', body: 'Second topic body.' }
-      const idx = await sdk.addTopicWithBody({ periodId, options: ['Yes', 'No'], body })
+      const idx = await sdk.addTopicWithBody({ periodId, options: ['Yes', 'No', 'Abstain'], body })
       expect(idx).toBe(1n)
 
       // The body lands on topic 1; topic 0 (which never got a body) has none.
@@ -690,7 +705,7 @@ describe('GGovPeriod contract', () => {
       const signed: number[] = []
       const idx = await sdk.addTopicWithBody({
         periodId,
-        options: ['Yes', 'No'],
+        options: ['Yes', 'No', 'Abstain'],
         body: maxBody,
         onSigningGroup: (i) => signed.push(i),
       })
@@ -721,7 +736,7 @@ describe('GGovPeriod contract', () => {
       const signed: number[] = []
       const idx = await sdk.addTopicWithBody({
         periodId,
-        options: ['Yes', 'No'],
+        options: ['Yes', 'No', 'Abstain'],
         body: big,
         onSigningGroup: (i) => signed.push(i),
       })
@@ -752,7 +767,7 @@ describe('GGovPeriod contract', () => {
       const signed: number[] = []
       const idx = await sdk.addTopicWithBody({
         periodId,
-        options: ['Yes', 'No'],
+        options: ['Yes', 'No', 'Abstain'],
         body: maxBody,
         onSigningGroup: (i) => signed.push(i),
       })
@@ -778,7 +793,7 @@ describe('GGovPeriod contract', () => {
       expect(() => GGovSDK.addTopicWithBodyGroupCount(tooBig)).toThrow(/maximum is 32000/)
 
       // The upload methods reject too, and nothing is created: the topic count stays 0.
-      await expect(sdk.addTopicWithBody({ periodId, options: ['Yes', 'No'], body: tooBig })).rejects.toThrow(
+      await expect(sdk.addTopicWithBody({ periodId, options: ['Yes', 'No', 'Abstain'], body: tooBig })).rejects.toThrow(
         /maximum is 32000/,
       )
       await expect(sdk.uploadPeriodBody({ periodId, body: tooBig })).rejects.toThrow(/maximum is 32000/)
@@ -799,7 +814,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       await sdk.editTopic({ periodId, topicIndex: 0n, options: ['Approve', 'Reject', 'Abstain'] })
 
       const period = await sdk.getPeriod(periodId)
@@ -816,8 +831,24 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
+      // Index error wins over trailing Abstain as this check precedes the options' validation.
       await expect(sdk.editTopic({ periodId, topicIndex: 0n, options: ['Yes'] })).rejects.toThrow(
         transformedError(errGGovTopicIndexOOB),
+      )
+    })
+
+    test('Rejects a topic whose last option is not Abstain', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 1000n,
+        votingEnd: now + 5000n,
+      })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
+      await expect(sdk.editTopic({ periodId, topicIndex: 0n, options: ['Approve', 'Reject'] })).rejects.toThrow(
+        transformedError(errGGovLastOptionAbstain),
       )
     })
 
@@ -825,7 +856,8 @@ describe('GGovPeriod contract', () => {
       // createVotingPeriod sets ready=true at the end; ready blocks edits before the timestamp check
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
+      // Options are deliberately non-compliant: ensureEditable runs before ensureValidOptions.
       await expect(sdk.editTopic({ periodId, topicIndex: 0n, options: ['Approve', 'Reject'] })).rejects.toThrow(
         transformedError(errGGovReady),
       )
@@ -841,7 +873,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 10000n,
         votingEnd: now + 20000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       // Rewind votingStart into the past while still in draft (ready=false)
       await sdk.editPeriod({
         periodId,
@@ -864,8 +896,8 @@ describe('GGovPeriod contract', () => {
       await sdk.registry.setOperator({ account: admin.toString() })
 
       const periodId = await createVotingPeriod(sdk, committeeId, [
-        ['Yes', 'No'],
-        ['A', 'B', 'C'],
+        ['Yes', 'No', 'Abstain'],
+        ['A', 'B', 'C', 'Abstain'],
       ])
 
       const voter = govAccounts[0]
@@ -874,27 +906,27 @@ describe('GGovPeriod contract', () => {
         periodId,
         voterAccount: voter.toString(),
         topicVotes: [
-          [7, 3],
-          [4, 4, 2],
+          [7, 3, 0],
+          [4, 4, 2, 0],
         ],
       })
 
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([7, 3])
-      expect(period.topics[1][1]).toEqual([4, 4, 2])
+      expect(period.topics[0][1]).toEqual([7, 3, 0])
+      expect(period.topics[1][1]).toEqual([4, 4, 2, 0])
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(false)
-      expect(record!.topicVotes[0]).toEqual([7, 3])
-      expect(record!.topicVotes[1]).toEqual([4, 4, 2])
+      expect(record!.topicVotes[0]).toEqual([7, 3, 0])
+      expect(record!.topicVotes[1]).toEqual([4, 4, 2, 0])
     })
 
     test('Multiple govs voting accumulates tallies', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 3, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
-      for (const [voter, votes] of [[govAccounts[0], [10, 0]] as const, [govAccounts[1], [3, 7]] as const]) {
+      for (const [voter, votes] of [[govAccounts[0], [10, 0, 0]] as const, [govAccounts[1], [3, 7, 0]] as const]) {
         const voterSDK = createUserSDK(localnet, appClient.appId, voter)
         await voterSDK.vote({
           periodId,
@@ -904,21 +936,21 @@ describe('GGovPeriod contract', () => {
       }
 
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([13, 7])
+      expect(period.topics[0][1]).toEqual([13, 7, 0])
     })
 
     test('Vote update subtracts old and adds new', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] })
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[3, 7]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2, 0]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[3, 7, 0]] })
 
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([3, 7])
+      expect(period.topics[0][1]).toEqual([3, 7, 0])
     })
 
     test('Rejects vote before voting starts (ready but window not open)', async () => {
@@ -931,40 +963,40 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 9999n,
         votingEnd: now + 19999n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       // Mark ready so the ready gate passes; the timestamp gate is what we want to exercise here.
       await sdk.setReady({ periodId, ready: true })
 
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await expect(voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })).rejects.toThrow(
-        transformedError(errGGovVotingNotStarted),
-      )
+      await expect(
+        voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] }),
+      ).rejects.toThrow(transformedError(errGGovVotingNotStarted))
     })
 
     test('Rejects vote with wrong topic count', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
       const periodId = await createVotingPeriod(sdk, committeeId, [
-        ['Yes', 'No'],
-        ['A', 'B'],
+        ['Yes', 'No', 'Abstain'],
+        ['A', 'B', 'Abstain'],
       ])
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await expect(voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })).rejects.toThrow(
-        transformedError(errGGovVoteMismatch),
-      )
+      await expect(
+        voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] }),
+      ).rejects.toThrow(transformedError(errGGovVoteMismatch))
     })
 
     test('Rejects vote with wrong power sum', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await expect(voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[5, 6]] })).rejects.toThrow(
-        transformedError(errGGovVotePowerMismatch),
-      )
+      await expect(
+        voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[5, 6, 0]] }),
+      ).rejects.toThrow(transformedError(errGGovVotePowerMismatch))
     })
   })
 
@@ -974,7 +1006,7 @@ describe('GGovPeriod contract', () => {
     test('Account can delegate and delegatee can vote', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
@@ -990,18 +1022,18 @@ describe('GGovPeriod contract', () => {
       await delegateeSDK.vote({
         periodId,
         voterAccount: voter.toString(),
-        topicVotes: [[10, 0]],
+        topicVotes: [[10, 0, 0]],
       })
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(true)
-      expect(record!.topicVotes[0]).toEqual([10, 0])
+      expect(record!.topicVotes[0]).toEqual([10, 0, 0])
     })
 
     test('Delegated vote without the delegator account reference is rejected', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
@@ -1020,7 +1052,7 @@ describe('GGovPeriod contract', () => {
       })
       await expect(
         rawClient.send.vote({
-          args: { voterAccount: voter.toString(), topicVotes: [[10, 0]] },
+          args: { voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] },
           extraFee: (2000).microAlgo(),
         }),
       ).rejects.toThrow(transformedError(errGGovDelegationNoAcctRef))
@@ -1050,31 +1082,31 @@ describe('GGovPeriod contract', () => {
     test('Delegatee cannot override direct vote', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
       await voterSDK.registry.setVotingAccount({ votingAddress: delegatee.toString() })
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] })
 
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
       await expect(
-        delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] }),
+        delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10, 0]] }),
       ).rejects.toThrow(transformedError(errGGovCannotOverride))
 
       // The rejected override must leave the voter's direct vote and the tallies untouched.
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(false)
-      expect(record!.topicVotes[0]).toEqual([10, 0])
+      expect(record!.topicVotes[0]).toEqual([10, 0, 0])
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([10, 0])
+      expect(period.topics[0][1]).toEqual([10, 0, 0])
     })
 
     test('Delegatee can override their own prior delegated vote', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
@@ -1082,58 +1114,58 @@ describe('GGovPeriod contract', () => {
       await voterSDK.registry.setVotingAccount({ votingAddress: delegatee.toString() })
 
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
-      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] })
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2, 0]] })
       // Re-voting on behalf overrides the delegatee's own prior delegated vote (isDelegated stays true).
-      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[1, 9]] })
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[1, 9, 0]] })
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(true)
-      expect(record!.topicVotes[0]).toEqual([1, 9])
+      expect(record!.topicVotes[0]).toEqual([1, 9, 0])
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([1, 9])
+      expect(period.topics[0][1]).toEqual([1, 9, 0])
     })
 
     test('Voter override of a delegated vote flips the record and re-tallies', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
       await voterSDK.registry.setVotingAccount({ votingAddress: delegatee.toString() })
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
-      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] })
 
       // Record is the delegated vote before the voter steps in.
       let record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(true)
-      expect(record!.topicVotes[0]).toEqual([10, 0])
+      expect(record!.topicVotes[0]).toEqual([10, 0, 0])
 
       // Voter votes directly: isDelegated flips to false and the tally reflects only the new vote.
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10, 0]] })
       record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(false)
-      expect(record!.topicVotes[0]).toEqual([0, 10])
+      expect(record!.topicVotes[0]).toEqual([0, 10, 0])
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([0, 10])
+      expect(period.topics[0][1]).toEqual([0, 10, 0])
     })
 
     test('Voter can override delegatee vote', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
       await voterSDK.registry.setVotingAccount({ votingAddress: delegatee.toString() })
       const delegateeSDK = createUserSDK(localnet, appClient.appId, delegatee)
-      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10]] })
+      await delegateeSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[0, 10, 0]] })
 
       const period = await sdk.getPeriod(periodId)
-      expect(period.topics[0][1]).toEqual([0, 10])
+      expect(period.topics[0][1]).toEqual([0, 10, 0])
 
       const record = await sdk.getVotingRecord(periodId, voter.toString())
       expect(record!.isDelegated).toBe(false)
@@ -1239,7 +1271,7 @@ describe('GGovPeriod contract', () => {
     test('canVote returns true for eligible voter in active period', async () => {
       const { sdk, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const result = await sdk.canVote(periodId, govAccounts[0].toString(), govAccounts[0].toString())
       expect(result.canVote).toBe(true)
@@ -1249,7 +1281,7 @@ describe('GGovPeriod contract', () => {
     test('canVote is true for a delegatee while the voter has not voted', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       await createUserSDK(localnet, appClient.appId, voter).registry.setVotingAccount({
@@ -1267,13 +1299,13 @@ describe('GGovPeriod contract', () => {
     test('canVote is false for a delegatee once the voter has voted directly', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
       await voterSDK.registry.setVotingAccount({ votingAddress: delegatee.toString() })
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] })
 
       const result = await sdk.canVote(periodId, voter.toString(), delegatee.toString())
       expect(result.canVote).toBe(false)
@@ -1287,7 +1319,7 @@ describe('GGovPeriod contract', () => {
     test('canVote stays true for a delegatee overriding their own delegated vote', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       const voter = govAccounts[0]
       const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
 
@@ -1296,7 +1328,7 @@ describe('GGovPeriod contract', () => {
       await createUserSDK(localnet, appClient.appId, delegatee).vote({
         periodId,
         voterAccount: voter.toString(),
-        topicVotes: [[10, 0]],
+        topicVotes: [[10, 0, 0]],
       })
 
       // The existing record is a delegated vote (isDelegated=true), so the delegatee may re-vote.
@@ -1313,14 +1345,14 @@ describe('GGovPeriod contract', () => {
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
       await sdk.registry.setOperator({ account: admin.toString() })
       const periodId = await createVotingPeriod(sdk, committeeId, [
-        ['Yes', 'No'],
-        ['A', 'B', 'C', 'D'],
+        ['Yes', 'No', 'Abstain'],
+        ['A', 'B', 'C', 'D', 'Abstain'],
       ])
 
       const short = await sdk.getPeriodShort(periodId)
       expect(short.committeeId).toEqual(committeeId)
       // One entry per topic, holding that topic's option count — no options/votes payload.
-      expect(short.topicOptionLengths).toEqual([2, 4])
+      expect(short.topicOptionLengths).toEqual([3, 5])
 
       // The window agrees with what the full getPeriod read reports for the same period.
       const period = await sdk.getPeriod(periodId)
@@ -1390,7 +1422,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       await sdk.setReady({ periodId, ready: true })
       const bodyJson = new TextEncoder().encode('{"title":"After ready"}')
       await expect(sdk.uploadPeriodBodyPartial({ periodId, startOffset: 0n, data: bodyJson })).rejects.toThrow(
@@ -1407,7 +1439,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       await sdk.setReady({ periodId, ready: true })
       const bodyJson = new TextEncoder().encode('{"title":"Topic body"}')
       await expect(
@@ -1513,7 +1545,9 @@ describe('GGovPeriod contract', () => {
       ).rejects.toThrow(transformedError(errGGovReady))
 
       // addTopic is also blocked
-      await expect(sdk.addTopic({ periodId, options: ['Yes', 'No'] })).rejects.toThrow(transformedError(errGGovReady))
+      await expect(sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })).rejects.toThrow(
+        transformedError(errGGovReady),
+      )
 
       // Un-set ready → edits are allowed again
       await sdk.setReady({ periodId, ready: false })
@@ -1528,7 +1562,7 @@ describe('GGovPeriod contract', () => {
     test('setReady(false) succeeds when no votes have been cast', async () => {
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
       // No vote yet → un-ready is allowed
       await sdk.setReady({ periodId, ready: false })
       const summary = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
@@ -1538,11 +1572,11 @@ describe('GGovPeriod contract', () => {
     test('setReady(false) fails once any vote has been cast', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })
+      await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] })
 
       await expect(sdk.setReady({ periodId, ready: false })).rejects.toThrow(transformedError(errGGovHasVotes))
     })
@@ -1558,7 +1592,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 10000n,
         votingEnd: now + 20000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       await sdk.editPeriod({
         periodId,
         committeeId,
@@ -1568,9 +1602,9 @@ describe('GGovPeriod contract', () => {
 
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      await expect(voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0]] })).rejects.toThrow(
-        transformedError(errGGovNotReady),
-      )
+      await expect(
+        voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] }),
+      ).rejects.toThrow(transformedError(errGGovNotReady))
     })
   })
 
@@ -1586,17 +1620,17 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await sdk.addTopic({ periodId, options: ['A', 'B'] })
-      await sdk.addTopic({ periodId, options: ['C', 'D', 'E'] })
-      await sdk.addTopic({ periodId, options: ['F'] })
+      await sdk.addTopic({ periodId, options: ['A', 'B', 'Abstain'] })
+      await sdk.addTopic({ periodId, options: ['C', 'D', 'Abstain'] })
+      await sdk.addTopic({ periodId, options: ['D', 'E', 'F', 'Abstain'] })
 
       // Remove the middle one (index 1)
       await sdk.removeTopic({ periodId, topicIndex: 1n })
 
       const period = await sdk.getPeriod(periodId)
       expect(period.topics).toHaveLength(2)
-      expect(period.topics[0][0]).toEqual(['A', 'B'])
-      expect(period.topics[1][0]).toEqual(['F']) // index 2 → index 1 after removal
+      expect(period.topics[0][0]).toEqual(['A', 'B', 'Abstain'])
+      expect(period.topics[1][0]).toEqual(['D', 'E', 'F', 'Abstain']) // index 2 → index 1 after removal
 
       const { return: summary } = await sdk.registry.readClient.send.getPeriodSummary({ args: { periodId } })
       expect(summary!.numTopics).toBe(2)
@@ -1625,7 +1659,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
 
       const nonOp = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const nonOpSDK = createUserSDK(localnet, appClient.appId, nonOp)
@@ -1643,7 +1677,7 @@ describe('GGovPeriod contract', () => {
         votingStart: now + 1000n,
         votingEnd: now + 5000n,
       })
-      await sdk.addTopic({ periodId, options: ['Yes', 'No'] })
+      await sdk.addTopic({ periodId, options: ['Yes', 'No', 'Abstain'] })
       await sdk.setReady({ periodId, ready: true })
 
       await expect(sdk.removeTopic({ periodId, topicIndex: 0n })).rejects.toThrow(transformedError(errGGovReady))
@@ -1900,7 +1934,7 @@ describe('GGovPeriod contract', () => {
     const voteRow = (numOptions: number) => Array.from({ length: numOptions }, (_, i) => (i === 0 ? 10 : 0))
 
     describe.each([
-      { label: 'Yes/No (2 options)', options: ['Yes', 'No'], max: 78 },
+      { label: 'Yes/Abstain (2 options)', options: ['Yes', 'Abstain'], max: 78 },
       { label: 'Yes/No/Abstain (3 options)', options: ['Yes', 'No', 'Abstain'], max: 58 },
     ])('$label', ({ options, max }) => {
       test(`a period at the maximum (${max}) topics can be readied and voted across all topics`, async () => {
@@ -1977,8 +2011,8 @@ describe('GGovPeriod contract', () => {
       const { sdk, committeeId, govAccounts, appClient, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
       const periodId = await createVotingPeriod(sdk, committeeId, [
-        ['Yes', 'No'],
-        ['A', 'B', 'C'],
+        ['Yes', 'No', 'Abstain'],
+        ['A', 'B', 'C', 'Abstain'],
       ])
 
       const voter = govAccounts[0] // self-vote: sender === voter, voting power 10
@@ -1988,8 +2022,8 @@ describe('GGovPeriod contract', () => {
         periodId,
         voterAccount: voter.toString(),
         topicVotes: [
-          [10, 0],
           [10, 0, 0],
+          [10, 0, 0, 0],
         ],
       })
       const [evVoter, evSender, evUpdate, evPower, evVotes] = decodeEvent(first, 'GGovVoteCast', VOTE_CAST)
@@ -1998,8 +2032,8 @@ describe('GGovPeriod contract', () => {
       expect(evUpdate).toBe(false) // first vote → not an update
       expect(Number(evPower)).toBe(10)
       expect((evVotes as bigint[][]).map((r) => r.map(Number))).toEqual([
-        [10, 0],
         [10, 0, 0],
+        [10, 0, 0, 0],
       ])
 
       // Re-voting on the same record flips updateVote to true.
@@ -2007,15 +2041,15 @@ describe('GGovPeriod contract', () => {
         periodId,
         voterAccount: voter.toString(),
         topicVotes: [
-          [0, 10],
           [0, 10, 0],
+          [0, 10, 0, 0],
         ],
       })
       const [, , evUpdate2, , evVotes2] = decodeEvent(second, 'GGovVoteCast', VOTE_CAST)
       expect(evUpdate2).toBe(true)
       expect((evVotes2 as bigint[][]).map((r) => r.map(Number))).toEqual([
-        [0, 10],
         [0, 10, 0],
+        [0, 10, 0, 0],
       ])
     })
 
@@ -2071,7 +2105,7 @@ describe('GGovPeriod contract', () => {
     test('both rounds are 0 before any vote', async () => {
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const g = await sdk.getPeriodGlobalState(periodId)
       expect(g.firstVotingRound).toBe(0n)
@@ -2083,12 +2117,14 @@ describe('GGovPeriod contract', () => {
     test('first vote sets both rounds; a later voter advances only lastVotingRound', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 2, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       // First vote → firstVotingRound and lastVotingRound both set to this round.
       const voter0 = govAccounts[0]
       const sdk0 = createUserSDK(localnet, appClient.appId, voter0)
-      const r0 = confirmedRound(await sdk0.vote({ periodId, voterAccount: voter0.toString(), topicVotes: [[10, 0]] }))
+      const r0 = confirmedRound(
+        await sdk0.vote({ periodId, voterAccount: voter0.toString(), topicVotes: [[10, 0, 0]] }),
+      )
 
       const afterFirst = await sdk.getPeriodGlobalState(periodId)
       expect(afterFirst.firstVotingRound).toBe(r0)
@@ -2097,7 +2133,9 @@ describe('GGovPeriod contract', () => {
       // A second voter in a later block advances lastVotingRound but leaves firstVotingRound put.
       const voter1 = govAccounts[1]
       const sdk1 = createUserSDK(localnet, appClient.appId, voter1)
-      const r1 = confirmedRound(await sdk1.vote({ periodId, voterAccount: voter1.toString(), topicVotes: [[0, 10]] }))
+      const r1 = confirmedRound(
+        await sdk1.vote({ periodId, voterAccount: voter1.toString(), topicVotes: [[0, 10, 0]] }),
+      )
       expect(r1).toBeGreaterThan(r0)
 
       const afterSecond = await sdk.getPeriodGlobalState(periodId)
@@ -2110,12 +2148,16 @@ describe('GGovPeriod contract', () => {
     test('a re-vote by the same account advances only lastVotingRound', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })
-      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No']])
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
 
       const voter = govAccounts[0]
       const voterSDK = createUserSDK(localnet, appClient.appId, voter)
-      const r0 = confirmedRound(await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2]] }))
-      const r1 = confirmedRound(await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[3, 7]] }))
+      const r0 = confirmedRound(
+        await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[8, 2, 0]] }),
+      )
+      const r1 = confirmedRound(
+        await voterSDK.vote({ periodId, voterAccount: voter.toString(), topicVotes: [[3, 7, 0]] }),
+      )
       expect(r1).toBeGreaterThan(r0)
 
       const g = await sdk.getPeriodGlobalState(periodId)

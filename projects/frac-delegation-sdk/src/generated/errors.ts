@@ -59,6 +59,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GP_UV": "Cannot ready: vote event would exceed the 1024-byte log limit",
   "ERR:GT_OB": "Topic index out of bounds",
   "ERR:GT_NO": "Topic must have at least one option",
+  "ERR:GT_OA": "'Abstain' must be the last option and appear only once",
   "ERR:GV_MM": "Vote array length mismatch",
   "ERR:GV_VP": "Vote sum != voting power",
   "ERR:GV_OD": "Delegatee cannot override direct vote",
