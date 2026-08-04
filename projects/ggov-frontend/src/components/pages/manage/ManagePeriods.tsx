@@ -7,21 +7,68 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
-import { formatTimestampUTC } from '@/utils/time'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { formatDateRangeUTC, formatTimestampUTC } from '@/utils/time'
 import { toBase64Url } from '@/hooks/queries'
 
+interface PeriodTableRowProps {
+  periodId: number
+  period: GGovPeriod
+  ready: boolean
+  /** Committee rounds for this period's committee, pre-resolved by the table. */
+  committeeRounds: string
+}
+
 /**
- * A period's ballot summary — "2 elections", "5 candidates", "3 topics".
- *
- * Its own component because the noun lives in the period *body*, which the list
- * query doesn't carry: the registry summary knows `numTopics` but nothing about
- * `elect`. TODO(perf): one body read per row. A batched period-body reader on
- * the SDK (alongside `getAllPeriodSummaries`) would collapse this to one call,
- * as would folding the election count into the summary itself.
+ * One period in the table. A component of its own so it can read the period *body*,
+ * which the list query doesn't carry: the registry summary knows `numTopics` but neither
+ * the title nor `elect`. TODO(perf): one body read per row. A batched period-body reader
+ * on the SDK (alongside `getAllPeriodSummaries`) would collapse them into a single call.
  */
-function BallotCell({ periodId, period }: { periodId: number; period: GGovPeriod }) {
+function PeriodTableRow({ periodId, period, ready, committeeRounds }: PeriodTableRowProps) {
   const { data: body } = usePeriodBody(periodId)
-  return <>{periodCountLabel(period.topics.length, body?.elect)}</>
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{periodId}</TableCell>
+      <TableCell className="text-sm">
+        <div className="max-w-[280px] truncate">{body?.title ?? <span className="text-muted-foreground">—</span>}</div>
+      </TableCell>
+      <TableCell className="text-sm">{committeeRounds}</TableCell>
+      <TableCell className="text-sm">
+        {/* Dates alone, to leave the title room; the exact window is a hover away. */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help">{formatDateRangeUTC(period.votingStart, period.votingEnd)}</span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
+          </TooltipContent>
+        </Tooltip>
+      </TableCell>
+      <TableCell className="text-sm">{periodCountLabel(period.topics.length, body?.elect)}</TableCell>
+      <TableCell>
+        <span
+          className={
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
+            (ready ? 'bg-success/15 text-success-strong' : 'bg-warning/15 text-warning-strong')
+          }
+        >
+          {ready ? 'Ready' : 'Draft'}
+        </span>
+      </TableCell>
+      <TableCell>
+        <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
+      </TableCell>
+      <TableCell>
+        <Link to="/manage/period/$periodId" params={{ periodId: String(periodId) }}>
+          <Button variant="ghost" size="sm">
+            Edit
+          </Button>
+        </Link>
+      </TableCell>
+    </TableRow>
+  )
 }
 
 export default function ManagePeriods() {
@@ -59,6 +106,7 @@ export default function ManagePeriods() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
+              <TableHead>Title</TableHead>
               <TableHead>Committee (rounds)</TableHead>
               <TableHead>Voting window</TableHead>
               <TableHead>Ballot</TableHead>
@@ -69,36 +117,13 @@ export default function ManagePeriods() {
           </TableHeader>
           <TableBody>
             {periods.map(({ id, period, ready }) => (
-              <TableRow key={id}>
-                <TableCell className="font-medium">{id}</TableCell>
-                <TableCell className="text-sm">{committeeRounds(period.committeeId)}</TableCell>
-                <TableCell className="text-sm">
-                  {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
-                </TableCell>
-                <TableCell className="text-sm">
-                  <BallotCell periodId={id} period={period} />
-                </TableCell>
-                <TableCell>
-                  <span
-                    className={
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
-                      (ready ? 'bg-success/15 text-success-strong' : 'bg-warning/15 text-warning-strong')
-                    }
-                  >
-                    {ready ? 'Ready' : 'Draft'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
-                </TableCell>
-                <TableCell>
-                  <Link to="/manage/period/$periodId" params={{ periodId: String(id) }}>
-                    <Button variant="ghost" size="sm">
-                      Edit
-                    </Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
+              <PeriodTableRow
+                key={id}
+                periodId={id}
+                period={period}
+                ready={ready}
+                committeeRounds={committeeRounds(period.committeeId)}
+              />
             ))}
           </TableBody>
         </Table>

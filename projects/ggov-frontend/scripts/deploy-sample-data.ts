@@ -247,8 +247,8 @@ type Ballot = { voter: string; ballot: string; castBy?: string }
 type FracBallot = { voter: string; ballot: string; instance: string }
 
 /**
- * Period 1's council candidates. Each is a Support/Against/Abstain ballot; candidates rank by net
- * score (Support − Against) for the available seats. One race, so none needs an `e` tag.
+ * Period 1's council candidates. Each is a Support/Veto/Abstain ballot; candidates rank by net
+ * score (Support − Veto) for the available seats. One race, so none needs an `e` tag.
  */
 const ENDED_ELECTIONS: Election[] = [{ t: 'xGov Council', s: 3 }]
 const ENDED_CANDIDATE_TOPICS = [
@@ -669,12 +669,12 @@ async function main() {
     })
     for (const topic of opts.topics) {
       // addTopicWithBody packs addTopic + the body chunks into one atomic, single-signature group.
-      // Election candidates are always Support/Against/Abstain (mirroring the Manage UI); standard
+      // Election candidates are always Support/Veto/Abstain (mirroring the Manage UI); standard
       // topics use their own options. Either way Abstain is last, as frac voting requires.
       await sdk.addTopicWithBody({
         periodId,
         options:
-          opts.elect !== undefined ? ['Support', 'Against', 'Abstain'] : (topic.options ?? ['Yes', 'No', 'Abstain']),
+          opts.elect !== undefined ? ['Support', 'Veto', 'Abstain'] : (topic.options ?? ['Yes', 'No', 'Abstain']),
         // A candidate joins one race by its index into `elect`. Tagging is mandatory — an untagged
         // one is an authoring error, not election 0 — but a single-race period needn't say so.
         body: { title: topic.title, body: topic.body, ...(opts.elect !== undefined ? { e: topic.e ?? 0 } : {}) },
@@ -752,7 +752,7 @@ async function main() {
   const endedVotingEnd = endedVotingStart + BigInt(ENDED_VOTING_WINDOW_SECONDS)
   const endedPeriodId = await createPeriodHelper({
     title: 'gGov Council — Term 1 election',
-    body: 'Elect 3 council members. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top 3 took the available seats.',
+    body: 'Elect 3 council members. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top 3 took the available seats.',
     elect: ENDED_ELECTIONS,
     topics: ENDED_CANDIDATE_TOPICS,
     votingStart: endedVotingStart - 3600n,
@@ -787,7 +787,7 @@ async function main() {
 
   const activePeriodId = await createPeriodHelper({
     title: 'gGov Council — Term 2 elections',
-    body: 'Elect 3 council members and 1 EAC member. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) within their own election, and the top scorers lead for that election’s seats.',
+    body: 'Elect 3 council members and 1 EAC member. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) within their own election, and the top scorers lead for that election’s seats.',
     elect: ACTIVE_ELECTIONS,
     topics: ACTIVE_CANDIDATE_TOPICS,
     votingStart: now - 3600n,
