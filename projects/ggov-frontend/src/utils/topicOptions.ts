@@ -1,8 +1,8 @@
 /**
  * Topic options rules, mirrored from `GGovPeriodContract.ensureValidOptions`: an option list must be
- * non-empty, end in the literal `Abstain`, and carry it exactly once, else the call fails `GT_OA`.
- * The manage panel therefore edits only the custom options and appends Abstain via `withAbstain`,
- * which keeps the editors' row indices clear of off-by-one guards.
+ * non-empty, end in the literal `Abstain`, and carry it exactly once, else the call fails `GT_OA` (or
+ * `GT_NO` for an empty list). The manage panel therefore edits only the custom options and appends
+ * Abstain via `withAbstain`, which keeps the editors' row indices clear of off-by-one guards.
  */
 
 /** The Abstain label. Must match the contract literal. */
