@@ -73,7 +73,11 @@ export default function AddTopic() {
       e: resolvedElection,
     })
 
-    void navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
+    void navigate({
+      to: '/manage/period/$periodId',
+      params: { periodId: String(periodId) },
+      search: { mode: 'edit' },
+    })
   }
 
   if (!sdk) {
