@@ -9,6 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { formatDateRangeUTC, formatTimestampUTC } from '@/utils/time'
+import { periodFrozen } from '@/utils/periodEditing'
 import { toBase64Url } from '@/hooks/queries'
 
 interface PeriodTableRowProps {
@@ -32,7 +33,13 @@ function PeriodTableRow({ periodId, period, ready, committeeRounds }: PeriodTabl
     <TableRow>
       <TableCell className="font-medium">{periodId}</TableCell>
       <TableCell className="text-sm">
-        <div className="max-w-[280px] truncate">{body?.title ?? <span className="text-muted-foreground">—</span>}</div>
+        <Link
+          to="/manage/period/$periodId"
+          params={{ periodId: String(periodId) }}
+          className="block max-w-[280px] truncate font-medium hover:underline"
+        >
+          {body?.title ?? <span className="font-normal text-muted-foreground">Untitled</span>}
+        </Link>
       </TableCell>
       <TableCell className="text-sm">{committeeRounds}</TableCell>
       <TableCell className="text-sm">
@@ -60,12 +67,21 @@ function PeriodTableRow({ periodId, period, ready, committeeRounds }: PeriodTabl
       <TableCell>
         <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
       </TableCell>
-      <TableCell>
-        <Link to="/manage/period/$periodId" params={{ periodId: String(periodId) }}>
-          <Button variant="ghost" size="sm">
-            Edit
-          </Button>
-        </Link>
+      <TableCell className="text-right">
+        {/* One button per row. A frozen period can never return to draft, so it offers View where the others offer Edit. */}
+        {periodFrozen(period, ready) ? (
+          <Link to="/manage/period/$periodId" params={{ periodId: String(periodId) }}>
+            <Button variant="ghost" size="sm">
+              View
+            </Button>
+          </Link>
+        ) : (
+          <Link to="/manage/period/$periodId" params={{ periodId: String(periodId) }} search={{ mode: 'edit' }}>
+            <Button variant="ghost" size="sm">
+              Edit
+            </Button>
+          </Link>
+        )}
       </TableCell>
     </TableRow>
   )

@@ -45,7 +45,11 @@ export default function AddPeriod() {
       elect: isElection ? draftsToElect(elections) : undefined,
     })
 
-    void navigate({ to: '/manage/period/$periodId', params: { periodId: String(periodId) } })
+    void navigate({
+      to: '/manage/period/$periodId',
+      params: { periodId: String(periodId) },
+      search: { mode: 'edit' },
+    })
   }
 
   if (!sdk) {
