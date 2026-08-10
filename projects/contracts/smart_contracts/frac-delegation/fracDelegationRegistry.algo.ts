@@ -60,6 +60,8 @@ export class FracDelegationRegistryContract extends BaseContract {
   defaultOperator = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** gGov registry application ID */
   gGovRegistryApp = GlobalState<Application>({ key: fracRegistryGGovKey, initialValue: Application(0) })
+  /** microALGO sent to an instance per `requestMBR` top-up. Configurable via `setMBRTopUp`. */
+  mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
   /** Last account numeric ID */
   lastAccountId = GlobalState<uint64>({ initialValue: 0 })
   /** Account registry; account ID + frac instance (numeric) IDs  */
@@ -106,6 +108,21 @@ export class FracDelegationRegistryContract extends BaseContract {
   public setGGovRegistryApp(appId: Application): void {
     this.ensureCallerIsAdmin()
     this.gGovRegistryApp.value = appId
+  }
+
+  /**
+   * Set the amount sent per `requestMBR`. Admin only. Economic parameter: it trades how often instances
+   * request against how much ALGO sits as available balance buffer in them. Leftovers always recoverable
+   * via `withdrawALGO`.
+   *
+   * Unguarded, but keep it well above one vote record's max MBR; recommended: greater than 0.4 ALGO.
+   * 384,100 microALGO at the largest shape `GGovVoteCast`/`FracVoteCast` could emit (1024 bytes),
+   * plus the 1,000 `requestMBR` fee; below that, votes could start failing.
+   * @param amount microALGO sent to an instance per `requestMBR` call
+   */
+  public setMBRTopUp(amount: uint64): void {
+    this.ensureCallerIsAdmin()
+    this.mbrTopUp.value = amount
   }
 
   /**
@@ -240,6 +257,36 @@ export class FracDelegationRegistryContract extends BaseContract {
     }
 
     return [instanceNum, newApp.id]
+  }
+
+  /**
+   * Send `mbrTopUp` amount to the instance registered under `instanceNumId`. Called as an inner txn
+   * by that same instance when writing a box vote record left it below its minimum balance.
+   * Policy: users never pay for vote record boxes MBR.
+   *
+   * Trust boundary: caller-app ID must match the appId registered for `instanceNumId`, analogous to
+   * what `GGovRegistry.updatePeriodSummary` does. Matching on that rather than on the instance's app
+   * creator is deliberate: instances can be rebound to a replacement registry via `setRegistryApp`,
+   * which will be different from its creator.
+   *
+   * NOTE: pays its own fee, against the usual `fee: 0` pooling rule. The top-up is conditional on a
+   * balance another voter can move between simulate and execution, so with pooling a group that
+   * simulated without it could not cover the extra fee. Own fees make the voter's group fee invariant.
+   * Its counterpart does the same - see `FracDelegationInstance.checkNeedMBR`.
+   * @param instanceNumId Numeric ID of the calling instance
+   */
+  public requestMBR(instanceNumId: Uint16): void {
+    const box = this.instances(instanceNumId)
+    loggedAssert(box.exists, errInstanceAppNotExists)
+    const instanceApp = box.value.appId
+    loggedAssert(Global.callerApplicationId === instanceApp.id, errUnauthorized)
+    itxn
+      .payment({
+        receiver: instanceApp.address,
+        amount: this.mbrTopUp.value,
+        fee: Global.minTxnFee,
+      })
+      .submit()
   }
 
   // ── Accounts (users) ─────────────────────────-----------------------------
