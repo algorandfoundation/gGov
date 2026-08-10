@@ -104,6 +104,11 @@ export class FracDelegationRegistryReaderSDK {
     return (await this.readClient.state.global.gGovRegistryApp()) ?? 0n
   }
 
+  /** microALGO the registry sends an instance per `requestMBR` top-up. */
+  async getMBRTopUp(): Promise<bigint> {
+    return (await this.readClient.state.global.mbrTopUp()) ?? 0n
+  }
+
   /** Registered instance record by numeric id, or undefined if no such instance. */
   async getInstance(instanceNumId: number | bigint) {
     const id = assertUint(instanceNumId, 16, 'instanceNumId')

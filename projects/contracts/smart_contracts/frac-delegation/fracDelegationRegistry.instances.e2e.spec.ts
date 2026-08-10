@@ -94,6 +94,36 @@ describe('FracDelegationRegistry instances', () => {
     })
   })
 
+  describe('requestMBR', () => {
+    // requestMBR is a public ABI method with no admin gate: an instance calls it as an inner txn when
+    // writing a box leaves it below its minimum balance. The only thing stopping an arbitrary
+    // caller from making the registry pay out is the callerApplicationId check.
+
+    /** Available balance of the registry vault — what `requestMBR` pays out of. */
+    const vaultAvailable = async (localnet: AlgorandFixture, address: string) => {
+      const info = await localnet.algorand.account.getInformation(address)
+      return info.balance.microAlgo - info.minBalance.microAlgo
+    }
+
+    test('a direct call cannot make the vault pay out, even naming a real instance', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+      const vault = sdk.registryReadClient.appAddress.toString()
+      const before = await vaultAvailable(localnet, vault)
+
+      await expect(
+        sdk.registry.writeClient!.send.requestMbr({
+          args: { instanceNumId: Number(instanceId) },
+          sender: testAccount.toString(),
+          signer: testAccount.signer,
+          extraFee: (1000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+
+      expect(await vaultAvailable(localnet, vault)).toBe(before)
+    })
+  })
+
   describe('uploadInstanceApprovalProgram (SDK wrapper)', () => {
     // chunked upload - uploadInstanceApprovalPartial wrapper
     test('instance approval box assembled via chunks matches the uploaded bytecode', async () => {

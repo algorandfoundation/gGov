@@ -16,6 +16,7 @@ import { parseAqFile } from '../util/aqFile'
 import { getSpendableBalance } from '../util/spendable'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { chunk } from '../util/chunk'
+import { instanceBoxName } from '../util/boxes'
 import { padForRefSlots } from '../util/padForRefSlots'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
@@ -662,8 +663,10 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * re-casts every escrow on every topic. Fees and reference padding are therefore provisioned for
    * the worst case up front (a no-op re-vote still pays them: extraFee is spent, not refunded).
    *
-   * The instance app account pays the `votingRecords` box MBR on an account's first vote — keep it
-   * funded, sized by `committeeAq.numAccounts`.
+   * Vote record MBR is paid by the instance app account on an account's first vote. It pulls a
+   * top-up from the registry when needed, so what needs funding is the REGISTRY app account, not
+   * each instance: keep it above `numVoters * voteRecordMBR + mbrTopUp`, and recover leftovers
+   * from instances via `withdrawInstanceALGO`.
    */
   @requireWriter()
   @wrapErrors()
@@ -694,18 +697,30 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // Slots, worst case (every escrow re-cast): 5 per escrow (the escrow's account ref — the inner
     // vote() passes it in its foreign-accounts array, so it must be available to the group — plus
     // this instance's periodEscrowVotes box, the period app's per-escrow vote record, and the gGov
-    // registry's delegations + accounts boxes), plus a fixed ~20 (3 app refs: period app, frac
+    // registry's delegations + accounts boxes), plus a fixed ~21 (3 app refs: period app, frac
     // registry, gGov registry; this instance's periods/periodVoteCache/committees/committeeAq/
-    // accountAq/votingRecords/escrows boxes; the frac registry's accounts box; the period's tallies
-    // box; the gGov registry's committee metadata + member superbox). Each pad also adds 16
-    // inner-txn allowance and 700 opcodes, both of which the ref demand dominates. Validated
-    // against simulate in the e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
+    // accountAq/votingRecords/escrows boxes; the frac registry's accounts and instances boxes, the
+    // latter for checkNeedMBR's conditional top-up; the period's tallies box; the gGov registry's
+    // committee metadata + member superbox). Each pad also adds 16 inner-txn allowance and 700
+    // opcodes, both of which the ref demand dominates. Validated against simulate in the e2e spec
+    // (8 escrows fail at 4-per-escrow sizing; 5 passes).
     // A delegated vote adds 2: the voter's account ref and the gGov registry's delegations box.
-    builder = padForRefSlots(builder, numEscrows * 5 + 20 + (isDelegated ? 2 : 0), 'vote')
+    builder = padForRefSlots(builder, numEscrows * 5 + 21 + (isDelegated ? 2 : 0), 'vote')
     const opts: Parameters<typeof builder.vote>[0] = {
       args: { voterAccount: voter, periodId, topicVotes },
       note,
+      // The two MBR inner calls are deliberately NOT counted here: both pay their own fee, so
+      // the group's fee must not depend on whether the top-up fires.
       extraFee: (innerCalls * 1000).microAlgo(),
+      // Resources whose need is state-dependent must be declared statically for the worst case.
+      // checkNeedMBR reads this box only when the instance is at or below its minimum balance - a
+      // branch another voter's transaction can flip between simulate and execution. Since resource
+      // population resolves references by simulating, a group that simulated without the top-up
+      // would hit an unavailable box error.
+      // The registry app ref is not redundant with population: algosdk encodes the box ref against
+      // this txn's own foreign-apps at build time, before population runs.
+      appReferences: [this.registryReadClient.appId],
+      boxReferences: [{ appId: this.registryReadClient.appId, name: instanceBoxName(Number(instanceNumId)) }],
     }
     if (isDelegated) {
       // The contract requires the delegator at Txn.accounts(1) so delegated votes are visible to
