@@ -243,6 +243,11 @@ export class GGovRegistryReaderSDK {
     return admin!
   }
 
+  /** microALGO the registry sends a period per `requestMBR` top-up. */
+  async getMBRTopUp(): Promise<bigint> {
+    return (await this.readClient.state.global.mbrTopUp()) ?? 0n
+  }
+
   /** Read all registry global state, plus the current network round. */
   async getGlobalState() {
     // TODO not atomic, could simulate a logGlobalState to get the current round atomically

@@ -1000,6 +1000,202 @@ describe('GGovPeriod contract', () => {
     })
   })
 
+  // ── MBR self-funding ─────────────────────────────────────────────
+
+  describe('MBR self-funding via registry vault', () => {
+    // Acts as well as regression test for the AVM property the whole design rests on: that `box_create`
+    // raises `min_balance` immediately but defers the balance check to the end of the outer transaction.
+
+    // One topic of three options: S = 1 + 3, so the record is 5 + 4*S = 21 bytes over a 33-byte key
+    // ('v' + address), and box MBR is 2500 + 400 * (key + value).
+    const VOTE_RECORD_MBR = 2_500n + 400n * (33n + 21n)
+    const MBR_TOP_UP = 5_000_000n
+    const REQUEST_FEE = 1_000n
+
+    /**
+     * A committee, an operator, a ready single-topic period, and a vault funded well past one top-up.
+     * `createPeriod` only forwards the 1 ALGO period MBR, so every period here starts with little
+     * headroom — which is the point.
+     */
+    async function setupVoting(numGovs = 1) {
+      const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, numGovs, 10)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const periodAddress = getApplicationAddress(periodAppId).toString()
+      const registryAddress = appClient.appAddress.toString()
+      await localnet.algorand.account.ensureFundedFromEnvironment(registryAddress, (10).algos())
+      return { sdk, appClient, admin, govAccounts, periodId, periodAppId, periodAddress, registryAddress }
+    }
+
+    type VotingCtx = Awaited<ReturnType<typeof setupVoting>>
+
+    const availableOf = async (address: string) => {
+      const info = await localnet.algorand.account.getInformation(address)
+      return info.balance.microAlgo - info.minBalance.microAlgo
+    }
+
+    const periodAvailable = (ctx: VotingCtx) => availableOf(ctx.periodAddress)
+    const registryAvailable = (ctx: VotingCtx) => availableOf(ctx.registryAddress)
+
+    /** Withdraw the period's available balance down to `leave` microALGO. */
+    const drainPeriodTo = async (ctx: VotingCtx, leave: bigint) => {
+      const available = await periodAvailable(ctx)
+      await ctx.sdk.withdrawPeriodALGO({
+        periodId: ctx.periodId,
+        receiver: ctx.admin.toString(),
+        amount: available - leave,
+      })
+      expect(await periodAvailable(ctx)).toBe(leave)
+    }
+
+    /** Inner transactions of the group's last app call (the vote); reference pads come before it. */
+    const voteInnerTxnCount = (result: { confirmations?: { innerTxns?: unknown[] }[] }) => {
+      const confirmations = result.confirmations ?? []
+      return confirmations[confirmations.length - 1].innerTxns?.length ?? 0
+    }
+
+    test('a well-funded period never asks for a top-up', async () => {
+      const ctx = await setupVoting()
+      const voter = ctx.govAccounts[0]
+      const voterSDK = createUserSDK(localnet, ctx.appClient.appId, voter)
+      const registryBefore = await registryAvailable(ctx)
+      const periodBefore = await periodAvailable(ctx)
+
+      const result = await voterSDK.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [[10, 0, 0]],
+      })
+
+      // 1 inner getGovVotingPower only.
+      expect(voteInnerTxnCount(result)).toBe(1)
+      expect(await registryAvailable(ctx)).toBe(registryBefore)
+      expect(await periodAvailable(ctx)).toBe(periodBefore - VOTE_RECORD_MBR)
+    })
+
+    test('a period with not enough available balance requests an MBR top-up', async () => {
+      const ctx = await setupVoting()
+      const voter = ctx.govAccounts[0]
+      const voterSDK = createUserSDK(localnet, ctx.appClient.appId, voter)
+      const leftover = VOTE_RECORD_MBR / 3n // positive, well under the record's MBR
+      await drainPeriodTo(ctx, leftover)
+      const registryBefore = await registryAvailable(ctx)
+
+      const result = await voterSDK.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [[10, 0, 0]],
+      })
+
+      expect(voteInnerTxnCount(result)).toBe(2)
+      expect(await registryAvailable(ctx)).toBe(registryBefore - MBR_TOP_UP - REQUEST_FEE)
+      expect(await periodAvailable(ctx)).toBe(leftover + MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      // Record is successfully stored
+      const record = await ctx.sdk.getVotingRecord(ctx.periodId, voter.toString())
+      expect(record!.topicVotes[0]).toEqual([10, 0, 0])
+    })
+
+    test('a period at zero available balance requests an MBR top-up', async () => {
+      // This is the `balance === minBalance` case
+      const ctx = await setupVoting()
+      const voter = ctx.govAccounts[0]
+      const voterSDK = createUserSDK(localnet, ctx.appClient.appId, voter)
+      await drainPeriodTo(ctx, VOTE_RECORD_MBR)
+      const registryBefore = await registryAvailable(ctx)
+
+      const result = await voterSDK.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [[10, 0, 0]],
+      })
+
+      expect(voteInnerTxnCount(result)).toBe(2)
+      expect(await registryAvailable(ctx)).toBe(registryBefore - MBR_TOP_UP - REQUEST_FEE)
+      expect(await periodAvailable(ctx)).toBe(MBR_TOP_UP - REQUEST_FEE)
+      const record = await ctx.sdk.getVotingRecord(ctx.periodId, voter.toString())
+      expect(record!.topicVotes[0]).toEqual([10, 0, 0])
+    })
+
+    test('a re-vote costs no MBR: one microALGO of headroom carries it', async () => {
+      const ctx = await setupVoting()
+      const voter = ctx.govAccounts[0]
+      const voterSDK = createUserSDK(localnet, ctx.appClient.appId, voter)
+      await voterSDK.vote({ periodId: ctx.periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] })
+      await drainPeriodTo(ctx, 1n)
+
+      const result = await voterSDK.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [[0, 10, 0]],
+      })
+
+      expect(voteInnerTxnCount(result)).toBe(1)
+      expect(await periodAvailable(ctx)).toBe(1n)
+      const record = await ctx.sdk.getVotingRecord(ctx.periodId, voter.toString())
+      expect(record!.topicVotes[0]).toEqual([0, 10, 0])
+    })
+
+    test('a drained registry fails the user-facing vote call', async () => {
+      const ctx = await setupVoting()
+      const voter = ctx.govAccounts[0]
+      const voterSDK = createUserSDK(localnet, ctx.appClient.appId, voter)
+      await drainPeriodTo(ctx, 3n)
+      await ctx.sdk.registry.withdrawALGO({
+        receiver: ctx.admin.toString(),
+        amount: await registryAvailable(ctx),
+      })
+
+      await expect(
+        voterSDK.vote({ periodId: ctx.periodId, voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] }),
+      ).rejects.toThrow()
+    })
+
+    test('every vote references the registry app and its periods box, top-up or not', async () => {
+      // The vote must name the registry's `periods` box unconditionally: checkNeedMBR reads it only
+      // on a branch another voter's transaction can flip between simulate and execution, and resource
+      // population resolves references BY simulating. Regression test: nothing else in this suite would
+      // notice if the SDK stopped sending it.
+      const ctx = await setupVoting(2)
+      const [first, second] = ctx.govAccounts
+      const firstSDK = createUserSDK(localnet, ctx.appClient.appId, first)
+      const secondSDK = createUserSDK(localnet, ctx.appClient.appId, second)
+
+      const vaultBeforeFirst = await registryAvailable(ctx)
+      const voteNoTopUp = await firstSDK.vote({
+        periodId: ctx.periodId,
+        voterAccount: first.toString(),
+        topicVotes: [[10, 0, 0]],
+      })
+      const vaultAfterFirst = await registryAvailable(ctx)
+      await drainPeriodTo(ctx, VOTE_RECORD_MBR / 3n)
+      const voteWithTopUp = await secondSDK.vote({
+        periodId: ctx.periodId,
+        voterAccount: second.toString(),
+        topicVotes: [[0, 10, 0]],
+      })
+
+      expect(vaultAfterFirst).toBe(vaultBeforeFirst)
+      expect(await registryAvailable(ctx)).toBe(vaultAfterFirst - MBR_TOP_UP - REQUEST_FEE)
+
+      const registryAppId = ctx.appClient.appId
+      // 'p' + big-endian uint32(periodId), matching BoxMap<Uint32, GGovPeriodSummary>({ keyPrefix: 'p' }).
+      const expectedName = new Uint8Array(5)
+      expectedName[0] = 0x70
+      new DataView(expectedName.buffer).setUint32(1, Number(ctx.periodId))
+      // The vote app call is the group's last txn; the reference pads come before it.
+      const voteCall = (r: typeof voteNoTopUp) => r.transactions[r.transactions.length - 1]
+
+      for (const result of [voteNoTopUp, voteWithTopUp]) {
+        const { foreignApps, boxes } = voteCall(result).applicationCall!
+        expect(foreignApps).toContain(registryAppId)
+        expect(boxes!.some((b) => b.appIndex === registryAppId && Buffer.from(b.name).equals(expectedName))).toBe(true)
+      }
+      // The two MBR inner calls pay their own fees, so the voter pays the same either way.
+      expect(voteCall(voteWithTopUp).fee).toBe(voteCall(voteNoTopUp).fee)
+    })
+  })
+
   // ── Delegation ───────────────────────────────────────────────────
 
   describe('delegation', () => {

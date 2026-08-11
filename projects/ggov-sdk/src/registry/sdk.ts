@@ -205,6 +205,21 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   @requireWriterWithClient()
   @wrapErrors()
+  makeSetMBRTopUpTxns({
+    amount,
+    builder,
+  }: GGovRegistryContractArgs['setMBRTopUp(uint64)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.setMbrTopUp({ args: { amount } })
+    return builder
+  }
+
+  setMBRTopUp = this.makeTxnExecutor({
+    maker: this.makeSetMBRTopUpTxns,
+  })
+
+  @requireWriterWithClient()
+  @wrapErrors()
   makeSetOperatorTxns({
     account,
     builder,

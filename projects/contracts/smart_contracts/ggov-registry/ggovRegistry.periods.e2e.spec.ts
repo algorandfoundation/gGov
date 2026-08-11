@@ -135,6 +135,39 @@ describe('GGovRegistry periods', () => {
     })
   })
 
+  describe('requestMBR', () => {
+    // requestMBR is a public ABI method with no admin gate: a period calls it as an inner txn when
+    // writing a vote record leaves it below its minimum balance. The only thing stopping an arbitrary
+    // caller from making the registry pay out is the callerApplicationId check.
+
+    /** Available balance of the registry vault — what `requestMBR` pays out of. */
+    const vaultAvailable = async (address: string) => {
+      const info = await localnet.algorand.account.getInformation(address)
+      return info.balance.microAlgo - info.minBalance.microAlgo
+    }
+
+    test('a direct call cannot make the vault pay out, even naming a real period', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const vault = sdk.readClient.appAddress.toString()
+      const before = await vaultAvailable(vault)
+
+      await expect(
+        sdk.writeClient!.send.requestMbr({
+          args: { periodId: Number(periodId) },
+          sender: testAccount.toString(),
+          signer: testAccount.signer,
+          extraFee: (1000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+
+      expect(await vaultAvailable(vault)).toBe(before)
+    })
+  })
+
   describe('setLastPeriodId', () => {
     test('admin can set lastPeriodId when no periods exist in the affected range', async () => {
       const { testAccount } = localnet.context
