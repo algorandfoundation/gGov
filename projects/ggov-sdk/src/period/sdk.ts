@@ -17,7 +17,7 @@ import {
   validateTopicBodyJson,
 } from './types'
 import { committeeIdToRaw } from '../util/comitteeId'
-import { asciiBoxName, topicBodyBoxName } from '../util/boxNames'
+import { asciiBoxName, periodBoxName, topicBodyBoxName } from '../util/boxNames'
 import { chunk } from '../util/chunk'
 import { assertUint } from '../util/assertUint'
 import { requireWriter } from '../util/requiresSender'
@@ -669,7 +669,7 @@ export class GGovSDK extends GGovReaderSDK {
   @requireWriter()
   @wrapErrors()
   makeVoteTxns({
-    periodId: _periodId,
+    periodId,
     voterAccount,
     topicVotes,
     note,
@@ -684,8 +684,19 @@ export class GGovSDK extends GGovReaderSDK {
     const opts: any = {
       args: { voterAccount, topicVotes },
       note,
-      // 1 inner getDelegate (when delegated) + 1 inner getGovVotingPower
+      // 1 inner getDelegate (when delegated) + 1 inner getGovVotingPower. The two MBR inner txns are
+      // deliberately NOT counted here: both pay their own fee, so the group's fee must not depend on
+      // whether the top-up fires.
       extraFee: (1000).microAlgo(),
+      // Resources whose need is state-dependent must be declared statically for the worst case.
+      // checkNeedMBR reads this box only when the period is at or below its minimum balance - a
+      // branch another voter's transaction can flip between simulate and execution. Since resource
+      // population resolves references by simulating, a group that simulated without the top-up
+      // would hit an unavailable box error.
+      // The registry app ref is not redundant with population: algosdk encodes the box ref against
+      // this txn's own foreign-apps at build time, before population runs.
+      appReferences: [this.registryAppId],
+      boxReferences: [{ appId: this.registryAppId, name: periodBoxName(periodId) }],
     }
     // The sender is always this SDK's writerAccount. Self-vote: writerAccount === voterAccount.
     // Delegated vote: writerAccount is the delegatee and voterAccount is the delegator (someone who

@@ -114,6 +114,18 @@ describe('GGovRegistry admin', () => {
     })
   })
 
+  describe('setMBRTopUp', () => {
+    test('admin can set the MBR top-up amount', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      // 5 ALGO default, set at deploy by the global's initialValue.
+      expect(await sdk.getMBRTopUp()).toBe(5_000_000n)
+
+      await sdk.setMBRTopUp({ amount: 2_000_000n })
+      expect(await sdk.getMBRTopUp()).toBe(2_000_000n)
+    })
+  })
+
   describe('admin transfer and lifecycle', () => {
     test('admin defaults to creator on deploy', async () => {
       const { testAccount } = localnet.context
@@ -294,6 +306,10 @@ describe('GGovRegistry admin', () => {
       await expect(nonAdminSDK.setOperator({ account: nonAdmin.toString() })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
+    })
+
+    test('non-admin cannot set the MBR top-up amount', async () => {
+      await expect(nonAdminSDK.setMBRTopUp({ amount: 2_000_000n })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot uploadPeriodApprovalPartial', async () => {
