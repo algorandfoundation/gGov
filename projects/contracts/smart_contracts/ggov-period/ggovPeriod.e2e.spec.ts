@@ -940,6 +940,30 @@ describe('GGovPeriod contract', () => {
       expect(period.topics[0][1]).toEqual([13, 7, 0])
     })
 
+    test('getVoters lists exactly the govs that cast a vote', async () => {
+      const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 3, 10)
+      await sdk.registry.setOperator({ account: admin.toString() })
+      const periodId = await createVotingPeriod(sdk, committeeId, [['Yes', 'No', 'Abstain']])
+
+      // Empty before any vote, even though the period's 'o'/'t' boxes already exist — getVoters
+      // scans box names for the `voteRecords` prefix, so this also pins that it ignores the others.
+      expect(await sdk.getVoters(periodId)).toEqual([])
+
+      const [voted1, voted2, abstained] = govAccounts
+      for (const voter of [voted1, voted2]) {
+        await createUserSDK(localnet, appClient.appId, voter).vote({
+          periodId,
+          voterAccount: voter.toString(),
+          topicVotes: [[10, 0, 0]],
+        })
+      }
+
+      const voters = await sdk.getVoters(periodId)
+      expect(voters).toHaveLength(2)
+      expect(voters).toEqual(expect.arrayContaining([voted1.toString(), voted2.toString()]))
+      expect(voters).not.toContain(abstained.toString())
+    })
+
     test('Vote update subtracts old and adds new', async () => {
       const { sdk, appClient, committeeId, govAccounts, admin } = await deployWithCommittee(localnet, 1, 10)
       await sdk.registry.setOperator({ account: admin.toString() })

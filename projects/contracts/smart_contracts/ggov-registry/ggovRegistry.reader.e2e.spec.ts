@@ -367,6 +367,15 @@ describe('GGovRegistry readers', () => {
       expect(delegations.get(delegator2.toString())).toBe(votingAddress.toString())
     })
 
+    test('getAccounts returns every ingested gov and nothing else', async () => {
+      const { sdk, govAccounts } = await deployRegistryWithCommittee(localnet, 2)
+      const unknown = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const accounts = await sdk.getAccounts()
+      expect(accounts).toHaveLength(govAccounts.length)
+      expect(accounts).toEqual(expect.arrayContaining(govAccounts.map((gov) => gov.toString())))
+      expect(accounts).not.toContain(unknown.toString())
+    })
+
     test('getAllPeriodSummaries returns all active periods', async () => {
       const { testAccount } = localnet.context
       const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
