@@ -27,7 +27,7 @@ interface PeriodTableRowProps {
  * on the SDK (alongside `getAllPeriodSummaries`) would collapse them into a single call.
  */
 function PeriodTableRow({ periodId, period, ready, committeeRounds }: PeriodTableRowProps) {
-  const { data: body } = usePeriodBody(periodId)
+  const { data: body, isPending: bodyPending } = usePeriodBody(periodId)
 
   return (
     <TableRow>
@@ -38,15 +38,24 @@ function PeriodTableRow({ periodId, period, ready, committeeRounds }: PeriodTabl
           params={{ periodId: String(periodId) }}
           className="block max-w-[280px] truncate font-medium hover:underline"
         >
-          {body?.title ?? <span className="font-normal text-muted-foreground">Untitled</span>}
+          {bodyPending ? (
+            <Skeleton className="h-4 w-40" />
+          ) : body?.title ? (
+            body.title
+          ) : (
+            <span className="font-normal text-muted-foreground">Untitled</span>
+          )}
         </Link>
       </TableCell>
       <TableCell className="text-sm">{committeeRounds}</TableCell>
       <TableCell className="text-sm">
-        {/* Dates alone, to leave the title room; the exact window is a hover away. */}
+        {/* Dates alone, to leave the title room; the exact window is a hover away.
+            `tabIndex` because a bare span takes no focus, and Radix opens on focus as well as hover. */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="cursor-help">{formatDateRangeUTC(period.votingStart, period.votingEnd)}</span>
+            <span tabIndex={0} className="cursor-help">
+              {formatDateRangeUTC(period.votingStart, period.votingEnd)}
+            </span>
           </TooltipTrigger>
           <TooltipContent>
             {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}

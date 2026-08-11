@@ -1,6 +1,6 @@
 /**
- * Date and time formatting. Every function takes unix **seconds**, the unit the period
- * contract stores voting windows in, and returns a display string.
+ * Date and time helpers. Unless otherwise noted, formatting functions take unix **seconds**
+ * (the unit the period contract stores voting windows in) and return a display string.
  *
  * Two families, split by who is reading:
  *
