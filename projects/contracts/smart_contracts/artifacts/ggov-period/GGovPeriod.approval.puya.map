@@ -6,7 +6,7 @@
     "../../base/utils.algo.ts",
     "../../ggov-period/ggovPeriod.algo.ts"
   ],
-  "mappings": "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",
+  "mappings": "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",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -17,7 +17,7 @@
       "op": "intcblock 0 2 1 4"
     },
     "7": {
-      "op": "bytecblock \"t\" \"o\" \"registryApp\" 0x0000 0x151f7c75 \"votingStart\" \"votingEnd\" 0x0002 \"P\" \"committeeId\" 0x000000000000000000 \"ready\" \"ERR:AUTH\" \"v\" 0x00 \"firstVotingRound\" \"periodId\" \"lastVotingRound\" 0x00020002 \"ERR:GT_OB\" 0xc8d461ab \"ERR:GV_MM\" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(C4EBQw==) \"Abstain\" \"ERR:GT_OA\""
+      "op": "bytecblock \"t\" \"o\" \"registryApp\" 0x0000 0x151f7c75 \"votingStart\" \"votingEnd\" 0x0002 \"P\" \"committeeId\" 0x000000000000000000 \"ready\" \"periodId\" \"ERR:AUTH\" \"v\" 0x00 \"firstVotingRound\" \"lastVotingRound\" 0x00020002 \"ERR:GT_OB\" 0xc8d461ab \"ERR:GV_MM\" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(C4EBQw==) \"Abstain\" \"ERR:GT_OA\""
     },
     "240": {
       "op": "txn ApplicationID",
@@ -77,7 +77,7 @@
       "stack_out": []
     },
     "252": {
-      "op": "bytec 15 // \"firstVotingRound\"",
+      "op": "bytec 16 // \"firstVotingRound\"",
       "defined_out": [
         "\"firstVotingRound\""
       ],
@@ -406,7 +406,7 @@
       ]
     },
     "452": {
-      "op": "bytec 16 // \"periodId\"",
+      "op": "bytec 12 // \"periodId\"",
       "defined_out": [
         "\"periodId\"",
         "0"
@@ -4253,7 +4253,7 @@
       ]
     },
     "917": {
-      "op": "bytec 12 // \"ERR:AUTH\"",
+      "op": "bytec 13 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\""
       ],
@@ -4351,7 +4351,7 @@
       ]
     },
     "928": {
-      "op": "bytec 16 // \"periodId\"",
+      "op": "bytec 12 // \"periodId\"",
       "defined_out": [
         "\"periodId\"",
         "tmp%4#1"
@@ -13149,7 +13149,7 @@
       ]
     },
     "1964": {
-      "op": "bytec 12 // \"ERR:AUTH\"",
+      "op": "bytec 13 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\"",
         "aggregate%array_length%0#0",
@@ -16560,7 +16560,7 @@
         "votingPower#0",
         "isDelegated#0"
       ],
-      "op": "bytec 13 // \"v\"",
+      "op": "bytec 14 // \"v\"",
       "defined_out": [
         "\"v\""
       ],
@@ -23320,7 +23320,7 @@
       ]
     },
     "2815": {
-      "op": "bytec 14 // 0x00",
+      "op": "bytec 15 // 0x00",
       "defined_out": [
         "0x00",
         "aggregate%head%5#0",
@@ -23593,7 +23593,7 @@
       ]
     },
     "2843": {
-      "op": "bytec 15 // \"firstVotingRound\"",
+      "op": "bytec 16 // \"firstVotingRound\"",
       "defined_out": [
         "\"firstVotingRound\"",
         "0"
@@ -23651,7 +23651,7 @@
       ]
     },
     "2850": {
-      "op": "bytec 15 // \"firstVotingRound\"",
+      "op": "bytec 16 // \"firstVotingRound\"",
       "stack_out": [
         "aggregate%array_length%4#0",
         "i#0",
@@ -23822,7 +23822,7 @@
       ]
     },
     "2867": {
-      "op": "bytec 14 // 0x00",
+      "op": "bytec 15 // 0x00",
       "defined_out": [
         "0x00"
       ],
@@ -23999,6 +23999,337 @@
       ]
     },
     "2887": {
+      "op": "global CurrentApplicationAddress",
+      "defined_out": [
+        "app#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "app#0"
+      ]
+    },
+    "2889": {
+      "op": "dup",
+      "defined_out": [
+        "app#0",
+        "app#0 (copy)"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "app#0",
+        "app#0 (copy)"
+      ]
+    },
+    "2890": {
+      "op": "acct_params_get AcctBalance",
+      "defined_out": [
+        "app#0",
+        "check%0#0",
+        "value%0#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "app#0",
+        "value%0#0",
+        "check%0#0"
+      ]
+    },
+    "2892": {
+      "error": "account funded",
+      "op": "assert // account funded",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "app#0",
+        "value%0#0"
+      ]
+    },
+    "2893": {
+      "op": "swap",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "value%0#0",
+        "app#0"
+      ]
+    },
+    "2894": {
+      "op": "acct_params_get AcctMinBalance",
+      "defined_out": [
+        "check%1#0",
+        "value%0#0",
+        "value%1#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "value%0#0",
+        "value%1#0",
+        "check%1#0"
+      ]
+    },
+    "2896": {
+      "error": "account funded",
+      "op": "assert // account funded",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "value%0#0",
+        "value%1#0"
+      ]
+    },
+    "2897": {
+      "op": ">",
+      "defined_out": [
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "tmp%1#1"
+      ]
+    },
+    "2898": {
+      "op": "bnz vote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkNeedMBR@52",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0"
+      ]
+    },
+    "2901": {
+      "op": "itxn_begin"
+    },
+    "2902": {
+      "op": "global MinTxnFee",
+      "defined_out": [
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0"
+      ]
+    },
+    "2904": {
+      "op": "intc_0 // 0",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "0"
+      ]
+    },
+    "2905": {
+      "op": "bytec 12 // \"periodId\"",
+      "defined_out": [
+        "\"periodId\"",
+        "0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "0",
+        "\"periodId\""
+      ]
+    },
+    "2907": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "maybe_exists%0#0",
+        "maybe_value%0#0"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "maybe_value%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "2908": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "maybe_value%0#0"
+      ]
+    },
+    "2909": {
+      "callsub": "smart_contracts/base/utils.algo.ts::u32",
+      "op": "callsub u32",
+      "defined_out": [
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2"
+      ]
+    },
+    "2912": {
+      "op": "intc_0 // 0",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "0"
+      ]
+    },
+    "2913": {
+      "op": "bytec_2 // \"registryApp\"",
+      "defined_out": [
+        "\"registryApp\"",
+        "0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "0",
+        "\"registryApp\""
+      ]
+    },
+    "2914": {
+      "op": "app_global_get_ex",
+      "defined_out": [
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "maybe_exists%1#0",
+        "maybe_value%1#0",
+        "tmp%2#2"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "maybe_value%1#0",
+        "maybe_exists%1#0"
+      ]
+    },
+    "2915": {
+      "error": "check GlobalState exists",
+      "op": "assert // check GlobalState exists",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "maybe_value%1#0"
+      ]
+    },
+    "2916": {
+      "op": "intc_0 // 0",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "maybe_value%1#0",
+        "0"
+      ]
+    },
+    "2917": {
+      "op": "itxn_field OnCompletion",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "maybe_value%1#0"
+      ]
+    },
+    "2919": {
+      "op": "itxn_field ApplicationID",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2"
+      ]
+    },
+    "2921": {
+      "op": "pushbytes 0x8d9746e4 // method \"requestMBR(uint32)void\"",
+      "defined_out": [
+        "Method(requestMBR(uint32)void)",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2",
+        "Method(requestMBR(uint32)void)"
+      ]
+    },
+    "2927": {
+      "op": "itxn_field ApplicationArgs",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "tmp%2#2"
+      ]
+    },
+    "2929": {
+      "op": "itxn_field ApplicationArgs",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0"
+      ]
+    },
+    "2931": {
+      "op": "pushint 6 // appl",
+      "defined_out": [
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "appl"
+      ],
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0",
+        "appl"
+      ]
+    },
+    "2933": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0",
+        "abi_call_inner_txn_params%1%%param_Fee_idx_0#0"
+      ]
+    },
+    "2935": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "aggregate%array_length%4#0",
+        "i#0"
+      ]
+    },
+    "2937": {
+      "op": "itxn_submit"
+    },
+    "2938": {
+      "block": "vote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.checkNeedMBR@52",
+      "stack_in": [
+        "aggregate%array_length%4#0",
+        "i#0"
+      ],
       "op": "intc_2 // 1",
       "defined_out": [
         "1"
@@ -24009,14 +24340,14 @@
         "1"
       ]
     },
-    "2888": {
+    "2939": {
       "op": "return",
       "stack_out": [
         "aggregate%array_length%4#0",
         "i#0"
       ]
     },
-    "2889": {
+    "2940": {
       "block": "vote_bool_false@18",
       "stack_in": [
         "aggregate%array_length%4#0",
@@ -24040,10 +24371,10 @@
         "and_result%0#0"
       ]
     },
-    "2890": {
+    "2941": {
       "op": "b vote_bool_merge@19"
     },
-    "2893": {
+    "2944": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote[routing]",
       "params": {},
       "block": "canVote",
@@ -24053,10 +24384,10 @@
         "recordBox#0"
       ]
     },
-    "2894": {
+    "2945": {
       "op": "txna ApplicationArgs 1"
     },
-    "2897": {
+    "2948": {
       "op": "dup",
       "defined_out": [
         "voterAccount#0"
@@ -24067,7 +24398,7 @@
         "voterAccount#0"
       ]
     },
-    "2898": {
+    "2949": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -24079,7 +24410,7 @@
         "len%0#0"
       ]
     },
-    "2899": {
+    "2950": {
       "op": "pushint 32",
       "defined_out": [
         "32",
@@ -24093,7 +24424,7 @@
         "32"
       ]
     },
-    "2901": {
+    "2952": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -24105,7 +24436,7 @@
         "eq%0#0"
       ]
     },
-    "2902": {
+    "2953": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
@@ -24113,10 +24444,10 @@
         "voterAccount#0"
       ]
     },
-    "2903": {
+    "2954": {
       "op": "txna ApplicationArgs 2"
     },
-    "2906": {
+    "2957": {
       "op": "dup",
       "defined_out": [
         "senderAccount#0",
@@ -24129,7 +24460,7 @@
         "senderAccount#0"
       ]
     },
-    "2907": {
+    "2958": {
       "op": "cover 2",
       "defined_out": [
         "senderAccount#0",
@@ -24142,7 +24473,7 @@
         "senderAccount#0"
       ]
     },
-    "2909": {
+    "2960": {
       "op": "len",
       "defined_out": [
         "len%1#0",
@@ -24156,7 +24487,7 @@
         "len%1#0"
       ]
     },
-    "2910": {
+    "2961": {
       "op": "pushint 32",
       "stack_out": [
         "recordBox#0",
@@ -24166,7 +24497,7 @@
         "32"
       ]
     },
-    "2912": {
+    "2963": {
       "op": "==",
       "defined_out": [
         "eq%1#0",
@@ -24180,7 +24511,7 @@
         "eq%1#0"
       ]
     },
-    "2913": {
+    "2964": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
@@ -24189,7 +24520,7 @@
         "voterAccount#0"
       ]
     },
-    "2914": {
+    "2965": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -24198,7 +24529,7 @@
         "0"
       ]
     },
-    "2915": {
+    "2966": {
       "op": "bytec 11 // \"ready\"",
       "defined_out": [
         "\"ready\"",
@@ -24214,7 +24545,7 @@
         "\"ready\""
       ]
     },
-    "2917": {
+    "2968": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -24230,7 +24561,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "2918": {
+    "2969": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -24240,7 +24571,7 @@
         "maybe_value%0#0"
       ]
     },
-    "2919": {
+    "2970": {
       "op": "bnz canVote_after_if_else@3",
       "stack_out": [
         "recordBox#0",
@@ -24248,14 +24579,14 @@
         "voterAccount#0"
       ]
     },
-    "2922": {
+    "2973": {
       "op": "pop",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "2923": {
+    "2974": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "senderAccount#0",
@@ -24267,7 +24598,7 @@
         "tmp%4#0"
       ]
     },
-    "2925": {
+    "2976": {
       "block": "canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21",
       "stack_in": [
         "recordBox#0",
@@ -24285,7 +24616,7 @@
         "0x151f7c75"
       ]
     },
-    "2927": {
+    "2978": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -24298,7 +24629,7 @@
         "tmp%4#0"
       ]
     },
-    "2928": {
+    "2979": {
       "op": "concat",
       "defined_out": [
         "tmp%5#0"
@@ -24309,14 +24640,14 @@
         "tmp%5#0"
       ]
     },
-    "2929": {
+    "2980": {
       "op": "log",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "2930": {
+    "2981": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1"
@@ -24327,14 +24658,14 @@
         "1"
       ]
     },
-    "2931": {
+    "2982": {
       "op": "return",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "2932": {
+    "2983": {
       "block": "canVote_after_if_else@3",
       "stack_in": [
         "recordBox#0",
@@ -24352,7 +24683,7 @@
         "tmp%1#1"
       ]
     },
-    "2934": {
+    "2985": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -24366,7 +24697,7 @@
         "0"
       ]
     },
-    "2935": {
+    "2986": {
       "op": "bytec 5 // \"votingStart\"",
       "defined_out": [
         "\"votingStart\"",
@@ -24382,7 +24713,7 @@
         "\"votingStart\""
       ]
     },
-    "2937": {
+    "2988": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -24398,7 +24729,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "2938": {
+    "2989": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -24409,7 +24740,7 @@
         "maybe_value%1#0"
       ]
     },
-    "2939": {
+    "2990": {
       "op": "<",
       "defined_out": [
         "tmp%2#1"
@@ -24421,7 +24752,7 @@
         "tmp%2#1"
       ]
     },
-    "2940": {
+    "2991": {
       "op": "bz canVote_after_if_else@5",
       "stack_out": [
         "recordBox#0",
@@ -24429,7 +24760,7 @@
         "voterAccount#0"
       ]
     },
-    "2943": {
+    "2994": {
       "op": "pop",
       "defined_out": [],
       "stack_out": [
@@ -24437,7 +24768,7 @@
         "senderAccount#0"
       ]
     },
-    "2944": {
+    "2995": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "tmp%4#0"
@@ -24448,10 +24779,10 @@
         "tmp%4#0"
       ]
     },
-    "2946": {
+    "2997": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "2949": {
+    "3000": {
       "block": "canVote_after_if_else@5",
       "stack_in": [
         "recordBox#0",
@@ -24469,7 +24800,7 @@
         "tmp%4#1"
       ]
     },
-    "2951": {
+    "3002": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -24483,7 +24814,7 @@
         "0"
       ]
     },
-    "2952": {
+    "3003": {
       "op": "bytec 6 // \"votingEnd\"",
       "defined_out": [
         "\"votingEnd\"",
@@ -24499,7 +24830,7 @@
         "\"votingEnd\""
       ]
     },
-    "2954": {
+    "3005": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -24515,7 +24846,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "2955": {
+    "3006": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -24526,7 +24857,7 @@
         "maybe_value%2#0"
       ]
     },
-    "2956": {
+    "3007": {
       "op": ">=",
       "defined_out": [
         "tmp%5#1"
@@ -24538,7 +24869,7 @@
         "tmp%5#1"
       ]
     },
-    "2957": {
+    "3008": {
       "op": "bz canVote_after_if_else@7",
       "stack_out": [
         "recordBox#0",
@@ -24546,7 +24877,7 @@
         "voterAccount#0"
       ]
     },
-    "2960": {
+    "3011": {
       "op": "pop",
       "defined_out": [],
       "stack_out": [
@@ -24554,7 +24885,7 @@
         "senderAccount#0"
       ]
     },
-    "2961": {
+    "3012": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "tmp%4#0"
@@ -24565,10 +24896,10 @@
         "tmp%4#0"
       ]
     },
-    "2963": {
+    "3014": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "2966": {
+    "3017": {
       "block": "canVote_after_if_else@7",
       "stack_in": [
         "recordBox#0",
@@ -24588,7 +24919,7 @@
         "voterAccount#0 (copy)"
       ]
     },
-    "2967": {
+    "3018": {
       "op": "!=",
       "defined_out": [
         "senderAccount#0",
@@ -24601,7 +24932,7 @@
         "tmp%7#0"
       ]
     },
-    "2968": {
+    "3019": {
       "op": "bz canVote_after_if_else@17",
       "stack_out": [
         "recordBox#0",
@@ -24609,10 +24940,10 @@
         "voterAccount#0"
       ]
     },
-    "2971": {
+    "3022": {
       "op": "itxn_begin"
     },
-    "2972": {
+    "3023": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -24625,7 +24956,7 @@
         "0"
       ]
     },
-    "2973": {
+    "3024": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -24640,7 +24971,7 @@
         "\"registryApp\""
       ]
     },
-    "2974": {
+    "3025": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%3#0",
@@ -24655,7 +24986,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "2975": {
+    "3026": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -24665,7 +24996,7 @@
         "maybe_value%3#0"
       ]
     },
-    "2976": {
+    "3027": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -24675,7 +25006,7 @@
         "0"
       ]
     },
-    "2977": {
+    "3028": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "recordBox#0",
@@ -24684,7 +25015,7 @@
         "maybe_value%3#0"
       ]
     },
-    "2979": {
+    "3030": {
       "op": "itxn_field ApplicationID",
       "stack_out": [
         "recordBox#0",
@@ -24692,7 +25023,7 @@
         "voterAccount#0"
       ]
     },
-    "2981": {
+    "3032": {
       "op": "bytec 20 // method \"getDelegate(address)address\"",
       "defined_out": [
         "Method(getDelegate(address)address)",
@@ -24705,7 +25036,7 @@
         "Method(getDelegate(address)address)"
       ]
     },
-    "2983": {
+    "3034": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "recordBox#0",
@@ -24713,7 +25044,7 @@
         "voterAccount#0"
       ]
     },
-    "2985": {
+    "3036": {
       "op": "dup",
       "stack_out": [
         "recordBox#0",
@@ -24722,7 +25053,7 @@
         "voterAccount#0 (copy)"
       ]
     },
-    "2986": {
+    "3037": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "recordBox#0",
@@ -24730,7 +25061,7 @@
         "voterAccount#0"
       ]
     },
-    "2988": {
+    "3039": {
       "op": "pushint 6 // appl",
       "defined_out": [
         "appl",
@@ -24743,7 +25074,7 @@
         "appl"
       ]
     },
-    "2990": {
+    "3041": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "recordBox#0",
@@ -24751,7 +25082,7 @@
         "voterAccount#0"
       ]
     },
-    "2992": {
+    "3043": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -24760,7 +25091,7 @@
         "0"
       ]
     },
-    "2993": {
+    "3044": {
       "op": "itxn_field Fee",
       "stack_out": [
         "recordBox#0",
@@ -24768,10 +25099,10 @@
         "voterAccount#0"
       ]
     },
-    "2995": {
+    "3046": {
       "op": "itxn_submit"
     },
-    "2996": {
+    "3047": {
       "op": "itxn LastLog",
       "defined_out": [
         "awst_tmp%0#0",
@@ -24784,7 +25115,7 @@
         "awst_tmp%0#0"
       ]
     },
-    "2998": {
+    "3049": {
       "op": "dup",
       "defined_out": [
         "awst_tmp%0#0",
@@ -24799,7 +25130,7 @@
         "awst_tmp%0#0 (copy)"
       ]
     },
-    "2999": {
+    "3050": {
       "op": "extract 4 0",
       "defined_out": [
         "awst_tmp%0#0",
@@ -24814,7 +25145,7 @@
         "delegate#0"
       ]
     },
-    "3002": {
+    "3053": {
       "op": "dup",
       "stack_out": [
         "recordBox#0",
@@ -24825,7 +25156,7 @@
         "delegate#0 (copy)"
       ]
     },
-    "3003": {
+    "3054": {
       "op": "uncover 2",
       "defined_out": [
         "awst_tmp%0#0",
@@ -24841,7 +25172,7 @@
         "awst_tmp%0#0"
       ]
     },
-    "3005": {
+    "3056": {
       "op": "extract 0 4",
       "defined_out": [
         "delegate#0",
@@ -24857,7 +25188,7 @@
         "tmp%10#0"
       ]
     },
-    "3008": {
+    "3059": {
       "op": "bytec 4 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -24875,7 +25206,7 @@
         "0x151f7c75"
       ]
     },
-    "3010": {
+    "3061": {
       "op": "==",
       "defined_out": [
         "delegate#0",
@@ -24891,7 +25222,7 @@
         "tmp%11#0"
       ]
     },
-    "3011": {
+    "3062": {
       "error": "Bytes has valid prefix",
       "op": "assert // Bytes has valid prefix",
       "stack_out": [
@@ -24902,7 +25233,7 @@
         "delegate#0"
       ]
     },
-    "3012": {
+    "3063": {
       "op": "dup",
       "defined_out": [
         "delegate#0",
@@ -24918,7 +25249,7 @@
         "delegate#0 (copy)"
       ]
     },
-    "3013": {
+    "3064": {
       "op": "len",
       "defined_out": [
         "delegate#0",
@@ -24934,7 +25265,7 @@
         "len%0#0"
       ]
     },
-    "3014": {
+    "3065": {
       "op": "pushint 32",
       "defined_out": [
         "32",
@@ -24952,7 +25283,7 @@
         "32"
       ]
     },
-    "3016": {
+    "3067": {
       "op": "==",
       "defined_out": [
         "delegate#0",
@@ -24968,7 +25299,7 @@
         "eq%0#0"
       ]
     },
-    "3017": {
+    "3068": {
       "error": "invalid number of bytes for account",
       "op": "assert // invalid number of bytes for account",
       "stack_out": [
@@ -24979,7 +25310,7 @@
         "delegate#0"
       ]
     },
-    "3018": {
+    "3069": {
       "op": "global ZeroAddress",
       "defined_out": [
         "delegate#0",
@@ -24995,7 +25326,7 @@
         "tmp%13#0"
       ]
     },
-    "3020": {
+    "3071": {
       "op": "==",
       "defined_out": [
         "delegate#0",
@@ -25010,7 +25341,7 @@
         "tmp%14#0"
       ]
     },
-    "3021": {
+    "3072": {
       "op": "bz canVote_after_if_else@11",
       "stack_out": [
         "recordBox#0",
@@ -25019,7 +25350,7 @@
         "delegate#0"
       ]
     },
-    "3024": {
+    "3075": {
       "op": "popn 2",
       "defined_out": [
         "senderAccount#0"
@@ -25029,7 +25360,7 @@
         "senderAccount#0"
       ]
     },
-    "3026": {
+    "3077": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "senderAccount#0",
@@ -25041,10 +25372,10 @@
         "tmp%4#0"
       ]
     },
-    "3028": {
+    "3079": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "3031": {
+    "3082": {
       "block": "canVote_after_if_else@11",
       "stack_in": [
         "recordBox#0",
@@ -25065,7 +25396,7 @@
         "senderAccount#0"
       ]
     },
-    "3033": {
+    "3084": {
       "op": "!=",
       "defined_out": [
         "senderAccount#0",
@@ -25078,7 +25409,7 @@
         "tmp%16#0"
       ]
     },
-    "3034": {
+    "3085": {
       "op": "bz canVote_after_if_else@13",
       "stack_out": [
         "recordBox#0",
@@ -25086,7 +25417,7 @@
         "voterAccount#0"
       ]
     },
-    "3037": {
+    "3088": {
       "op": "pop",
       "defined_out": [
         "senderAccount#0"
@@ -25096,7 +25427,7 @@
         "senderAccount#0"
       ]
     },
-    "3038": {
+    "3089": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "senderAccount#0",
@@ -25108,17 +25439,17 @@
         "tmp%4#0"
       ]
     },
-    "3040": {
+    "3091": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "3043": {
+    "3094": {
       "block": "canVote_after_if_else@13",
       "stack_in": [
         "recordBox#0",
         "senderAccount#0",
         "voterAccount#0"
       ],
-      "op": "bytec 13 // \"v\"",
+      "op": "bytec 14 // \"v\"",
       "defined_out": [
         "\"v\""
       ],
@@ -25129,7 +25460,7 @@
         "\"v\""
       ]
     },
-    "3045": {
+    "3096": {
       "op": "dig 1",
       "defined_out": [
         "\"v\"",
@@ -25143,7 +25474,7 @@
         "voterAccount#0 (copy)"
       ]
     },
-    "3047": {
+    "3098": {
       "op": "concat",
       "defined_out": [
         "recordBox#0"
@@ -25155,7 +25486,7 @@
         "recordBox#0"
       ]
     },
-    "3048": {
+    "3099": {
       "op": "dup",
       "stack_out": [
         "recordBox#0",
@@ -25165,7 +25496,7 @@
         "recordBox#0"
       ]
     },
-    "3049": {
+    "3100": {
       "op": "bury 4",
       "defined_out": [
         "recordBox#0"
@@ -25177,7 +25508,7 @@
         "recordBox#0"
       ]
     },
-    "3051": {
+    "3102": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -25192,7 +25523,7 @@
         "maybe_exists%4#0"
       ]
     },
-    "3052": {
+    "3103": {
       "op": "bury 1",
       "stack_out": [
         "recordBox#0",
@@ -25201,7 +25532,7 @@
         "maybe_exists%4#0"
       ]
     },
-    "3054": {
+    "3105": {
       "op": "bz canVote_after_if_else@17",
       "stack_out": [
         "recordBox#0",
@@ -25209,7 +25540,7 @@
         "voterAccount#0"
       ]
     },
-    "3057": {
+    "3108": {
       "op": "dig 2",
       "stack_out": [
         "recordBox#0",
@@ -25218,7 +25549,7 @@
         "recordBox#0"
       ]
     },
-    "3059": {
+    "3110": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -25228,7 +25559,7 @@
         "0"
       ]
     },
-    "3060": {
+    "3111": {
       "op": "intc_2 // 1",
       "defined_out": [
         "0",
@@ -25244,7 +25575,7 @@
         "1"
       ]
     },
-    "3061": {
+    "3112": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -25258,7 +25589,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "3062": {
+    "3113": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -25268,7 +25599,7 @@
         "0"
       ]
     },
-    "3063": {
+    "3114": {
       "op": "getbit",
       "defined_out": [
         "aggregate%get_bit%0#0",
@@ -25281,7 +25612,7 @@
         "aggregate%get_bit%0#0"
       ]
     },
-    "3064": {
+    "3115": {
       "op": "bnz canVote_after_if_else@17",
       "stack_out": [
         "recordBox#0",
@@ -25289,7 +25620,7 @@
         "voterAccount#0"
       ]
     },
-    "3067": {
+    "3118": {
       "op": "pop",
       "defined_out": [
         "recordBox#0"
@@ -25299,7 +25630,7 @@
         "senderAccount#0"
       ]
     },
-    "3068": {
+    "3119": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "recordBox#0",
@@ -25311,10 +25642,10 @@
         "tmp%4#0"
       ]
     },
-    "3070": {
+    "3121": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "3073": {
+    "3124": {
       "block": "canVote_after_if_else@17",
       "stack_in": [
         "recordBox#0",
@@ -25323,7 +25654,7 @@
       ],
       "op": "itxn_begin"
     },
-    "3074": {
+    "3125": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -25335,7 +25666,7 @@
         "0"
       ]
     },
-    "3075": {
+    "3126": {
       "op": "bytec 9 // \"committeeId\"",
       "defined_out": [
         "\"committeeId\"",
@@ -25349,7 +25680,7 @@
         "\"committeeId\""
       ]
     },
-    "3077": {
+    "3128": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%5#0",
@@ -25363,7 +25694,7 @@
         "maybe_exists%5#0"
       ]
     },
-    "3078": {
+    "3129": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -25373,7 +25704,7 @@
         "maybe_value%4#0"
       ]
     },
-    "3079": {
+    "3130": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -25383,7 +25714,7 @@
         "0"
       ]
     },
-    "3080": {
+    "3131": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -25399,7 +25730,7 @@
         "\"registryApp\""
       ]
     },
-    "3081": {
+    "3132": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%6#0",
@@ -25415,7 +25746,7 @@
         "maybe_exists%6#0"
       ]
     },
-    "3082": {
+    "3133": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -25426,7 +25757,7 @@
         "maybe_value%5#0"
       ]
     },
-    "3083": {
+    "3134": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -25437,7 +25768,7 @@
         "0"
       ]
     },
-    "3084": {
+    "3135": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "recordBox#0",
@@ -25447,7 +25778,7 @@
         "maybe_value%5#0"
       ]
     },
-    "3086": {
+    "3137": {
       "op": "itxn_field ApplicationID",
       "stack_out": [
         "recordBox#0",
@@ -25456,7 +25787,7 @@
         "maybe_value%4#0"
       ]
     },
-    "3088": {
+    "3139": {
       "op": "pushbytes 0x488d2290 // method \"tryGetGovVotingPower(byte[32],address)uint32\"",
       "defined_out": [
         "Method(tryGetGovVotingPower(byte[32],address)uint32)",
@@ -25470,7 +25801,7 @@
         "Method(tryGetGovVotingPower(byte[32],address)uint32)"
       ]
     },
-    "3094": {
+    "3145": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "recordBox#0",
@@ -25479,7 +25810,7 @@
         "maybe_value%4#0"
       ]
     },
-    "3096": {
+    "3147": {
       "op": "itxn_field ApplicationArgs",
       "defined_out": [
         "voterAccount#0"
@@ -25490,14 +25821,14 @@
         "voterAccount#0"
       ]
     },
-    "3098": {
+    "3149": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "3100": {
+    "3151": {
       "op": "pushint 6 // appl",
       "defined_out": [
         "appl"
@@ -25508,14 +25839,14 @@
         "appl"
       ]
     },
-    "3102": {
+    "3153": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "3104": {
+    "3155": {
       "op": "intc_0 // 0",
       "stack_out": [
         "recordBox#0",
@@ -25523,17 +25854,17 @@
         "0"
       ]
     },
-    "3105": {
+    "3156": {
       "op": "itxn_field Fee",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "3107": {
+    "3158": {
       "op": "itxn_submit"
     },
-    "3108": {
+    "3159": {
       "op": "itxn LastLog",
       "defined_out": [
         "awst_tmp%1#0"
@@ -25544,7 +25875,7 @@
         "awst_tmp%1#0"
       ]
     },
-    "3110": {
+    "3161": {
       "op": "dup",
       "defined_out": [
         "awst_tmp%1#0",
@@ -25557,7 +25888,7 @@
         "awst_tmp%1#0 (copy)"
       ]
     },
-    "3111": {
+    "3162": {
       "op": "extract 4 0",
       "defined_out": [
         "awst_tmp%1#0",
@@ -25570,7 +25901,7 @@
         "power#0"
       ]
     },
-    "3114": {
+    "3165": {
       "op": "swap",
       "stack_out": [
         "recordBox#0",
@@ -25579,7 +25910,7 @@
         "awst_tmp%1#0"
       ]
     },
-    "3115": {
+    "3166": {
       "op": "extract 0 4",
       "defined_out": [
         "power#0",
@@ -25592,7 +25923,7 @@
         "tmp%22#0"
       ]
     },
-    "3118": {
+    "3169": {
       "op": "bytec 4 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -25607,7 +25938,7 @@
         "0x151f7c75"
       ]
     },
-    "3120": {
+    "3171": {
       "op": "==",
       "defined_out": [
         "power#0",
@@ -25620,7 +25951,7 @@
         "tmp%23#0"
       ]
     },
-    "3121": {
+    "3172": {
       "error": "Bytes has valid prefix",
       "op": "assert // Bytes has valid prefix",
       "stack_out": [
@@ -25629,7 +25960,7 @@
         "power#0"
       ]
     },
-    "3122": {
+    "3173": {
       "op": "dup",
       "defined_out": [
         "power#0",
@@ -25642,7 +25973,7 @@
         "power#0 (copy)"
       ]
     },
-    "3123": {
+    "3174": {
       "op": "len",
       "defined_out": [
         "len%1#0",
@@ -25655,7 +25986,7 @@
         "len%1#0"
       ]
     },
-    "3124": {
+    "3175": {
       "op": "intc_3 // 4",
       "defined_out": [
         "4",
@@ -25670,7 +26001,7 @@
         "4"
       ]
     },
-    "3125": {
+    "3176": {
       "op": "==",
       "defined_out": [
         "eq%1#0",
@@ -25683,7 +26014,7 @@
         "eq%1#0"
       ]
     },
-    "3126": {
+    "3177": {
       "error": "invalid number of bytes for arc4.uint32",
       "op": "assert // invalid number of bytes for arc4.uint32",
       "stack_out": [
@@ -25692,7 +26023,7 @@
         "power#0"
       ]
     },
-    "3127": {
+    "3178": {
       "op": "btoi",
       "defined_out": [
         "tmp%24#0"
@@ -25703,7 +26034,7 @@
         "tmp%24#0"
       ]
     },
-    "3128": {
+    "3179": {
       "op": "dup",
       "defined_out": [
         "tmp%24#0"
@@ -25715,7 +26046,7 @@
         "tmp%24#0"
       ]
     },
-    "3129": {
+    "3180": {
       "op": "bnz canVote_after_if_else@20",
       "stack_out": [
         "recordBox#0",
@@ -25723,14 +26054,14 @@
         "tmp%24#0"
       ]
     },
-    "3132": {
+    "3183": {
       "op": "pop",
       "stack_out": [
         "recordBox#0",
         "senderAccount#0"
       ]
     },
-    "3133": {
+    "3184": {
       "op": "bytec 10 // 0x000000000000000000",
       "defined_out": [
         "tmp%4#0"
@@ -25741,10 +26072,10 @@
         "tmp%4#0"
       ]
     },
-    "3135": {
+    "3186": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "3138": {
+    "3189": {
       "block": "canVote_after_if_else@20",
       "stack_in": [
         "recordBox#0",
@@ -25761,7 +26092,7 @@
         "aggregate%val_as_bytes%7#0"
       ]
     },
-    "3139": {
+    "3190": {
       "op": "pushbytes 0x80",
       "defined_out": [
         "0x80",
@@ -25774,7 +26105,7 @@
         "0x80"
       ]
     },
-    "3142": {
+    "3193": {
       "op": "swap",
       "stack_out": [
         "recordBox#0",
@@ -25783,7 +26114,7 @@
         "aggregate%val_as_bytes%7#0"
       ]
     },
-    "3143": {
+    "3194": {
       "op": "concat",
       "defined_out": [
         "tmp%4#0"
@@ -25794,10 +26125,10 @@
         "tmp%4#0"
       ]
     },
-    "3144": {
+    "3195": {
       "op": "b canVote_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.canVote@21"
     },
-    "3147": {
+    "3198": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriod[routing]",
       "params": {},
       "block": "getPeriod",
@@ -25810,7 +26141,7 @@
         "0"
       ]
     },
-    "3148": {
+    "3199": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -25821,7 +26152,7 @@
         "\"registryApp\""
       ]
     },
-    "3149": {
+    "3200": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -25832,24 +26163,24 @@
         "maybe_exists%0#0"
       ]
     },
-    "3150": {
+    "3201": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "3151": {
+    "3202": {
       "op": "bnz getPeriod_after_if_else@3",
       "stack_out": []
     },
-    "3154": {
+    "3205": {
       "op": "intc_0 // 0",
       "stack_out": [
         "0"
       ]
     },
-    "3155": {
+    "3206": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -25859,14 +26190,14 @@
         "tmp%0#0"
       ]
     },
-    "3158": {
+    "3209": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
         "0"
       ]
     },
-    "3159": {
+    "3210": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -25878,7 +26209,7 @@
         "tmp%1#0"
       ]
     },
-    "3162": {
+    "3213": {
       "op": "bytec 22 // 0x0000000000000000000000000000000000000000000000000000000000000000",
       "defined_out": [
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -25891,7 +26222,7 @@
         "0x0000000000000000000000000000000000000000000000000000000000000000"
       ]
     },
-    "3164": {
+    "3215": {
       "op": "uncover 2",
       "stack_out": [
         "tmp%1#0",
@@ -25899,7 +26230,7 @@
         "tmp%0#0"
       ]
     },
-    "3166": {
+    "3217": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%1#0",
@@ -25910,14 +26241,14 @@
         "aggregate%head%1#0"
       ]
     },
-    "3167": {
+    "3218": {
       "op": "swap",
       "stack_out": [
         "aggregate%head%1#0",
         "tmp%1#0"
       ]
     },
-    "3168": {
+    "3219": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%2#0"
@@ -25926,7 +26257,7 @@
         "aggregate%head%2#0"
       ]
     },
-    "3169": {
+    "3220": {
       "op": "bytec 23 // 0x002a0000",
       "defined_out": [
         "0x002a0000",
@@ -25937,7 +26268,7 @@
         "0x002a0000"
       ]
     },
-    "3171": {
+    "3222": {
       "op": "concat",
       "defined_out": [
         "tmp%0#0"
@@ -25946,7 +26277,7 @@
         "tmp%0#0"
       ]
     },
-    "3172": {
+    "3223": {
       "block": "getPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriod@7",
       "stack_in": [
         "tmp%0#0"
@@ -25960,7 +26291,7 @@
         "0x151f7c75"
       ]
     },
-    "3174": {
+    "3225": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -25971,7 +26302,7 @@
         "tmp%0#0"
       ]
     },
-    "3175": {
+    "3226": {
       "op": "concat",
       "defined_out": [
         "tmp%1#0"
@@ -25980,11 +26311,11 @@
         "tmp%1#0"
       ]
     },
-    "3176": {
+    "3227": {
       "op": "log",
       "stack_out": []
     },
-    "3177": {
+    "3228": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1"
@@ -25993,11 +26324,11 @@
         "1"
       ]
     },
-    "3178": {
+    "3229": {
       "op": "return",
       "stack_out": []
     },
-    "3179": {
+    "3230": {
       "block": "getPeriod_after_if_else@3",
       "stack_in": [],
       "op": "bytec_1 // \"o\"",
@@ -26008,7 +26339,7 @@
         "\"o\""
       ]
     },
-    "3180": {
+    "3231": {
       "op": "box_get",
       "defined_out": [
         "aggregate%box_get%1#0",
@@ -26019,17 +26350,17 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "3181": {
+    "3232": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "stack_out": [
         "optionsArr#0"
       ]
     },
-    "3182": {
+    "3233": {
       "op": "bytec_3 // 0x0000"
     },
-    "3183": {
+    "3234": {
       "op": "intc_0 // 0",
       "defined_out": [
         "i#0",
@@ -26042,7 +26373,7 @@
         "i#0"
       ]
     },
-    "3184": {
+    "3235": {
       "block": "getPeriod_while_top@4",
       "stack_in": [
         "optionsArr#0",
@@ -26060,7 +26391,7 @@
         "\"o\""
       ]
     },
-    "3185": {
+    "3236": {
       "op": "intc_0 // 0",
       "defined_out": [
         "\"o\"",
@@ -26074,7 +26405,7 @@
         "0"
       ]
     },
-    "3186": {
+    "3237": {
       "op": "intc_1 // 2",
       "defined_out": [
         "\"o\"",
@@ -26090,7 +26421,7 @@
         "2"
       ]
     },
-    "3187": {
+    "3238": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%0#0"
@@ -26102,7 +26433,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "3188": {
+    "3239": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0"
@@ -26114,7 +26445,7 @@
         "box%btoi%0#0"
       ]
     },
-    "3189": {
+    "3240": {
       "op": "dig 1",
       "defined_out": [
         "box%btoi%0#0",
@@ -26128,7 +26459,7 @@
         "i#0 (copy)"
       ]
     },
-    "3191": {
+    "3242": {
       "op": ">",
       "defined_out": [
         "tmp%3#0"
@@ -26140,7 +26471,7 @@
         "tmp%3#0"
       ]
     },
-    "3192": {
+    "3243": {
       "op": "bz getPeriod_after_while@6",
       "stack_out": [
         "optionsArr#0",
@@ -26148,7 +26479,7 @@
         "i#0"
       ]
     },
-    "3195": {
+    "3246": {
       "op": "dig 2",
       "defined_out": [
         "optionsArr#0 (copy)"
@@ -26160,7 +26491,7 @@
         "optionsArr#0 (copy)"
       ]
     },
-    "3197": {
+    "3248": {
       "op": "dig 1",
       "defined_out": [
         "i#0",
@@ -26175,7 +26506,7 @@
         "i#0 (copy)"
       ]
     },
-    "3199": {
+    "3250": {
       "callsub": "_puya_lib.arc4.dynamic_array_read_dynamic_element",
       "op": "callsub dynamic_array_read_dynamic_element",
       "defined_out": [
@@ -26189,7 +26520,7 @@
         "aggregate%item%0#0"
       ]
     },
-    "3202": {
+    "3253": {
       "op": "dup",
       "defined_out": [
         "aggregate%item%0#0",
@@ -26204,7 +26535,7 @@
         "aggregate%item%0#0 (copy)"
       ]
     },
-    "3203": {
+    "3254": {
       "op": "intc_0 // 0",
       "stack_out": [
         "optionsArr#0",
@@ -26215,7 +26546,7 @@
         "0"
       ]
     },
-    "3204": {
+    "3255": {
       "op": "extract_uint16",
       "defined_out": [
         "aggregate%extract_uint16%0#0",
@@ -26230,7 +26561,7 @@
         "aggregate%extract_uint16%0#0"
       ]
     },
-    "3205": {
+    "3256": {
       "op": "dig 1",
       "stack_out": [
         "optionsArr#0",
@@ -26241,7 +26572,7 @@
         "aggregate%item%0#0 (copy)"
       ]
     },
-    "3207": {
+    "3258": {
       "op": "len",
       "defined_out": [
         "aggregate%extract_uint16%0#0",
@@ -26258,7 +26589,7 @@
         "aggregate%len%0#0"
       ]
     },
-    "3208": {
+    "3259": {
       "op": "substring3",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26271,7 +26602,7 @@
         "aggregate%substring3%0#0"
       ]
     },
-    "3209": {
+    "3260": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -26281,7 +26612,7 @@
         "2"
       ]
     },
-    "3210": {
+    "3261": {
       "op": "dig 2",
       "stack_out": [
         "optionsArr#0",
@@ -26292,7 +26623,7 @@
         "i#0 (copy)"
       ]
     },
-    "3212": {
+    "3263": {
       "op": "*",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26307,7 +26638,7 @@
         "box%mul%0#0"
       ]
     },
-    "3213": {
+    "3264": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -26318,7 +26649,7 @@
         "2"
       ]
     },
-    "3214": {
+    "3265": {
       "op": "+",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26333,7 +26664,7 @@
         "box%add%1#0"
       ]
     },
-    "3215": {
+    "3266": {
       "op": "bytec_0 // \"t\"",
       "defined_out": [
         "\"t\"",
@@ -26350,7 +26681,7 @@
         "\"t\""
       ]
     },
-    "3216": {
+    "3267": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -26361,7 +26692,7 @@
         "box%add%1#0"
       ]
     },
-    "3217": {
+    "3268": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -26373,7 +26704,7 @@
         "2"
       ]
     },
-    "3218": {
+    "3269": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26388,7 +26719,7 @@
         "box%box_extract%1#0"
       ]
     },
-    "3219": {
+    "3270": {
       "op": "btoi",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26403,7 +26734,7 @@
         "box%btoi%1#0"
       ]
     },
-    "3220": {
+    "3271": {
       "op": "intc_3 // 4",
       "defined_out": [
         "4",
@@ -26420,7 +26751,7 @@
         "4"
       ]
     },
-    "3221": {
+    "3272": {
       "op": "+",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26435,7 +26766,7 @@
         "box%offset%1#0"
       ]
     },
-    "3222": {
+    "3273": {
       "op": "bytec_0 // \"t\"",
       "stack_out": [
         "optionsArr#0",
@@ -26446,7 +26777,7 @@
         "\"t\""
       ]
     },
-    "3223": {
+    "3274": {
       "op": "dig 1",
       "defined_out": [
         "\"t\"",
@@ -26465,7 +26796,7 @@
         "box%offset%1#0 (copy)"
       ]
     },
-    "3225": {
+    "3276": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -26478,7 +26809,7 @@
         "2"
       ]
     },
-    "3226": {
+    "3277": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26495,7 +26826,7 @@
         "box%box_extract%2#0"
       ]
     },
-    "3227": {
+    "3278": {
       "op": "btoi",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26512,7 +26843,7 @@
         "box%btoi%2#0"
       ]
     },
-    "3228": {
+    "3279": {
       "op": "intc_3 // 4",
       "stack_out": [
         "optionsArr#0",
@@ -26524,7 +26855,7 @@
         "4"
       ]
     },
-    "3229": {
+    "3280": {
       "op": "*",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26541,7 +26872,7 @@
         "box%data_bytes%0#0"
       ]
     },
-    "3230": {
+    "3281": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -26553,7 +26884,7 @@
         "2"
       ]
     },
-    "3231": {
+    "3282": {
       "op": "+",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26570,7 +26901,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "3232": {
+    "3283": {
       "op": "bytec_0 // \"t\"",
       "stack_out": [
         "optionsArr#0",
@@ -26582,7 +26913,7 @@
         "\"t\""
       ]
     },
-    "3233": {
+    "3284": {
       "op": "cover 2",
       "stack_out": [
         "optionsArr#0",
@@ -26594,7 +26925,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "3235": {
+    "3286": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26609,7 +26940,7 @@
         "box%box_extract%3#0"
       ]
     },
-    "3236": {
+    "3287": {
       "op": "dig 1",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -26626,7 +26957,7 @@
         "aggregate%substring3%0#0 (copy)"
       ]
     },
-    "3238": {
+    "3289": {
       "op": "len",
       "defined_out": [
         "aggregate%data_length%1#0",
@@ -26643,7 +26974,7 @@
         "aggregate%data_length%1#0"
       ]
     },
-    "3239": {
+    "3290": {
       "op": "intc_3 // 4",
       "stack_out": [
         "optionsArr#0",
@@ -26655,7 +26986,7 @@
         "4"
       ]
     },
-    "3240": {
+    "3291": {
       "op": "+",
       "defined_out": [
         "aggregate%current_tail_offset%1#0",
@@ -26672,7 +27003,7 @@
         "aggregate%current_tail_offset%1#0"
       ]
     },
-    "3241": {
+    "3292": {
       "op": "itob",
       "defined_out": [
         "aggregate%as_bytes%4#0",
@@ -26689,7 +27020,7 @@
         "aggregate%as_bytes%4#0"
       ]
     },
-    "3242": {
+    "3293": {
       "op": "extract 6 2",
       "defined_out": [
         "aggregate%offset_as_uint16%2#0",
@@ -26706,7 +27037,7 @@
         "aggregate%offset_as_uint16%2#0"
       ]
     },
-    "3245": {
+    "3296": {
       "op": "bytec 24 // 0x0004",
       "defined_out": [
         "0x0004",
@@ -26725,7 +27056,7 @@
         "0x0004"
       ]
     },
-    "3247": {
+    "3298": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -26737,7 +27068,7 @@
         "aggregate%offset_as_uint16%2#0"
       ]
     },
-    "3248": {
+    "3299": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%5#0",
@@ -26754,7 +27085,7 @@
         "aggregate%head%5#0"
       ]
     },
-    "3249": {
+    "3300": {
       "op": "uncover 2",
       "stack_out": [
         "optionsArr#0",
@@ -26765,7 +27096,7 @@
         "aggregate%substring3%0#0"
       ]
     },
-    "3251": {
+    "3302": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%1#0",
@@ -26780,7 +27111,7 @@
         "aggregate%concat%1#0"
       ]
     },
-    "3252": {
+    "3303": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -26790,7 +27121,7 @@
         "box%box_extract%3#0"
       ]
     },
-    "3253": {
+    "3304": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%2#0",
@@ -26803,7 +27134,7 @@
         "aggregate%concat%2#0"
       ]
     },
-    "3254": {
+    "3305": {
       "op": "bytec 7 // 0x0002",
       "defined_out": [
         "0x0002",
@@ -26818,7 +27149,7 @@
         "0x0002"
       ]
     },
-    "3256": {
+    "3307": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -26828,7 +27159,7 @@
         "aggregate%concat%2#0"
       ]
     },
-    "3257": {
+    "3308": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%3#0",
@@ -26841,7 +27172,7 @@
         "aggregate%concat%3#0"
       ]
     },
-    "3258": {
+    "3309": {
       "op": "uncover 2",
       "defined_out": [
         "aggregate%concat%3#0",
@@ -26855,7 +27186,7 @@
         "topics#0"
       ]
     },
-    "3260": {
+    "3311": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -26864,7 +27195,7 @@
         "aggregate%concat%3#0"
       ]
     },
-    "3261": {
+    "3312": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1",
@@ -26880,7 +27211,7 @@
         "1"
       ]
     },
-    "3262": {
+    "3313": {
       "callsub": "_puya_lib.arc4.dynamic_array_concat_dynamic_element",
       "op": "callsub dynamic_array_concat_dynamic_element",
       "stack_out": [
@@ -26889,7 +27220,7 @@
         "topics#0"
       ]
     },
-    "3265": {
+    "3316": {
       "op": "swap",
       "defined_out": [
         "i#0",
@@ -26901,7 +27232,7 @@
         "i#0"
       ]
     },
-    "3266": {
+    "3317": {
       "op": "intc_2 // 1",
       "stack_out": [
         "optionsArr#0",
@@ -26910,7 +27241,7 @@
         "1"
       ]
     },
-    "3267": {
+    "3318": {
       "op": "+",
       "stack_out": [
         "optionsArr#0",
@@ -26918,10 +27249,10 @@
         "i#0"
       ]
     },
-    "3268": {
+    "3319": {
       "op": "b getPeriod_while_top@4"
     },
-    "3271": {
+    "3322": {
       "block": "getPeriod_after_while@6",
       "stack_in": [
         "optionsArr#0",
@@ -26935,14 +27266,14 @@
         "topics#0"
       ]
     },
-    "3272": {
+    "3323": {
       "op": "bury 1",
       "defined_out": [],
       "stack_out": [
         "topics#0"
       ]
     },
-    "3274": {
+    "3325": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -26952,7 +27283,7 @@
         "0"
       ]
     },
-    "3275": {
+    "3326": {
       "op": "bytec 9 // \"committeeId\"",
       "defined_out": [
         "\"committeeId\"",
@@ -26964,7 +27295,7 @@
         "\"committeeId\""
       ]
     },
-    "3277": {
+    "3328": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -26976,7 +27307,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "3278": {
+    "3329": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -26984,7 +27315,7 @@
         "maybe_value%1#0"
       ]
     },
-    "3279": {
+    "3330": {
       "op": "intc_0 // 0",
       "stack_out": [
         "topics#0",
@@ -26992,7 +27323,7 @@
         "0"
       ]
     },
-    "3280": {
+    "3331": {
       "op": "bytec 5 // \"votingStart\"",
       "defined_out": [
         "\"votingStart\"",
@@ -27006,7 +27337,7 @@
         "\"votingStart\""
       ]
     },
-    "3282": {
+    "3333": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -27020,7 +27351,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "3283": {
+    "3334": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -27029,7 +27360,7 @@
         "maybe_value%2#0"
       ]
     },
-    "3284": {
+    "3335": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -27042,7 +27373,7 @@
         "tmp%9#0"
       ]
     },
-    "3287": {
+    "3338": {
       "op": "intc_0 // 0",
       "stack_out": [
         "topics#0",
@@ -27051,7 +27382,7 @@
         "0"
       ]
     },
-    "3288": {
+    "3339": {
       "op": "bytec 6 // \"votingEnd\"",
       "defined_out": [
         "\"votingEnd\"",
@@ -27067,7 +27398,7 @@
         "\"votingEnd\""
       ]
     },
-    "3290": {
+    "3341": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%3#0",
@@ -27083,7 +27414,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "3291": {
+    "3342": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -27093,7 +27424,7 @@
         "maybe_value%3#0"
       ]
     },
-    "3292": {
+    "3343": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -27108,7 +27439,7 @@
         "tmp%10#0"
       ]
     },
-    "3295": {
+    "3346": {
       "op": "cover 2",
       "stack_out": [
         "topics#0",
@@ -27117,7 +27448,7 @@
         "tmp%9#0"
       ]
     },
-    "3297": {
+    "3348": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%8#0",
@@ -27129,7 +27460,7 @@
         "aggregate%head%8#0"
       ]
     },
-    "3298": {
+    "3349": {
       "op": "swap",
       "stack_out": [
         "topics#0",
@@ -27137,7 +27468,7 @@
         "tmp%10#0"
       ]
     },
-    "3299": {
+    "3350": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%9#0"
@@ -27147,7 +27478,7 @@
         "aggregate%head%9#0"
       ]
     },
-    "3300": {
+    "3351": {
       "op": "bytec 25 // 0x002a",
       "defined_out": [
         "0x002a",
@@ -27159,7 +27490,7 @@
         "0x002a"
       ]
     },
-    "3302": {
+    "3353": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%10#0"
@@ -27169,7 +27500,7 @@
         "aggregate%head%10#0"
       ]
     },
-    "3303": {
+    "3354": {
       "op": "swap",
       "defined_out": [
         "aggregate%head%10#0",
@@ -27180,7 +27511,7 @@
         "topics#0"
       ]
     },
-    "3304": {
+    "3355": {
       "op": "concat",
       "defined_out": [
         "tmp%0#0"
@@ -27189,10 +27520,10 @@
         "tmp%0#0"
       ]
     },
-    "3305": {
+    "3356": {
       "op": "b getPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriod@7"
     },
-    "3308": {
+    "3359": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriodShort[routing]",
       "params": {},
       "block": "getPeriodShort",
@@ -27205,7 +27536,7 @@
         "0"
       ]
     },
-    "3309": {
+    "3360": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -27216,7 +27547,7 @@
         "\"registryApp\""
       ]
     },
-    "3310": {
+    "3361": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -27227,24 +27558,24 @@
         "maybe_exists%0#0"
       ]
     },
-    "3311": {
+    "3362": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "3312": {
+    "3363": {
       "op": "bnz getPeriodShort_after_if_else@3",
       "stack_out": []
     },
-    "3315": {
+    "3366": {
       "op": "intc_0 // 0",
       "stack_out": [
         "0"
       ]
     },
-    "3316": {
+    "3367": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -27254,14 +27585,14 @@
         "tmp%0#0"
       ]
     },
-    "3319": {
+    "3370": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
         "0"
       ]
     },
-    "3320": {
+    "3371": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -27273,7 +27604,7 @@
         "tmp%1#0"
       ]
     },
-    "3323": {
+    "3374": {
       "op": "bytec 22 // 0x0000000000000000000000000000000000000000000000000000000000000000",
       "defined_out": [
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -27286,7 +27617,7 @@
         "0x0000000000000000000000000000000000000000000000000000000000000000"
       ]
     },
-    "3325": {
+    "3376": {
       "op": "uncover 2",
       "stack_out": [
         "tmp%1#0",
@@ -27294,7 +27625,7 @@
         "tmp%0#0"
       ]
     },
-    "3327": {
+    "3378": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%1#0",
@@ -27305,14 +27636,14 @@
         "aggregate%head%1#0"
       ]
     },
-    "3328": {
+    "3379": {
       "op": "swap",
       "stack_out": [
         "aggregate%head%1#0",
         "tmp%1#0"
       ]
     },
-    "3329": {
+    "3380": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%2#0"
@@ -27321,7 +27652,7 @@
         "aggregate%head%2#0"
       ]
     },
-    "3330": {
+    "3381": {
       "op": "bytec 23 // 0x002a0000",
       "defined_out": [
         "0x002a0000",
@@ -27332,7 +27663,7 @@
         "0x002a0000"
       ]
     },
-    "3332": {
+    "3383": {
       "op": "concat",
       "defined_out": [
         "tmp%0#0"
@@ -27341,7 +27672,7 @@
         "tmp%0#0"
       ]
     },
-    "3333": {
+    "3384": {
       "block": "getPeriodShort_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriodShort@7",
       "stack_in": [
         "tmp%0#0"
@@ -27355,7 +27686,7 @@
         "0x151f7c75"
       ]
     },
-    "3335": {
+    "3386": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -27366,7 +27697,7 @@
         "tmp%0#0"
       ]
     },
-    "3336": {
+    "3387": {
       "op": "concat",
       "defined_out": [
         "tmp%1#0"
@@ -27375,11 +27706,11 @@
         "tmp%1#0"
       ]
     },
-    "3337": {
+    "3388": {
       "op": "log",
       "stack_out": []
     },
-    "3338": {
+    "3389": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1"
@@ -27388,16 +27719,16 @@
         "1"
       ]
     },
-    "3339": {
+    "3390": {
       "op": "return",
       "stack_out": []
     },
-    "3340": {
+    "3391": {
       "block": "getPeriodShort_after_if_else@3",
       "stack_in": [],
       "op": "bytec_3 // 0x0000"
     },
-    "3341": {
+    "3392": {
       "op": "intc_0 // 0",
       "defined_out": [
         "i#0",
@@ -27408,7 +27739,7 @@
         "i#0"
       ]
     },
-    "3342": {
+    "3393": {
       "block": "getPeriodShort_while_top@4",
       "stack_in": [
         "lengths#0",
@@ -27424,7 +27755,7 @@
         "\"o\""
       ]
     },
-    "3343": {
+    "3394": {
       "op": "intc_0 // 0",
       "defined_out": [
         "\"o\"",
@@ -27437,7 +27768,7 @@
         "0"
       ]
     },
-    "3344": {
+    "3395": {
       "op": "intc_1 // 2",
       "defined_out": [
         "\"o\"",
@@ -27452,7 +27783,7 @@
         "2"
       ]
     },
-    "3345": {
+    "3396": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%0#0"
@@ -27463,7 +27794,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "3346": {
+    "3397": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0"
@@ -27474,7 +27805,7 @@
         "box%btoi%0#0"
       ]
     },
-    "3347": {
+    "3398": {
       "op": "dig 1",
       "defined_out": [
         "box%btoi%0#0",
@@ -27487,7 +27818,7 @@
         "i#0 (copy)"
       ]
     },
-    "3349": {
+    "3400": {
       "op": ">",
       "defined_out": [
         "tmp%3#0"
@@ -27498,14 +27829,14 @@
         "tmp%3#0"
       ]
     },
-    "3350": {
+    "3401": {
       "op": "bz getPeriodShort_after_while@6",
       "stack_out": [
         "lengths#0",
         "i#0"
       ]
     },
-    "3353": {
+    "3404": {
       "op": "intc_1 // 2",
       "stack_out": [
         "lengths#0",
@@ -27513,7 +27844,7 @@
         "2"
       ]
     },
-    "3354": {
+    "3405": {
       "op": "dig 1",
       "defined_out": [
         "2",
@@ -27527,7 +27858,7 @@
         "i#0 (copy)"
       ]
     },
-    "3356": {
+    "3407": {
       "op": "*",
       "defined_out": [
         "box%mul%0#0",
@@ -27539,7 +27870,7 @@
         "box%mul%0#0"
       ]
     },
-    "3357": {
+    "3408": {
       "op": "intc_1 // 2",
       "stack_out": [
         "lengths#0",
@@ -27548,7 +27879,7 @@
         "2"
       ]
     },
-    "3358": {
+    "3409": {
       "op": "+",
       "defined_out": [
         "box%add%1#0",
@@ -27560,7 +27891,7 @@
         "box%add%1#0"
       ]
     },
-    "3359": {
+    "3410": {
       "op": "bytec_1 // \"o\"",
       "stack_out": [
         "lengths#0",
@@ -27569,7 +27900,7 @@
         "\"o\""
       ]
     },
-    "3360": {
+    "3411": {
       "op": "swap",
       "stack_out": [
         "lengths#0",
@@ -27578,7 +27909,7 @@
         "box%add%1#0"
       ]
     },
-    "3361": {
+    "3412": {
       "op": "intc_1 // 2",
       "stack_out": [
         "lengths#0",
@@ -27588,7 +27919,7 @@
         "2"
       ]
     },
-    "3362": {
+    "3413": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%1#0",
@@ -27600,7 +27931,7 @@
         "box%box_extract%1#0"
       ]
     },
-    "3363": {
+    "3414": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%1#0",
@@ -27612,7 +27943,7 @@
         "box%btoi%1#0"
       ]
     },
-    "3364": {
+    "3415": {
       "op": "intc_3 // 4",
       "defined_out": [
         "4",
@@ -27626,7 +27957,7 @@
         "4"
       ]
     },
-    "3365": {
+    "3416": {
       "op": "+",
       "defined_out": [
         "box%offset%1#0",
@@ -27638,7 +27969,7 @@
         "box%offset%1#0"
       ]
     },
-    "3366": {
+    "3417": {
       "op": "bytec_1 // \"o\"",
       "stack_out": [
         "lengths#0",
@@ -27647,7 +27978,7 @@
         "\"o\""
       ]
     },
-    "3367": {
+    "3418": {
       "op": "swap",
       "stack_out": [
         "lengths#0",
@@ -27656,7 +27987,7 @@
         "box%offset%1#0"
       ]
     },
-    "3368": {
+    "3419": {
       "op": "intc_1 // 2",
       "stack_out": [
         "lengths#0",
@@ -27666,7 +27997,7 @@
         "2"
       ]
     },
-    "3369": {
+    "3420": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%2#0",
@@ -27678,7 +28009,7 @@
         "box%box_extract%2#0"
       ]
     },
-    "3370": {
+    "3421": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%2#0",
@@ -27690,7 +28021,7 @@
         "box%btoi%2#0"
       ]
     },
-    "3371": {
+    "3422": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -27703,7 +28034,7 @@
         "new_items_bytes#0"
       ]
     },
-    "3374": {
+    "3425": {
       "op": "uncover 2",
       "defined_out": [
         "i#0",
@@ -27716,7 +28047,7 @@
         "lengths#0"
       ]
     },
-    "3376": {
+    "3427": {
       "op": "dup",
       "defined_out": [
         "i#0",
@@ -27731,7 +28062,7 @@
         "lengths#0 (copy)"
       ]
     },
-    "3377": {
+    "3428": {
       "op": "intc_0 // 0",
       "stack_out": [
         "i#0",
@@ -27741,7 +28072,7 @@
         "0"
       ]
     },
-    "3378": {
+    "3429": {
       "op": "extract_uint16",
       "defined_out": [
         "array_length#0",
@@ -27756,7 +28087,7 @@
         "array_length#0"
       ]
     },
-    "3379": {
+    "3430": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1",
@@ -27773,7 +28104,7 @@
         "1"
       ]
     },
-    "3380": {
+    "3431": {
       "op": "+",
       "defined_out": [
         "i#0",
@@ -27788,7 +28119,7 @@
         "new_array_length#0"
       ]
     },
-    "3381": {
+    "3432": {
       "op": "itob",
       "defined_out": [
         "i#0",
@@ -27803,7 +28134,7 @@
         "tmp%0#0"
       ]
     },
-    "3382": {
+    "3433": {
       "op": "extract 6 0",
       "defined_out": [
         "i#0",
@@ -27818,7 +28149,7 @@
         "new_len_u16#0"
       ]
     },
-    "3385": {
+    "3436": {
       "op": "replace2 0",
       "defined_out": [
         "i#0",
@@ -27831,7 +28162,7 @@
         "result#0"
       ]
     },
-    "3387": {
+    "3438": {
       "op": "swap",
       "stack_out": [
         "i#0",
@@ -27839,14 +28170,14 @@
         "new_items_bytes#0"
       ]
     },
-    "3388": {
+    "3439": {
       "op": "concat",
       "stack_out": [
         "i#0",
         "lengths#0"
       ]
     },
-    "3389": {
+    "3440": {
       "op": "swap",
       "defined_out": [
         "i#0",
@@ -27857,7 +28188,7 @@
         "i#0"
       ]
     },
-    "3390": {
+    "3441": {
       "op": "intc_2 // 1",
       "stack_out": [
         "lengths#0",
@@ -27865,7 +28196,7 @@
         "1"
       ]
     },
-    "3391": {
+    "3442": {
       "op": "+",
       "defined_out": [
         "i#0",
@@ -27876,10 +28207,10 @@
         "i#0"
       ]
     },
-    "3392": {
+    "3443": {
       "op": "b getPeriodShort_while_top@4"
     },
-    "3395": {
+    "3446": {
       "block": "getPeriodShort_after_while@6",
       "stack_in": [
         "lengths#0",
@@ -27891,7 +28222,7 @@
         "lengths#0"
       ]
     },
-    "3396": {
+    "3447": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -27901,7 +28232,7 @@
         "0"
       ]
     },
-    "3397": {
+    "3448": {
       "op": "bytec 9 // \"committeeId\"",
       "defined_out": [
         "\"committeeId\"",
@@ -27913,7 +28244,7 @@
         "\"committeeId\""
       ]
     },
-    "3399": {
+    "3450": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -27925,7 +28256,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "3400": {
+    "3451": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -27933,7 +28264,7 @@
         "maybe_value%1#0"
       ]
     },
-    "3401": {
+    "3452": {
       "op": "intc_0 // 0",
       "stack_out": [
         "lengths#0",
@@ -27941,7 +28272,7 @@
         "0"
       ]
     },
-    "3402": {
+    "3453": {
       "op": "bytec 5 // \"votingStart\"",
       "defined_out": [
         "\"votingStart\"",
@@ -27955,7 +28286,7 @@
         "\"votingStart\""
       ]
     },
-    "3404": {
+    "3455": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -27969,7 +28300,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "3405": {
+    "3456": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -27978,7 +28309,7 @@
         "maybe_value%2#0"
       ]
     },
-    "3406": {
+    "3457": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -27991,7 +28322,7 @@
         "tmp%10#0"
       ]
     },
-    "3409": {
+    "3460": {
       "op": "intc_0 // 0",
       "stack_out": [
         "lengths#0",
@@ -28000,7 +28331,7 @@
         "0"
       ]
     },
-    "3410": {
+    "3461": {
       "op": "bytec 6 // \"votingEnd\"",
       "defined_out": [
         "\"votingEnd\"",
@@ -28016,7 +28347,7 @@
         "\"votingEnd\""
       ]
     },
-    "3412": {
+    "3463": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%3#0",
@@ -28032,7 +28363,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "3413": {
+    "3464": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -28042,7 +28373,7 @@
         "maybe_value%3#0"
       ]
     },
-    "3414": {
+    "3465": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -28057,7 +28388,7 @@
         "tmp%11#0"
       ]
     },
-    "3417": {
+    "3468": {
       "op": "cover 2",
       "stack_out": [
         "lengths#0",
@@ -28066,7 +28397,7 @@
         "tmp%10#0"
       ]
     },
-    "3419": {
+    "3470": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%6#0",
@@ -28078,7 +28409,7 @@
         "aggregate%head%6#0"
       ]
     },
-    "3420": {
+    "3471": {
       "op": "swap",
       "stack_out": [
         "lengths#0",
@@ -28086,7 +28417,7 @@
         "tmp%11#0"
       ]
     },
-    "3421": {
+    "3472": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%7#0"
@@ -28096,7 +28427,7 @@
         "aggregate%head%7#0"
       ]
     },
-    "3422": {
+    "3473": {
       "op": "bytec 25 // 0x002a",
       "defined_out": [
         "0x002a",
@@ -28108,7 +28439,7 @@
         "0x002a"
       ]
     },
-    "3424": {
+    "3475": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%8#0"
@@ -28118,7 +28449,7 @@
         "aggregate%head%8#0"
       ]
     },
-    "3425": {
+    "3476": {
       "op": "swap",
       "defined_out": [
         "aggregate%head%8#0",
@@ -28129,7 +28460,7 @@
         "lengths#0"
       ]
     },
-    "3426": {
+    "3477": {
       "op": "concat",
       "defined_out": [
         "tmp%0#0"
@@ -28138,10 +28469,10 @@
         "tmp%0#0"
       ]
     },
-    "3427": {
+    "3478": {
       "op": "b getPeriodShort_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getPeriodShort@7"
     },
-    "3430": {
+    "3481": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod[routing]",
       "params": {},
       "block": "logPeriod",
@@ -28151,14 +28482,14 @@
         "optionsArr#0"
       ]
     },
-    "3431": {
+    "3482": {
       "op": "pushbytes \"\"",
       "stack_out": [
         "optionsArr#0",
         "i#0"
       ]
     },
-    "3433": {
+    "3484": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -28169,7 +28500,7 @@
         "0"
       ]
     },
-    "3434": {
+    "3485": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -28182,7 +28513,7 @@
         "\"registryApp\""
       ]
     },
-    "3435": {
+    "3486": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -28195,7 +28526,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "3436": {
+    "3487": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -28204,14 +28535,14 @@
         "maybe_value%0#0"
       ]
     },
-    "3437": {
+    "3488": {
       "op": "bz logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod@7",
       "stack_out": [
         "optionsArr#0",
         "i#0"
       ]
     },
-    "3440": {
+    "3491": {
       "op": "bytec_1 // \"o\"",
       "defined_out": [
         "\"o\""
@@ -28222,7 +28553,7 @@
         "\"o\""
       ]
     },
-    "3441": {
+    "3492": {
       "op": "box_get",
       "defined_out": [
         "aggregate%box_get%1#0",
@@ -28235,7 +28566,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "3442": {
+    "3493": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -28244,7 +28575,7 @@
         "optionsArr#0"
       ]
     },
-    "3443": {
+    "3494": {
       "op": "bury 3",
       "defined_out": [
         "aggregate%box_get%1#0",
@@ -28256,7 +28587,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "3445": {
+    "3496": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "stack_out": [
@@ -28264,7 +28595,7 @@
         "i#0"
       ]
     },
-    "3446": {
+    "3497": {
       "op": "intc_0 // 0",
       "stack_out": [
         "optionsArr#0",
@@ -28272,7 +28603,7 @@
         "0"
       ]
     },
-    "3447": {
+    "3498": {
       "op": "bytec 9 // \"committeeId\"",
       "defined_out": [
         "\"committeeId\"",
@@ -28286,7 +28617,7 @@
         "\"committeeId\""
       ]
     },
-    "3449": {
+    "3500": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -28300,7 +28631,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "3450": {
+    "3501": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -28309,7 +28640,7 @@
         "maybe_value%1#0"
       ]
     },
-    "3451": {
+    "3502": {
       "op": "intc_0 // 0",
       "stack_out": [
         "optionsArr#0",
@@ -28318,7 +28649,7 @@
         "0"
       ]
     },
-    "3452": {
+    "3503": {
       "op": "bytec 5 // \"votingStart\"",
       "defined_out": [
         "\"votingStart\"",
@@ -28334,7 +28665,7 @@
         "\"votingStart\""
       ]
     },
-    "3454": {
+    "3505": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -28350,7 +28681,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "3455": {
+    "3506": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -28360,7 +28691,7 @@
         "maybe_value%2#0"
       ]
     },
-    "3456": {
+    "3507": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -28375,7 +28706,7 @@
         "tmp%1#0"
       ]
     },
-    "3459": {
+    "3510": {
       "op": "intc_0 // 0",
       "stack_out": [
         "optionsArr#0",
@@ -28385,7 +28716,7 @@
         "0"
       ]
     },
-    "3460": {
+    "3511": {
       "op": "bytec 6 // \"votingEnd\"",
       "defined_out": [
         "\"votingEnd\"",
@@ -28403,7 +28734,7 @@
         "\"votingEnd\""
       ]
     },
-    "3462": {
+    "3513": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%3#0",
@@ -28421,7 +28752,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "3463": {
+    "3514": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -28432,7 +28763,7 @@
         "maybe_value%3#0"
       ]
     },
-    "3464": {
+    "3515": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -28449,7 +28780,7 @@
         "tmp%2#0"
       ]
     },
-    "3467": {
+    "3518": {
       "op": "bytec_1 // \"o\"",
       "stack_out": [
         "optionsArr#0",
@@ -28460,7 +28791,7 @@
         "\"o\""
       ]
     },
-    "3468": {
+    "3519": {
       "op": "intc_0 // 0",
       "stack_out": [
         "optionsArr#0",
@@ -28472,7 +28803,7 @@
         "0"
       ]
     },
-    "3469": {
+    "3520": {
       "op": "intc_1 // 2",
       "defined_out": [
         "\"o\"",
@@ -28494,7 +28825,7 @@
         "2"
       ]
     },
-    "3470": {
+    "3521": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%0#0",
@@ -28512,7 +28843,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "3471": {
+    "3522": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0",
@@ -28530,7 +28861,7 @@
         "box%btoi%0#0"
       ]
     },
-    "3472": {
+    "3523": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -28549,7 +28880,7 @@
         "tmp%4#0"
       ]
     },
-    "3475": {
+    "3526": {
       "op": "uncover 3",
       "stack_out": [
         "optionsArr#0",
@@ -28560,7 +28891,7 @@
         "maybe_value%1#0"
       ]
     },
-    "3477": {
+    "3528": {
       "op": "uncover 3",
       "stack_out": [
         "optionsArr#0",
@@ -28571,7 +28902,7 @@
         "tmp%1#0"
       ]
     },
-    "3479": {
+    "3530": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%1#0",
@@ -28587,7 +28918,7 @@
         "aggregate%head%1#0"
       ]
     },
-    "3480": {
+    "3531": {
       "op": "uncover 2",
       "stack_out": [
         "optionsArr#0",
@@ -28597,7 +28928,7 @@
         "tmp%2#0"
       ]
     },
-    "3482": {
+    "3533": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%2#0",
@@ -28611,7 +28942,7 @@
         "aggregate%head%2#0"
       ]
     },
-    "3483": {
+    "3534": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -28620,7 +28951,7 @@
         "tmp%4#0"
       ]
     },
-    "3484": {
+    "3535": {
       "op": "concat",
       "defined_out": [
         "meta#0",
@@ -28632,14 +28963,14 @@
         "meta#0"
       ]
     },
-    "3485": {
+    "3536": {
       "op": "log",
       "stack_out": [
         "optionsArr#0",
         "i#0"
       ]
     },
-    "3486": {
+    "3537": {
       "op": "intc_0 // 0",
       "defined_out": [
         "i#0",
@@ -28651,14 +28982,14 @@
         "i#0"
       ]
     },
-    "3487": {
+    "3538": {
       "op": "bury 1",
       "stack_out": [
         "optionsArr#0",
         "i#0"
       ]
     },
-    "3489": {
+    "3540": {
       "block": "logPeriod_while_top@4",
       "stack_in": [
         "optionsArr#0",
@@ -28674,7 +29005,7 @@
         "\"o\""
       ]
     },
-    "3490": {
+    "3541": {
       "op": "intc_0 // 0",
       "defined_out": [
         "\"o\"",
@@ -28687,7 +29018,7 @@
         "0"
       ]
     },
-    "3491": {
+    "3542": {
       "op": "intc_1 // 2",
       "defined_out": [
         "\"o\"",
@@ -28702,7 +29033,7 @@
         "2"
       ]
     },
-    "3492": {
+    "3543": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%1#0"
@@ -28713,7 +29044,7 @@
         "box%box_extract%1#0"
       ]
     },
-    "3493": {
+    "3544": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%1#0"
@@ -28724,7 +29055,7 @@
         "box%btoi%1#0"
       ]
     },
-    "3494": {
+    "3545": {
       "op": "dig 1",
       "defined_out": [
         "box%btoi%1#0",
@@ -28737,7 +29068,7 @@
         "i#0"
       ]
     },
-    "3496": {
+    "3547": {
       "op": ">",
       "defined_out": [
         "i#0",
@@ -28749,14 +29080,14 @@
         "tmp%7#0"
       ]
     },
-    "3497": {
+    "3548": {
       "op": "bz logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod@7",
       "stack_out": [
         "optionsArr#0",
         "i#0"
       ]
     },
-    "3500": {
+    "3551": {
       "op": "dup2",
       "defined_out": [
         "i#0",
@@ -28769,7 +29100,7 @@
         "i#0"
       ]
     },
-    "3501": {
+    "3552": {
       "op": "dup",
       "defined_out": [
         "i#0",
@@ -28784,7 +29115,7 @@
         "i#0 (copy)"
       ]
     },
-    "3502": {
+    "3553": {
       "op": "cover 2",
       "stack_out": [
         "optionsArr#0",
@@ -28794,7 +29125,7 @@
         "i#0 (copy)"
       ]
     },
-    "3504": {
+    "3555": {
       "callsub": "_puya_lib.arc4.dynamic_array_read_dynamic_element",
       "op": "callsub dynamic_array_read_dynamic_element",
       "defined_out": [
@@ -28809,7 +29140,7 @@
         "aggregate%item%0#0"
       ]
     },
-    "3507": {
+    "3558": {
       "op": "dup",
       "defined_out": [
         "aggregate%item%0#0",
@@ -28825,7 +29156,7 @@
         "aggregate%item%0#0 (copy)"
       ]
     },
-    "3508": {
+    "3559": {
       "op": "intc_0 // 0",
       "stack_out": [
         "optionsArr#0",
@@ -28836,7 +29167,7 @@
         "0"
       ]
     },
-    "3509": {
+    "3560": {
       "op": "extract_uint16",
       "defined_out": [
         "aggregate%extract_uint16%0#0",
@@ -28852,7 +29183,7 @@
         "aggregate%extract_uint16%0#0"
       ]
     },
-    "3510": {
+    "3561": {
       "op": "dig 1",
       "stack_out": [
         "optionsArr#0",
@@ -28863,7 +29194,7 @@
         "aggregate%item%0#0 (copy)"
       ]
     },
-    "3512": {
+    "3563": {
       "op": "len",
       "defined_out": [
         "aggregate%extract_uint16%0#0",
@@ -28881,7 +29212,7 @@
         "aggregate%len%0#0"
       ]
     },
-    "3513": {
+    "3564": {
       "op": "substring3",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -28895,7 +29226,7 @@
         "aggregate%substring3%0#0"
       ]
     },
-    "3514": {
+    "3565": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -28905,7 +29236,7 @@
         "2"
       ]
     },
-    "3515": {
+    "3566": {
       "op": "dig 2",
       "stack_out": [
         "optionsArr#0",
@@ -28916,7 +29247,7 @@
         "i#0 (copy)"
       ]
     },
-    "3517": {
+    "3568": {
       "op": "*",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -28932,7 +29263,7 @@
         "box%mul%0#0"
       ]
     },
-    "3518": {
+    "3569": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -28943,7 +29274,7 @@
         "2"
       ]
     },
-    "3519": {
+    "3570": {
       "op": "+",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -28959,7 +29290,7 @@
         "box%add%1#0"
       ]
     },
-    "3520": {
+    "3571": {
       "op": "bytec_0 // \"t\"",
       "defined_out": [
         "\"t\"",
@@ -28977,7 +29308,7 @@
         "\"t\""
       ]
     },
-    "3521": {
+    "3572": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -28988,7 +29319,7 @@
         "box%add%1#0"
       ]
     },
-    "3522": {
+    "3573": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -29000,7 +29331,7 @@
         "2"
       ]
     },
-    "3523": {
+    "3574": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29016,7 +29347,7 @@
         "box%box_extract%2#0"
       ]
     },
-    "3524": {
+    "3575": {
       "op": "btoi",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29032,7 +29363,7 @@
         "box%btoi%2#0"
       ]
     },
-    "3525": {
+    "3576": {
       "op": "intc_3 // 4",
       "defined_out": [
         "4",
@@ -29050,7 +29381,7 @@
         "4"
       ]
     },
-    "3526": {
+    "3577": {
       "op": "+",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29066,7 +29397,7 @@
         "box%offset%1#0"
       ]
     },
-    "3527": {
+    "3578": {
       "op": "bytec_0 // \"t\"",
       "stack_out": [
         "optionsArr#0",
@@ -29077,7 +29408,7 @@
         "\"t\""
       ]
     },
-    "3528": {
+    "3579": {
       "op": "dig 1",
       "defined_out": [
         "\"t\"",
@@ -29097,7 +29428,7 @@
         "box%offset%1#0 (copy)"
       ]
     },
-    "3530": {
+    "3581": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -29110,7 +29441,7 @@
         "2"
       ]
     },
-    "3531": {
+    "3582": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29128,7 +29459,7 @@
         "box%box_extract%3#0"
       ]
     },
-    "3532": {
+    "3583": {
       "op": "btoi",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29146,7 +29477,7 @@
         "box%btoi%3#0"
       ]
     },
-    "3533": {
+    "3584": {
       "op": "intc_3 // 4",
       "stack_out": [
         "optionsArr#0",
@@ -29158,7 +29489,7 @@
         "4"
       ]
     },
-    "3534": {
+    "3585": {
       "op": "*",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29176,7 +29507,7 @@
         "box%data_bytes%0#0"
       ]
     },
-    "3535": {
+    "3586": {
       "op": "intc_1 // 2",
       "stack_out": [
         "optionsArr#0",
@@ -29188,7 +29519,7 @@
         "2"
       ]
     },
-    "3536": {
+    "3587": {
       "op": "+",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29206,7 +29537,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "3537": {
+    "3588": {
       "op": "bytec_0 // \"t\"",
       "stack_out": [
         "optionsArr#0",
@@ -29218,7 +29549,7 @@
         "\"t\""
       ]
     },
-    "3538": {
+    "3589": {
       "op": "cover 2",
       "stack_out": [
         "optionsArr#0",
@@ -29230,7 +29561,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "3540": {
+    "3591": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29246,7 +29577,7 @@
         "box%box_extract%4#0"
       ]
     },
-    "3541": {
+    "3592": {
       "op": "dig 1",
       "defined_out": [
         "aggregate%substring3%0#0",
@@ -29264,7 +29595,7 @@
         "aggregate%substring3%0#0 (copy)"
       ]
     },
-    "3543": {
+    "3594": {
       "op": "len",
       "defined_out": [
         "aggregate%data_length%0#0",
@@ -29282,7 +29613,7 @@
         "aggregate%data_length%0#0"
       ]
     },
-    "3544": {
+    "3595": {
       "op": "intc_3 // 4",
       "stack_out": [
         "optionsArr#0",
@@ -29294,7 +29625,7 @@
         "4"
       ]
     },
-    "3545": {
+    "3596": {
       "op": "+",
       "defined_out": [
         "aggregate%current_tail_offset%0#0",
@@ -29312,7 +29643,7 @@
         "aggregate%current_tail_offset%0#0"
       ]
     },
-    "3546": {
+    "3597": {
       "op": "itob",
       "defined_out": [
         "aggregate%as_bytes%1#0",
@@ -29330,7 +29661,7 @@
         "aggregate%as_bytes%1#0"
       ]
     },
-    "3547": {
+    "3598": {
       "op": "extract 6 2",
       "defined_out": [
         "aggregate%offset_as_uint16%1#0",
@@ -29348,7 +29679,7 @@
         "aggregate%offset_as_uint16%1#0"
       ]
     },
-    "3550": {
+    "3601": {
       "op": "bytec 24 // 0x0004",
       "defined_out": [
         "0x0004",
@@ -29368,7 +29699,7 @@
         "0x0004"
       ]
     },
-    "3552": {
+    "3603": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -29380,7 +29711,7 @@
         "aggregate%offset_as_uint16%1#0"
       ]
     },
-    "3553": {
+    "3604": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%5#0",
@@ -29398,7 +29729,7 @@
         "aggregate%head%5#0"
       ]
     },
-    "3554": {
+    "3605": {
       "op": "uncover 2",
       "stack_out": [
         "optionsArr#0",
@@ -29409,7 +29740,7 @@
         "aggregate%substring3%0#0"
       ]
     },
-    "3556": {
+    "3607": {
       "op": "concat",
       "defined_out": [
         "aggregate%concat%0#0",
@@ -29425,7 +29756,7 @@
         "aggregate%concat%0#0"
       ]
     },
-    "3557": {
+    "3608": {
       "op": "swap",
       "stack_out": [
         "optionsArr#0",
@@ -29435,7 +29766,7 @@
         "box%box_extract%4#0"
       ]
     },
-    "3558": {
+    "3609": {
       "op": "concat",
       "defined_out": [
         "i#0",
@@ -29449,7 +29780,7 @@
         "topic#0"
       ]
     },
-    "3559": {
+    "3610": {
       "op": "log",
       "stack_out": [
         "optionsArr#0",
@@ -29457,7 +29788,7 @@
         "i#0"
       ]
     },
-    "3560": {
+    "3611": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1",
@@ -29471,7 +29802,7 @@
         "1"
       ]
     },
-    "3561": {
+    "3612": {
       "op": "+",
       "stack_out": [
         "optionsArr#0",
@@ -29479,7 +29810,7 @@
         "i#0"
       ]
     },
-    "3562": {
+    "3613": {
       "op": "bury 1",
       "defined_out": [
         "i#0",
@@ -29490,10 +29821,10 @@
         "i#0"
       ]
     },
-    "3564": {
+    "3615": {
       "op": "b logPeriod_while_top@4"
     },
-    "3567": {
+    "3618": {
       "block": "logPeriod_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logPeriod@7",
       "stack_in": [
         "optionsArr#0",
@@ -29509,14 +29840,14 @@
         "1"
       ]
     },
-    "3568": {
+    "3619": {
       "op": "return",
       "stack_out": [
         "optionsArr#0",
         "i#0"
       ]
     },
-    "3569": {
+    "3620": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getVotingRecord[routing]",
       "params": {},
       "block": "getVotingRecord",
@@ -29529,7 +29860,7 @@
         "account#0"
       ]
     },
-    "3572": {
+    "3623": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -29540,7 +29871,7 @@
         "account#0 (copy)"
       ]
     },
-    "3573": {
+    "3624": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -29551,7 +29882,7 @@
         "len%0#0"
       ]
     },
-    "3574": {
+    "3625": {
       "op": "pushint 32",
       "defined_out": [
         "32",
@@ -29564,7 +29895,7 @@
         "32"
       ]
     },
-    "3576": {
+    "3627": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -29575,15 +29906,15 @@
         "eq%0#0"
       ]
     },
-    "3577": {
+    "3628": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "account#0"
       ]
     },
-    "3578": {
-      "op": "bytec 13 // \"v\"",
+    "3629": {
+      "op": "bytec 14 // \"v\"",
       "defined_out": [
         "\"v\"",
         "account#0"
@@ -29593,14 +29924,14 @@
         "\"v\""
       ]
     },
-    "3580": {
+    "3631": {
       "op": "swap",
       "stack_out": [
         "\"v\"",
         "account#0"
       ]
     },
-    "3581": {
+    "3632": {
       "op": "concat",
       "defined_out": [
         "box#0"
@@ -29609,7 +29940,7 @@
         "box#0"
       ]
     },
-    "3582": {
+    "3633": {
       "op": "dup",
       "defined_out": [
         "box#0"
@@ -29619,7 +29950,7 @@
         "box#0"
       ]
     },
-    "3583": {
+    "3634": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -29632,20 +29963,20 @@
         "maybe_exists%0#0"
       ]
     },
-    "3584": {
+    "3635": {
       "op": "bury 1",
       "stack_out": [
         "box#0",
         "maybe_exists%0#0"
       ]
     },
-    "3586": {
+    "3637": {
       "op": "bz getVotingRecord_after_if_else@3",
       "stack_out": [
         "box#0"
       ]
     },
-    "3589": {
+    "3640": {
       "op": "box_get",
       "defined_out": [
         "aggregate%box_get%0#0",
@@ -29656,7 +29987,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "3590": {
+    "3641": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "defined_out": [
@@ -29666,7 +29997,7 @@
         "tmp%2#0"
       ]
     },
-    "3591": {
+    "3642": {
       "block": "getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getVotingRecord@4",
       "stack_in": [
         "tmp%2#0"
@@ -29680,7 +30011,7 @@
         "0x151f7c75"
       ]
     },
-    "3593": {
+    "3644": {
       "op": "swap",
       "defined_out": [
         "0x151f7c75",
@@ -29691,7 +30022,7 @@
         "tmp%2#0"
       ]
     },
-    "3594": {
+    "3645": {
       "op": "concat",
       "defined_out": [
         "tmp%3#0"
@@ -29700,11 +30031,11 @@
         "tmp%3#0"
       ]
     },
-    "3595": {
+    "3646": {
       "op": "log",
       "stack_out": []
     },
-    "3596": {
+    "3647": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1"
@@ -29713,11 +30044,11 @@
         "1"
       ]
     },
-    "3597": {
+    "3648": {
       "op": "return",
       "stack_out": []
     },
-    "3598": {
+    "3649": {
       "block": "getVotingRecord_after_if_else@3",
       "stack_in": [
         "box#0"
@@ -29726,7 +30057,7 @@
       "defined_out": [],
       "stack_out": []
     },
-    "3599": {
+    "3650": {
       "op": "pushbytes 0x0000030000",
       "defined_out": [
         "tmp%2#0"
@@ -29735,10 +30066,10 @@
         "tmp%2#0"
       ]
     },
-    "3606": {
+    "3657": {
       "op": "b getVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.getVotingRecord@4"
     },
-    "3609": {
+    "3660": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord[routing]",
       "params": {},
       "block": "logVotingRecord",
@@ -29748,7 +30079,7 @@
         "i#0"
       ]
     },
-    "3611": {
+    "3662": {
       "op": "txna ApplicationArgs 1",
       "defined_out": [
         "account#0"
@@ -29758,7 +30089,7 @@
         "account#0"
       ]
     },
-    "3614": {
+    "3665": {
       "op": "dup",
       "defined_out": [
         "account#0",
@@ -29770,7 +30101,7 @@
         "account#0 (copy)"
       ]
     },
-    "3615": {
+    "3666": {
       "op": "len",
       "defined_out": [
         "account#0",
@@ -29782,7 +30113,7 @@
         "len%0#0"
       ]
     },
-    "3616": {
+    "3667": {
       "op": "pushint 32",
       "defined_out": [
         "32",
@@ -29796,7 +30127,7 @@
         "32"
       ]
     },
-    "3618": {
+    "3669": {
       "op": "==",
       "defined_out": [
         "account#0",
@@ -29808,7 +30139,7 @@
         "eq%0#0"
       ]
     },
-    "3619": {
+    "3670": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
@@ -29816,8 +30147,8 @@
         "account#0"
       ]
     },
-    "3620": {
-      "op": "bytec 13 // \"v\"",
+    "3671": {
+      "op": "bytec 14 // \"v\"",
       "defined_out": [
         "\"v\"",
         "account#0"
@@ -29828,7 +30159,7 @@
         "\"v\""
       ]
     },
-    "3622": {
+    "3673": {
       "op": "swap",
       "stack_out": [
         "i#0",
@@ -29836,7 +30167,7 @@
         "account#0"
       ]
     },
-    "3623": {
+    "3674": {
       "op": "concat",
       "defined_out": [
         "box#0"
@@ -29846,7 +30177,7 @@
         "box#0"
       ]
     },
-    "3624": {
+    "3675": {
       "op": "dup",
       "defined_out": [
         "box#0"
@@ -29857,7 +30188,7 @@
         "box#0"
       ]
     },
-    "3625": {
+    "3676": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -29871,7 +30202,7 @@
         "maybe_exists%0#0"
       ]
     },
-    "3626": {
+    "3677": {
       "op": "bury 1",
       "stack_out": [
         "i#0",
@@ -29879,14 +30210,14 @@
         "maybe_exists%0#0"
       ]
     },
-    "3628": {
+    "3679": {
       "op": "bz logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord@7",
       "stack_out": [
         "i#0",
         "box#0"
       ]
     },
-    "3631": {
+    "3682": {
       "op": "dupn 2",
       "defined_out": [
         "box#0",
@@ -29899,7 +30230,7 @@
         "box#0 (copy)"
       ]
     },
-    "3633": {
+    "3684": {
       "op": "intc_0 // 0",
       "stack_out": [
         "i#0",
@@ -29909,7 +30240,7 @@
         "0"
       ]
     },
-    "3634": {
+    "3685": {
       "op": "intc_2 // 1",
       "defined_out": [
         "0",
@@ -29926,7 +30257,7 @@
         "1"
       ]
     },
-    "3635": {
+    "3686": {
       "error": "index out of bounds",
       "op": "box_extract // on error: index out of bounds",
       "defined_out": [
@@ -29940,7 +30271,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "3636": {
+    "3687": {
       "op": "intc_0 // 0",
       "stack_out": [
         "i#0",
@@ -29950,7 +30281,7 @@
         "0"
       ]
     },
-    "3637": {
+    "3688": {
       "op": "getbit",
       "defined_out": [
         "aggregate%get_bit%0#0",
@@ -29963,7 +30294,7 @@
         "aggregate%get_bit%0#0"
       ]
     },
-    "3638": {
+    "3689": {
       "op": "swap",
       "stack_out": [
         "i#0",
@@ -29972,7 +30303,7 @@
         "box#0"
       ]
     },
-    "3639": {
+    "3690": {
       "op": "pushint 3",
       "defined_out": [
         "3",
@@ -29987,7 +30318,7 @@
         "3"
       ]
     },
-    "3641": {
+    "3692": {
       "op": "intc_1 // 2",
       "defined_out": [
         "2",
@@ -30004,7 +30335,7 @@
         "2"
       ]
     },
-    "3642": {
+    "3693": {
       "op": "box_extract",
       "defined_out": [
         "aggregate%get_bit%0#0",
@@ -30018,7 +30349,7 @@
         "box%box_extract%1#0"
       ]
     },
-    "3643": {
+    "3694": {
       "op": "btoi",
       "defined_out": [
         "aggregate%get_bit%0#0",
@@ -30032,7 +30363,7 @@
         "box%btoi%0#0"
       ]
     },
-    "3644": {
+    "3695": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -30047,8 +30378,8 @@
         "tmp%2#0"
       ]
     },
-    "3647": {
-      "op": "bytec 14 // 0x00",
+    "3698": {
+      "op": "bytec 15 // 0x00",
       "defined_out": [
         "0x00",
         "aggregate%get_bit%0#0",
@@ -30063,7 +30394,7 @@
         "0x00"
       ]
     },
-    "3649": {
+    "3700": {
       "op": "intc_0 // 0",
       "stack_out": [
         "i#0",
@@ -30074,7 +30405,7 @@
         "0"
       ]
     },
-    "3650": {
+    "3701": {
       "op": "uncover 3",
       "stack_out": [
         "i#0",
@@ -30085,7 +30416,7 @@
         "aggregate%get_bit%0#0"
       ]
     },
-    "3652": {
+    "3703": {
       "op": "setbit",
       "defined_out": [
         "aggregate%encoded_bool%0#0",
@@ -30099,7 +30430,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3653": {
+    "3704": {
       "op": "swap",
       "stack_out": [
         "i#0",
@@ -30108,7 +30439,7 @@
         "tmp%2#0"
       ]
     },
-    "3654": {
+    "3705": {
       "op": "concat",
       "defined_out": [
         "box#0",
@@ -30120,14 +30451,14 @@
         "meta#0"
       ]
     },
-    "3655": {
+    "3706": {
       "op": "log",
       "stack_out": [
         "i#0",
         "box#0"
       ]
     },
-    "3656": {
+    "3707": {
       "op": "intc_0 // 0",
       "defined_out": [
         "box#0",
@@ -30139,7 +30470,7 @@
         "i#0"
       ]
     },
-    "3657": {
+    "3708": {
       "op": "bury 2",
       "defined_out": [
         "box#0",
@@ -30150,7 +30481,7 @@
         "box#0"
       ]
     },
-    "3659": {
+    "3710": {
       "block": "logVotingRecord_while_top@4",
       "stack_in": [
         "i#0",
@@ -30166,7 +30497,7 @@
         "box#0 (copy)"
       ]
     },
-    "3660": {
+    "3711": {
       "op": "pushint 3",
       "defined_out": [
         "3",
@@ -30179,7 +30510,7 @@
         "3"
       ]
     },
-    "3662": {
+    "3713": {
       "op": "intc_1 // 2",
       "defined_out": [
         "2",
@@ -30194,7 +30525,7 @@
         "2"
       ]
     },
-    "3663": {
+    "3714": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%2#0"
@@ -30205,7 +30536,7 @@
         "box%box_extract%2#0"
       ]
     },
-    "3664": {
+    "3715": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%1#0"
@@ -30216,7 +30547,7 @@
         "box%btoi%1#0"
       ]
     },
-    "3665": {
+    "3716": {
       "op": "dig 2",
       "defined_out": [
         "box%btoi%1#0",
@@ -30229,7 +30560,7 @@
         "i#0"
       ]
     },
-    "3667": {
+    "3718": {
       "op": ">",
       "defined_out": [
         "i#0",
@@ -30241,14 +30572,14 @@
         "tmp%5#0"
       ]
     },
-    "3668": {
+    "3719": {
       "op": "bz logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord@7",
       "stack_out": [
         "i#0",
         "box#0"
       ]
     },
-    "3671": {
+    "3722": {
       "op": "dupn 2",
       "defined_out": [
         "box#0",
@@ -30262,7 +30593,7 @@
         "box#0 (copy)"
       ]
     },
-    "3673": {
+    "3724": {
       "op": "pushint 3",
       "stack_out": [
         "i#0",
@@ -30272,7 +30603,7 @@
         "3"
       ]
     },
-    "3675": {
+    "3726": {
       "op": "intc_1 // 2",
       "stack_out": [
         "i#0",
@@ -30283,7 +30614,7 @@
         "2"
       ]
     },
-    "3676": {
+    "3727": {
       "op": "box_extract",
       "defined_out": [
         "box#0",
@@ -30297,7 +30628,7 @@
         "box%box_extract%3#0"
       ]
     },
-    "3677": {
+    "3728": {
       "op": "btoi",
       "defined_out": [
         "box#0",
@@ -30311,7 +30642,7 @@
         "box%btoi%2#0"
       ]
     },
-    "3678": {
+    "3729": {
       "op": "dig 3",
       "stack_out": [
         "i#0",
@@ -30321,10 +30652,10 @@
         "i#0"
       ]
     },
-    "3680": {
+    "3731": {
       "op": "dup"
     },
-    "3681": {
+    "3732": {
       "op": "uncover 2",
       "defined_out": [
         "box#0",
@@ -30341,7 +30672,7 @@
         "box%btoi%2#0"
       ]
     },
-    "3683": {
+    "3734": {
       "op": "<",
       "defined_out": [
         "box#0",
@@ -30356,7 +30687,7 @@
         "box%index_ok%0#0"
       ]
     },
-    "3684": {
+    "3735": {
       "error": "index out of bounds",
       "op": "assert // index out of bounds",
       "stack_out": [
@@ -30366,7 +30697,7 @@
         "i#0"
       ]
     },
-    "3685": {
+    "3736": {
       "op": "intc_1 // 2",
       "stack_out": [
         "i#0",
@@ -30376,7 +30707,7 @@
         "2"
       ]
     },
-    "3686": {
+    "3737": {
       "op": "dig 1",
       "stack_out": [
         "i#0",
@@ -30387,7 +30718,7 @@
         "i#0 (copy)"
       ]
     },
-    "3688": {
+    "3739": {
       "op": "*",
       "defined_out": [
         "box#0",
@@ -30402,7 +30733,7 @@
         "box%mul%0#0"
       ]
     },
-    "3689": {
+    "3740": {
       "op": "pushint 5",
       "defined_out": [
         "5",
@@ -30419,7 +30750,7 @@
         "5"
       ]
     },
-    "3691": {
+    "3742": {
       "op": "+",
       "defined_out": [
         "box#0",
@@ -30434,7 +30765,7 @@
         "box%add%1#0"
       ]
     },
-    "3692": {
+    "3743": {
       "op": "dig 2",
       "stack_out": [
         "i#0",
@@ -30445,7 +30776,7 @@
         "box#0 (copy)"
       ]
     },
-    "3694": {
+    "3745": {
       "op": "swap",
       "stack_out": [
         "i#0",
@@ -30456,7 +30787,7 @@
         "box%add%1#0"
       ]
     },
-    "3695": {
+    "3746": {
       "op": "intc_1 // 2",
       "stack_out": [
         "i#0",
@@ -30468,7 +30799,7 @@
         "2"
       ]
     },
-    "3696": {
+    "3747": {
       "op": "box_extract",
       "defined_out": [
         "box#0",
@@ -30483,7 +30814,7 @@
         "box%box_extract%4#0"
       ]
     },
-    "3697": {
+    "3748": {
       "op": "btoi",
       "defined_out": [
         "box#0",
@@ -30498,7 +30829,7 @@
         "box%btoi%3#0"
       ]
     },
-    "3698": {
+    "3749": {
       "op": "pushint 5",
       "stack_out": [
         "i#0",
@@ -30509,7 +30840,7 @@
         "5"
       ]
     },
-    "3700": {
+    "3751": {
       "op": "+",
       "defined_out": [
         "box#0",
@@ -30524,7 +30855,7 @@
         "box%offset%3#0"
       ]
     },
-    "3701": {
+    "3752": {
       "op": "dig 2",
       "stack_out": [
         "i#0",
@@ -30535,7 +30866,7 @@
         "box#0 (copy)"
       ]
     },
-    "3703": {
+    "3754": {
       "op": "dig 1",
       "defined_out": [
         "box#0",
@@ -30554,7 +30885,7 @@
         "box%offset%3#0 (copy)"
       ]
     },
-    "3705": {
+    "3756": {
       "op": "intc_1 // 2",
       "stack_out": [
         "i#0",
@@ -30567,7 +30898,7 @@
         "2"
       ]
     },
-    "3706": {
+    "3757": {
       "op": "box_extract",
       "defined_out": [
         "box#0",
@@ -30584,7 +30915,7 @@
         "box%box_extract%5#0"
       ]
     },
-    "3707": {
+    "3758": {
       "op": "btoi",
       "defined_out": [
         "box#0",
@@ -30601,7 +30932,7 @@
         "box%btoi%4#0"
       ]
     },
-    "3708": {
+    "3759": {
       "op": "intc_3 // 4",
       "defined_out": [
         "4",
@@ -30620,7 +30951,7 @@
         "4"
       ]
     },
-    "3709": {
+    "3760": {
       "op": "*",
       "defined_out": [
         "box#0",
@@ -30637,7 +30968,7 @@
         "box%data_bytes%0#0"
       ]
     },
-    "3710": {
+    "3761": {
       "op": "intc_1 // 2",
       "stack_out": [
         "i#0",
@@ -30649,7 +30980,7 @@
         "2"
       ]
     },
-    "3711": {
+    "3762": {
       "op": "+",
       "defined_out": [
         "box#0",
@@ -30666,7 +30997,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "3712": {
+    "3763": {
       "op": "uncover 3",
       "stack_out": [
         "i#0",
@@ -30677,7 +31008,7 @@
         "box#0"
       ]
     },
-    "3714": {
+    "3765": {
       "op": "cover 2",
       "stack_out": [
         "i#0",
@@ -30688,7 +31019,7 @@
         "box%total_bytes%0#0"
       ]
     },
-    "3716": {
+    "3767": {
       "op": "box_extract",
       "defined_out": [
         "box#0",
@@ -30702,7 +31033,7 @@
         "box%box_extract%6#0"
       ]
     },
-    "3717": {
+    "3768": {
       "op": "bytec 7 // 0x0002",
       "defined_out": [
         "0x0002",
@@ -30718,7 +31049,7 @@
         "0x0002"
       ]
     },
-    "3719": {
+    "3770": {
       "op": "swap",
       "stack_out": [
         "i#0",
@@ -30728,7 +31059,7 @@
         "box%box_extract%6#0"
       ]
     },
-    "3720": {
+    "3771": {
       "op": "concat",
       "defined_out": [
         "box#0",
@@ -30742,7 +31073,7 @@
         "topicVotes#0"
       ]
     },
-    "3721": {
+    "3772": {
       "op": "log",
       "stack_out": [
         "i#0",
@@ -30750,7 +31081,7 @@
         "i#0"
       ]
     },
-    "3722": {
+    "3773": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1",
@@ -30764,7 +31095,7 @@
         "1"
       ]
     },
-    "3723": {
+    "3774": {
       "op": "+",
       "stack_out": [
         "i#0",
@@ -30772,7 +31103,7 @@
         "i#0"
       ]
     },
-    "3724": {
+    "3775": {
       "op": "bury 2",
       "defined_out": [
         "box#0",
@@ -30783,10 +31114,10 @@
         "box#0"
       ]
     },
-    "3726": {
+    "3777": {
       "op": "b logVotingRecord_while_top@4"
     },
-    "3729": {
+    "3780": {
       "block": "logVotingRecord_after_inlined_smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.logVotingRecord@7",
       "stack_in": [
         "i#0",
@@ -30802,14 +31133,14 @@
         "1"
       ]
     },
-    "3730": {
+    "3781": {
       "op": "return",
       "stack_out": [
         "i#0",
         "box#0"
       ]
     },
-    "3731": {
+    "3782": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.withdrawALGO[routing]",
       "params": {},
       "block": "withdrawALGO",
@@ -30822,7 +31153,7 @@
         "receiver#0"
       ]
     },
-    "3734": {
+    "3785": {
       "op": "dup",
       "defined_out": [
         "receiver#0",
@@ -30833,7 +31164,7 @@
         "receiver#0 (copy)"
       ]
     },
-    "3735": {
+    "3786": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -30844,7 +31175,7 @@
         "len%0#0"
       ]
     },
-    "3736": {
+    "3787": {
       "op": "pushint 32",
       "defined_out": [
         "32",
@@ -30857,7 +31188,7 @@
         "32"
       ]
     },
-    "3738": {
+    "3789": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -30868,14 +31199,14 @@
         "eq%0#0"
       ]
     },
-    "3739": {
+    "3790": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "receiver#0"
       ]
     },
-    "3740": {
+    "3791": {
       "op": "txna ApplicationArgs 2",
       "defined_out": [
         "receiver#0",
@@ -30886,7 +31217,7 @@
         "tmp%2#0"
       ]
     },
-    "3743": {
+    "3794": {
       "op": "dup",
       "defined_out": [
         "receiver#0",
@@ -30899,7 +31230,7 @@
         "tmp%2#0 (copy)"
       ]
     },
-    "3744": {
+    "3795": {
       "op": "len",
       "defined_out": [
         "len%1#0",
@@ -30912,7 +31243,7 @@
         "len%1#0"
       ]
     },
-    "3745": {
+    "3796": {
       "op": "pushint 8",
       "defined_out": [
         "8",
@@ -30927,7 +31258,7 @@
         "8"
       ]
     },
-    "3747": {
+    "3798": {
       "op": "==",
       "defined_out": [
         "eq%1#0",
@@ -30940,7 +31271,7 @@
         "eq%1#0"
       ]
     },
-    "3748": {
+    "3799": {
       "error": "invalid number of bytes for arc4.uint64",
       "op": "assert // invalid number of bytes for arc4.uint64",
       "stack_out": [
@@ -30948,7 +31279,7 @@
         "tmp%2#0"
       ]
     },
-    "3749": {
+    "3800": {
       "op": "btoi",
       "defined_out": [
         "amount#0",
@@ -30959,24 +31290,24 @@
         "amount#0"
       ]
     },
-    "3750": {
+    "3801": {
       "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
       "op": "callsub ensureCallerIsAdmin"
     },
-    "3753": {
+    "3804": {
       "op": "itxn_begin"
     },
-    "3754": {
+    "3805": {
       "op": "itxn_field Amount",
       "stack_out": [
         "receiver#0"
       ]
     },
-    "3756": {
+    "3807": {
       "op": "itxn_field Receiver",
       "stack_out": []
     },
-    "3758": {
+    "3809": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1"
@@ -30985,11 +31316,11 @@
         "1"
       ]
     },
-    "3759": {
+    "3810": {
       "op": "itxn_field TypeEnum",
       "stack_out": []
     },
-    "3761": {
+    "3812": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -30998,24 +31329,24 @@
         "0"
       ]
     },
-    "3762": {
+    "3813": {
       "op": "itxn_field Fee",
       "stack_out": []
     },
-    "3764": {
+    "3815": {
       "op": "itxn_submit"
     },
-    "3765": {
+    "3816": {
       "op": "intc_2 // 1",
       "stack_out": [
         "1"
       ]
     },
-    "3766": {
+    "3817": {
       "op": "return",
       "stack_out": []
     },
-    "3767": {
+    "3818": {
       "subroutine": "smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]",
       "params": {},
       "block": "increaseBudget",
@@ -31028,7 +31359,7 @@
         "tmp%0#0"
       ]
     },
-    "3770": {
+    "3821": {
       "op": "btoi",
       "defined_out": [
         "itxns#0"
@@ -31037,7 +31368,7 @@
         "itxns#0"
       ]
     },
-    "3771": {
+    "3822": {
       "op": "intc_0 // 0",
       "defined_out": [
         "i#0",
@@ -31048,7 +31379,7 @@
         "i#0"
       ]
     },
-    "3772": {
+    "3823": {
       "block": "increaseBudget_while_top@2",
       "stack_in": [
         "itxns#0",
@@ -31064,7 +31395,7 @@
         "i#0 (copy)"
       ]
     },
-    "3773": {
+    "3824": {
       "op": "dig 2",
       "defined_out": [
         "i#0 (copy)",
@@ -31077,7 +31408,7 @@
         "itxns#0 (copy)"
       ]
     },
-    "3775": {
+    "3826": {
       "op": "<",
       "defined_out": [
         "tmp%0#1"
@@ -31088,17 +31419,17 @@
         "tmp%0#1"
       ]
     },
-    "3776": {
+    "3827": {
       "op": "bz increaseBudget_after_while@5",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3779": {
+    "3830": {
       "op": "itxn_begin"
     },
-    "3780": {
+    "3831": {
       "op": "pushint 5",
       "defined_out": [
         "5"
@@ -31109,14 +31440,14 @@
         "5"
       ]
     },
-    "3782": {
+    "3833": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3784": {
+    "3835": {
       "op": "bytec 26 // base64(C4EBQw==)",
       "defined_out": [
         "C4EBQw=="
@@ -31127,14 +31458,14 @@
         "C4EBQw=="
       ]
     },
-    "3786": {
+    "3837": {
       "op": "itxn_field ClearStateProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3788": {
+    "3839": {
       "op": "bytec 26 // base64(C4EBQw==)",
       "stack_out": [
         "itxns#0",
@@ -31142,14 +31473,14 @@
         "C4EBQw=="
       ]
     },
-    "3790": {
+    "3841": {
       "op": "itxn_field ApprovalProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3792": {
+    "3843": {
       "op": "pushint 6",
       "defined_out": [
         "6"
@@ -31160,14 +31491,14 @@
         "6"
       ]
     },
-    "3794": {
+    "3845": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3796": {
+    "3847": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -31178,20 +31509,20 @@
         "0"
       ]
     },
-    "3797": {
+    "3848": {
       "op": "itxn_field Fee",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3799": {
+    "3850": {
       "op": "itxn_submit",
       "defined_out": [
         "i#0"
       ]
     },
-    "3800": {
+    "3851": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1",
@@ -31203,7 +31534,7 @@
         "1"
       ]
     },
-    "3801": {
+    "3852": {
       "op": "+",
       "defined_out": [
         "i#0"
@@ -31213,10 +31544,10 @@
         "i#0"
       ]
     },
-    "3802": {
+    "3853": {
       "op": "b increaseBudget_while_top@2"
     },
-    "3805": {
+    "3856": {
       "block": "increaseBudget_after_while@5",
       "stack_in": [
         "itxns#0",
@@ -31232,14 +31563,14 @@
         "1"
       ]
     },
-    "3806": {
+    "3857": {
       "op": "return",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "3807": {
+    "3858": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.resolveAdmin",
       "params": {},
       "block": "resolveAdmin",
@@ -31252,7 +31583,7 @@
         "0"
       ]
     },
-    "3808": {
+    "3859": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -31263,7 +31594,7 @@
         "\"registryApp\""
       ]
     },
-    "3809": {
+    "3860": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -31274,14 +31605,14 @@
         "maybe_exists%0#0"
       ]
     },
-    "3810": {
+    "3861": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "3811": {
+    "3862": {
       "op": "pushbytes \"admin\"",
       "defined_out": [
         "\"admin\"",
@@ -31292,7 +31623,7 @@
         "\"admin\""
       ]
     },
-    "3818": {
+    "3869": {
       "op": "app_global_get_ex",
       "defined_out": [
         "exists#0",
@@ -31303,13 +31634,13 @@
         "exists#0"
       ]
     },
-    "3819": {
+    "3870": {
       "op": "bnz resolveAdmin_after_assert@2",
       "stack_out": [
         "value#0"
       ]
     },
-    "3822": {
+    "3873": {
       "op": "pushbytes \"ERR:RM\"",
       "defined_out": [
         "\"ERR:RM\"",
@@ -31320,17 +31651,17 @@
         "\"ERR:RM\""
       ]
     },
-    "3830": {
+    "3881": {
       "op": "log",
       "stack_out": [
         "value#0"
       ]
     },
-    "3831": {
+    "3882": {
       "error": "ERR:RM",
       "op": "err // ERR:RM"
     },
-    "3832": {
+    "3883": {
       "block": "resolveAdmin_after_assert@2",
       "stack_in": [
         "value#0"
@@ -31341,7 +31672,7 @@
         "value#0"
       ]
     },
-    "3833": {
+    "3884": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.resolveOperator",
       "params": {},
       "block": "resolveOperator",
@@ -31354,7 +31685,7 @@
         "0"
       ]
     },
-    "3834": {
+    "3885": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -31365,7 +31696,7 @@
         "\"registryApp\""
       ]
     },
-    "3835": {
+    "3886": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -31376,14 +31707,14 @@
         "maybe_exists%0#0"
       ]
     },
-    "3836": {
+    "3887": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "3837": {
+    "3888": {
       "op": "pushbytes \"operator\"",
       "defined_out": [
         "\"operator\"",
@@ -31394,7 +31725,7 @@
         "\"operator\""
       ]
     },
-    "3847": {
+    "3898": {
       "op": "app_global_get_ex",
       "defined_out": [
         "exists#0",
@@ -31405,13 +31736,13 @@
         "exists#0"
       ]
     },
-    "3848": {
+    "3899": {
       "op": "bz resolveOperator_ternary_false@2",
       "stack_out": [
         "value#0"
       ]
     },
-    "3851": {
+    "3902": {
       "retsub": true,
       "op": "retsub",
       "defined_out": [
@@ -31421,7 +31752,7 @@
         "ternary_result%0#1"
       ]
     },
-    "3852": {
+    "3903": {
       "block": "resolveOperator_ternary_false@2",
       "stack_in": [
         "value#0"
@@ -31430,7 +31761,7 @@
       "defined_out": [],
       "stack_out": []
     },
-    "3853": {
+    "3904": {
       "op": "global ZeroAddress",
       "defined_out": [
         "ternary_result%0#1"
@@ -31439,11 +31770,11 @@
         "ternary_result%0#1"
       ]
     },
-    "3855": {
+    "3906": {
       "retsub": true,
       "op": "retsub"
     },
-    "3856": {
+    "3907": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsAdmin",
       "params": {},
       "block": "ensureCallerIsAdmin",
@@ -31456,7 +31787,7 @@
         "tmp%0#0"
       ]
     },
-    "3858": {
+    "3909": {
       "op": "global CreatorAddress",
       "defined_out": [
         "tmp%0#0",
@@ -31467,7 +31798,7 @@
         "tmp%1#0"
       ]
     },
-    "3860": {
+    "3911": {
       "op": "==",
       "defined_out": [
         "tmp%2#0"
@@ -31476,15 +31807,15 @@
         "tmp%2#0"
       ]
     },
-    "3861": {
+    "3912": {
       "op": "bz ensureCallerIsAdmin_after_if_else@2",
       "stack_out": []
     },
-    "3864": {
+    "3915": {
       "retsub": true,
       "op": "retsub"
     },
-    "3865": {
+    "3916": {
       "block": "ensureCallerIsAdmin_after_if_else@2",
       "stack_in": [],
       "op": "txn Sender",
@@ -31495,7 +31826,7 @@
         "tmp%3#0"
       ]
     },
-    "3867": {
+    "3918": {
       "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.resolveAdmin",
       "op": "callsub resolveAdmin",
       "defined_out": [
@@ -31507,7 +31838,7 @@
         "tmp%4#0"
       ]
     },
-    "3870": {
+    "3921": {
       "op": "==",
       "defined_out": [
         "tmp%5#0"
@@ -31516,12 +31847,12 @@
         "tmp%5#0"
       ]
     },
-    "3871": {
+    "3922": {
       "op": "bnz ensureCallerIsAdmin_after_assert@4",
       "stack_out": []
     },
-    "3874": {
-      "op": "bytec 12 // \"ERR:AUTH\"",
+    "3925": {
+      "op": "bytec 13 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\""
       ],
@@ -31529,21 +31860,21 @@
         "\"ERR:AUTH\""
       ]
     },
-    "3876": {
+    "3927": {
       "op": "log",
       "stack_out": []
     },
-    "3877": {
+    "3928": {
       "error": "ERR:AUTH",
       "op": "err // ERR:AUTH"
     },
-    "3878": {
+    "3929": {
       "block": "ensureCallerIsAdmin_after_assert@4",
       "stack_in": [],
       "retsub": true,
       "op": "retsub"
     },
-    "3879": {
+    "3930": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureCallerIsOperator",
       "params": {},
       "block": "ensureCallerIsOperator",
@@ -31556,7 +31887,7 @@
         "tmp%0#0"
       ]
     },
-    "3881": {
+    "3932": {
       "callsub": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.resolveOperator",
       "op": "callsub resolveOperator",
       "defined_out": [
@@ -31568,7 +31899,7 @@
         "tmp%1#0"
       ]
     },
-    "3884": {
+    "3935": {
       "op": "==",
       "defined_out": [
         "tmp%2#0"
@@ -31577,12 +31908,12 @@
         "tmp%2#0"
       ]
     },
-    "3885": {
+    "3936": {
       "op": "bnz ensureCallerIsOperator_after_assert@2",
       "stack_out": []
     },
-    "3888": {
-      "op": "bytec 12 // \"ERR:AUTH\"",
+    "3939": {
+      "op": "bytec 13 // \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\""
       ],
@@ -31590,28 +31921,28 @@
         "\"ERR:AUTH\""
       ]
     },
-    "3890": {
+    "3941": {
       "op": "log",
       "stack_out": []
     },
-    "3891": {
+    "3942": {
       "error": "ERR:AUTH",
       "op": "err // ERR:AUTH"
     },
-    "3892": {
+    "3943": {
       "block": "ensureCallerIsOperator_after_assert@2",
       "stack_in": [],
       "retsub": true,
       "op": "retsub"
     },
-    "3893": {
+    "3944": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.syncSummaryToRegistry",
       "params": {},
       "block": "syncSummaryToRegistry",
       "stack_in": [],
       "op": "itxn_begin"
     },
-    "3894": {
+    "3945": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -31620,8 +31951,8 @@
         "0"
       ]
     },
-    "3895": {
-      "op": "bytec 16 // \"periodId\"",
+    "3946": {
+      "op": "bytec 12 // \"periodId\"",
       "defined_out": [
         "\"periodId\"",
         "0"
@@ -31631,7 +31962,7 @@
         "\"periodId\""
       ]
     },
-    "3897": {
+    "3948": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -31642,14 +31973,14 @@
         "maybe_exists%0#0"
       ]
     },
-    "3898": {
+    "3949": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "3899": {
+    "3950": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -31659,14 +31990,14 @@
         "tmp%0#0"
       ]
     },
-    "3902": {
+    "3953": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
         "0"
       ]
     },
-    "3903": {
+    "3954": {
       "op": "bytec 5 // \"votingStart\"",
       "defined_out": [
         "\"votingStart\"",
@@ -31679,7 +32010,7 @@
         "\"votingStart\""
       ]
     },
-    "3905": {
+    "3956": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%1#0",
@@ -31692,7 +32023,7 @@
         "maybe_exists%1#0"
       ]
     },
-    "3906": {
+    "3957": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -31700,7 +32031,7 @@
         "maybe_value%1#0"
       ]
     },
-    "3907": {
+    "3958": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -31712,7 +32043,7 @@
         "tmp%1#0"
       ]
     },
-    "3910": {
+    "3961": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
@@ -31720,7 +32051,7 @@
         "0"
       ]
     },
-    "3911": {
+    "3962": {
       "op": "bytec 6 // \"votingEnd\"",
       "defined_out": [
         "\"votingEnd\"",
@@ -31735,7 +32066,7 @@
         "\"votingEnd\""
       ]
     },
-    "3913": {
+    "3964": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%2#0",
@@ -31750,7 +32081,7 @@
         "maybe_exists%2#0"
       ]
     },
-    "3914": {
+    "3965": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -31759,7 +32090,7 @@
         "maybe_value%2#0"
       ]
     },
-    "3915": {
+    "3966": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -31773,7 +32104,7 @@
         "tmp%2#0"
       ]
     },
-    "3918": {
+    "3969": {
       "op": "bytec_1 // \"o\"",
       "defined_out": [
         "\"o\"",
@@ -31788,7 +32119,7 @@
         "\"o\""
       ]
     },
-    "3919": {
+    "3970": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
@@ -31798,7 +32129,7 @@
         "0"
       ]
     },
-    "3920": {
+    "3971": {
       "op": "intc_1 // 2",
       "defined_out": [
         "\"o\"",
@@ -31817,7 +32148,7 @@
         "2"
       ]
     },
-    "3921": {
+    "3972": {
       "op": "box_extract",
       "defined_out": [
         "box%box_extract%0#0",
@@ -31832,7 +32163,7 @@
         "box%box_extract%0#0"
       ]
     },
-    "3922": {
+    "3973": {
       "op": "btoi",
       "defined_out": [
         "box%btoi%0#0",
@@ -31847,7 +32178,7 @@
         "box%btoi%0#0"
       ]
     },
-    "3923": {
+    "3974": {
       "callsub": "smart_contracts/base/utils.algo.ts::u32",
       "op": "callsub u32",
       "defined_out": [
@@ -31863,7 +32194,7 @@
         "tmp%4#0"
       ]
     },
-    "3926": {
+    "3977": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
@@ -31873,7 +32204,7 @@
         "0"
       ]
     },
-    "3927": {
+    "3978": {
       "op": "bytec 11 // \"ready\"",
       "defined_out": [
         "\"ready\"",
@@ -31892,7 +32223,7 @@
         "\"ready\""
       ]
     },
-    "3929": {
+    "3980": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%3#0",
@@ -31911,7 +32242,7 @@
         "maybe_exists%3#0"
       ]
     },
-    "3930": {
+    "3981": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -31922,8 +32253,8 @@
         "maybe_value%3#0"
       ]
     },
-    "3931": {
-      "op": "bytec 14 // 0x00",
+    "3982": {
+      "op": "bytec 15 // 0x00",
       "defined_out": [
         "0x00",
         "maybe_value%3#0",
@@ -31941,7 +32272,7 @@
         "0x00"
       ]
     },
-    "3933": {
+    "3984": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
@@ -31953,7 +32284,7 @@
         "0"
       ]
     },
-    "3934": {
+    "3985": {
       "op": "uncover 2",
       "stack_out": [
         "tmp%0#0",
@@ -31965,7 +32296,7 @@
         "maybe_value%3#0"
       ]
     },
-    "3936": {
+    "3987": {
       "op": "setbit",
       "defined_out": [
         "aggregate%encoded_bool%0#0",
@@ -31982,7 +32313,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3937": {
+    "3988": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
@@ -31993,7 +32324,7 @@
         "0"
       ]
     },
-    "3938": {
+    "3989": {
       "op": "bytec_2 // \"registryApp\"",
       "defined_out": [
         "\"registryApp\"",
@@ -32014,7 +32345,7 @@
         "\"registryApp\""
       ]
     },
-    "3939": {
+    "3990": {
       "op": "app_global_get_ex",
       "defined_out": [
         "aggregate%encoded_bool%0#0",
@@ -32035,7 +32366,7 @@
         "maybe_exists%4#0"
       ]
     },
-    "3940": {
+    "3991": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
@@ -32047,7 +32378,7 @@
         "maybe_value%4#0"
       ]
     },
-    "3941": {
+    "3992": {
       "op": "intc_0 // 0",
       "stack_out": [
         "tmp%0#0",
@@ -32059,7 +32390,7 @@
         "0"
       ]
     },
-    "3942": {
+    "3993": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "tmp%0#0",
@@ -32070,7 +32401,7 @@
         "maybe_value%4#0"
       ]
     },
-    "3944": {
+    "3995": {
       "op": "itxn_field ApplicationID",
       "stack_out": [
         "tmp%0#0",
@@ -32080,7 +32411,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3946": {
+    "3997": {
       "op": "pushbytes 0xecb70c0e // method \"updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void\"",
       "defined_out": [
         "Method(updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void)",
@@ -32099,7 +32430,7 @@
         "Method(updatePeriodSummary(uint32,uint32,uint32,uint32,bool)void)"
       ]
     },
-    "3952": {
+    "4003": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "tmp%0#0",
@@ -32109,7 +32440,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3954": {
+    "4005": {
       "op": "uncover 4",
       "stack_out": [
         "tmp%1#0",
@@ -32119,7 +32450,7 @@
         "tmp%0#0"
       ]
     },
-    "3956": {
+    "4007": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "tmp%1#0",
@@ -32128,7 +32459,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3958": {
+    "4009": {
       "op": "uncover 3",
       "stack_out": [
         "tmp%2#0",
@@ -32137,7 +32468,7 @@
         "tmp%1#0"
       ]
     },
-    "3960": {
+    "4011": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "tmp%2#0",
@@ -32145,7 +32476,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3962": {
+    "4013": {
       "op": "uncover 2",
       "stack_out": [
         "tmp%4#0",
@@ -32153,31 +32484,31 @@
         "tmp%2#0"
       ]
     },
-    "3964": {
+    "4015": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "tmp%4#0",
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3966": {
+    "4017": {
       "op": "swap",
       "stack_out": [
         "aggregate%encoded_bool%0#0",
         "tmp%4#0"
       ]
     },
-    "3967": {
+    "4018": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "3969": {
+    "4020": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": []
     },
-    "3971": {
+    "4022": {
       "op": "pushint 6 // appl",
       "defined_out": [
         "appl"
@@ -32186,28 +32517,28 @@
         "appl"
       ]
     },
-    "3973": {
+    "4024": {
       "op": "itxn_field TypeEnum",
       "stack_out": []
     },
-    "3975": {
+    "4026": {
       "op": "intc_0 // 0",
       "stack_out": [
         "0"
       ]
     },
-    "3976": {
+    "4027": {
       "op": "itxn_field Fee",
       "stack_out": []
     },
-    "3978": {
+    "4029": {
       "op": "itxn_submit"
     },
-    "3979": {
+    "4030": {
       "retsub": true,
       "op": "retsub"
     },
-    "3980": {
+    "4031": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureEditable",
       "params": {},
       "block": "ensureEditable",
@@ -32220,7 +32551,7 @@
         "0"
       ]
     },
-    "3981": {
+    "4032": {
       "op": "bytec 11 // \"ready\"",
       "defined_out": [
         "\"ready\"",
@@ -32231,7 +32562,7 @@
         "\"ready\""
       ]
     },
-    "3983": {
+    "4034": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maybe_exists%0#0",
@@ -32242,18 +32573,18 @@
         "maybe_exists%0#0"
       ]
     },
-    "3984": {
+    "4035": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "maybe_value%0#0"
       ]
     },
-    "3985": {
+    "4036": {
       "op": "bz ensureEditable_after_assert@2",
       "stack_out": []
     },
-    "3988": {
+    "4039": {
       "op": "pushbytes \"ERR:GP_RD\"",
       "defined_out": [
         "\"ERR:GP_RD\""
@@ -32262,21 +32593,21 @@
         "\"ERR:GP_RD\""
       ]
     },
-    "3999": {
+    "4050": {
       "op": "log",
       "stack_out": []
     },
-    "4000": {
+    "4051": {
       "error": "ERR:GP_RD",
       "op": "err // ERR:GP_RD"
     },
-    "4001": {
+    "4052": {
       "block": "ensureEditable_after_assert@2",
       "stack_in": [],
       "retsub": true,
       "op": "retsub"
     },
-    "4002": {
+    "4053": {
       "subroutine": "smart_contracts/ggov-period/ggovPeriod.algo.ts::GGovPeriodContract.ensureValidOptions",
       "params": {
         "options#0": "bytes"
@@ -32285,13 +32616,13 @@
       "stack_in": [],
       "op": "proto 1 1"
     },
-    "4005": {
+    "4056": {
       "op": "pushbytes \"\"",
       "stack_out": [
         "lastIndex#0"
       ]
     },
-    "4007": {
+    "4058": {
       "op": "frame_dig -1",
       "defined_out": [
         "options#0 (copy)"
@@ -32301,7 +32632,7 @@
         "options#0 (copy)"
       ]
     },
-    "4009": {
+    "4060": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -32313,7 +32644,7 @@
         "0"
       ]
     },
-    "4010": {
+    "4061": {
       "error": "invalid array length header",
       "op": "extract_uint16 // on error: invalid array length header",
       "defined_out": [
@@ -32324,7 +32655,7 @@
         "length#1"
       ]
     },
-    "4011": {
+    "4062": {
       "op": "dup",
       "defined_out": [
         "length#1"
@@ -32335,14 +32666,14 @@
         "length#1"
       ]
     },
-    "4012": {
+    "4063": {
       "op": "bnz ensureValidOptions_after_assert@2",
       "stack_out": [
         "lastIndex#0",
         "length#1"
       ]
     },
-    "4015": {
+    "4066": {
       "op": "pushbytes \"ERR:GT_NO\"",
       "defined_out": [
         "\"ERR:GT_NO\"",
@@ -32354,18 +32685,18 @@
         "\"ERR:GT_NO\""
       ]
     },
-    "4026": {
+    "4077": {
       "op": "log",
       "stack_out": [
         "lastIndex#0",
         "length#1"
       ]
     },
-    "4027": {
+    "4078": {
       "error": "ERR:GT_NO",
       "op": "err // ERR:GT_NO"
     },
-    "4028": {
+    "4079": {
       "block": "ensureValidOptions_after_assert@2",
       "stack_in": [
         "lastIndex#0",
@@ -32383,7 +32714,7 @@
         "length#1 (copy)"
       ]
     },
-    "4030": {
+    "4081": {
       "op": "intc_2 // 1",
       "defined_out": [
         "1",
@@ -32398,7 +32729,7 @@
         "1"
       ]
     },
-    "4031": {
+    "4082": {
       "op": "-",
       "defined_out": [
         "lastIndex#0",
@@ -32411,7 +32742,7 @@
         "lastIndex#0"
       ]
     },
-    "4032": {
+    "4083": {
       "op": "dup",
       "stack_out": [
         "lastIndex#0",
@@ -32421,7 +32752,7 @@
         "lastIndex#0"
       ]
     },
-    "4033": {
+    "4084": {
       "op": "frame_bury 0",
       "defined_out": [
         "lastIndex#0",
@@ -32434,7 +32765,7 @@
         "lastIndex#0"
       ]
     },
-    "4035": {
+    "4086": {
       "op": "dup",
       "defined_out": [
         "lastIndex#0",
@@ -32449,7 +32780,7 @@
         "lastIndex#0 (copy)"
       ]
     },
-    "4036": {
+    "4087": {
       "op": "uncover 2",
       "stack_out": [
         "lastIndex#0",
@@ -32459,7 +32790,7 @@
         "length#1"
       ]
     },
-    "4038": {
+    "4089": {
       "op": "<",
       "defined_out": [
         "lastIndex#0",
@@ -32473,7 +32804,7 @@
         "tmp%1#0"
       ]
     },
-    "4039": {
+    "4090": {
       "error": "index out of bounds",
       "op": "assert // index out of bounds",
       "stack_out": [
@@ -32482,7 +32813,7 @@
         "lastIndex#0"
       ]
     },
-    "4040": {
+    "4091": {
       "op": "frame_dig -1",
       "defined_out": [
         "lastIndex#0",
@@ -32496,7 +32827,7 @@
         "options#0 (copy)"
       ]
     },
-    "4042": {
+    "4093": {
       "op": "swap",
       "stack_out": [
         "lastIndex#0",
@@ -32505,7 +32836,7 @@
         "lastIndex#0"
       ]
     },
-    "4043": {
+    "4094": {
       "callsub": "_puya_lib.arc4.dynamic_array_read_byte_length_element",
       "op": "callsub dynamic_array_read_byte_length_element",
       "defined_out": [
@@ -32519,7 +32850,7 @@
         "aggregate%item%0#0"
       ]
     },
-    "4046": {
+    "4097": {
       "op": "extract 2 0",
       "defined_out": [
         "lastIndex#0",
@@ -32532,7 +32863,7 @@
         "tmp%4#0"
       ]
     },
-    "4049": {
+    "4100": {
       "op": "bytec 27 // \"Abstain\"",
       "defined_out": [
         "\"Abstain\"",
@@ -32547,7 +32878,7 @@
         "\"Abstain\""
       ]
     },
-    "4051": {
+    "4102": {
       "op": "==",
       "defined_out": [
         "lastIndex#0",
@@ -32560,14 +32891,14 @@
         "tmp%5#0"
       ]
     },
-    "4052": {
+    "4103": {
       "op": "bnz ensureValidOptions_after_assert@4",
       "stack_out": [
         "lastIndex#0",
         "length#1"
       ]
     },
-    "4055": {
+    "4106": {
       "op": "bytec 28 // \"ERR:GT_OA\"",
       "defined_out": [
         "\"ERR:GT_OA\"",
@@ -32580,18 +32911,18 @@
         "\"ERR:GT_OA\""
       ]
     },
-    "4057": {
+    "4108": {
       "op": "log",
       "stack_out": [
         "lastIndex#0",
         "length#1"
       ]
     },
-    "4058": {
+    "4109": {
       "error": "ERR:GT_OA",
       "op": "err // ERR:GT_OA"
     },
-    "4059": {
+    "4110": {
       "block": "ensureValidOptions_after_assert@4",
       "stack_in": [
         "lastIndex#0",
@@ -32607,7 +32938,7 @@
         "i#0"
       ]
     },
-    "4060": {
+    "4111": {
       "block": "ensureValidOptions_while_top@5",
       "stack_in": [
         "lastIndex#0",
@@ -32625,7 +32956,7 @@
         "i#0 (copy)"
       ]
     },
-    "4061": {
+    "4112": {
       "op": "frame_dig 0",
       "defined_out": [
         "i#0 (copy)",
@@ -32639,7 +32970,7 @@
         "lastIndex#0"
       ]
     },
-    "4063": {
+    "4114": {
       "op": "<",
       "defined_out": [
         "lastIndex#0",
@@ -32652,7 +32983,7 @@
         "tmp%6#0"
       ]
     },
-    "4064": {
+    "4115": {
       "op": "bz ensureValidOptions_after_while@9",
       "stack_out": [
         "lastIndex#0",
@@ -32660,7 +32991,7 @@
         "i#0"
       ]
     },
-    "4067": {
+    "4118": {
       "op": "dupn 2",
       "defined_out": [
         "i#0",
@@ -32675,7 +33006,7 @@
         "i#0 (copy)"
       ]
     },
-    "4069": {
+    "4120": {
       "op": "dig 3",
       "defined_out": [
         "i#0",
@@ -32692,7 +33023,7 @@
         "length#1 (copy)"
       ]
     },
-    "4071": {
+    "4122": {
       "op": "<",
       "defined_out": [
         "i#0",
@@ -32707,7 +33038,7 @@
         "tmp%1#0"
       ]
     },
-    "4072": {
+    "4123": {
       "error": "index out of bounds",
       "op": "assert // index out of bounds",
       "stack_out": [
@@ -32717,7 +33048,7 @@
         "i#0"
       ]
     },
-    "4073": {
+    "4124": {
       "op": "frame_dig -1",
       "defined_out": [
         "i#0",
@@ -32732,7 +33063,7 @@
         "options#0 (copy)"
       ]
     },
-    "4075": {
+    "4126": {
       "op": "swap",
       "stack_out": [
         "lastIndex#0",
@@ -32742,7 +33073,7 @@
         "i#0"
       ]
     },
-    "4076": {
+    "4127": {
       "callsub": "_puya_lib.arc4.dynamic_array_read_byte_length_element",
       "op": "callsub dynamic_array_read_byte_length_element",
       "defined_out": [
@@ -32757,7 +33088,7 @@
         "aggregate%item%1#0"
       ]
     },
-    "4079": {
+    "4130": {
       "op": "extract 2 0",
       "defined_out": [
         "i#0",
@@ -32771,7 +33102,7 @@
         "tmp%7#0"
       ]
     },
-    "4082": {
+    "4133": {
       "op": "bytec 27 // \"Abstain\"",
       "defined_out": [
         "\"Abstain\"",
@@ -32787,7 +33118,7 @@
         "\"Abstain\""
       ]
     },
-    "4084": {
+    "4135": {
       "op": "!=",
       "defined_out": [
         "i#0",
@@ -32801,7 +33132,7 @@
         "tmp%8#0"
       ]
     },
-    "4085": {
+    "4136": {
       "op": "bnz ensureValidOptions_after_assert@8",
       "stack_out": [
         "lastIndex#0",
@@ -32809,7 +33140,7 @@
         "i#0"
       ]
     },
-    "4088": {
+    "4139": {
       "op": "bytec 28 // \"ERR:GT_OA\"",
       "defined_out": [
         "\"ERR:GT_OA\"",
@@ -32823,7 +33154,7 @@
         "\"ERR:GT_OA\""
       ]
     },
-    "4090": {
+    "4141": {
       "op": "log",
       "stack_out": [
         "lastIndex#0",
@@ -32831,11 +33162,11 @@
         "i#0"
       ]
     },
-    "4091": {
+    "4142": {
       "error": "ERR:GT_OA",
       "op": "err // ERR:GT_OA"
     },
-    "4092": {
+    "4143": {
       "block": "ensureValidOptions_after_assert@8",
       "stack_in": [
         "lastIndex#0",
@@ -32854,7 +33185,7 @@
         "1"
       ]
     },
-    "4093": {
+    "4144": {
       "op": "+",
       "defined_out": [
         "i#0"
@@ -32865,10 +33196,10 @@
         "i#0"
       ]
     },
-    "4094": {
+    "4145": {
       "op": "b ensureValidOptions_while_top@5"
     },
-    "4097": {
+    "4148": {
       "block": "ensureValidOptions_after_while@9",
       "stack_in": [
         "lastIndex#0",
@@ -32886,10 +33217,10 @@
         "options#0 (copy)"
       ]
     },
-    "4099": {
+    "4150": {
       "op": "frame_bury 0"
     },
-    "4101": {
+    "4152": {
       "retsub": true,
       "op": "retsub"
     }

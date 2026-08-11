@@ -88,7 +88,7 @@ export class GGovPeriodContract extends BaseContract {
   periodBody = Box<bytes>({ key: 'P' })
   /** Topic body JSON by topicIndex */
   topicBodies = BoxMap<Uint32, bytes>({ keyPrefix: TOPIC_BODY_BOX_PREFIX }) // squatting key prefix to avoid collisions; code uses op.Box for splicing/resizing
-  /** Per-voter vote record, keyed by voter Account */
+  /** Per-voter vote record, keyed by voter Account. MBR is pulled from the registry on demand via `checkNeedMBR`. */
   voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
 
   // ── Lifecycle ────────────────────────────────────────────────────
@@ -154,6 +154,27 @@ export class GGovPeriodContract extends BaseContract {
   /** Caller must match the registry's operator. */
   protected ensureCallerIsOperator(): void {
     loggedAssert(Txn.sender === this.resolveOperator(), errUnauthorized)
+  }
+
+  /**
+   * Post-condition: if this app account is at or below its minimum balance, pull a top-up from the
+   * registry. The minimum balance requirement itself is enforced for the transaction as a whole, so
+   * an app's account `balance` can be lower than its `minBalance` within the execution of the (outer)
+   * transaction.
+   *
+   * NOTE: pays its own fee, against the usual `fee: 0` pooling rule. The top-up is conditional on a
+   * balance another voter can move between simulate and execution, so with pooling a group that
+   * simulated without it could not cover the extra fee. Own fees make the voter's group fee invariant.
+   * Its counterpart does the same - see `GGovRegistry.requestMBR`.
+   */
+  protected checkNeedMBR(): void {
+    const app = Global.currentApplicationAddress
+    if (app.balance > app.minBalance) return
+    compileArc4(GGovRegistryContract).call.requestMBR({
+      appId: Application(this.registryApp.value),
+      args: [u32(this.periodId.value)],
+      fee: Global.minTxnFee,
+    })
   }
 
   /**
@@ -376,6 +397,8 @@ export class GGovPeriodContract extends BaseContract {
    * Sender can be the voter (not delegated) or the delegatee (delegated). Delegation is verified via an inner-call to the registry.
    * Votes are tallied into global topic vote counts, and the voter's individual vote record is updated.
    * Re-votes are allowed and will overwrite the previous vote; if re-voting via delegation, the delegation override guard applies (a delegatee cannot override a direct vote by the delegator).
+   *
+   * Vote record MBR is paid by the period app account on an account's first vote. A top-up is requested from the registry via inner call when needed; see the `checkNeedMBR` post-condition.
    * @param voterAccount Account with voting power
    * @param topicVotes Votes per topic, parallel to the period's topics/options. Each topic's votes are an array of Uint32, parallel to that topic's options, with the count of votes for each option. The sum of every topic's votes must equal the voter's total voting power (enforced in code, not ABI).
    */
@@ -465,6 +488,8 @@ export class GGovPeriodContract extends BaseContract {
       isDelegated: isDelegated,
       topicVotes: clone(newTopicVotes),
     }
+    // Must stay after the vote record write
+    this.checkNeedMBR()
   }
 
   /** Whether an account can vote and the resulting voting power. Returns [false, 0] in any rejection case. */

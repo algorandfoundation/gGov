@@ -99,6 +99,8 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** Operator address (manages periods on spawned ggov-period apps) */
   operator = GlobalState<Account>()
+  /** microALGO sent to a period per `requestMBR` top-up. Configurable via `setMBRTopUp`. */
+  mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
   /** Auto-increment period IDs */
   lastPeriodId = GlobalState<uint64>({ initialValue: 0 })
   /** Per-period summary: periodId → { appId, votingStart, votingEnd, numTopics } */
@@ -293,6 +295,21 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
     loggedAssert(newAdmin !== Global.zeroAddress, errUnauthorized)
     this.admin.value = newAdmin
+  }
+
+  /**
+   * Set the amount sent per `requestMBR`. Admin only. Economic parameter: it trades how often periods
+   * request against how much ALGO sits as available balance buffer in them. Leftovers always recoverable
+   * via `withdrawALGO`.
+   *
+   * Unguarded, but keep it well above one vote record's max MBR; recommended: greater than 0.4 ALGO.
+   * 393,700 microALGO at the largest shape `GGovVoteCast` could emit (1024 bytes), plus the 1,000
+   * `requestMBR` fee; below that, votes could start failing.
+   * @param amount microALGO sent to a period per `requestMBR` call
+   */
+  public setMBRTopUp(amount: uint64): void {
+    this.ensureCallerIsAdmin()
+    this.mbrTopUp.value = amount
   }
 
   /**
@@ -722,6 +739,38 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     loggedAssert(box.exists, errGGovPeriodNotExists)
     loggedAssert(Global.callerApplicationId === box.value.appId, errUnauthorized)
     box.delete()
+  }
+
+  /**
+   * Send `mbrTopUp` amount to the period registered under `periodId`. Called as an inner txn by that
+   * same period when writing a box vote record left it below its minimum balance.
+   * Policy: users never pay for vote record boxes MBR.
+   *
+   * Trust boundary: caller-app ID must match the appId registered for `periodId`, same as
+   * `updatePeriodSummary` and `removePeriodSummary`. Unlike a frac instance — which can be rebound to
+   * a replacement registry via `setRegistryApp` — a period binds its registry once in `init`, so today
+   * the registered appId and the app creator coincide. Matching on the registered appId anyway keeps
+   * all three period-callable methods on one rule, and stays correct if periods ever gain a rebinding
+   * path.
+   *
+   * NOTE: pays its own fee, against the usual `fee: 0` pooling rule. The top-up is conditional on a
+   * balance another voter can move between simulate and execution, so with pooling a group that
+   * simulated without it could not cover the extra fee. Own fees make the voter's group fee invariant.
+   * Its counterpart does the same - see `GGovPeriod.checkNeedMBR`.
+   * @param periodId Numeric ID of the calling period
+   */
+  public requestMBR(periodId: Uint32): void {
+    const box = this.periods(periodId)
+    loggedAssert(box.exists, errGGovPeriodNotExists)
+    const periodApp = Application(box.value.appId)
+    loggedAssert(Global.callerApplicationId === periodApp.id, errUnauthorized)
+    itxn
+      .payment({
+        receiver: periodApp.address,
+        amount: this.mbrTopUp.value,
+        fee: Global.minTxnFee,
+      })
+      .submit()
   }
 
   /** Get the spawned period app ID for `periodId` (0 if unknown). */
