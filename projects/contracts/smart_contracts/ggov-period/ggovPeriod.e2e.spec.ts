@@ -1117,6 +1117,31 @@ describe('GGovPeriod contract', () => {
       expect(record!.topicVotes[0]).toEqual([10, 0, 0])
     })
 
+    test('a delegated vote requests an MBR top-up too', async () => {
+      const ctx = await setupVoting()
+      const voter = ctx.govAccounts[0]
+      const delegatee = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await createUserSDK(localnet, ctx.appClient.appId, voter).registry.setVotingAccount({
+        votingAddress: delegatee.toString(),
+      })
+      const leftover = VOTE_RECORD_MBR / 3n
+      await drainPeriodTo(ctx, leftover)
+      const registryBefore = await registryAvailable(ctx)
+
+      const result = await createUserSDK(localnet, ctx.appClient.appId, delegatee).vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.toString(),
+        topicVotes: [[10, 0, 0]],
+      })
+
+      // 3 = getDelegate + getGovVotingPower + requestMBR.
+      expect(voteInnerTxnCount(result)).toBe(3)
+      expect(await registryAvailable(ctx)).toBe(registryBefore - MBR_TOP_UP - REQUEST_FEE)
+      expect(await periodAvailable(ctx)).toBe(leftover + MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      const record = await ctx.sdk.getVotingRecord(ctx.periodId, voter.toString())
+      expect(record!.topicVotes[0]).toEqual([10, 0, 0])
+    })
+
     test('a re-vote costs no MBR: one microALGO of headroom carries it', async () => {
       const ctx = await setupVoting()
       const voter = ctx.govAccounts[0]
