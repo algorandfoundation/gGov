@@ -2,6 +2,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Address, generateAccount, getApplicationAddress } from 'algosdk'
 import { FracDelegationInstanceClient, FracDelegationSDK } from 'frac-delegation-sdk'
+import { instanceBoxName } from '../../../frac-delegation-sdk/src/util/boxes'
 import { GGovCommitteeFile, GGovSDK } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -930,12 +931,9 @@ describe('FracDelegationInstance vote', () => {
       expect(await registryAvailable(localnet, ctx)).toBe(vaultAfterFirst - MBR_TOP_UP - REQUEST_FEE)
 
       const registryAppId = ctx.registrySdk.appId
-      // 'i' + uint16(instanceNumId), matching BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' }).
-      const expectedName = new Uint8Array([
-        ...Buffer.from('i'),
-        Number(ctx.instanceId) >> 8,
-        Number(ctx.instanceId) & 0xff,
-      ])
+      // Presence of the reference is what this test owns. That its bytes match the contract's
+      // `instances` prefix is boxNames.spec.ts's job.
+      const expectedName = instanceBoxName(ctx.instanceId)
       // The vote app call is the group's last txn; the reference pads come before it.
       const voteCall = (r: typeof voteNoTopUp) => r.transactions[r.transactions.length - 1]
 

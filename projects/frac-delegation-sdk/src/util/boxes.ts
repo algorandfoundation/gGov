@@ -1,6 +1,3 @@
-import { ABIType } from 'algosdk'
-import { APP_SPEC } from '../generated/FracDelegationRegistryClient'
-
 /** Detects the algod "box not found" 404 raised when reading a box key that has no entry. */
 export function isBoxNotFoundError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e)
@@ -17,9 +14,10 @@ export async function undefinedIfBoxMissing<T>(read: () => Promise<T>): Promise<
   }
 }
 
-/** Box name for the registry's `instances` entry, for use as an explicit box reference. */
-export function instanceBoxName(instanceNumId: number): Uint8Array {
-  const map = APP_SPEC.state!.maps!.box!.instances
-  const prefix = new Uint8Array(Buffer.from(map.prefix!, 'base64'))
-  return new Uint8Array([...prefix, ...ABIType.from(map.keyType).encode(instanceNumId)])
+/** Box name for the registry's `instances` entry: 'i' (0x69) followed by the big-endian uint16 instanceNumId. */
+export function instanceBoxName(instanceNumId: number | bigint): Uint8Array {
+  const name = new Uint8Array(3)
+  name[0] = 0x69 // 'i'
+  new DataView(name.buffer).setUint16(1, Number(instanceNumId))
+  return name
 }
