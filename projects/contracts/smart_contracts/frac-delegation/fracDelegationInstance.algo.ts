@@ -877,7 +877,7 @@ export class FracDelegationInstanceContract extends BaseContract {
    * accounts that delegated to this instance's app address and must NEVER vote directly - a direct
    * vote is unoverridable in the same way and would brick external casting for the period.
    *
-   * Vote record MBR is paid by the period app account on an account's first vote. A top-up is
+   * Vote record MBR is paid by the instance app account on an account's first vote. A top-up is
    * requested from the registry via inner call when needed; see the `checkNeedMBR` post-condition.
    * Fees for the other inner calls come from the outer group's pool; the MBR ones are the exception
    * and pay their own, so the voter's group fee does not depend on whether the top-up fires.
