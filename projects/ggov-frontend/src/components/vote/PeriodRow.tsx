@@ -1,28 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import type { GGovPeriod } from 'ggov-sdk'
-import { Badge } from '@/components/ui/badge'
 import { ClampedMarkdown } from '@/components/ui/clamped-markdown'
+import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import { usePeriodBody } from '@/hooks/queries'
-import { periodStatus, formatDateRange, type PeriodStatus } from '@/utils/time'
+import { periodStatus, formatDateRange } from '@/utils/time'
 import { toPlainText } from '@/utils/format'
 import { periodCountLabel } from '@/utils/periodTerms'
 import { cn } from '@/lib/utils'
-
-/** Design status tones. "ended" reads as "Closed" — pass/reject outcome isn't
- *  derivable on-chain yet (TODO(FLAG): tone closed periods by result). */
-const STATUS_BADGE: Record<PeriodStatus, { label: string; className: string }> = {
-  active: { label: 'Active', className: 'border-transparent bg-algo-teal text-[#001324]' },
-  upcoming: {
-    label: 'Upcoming',
-    className: 'border-transparent bg-primary/10 text-primary dark:bg-algo-blue dark:text-white',
-  },
-  ended: { label: 'Closed', className: 'border-transparent bg-muted text-muted-foreground' },
-}
-
-export function PeriodStatusTag({ status, className }: { status: PeriodStatus; className?: string }) {
-  const cfg = STATUS_BADGE[status]
-  return <Badge className={cn(cfg.className, className)}>{cfg.label}</Badge>
-}
 
 /** Shared desktop column template for the periods table header + rows. The
  *  ballot column is wide enough for "2 elections", the longest label
@@ -61,7 +45,7 @@ export default function PeriodRow({ periodId, period }: Props) {
         <span className="text-[13px]">{formatDateRange(period.votingStart, period.votingEnd)}</span>
         <span className="text-[13px]">{countLabel}</span>
         <span className="justify-self-end">
-          <PeriodStatusTag status={status} />
+          <PeriodStatusBadge status={status} />
         </span>
       </div>
 
@@ -69,7 +53,7 @@ export default function PeriodRow({ periodId, period }: Props) {
       <div className="p-4 md:hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <PeriodStatusTag status={status} />
+            <PeriodStatusBadge status={status} />
             <span>Period {periodId}</span>
           </div>
           <span className="text-xs text-muted-foreground">{countLabel}</span>
