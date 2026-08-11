@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { ABIType, ABIValue, Address, encodeAddress, getApplicationAddress } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistrySDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
+import { periodBoxName } from '../../../ggov-sdk/src/util/boxNames'
 import { GGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
@@ -1204,10 +1205,9 @@ describe('GGovPeriod contract', () => {
       expect(await registryAvailable(ctx)).toBe(vaultAfterFirst - MBR_TOP_UP - REQUEST_FEE)
 
       const registryAppId = ctx.appClient.appId
-      // 'p' + big-endian uint32(periodId), matching BoxMap<Uint32, GGovPeriodSummary>({ keyPrefix: 'p' }).
-      const expectedName = new Uint8Array(5)
-      expectedName[0] = 0x70
-      new DataView(expectedName.buffer).setUint32(1, Number(ctx.periodId))
+      // Presence of the reference is what this test owns. That its bytes match the contract's
+      // `periods` prefix is boxNames.spec.ts's job.
+      const expectedName = periodBoxName(ctx.periodId)
       // The vote app call is the group's last txn; the reference pads come before it.
       const voteCall = (r: typeof voteNoTopUp) => r.transactions[r.transactions.length - 1]
 

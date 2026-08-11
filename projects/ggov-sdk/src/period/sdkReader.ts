@@ -14,6 +14,7 @@ import {
 import { getConstructorConfig } from '../networkConfig'
 import { PeriodBodyJson, TopicBodyJson, parsePeriodBodyJson, parseTopicBodyJson, ReaderConstructorArgs } from './types'
 import { assertUint } from '../util/assertUint'
+import { asciiBoxName, topicBodyBoxName } from '../util/boxNames'
 import { chunked } from '../util/chunked'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors'
 
@@ -272,9 +273,7 @@ export class GGovReaderSDK {
     assertUint(periodId, 64, 'periodId')
     try {
       const appId = await this.getPeriodAppId(periodId)
-      const key = new Uint8Array(1)
-      key[0] = 0x50 // 'P'
-      const raw = await this.algorand.app.getBoxValue(appId, key)
+      const raw = await this.algorand.app.getBoxValue(appId, asciiBoxName('P'))
       return parsePeriodBodyJson(raw)
     } catch {
       return null
@@ -294,11 +293,7 @@ export class GGovReaderSDK {
     const topicIndexArg = Number(assertUint(topicIndex, 32, 'topicIndex'))
     try {
       const appId = await this.getPeriodAppId(periodId)
-      const key = new Uint8Array(5)
-      key[0] = 0x54 // 'T'
-      const view = new DataView(key.buffer)
-      view.setUint32(1, topicIndexArg)
-      const raw = await this.algorand.app.getBoxValue(appId, key)
+      const raw = await this.algorand.app.getBoxValue(appId, topicBodyBoxName(topicIndexArg))
       return parseTopicBodyJson(raw)
     } catch {
       return null
