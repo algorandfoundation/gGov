@@ -1,7 +1,7 @@
 import { Arc56Contract } from '@algorandfoundation/algokit-utils/types/app-arc56'
 import { ABIType, ABIValue, base64ToBytes } from 'algosdk'
 import { describe, expect, test } from 'vitest'
-import { instanceBoxName } from '../../frac-delegation-sdk/src/util/boxes'
+import { instanceBoxName, periodBoxName as fracPeriodBoxName } from '../../frac-delegation-sdk/src/util/boxes'
 import { asciiBoxName, periodBoxName, topicBodyBoxName } from '../../ggov-sdk/src/util/boxNames'
 import { APP_SPEC as FRAC_REGISTRY_SPEC } from './artifacts/frac-delegation/FracDelegationRegistryClient'
 import { APP_SPEC as GGOV_PERIOD_SPEC } from './artifacts/ggov-period/GGovPeriodClient'
@@ -37,6 +37,13 @@ describe('box name helpers match the compiled ARC-56 specs', () => {
     // encoder that writes the key little-endian.
     test.each([0n, 1n, UINT32_MAX])('periodBoxName(%s) matches GGovRegistry `periods`', (periodId) => {
       expect(hex(periodBoxName(periodId))).toBe(hex(mapBoxName(GGOV_REGISTRY_SPEC, 'periods', periodId)))
+    })
+
+    // frac-delegation-sdk carries its own copy: it declares the same gGov registry box for the
+    // `GGovPeriod.vote` nested inside a frac vote, and the two SDK packages share no code. Pinned
+    // against the same spec so the copies cannot drift apart silently.
+    test.each([0n, 1n, UINT32_MAX])("frac's periodBoxName(%s) matches GGovRegistry `periods`", (periodId) => {
+      expect(hex(fracPeriodBoxName(periodId))).toBe(hex(mapBoxName(GGOV_REGISTRY_SPEC, 'periods', periodId)))
     })
 
     test.each([0n, 1n, UINT32_MAX])('topicBodyBoxName(%s) matches GGovPeriod `topicBodies`', (topicIndex) => {
