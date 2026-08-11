@@ -7,7 +7,7 @@ import { Eyebrow } from '@/components/ui/eyebrow'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import FocusedPeriodHero from '@/components/vote/FocusedPeriodHero'
-import { PeriodStatusTag } from '@/components/vote/PeriodRow'
+import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 
 /** Compact row in the "Other periods" list — links to the period detail page. */
 function OtherPeriodRow({ periodId, period }: { periodId: number; period: GGovPeriod }) {
@@ -19,7 +19,7 @@ function OtherPeriodRow({ periodId, period }: { periodId: number; period: GGovPe
       params={{ periodId: String(periodId) }}
       className="group flex items-center gap-3.5 border-t border-border py-3.5"
     >
-      <PeriodStatusTag status={status} />
+      <PeriodStatusBadge status={status} />
       <span className="min-w-0 flex-1 truncate text-sm font-semibold transition-colors group-hover:text-algo-blue dark:group-hover:text-algo-teal">
         {body?.title ?? `Period ${periodId}`}
       </span>
