@@ -4,3 +4,4 @@
 *.arc32.json linguist-generated
 *.arc56.json linguist-generated
 **/artifacts/*/*Client.ts linguist-generated
+**/src/generated/*Client.ts linguist-generated
