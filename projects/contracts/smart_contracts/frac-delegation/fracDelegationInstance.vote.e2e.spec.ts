@@ -862,6 +862,29 @@ describe('FracDelegationInstance vote', () => {
       expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
     }, 120_000)
 
+    test('a delegated vote requests an MBR top-up too', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+      const leftover = VOTE_RECORD_MBR / 3n
+      await drainInstanceTo(localnet, ctx, leftover)
+      const registryAvailableBefore = await registryAvailable(localnet, ctx)
+
+      const result = await delegatee.sdk.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.account.toString(),
+        topicVotes: [[50, 30, 20]],
+      })
+
+      // 6 = the delegated path's 5 (gGov getDelegate + registry getAccount + 3 escrow casts) + requestMBR.
+      expect(voteInnerTxnCount(result)).toBe(6)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
+    }, 120_000)
+
     test('a re-vote costs no MBR: one microALGO of headroom carries it', async () => {
       const ctx = await setupVoting(localnet)
       const voter = await addVoter(localnet, ctx, 100)
