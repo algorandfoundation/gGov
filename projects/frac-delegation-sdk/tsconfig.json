@@ -4,7 +4,7 @@
     "declaration": true,
     "target": "ES2022",
     "moduleResolution": "node",
-    "module": "ES2022",
+    "module": "commonjs",
     "types": ["node"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
