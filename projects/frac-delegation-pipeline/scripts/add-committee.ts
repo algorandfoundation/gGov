@@ -30,7 +30,6 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { GGovRegistrySDK } from 'ggov-sdk'
 import type { GGovCommitteeFile } from 'ggov-sdk'
 import {
-  CjsAlgorandClient,
   COMMITTEE_PERIOD_END,
   COMMITTEE_PERIOD_START,
   ESCROW_VOTES,
@@ -64,7 +63,7 @@ async function main() {
   step('Reading seed file…')
 
   const seed = readSeedFile()
-  const algorand = CjsAlgorandClient.defaultLocalNet()
+  const algorand = AlgorandClient.defaultLocalNet()
   const network = await algorand.client.network()
 
   // The registries were created by the first seed's deployer, so only it can upload a committee.
@@ -88,7 +87,6 @@ async function main() {
 
   step('Reading escrows off mainnet…')
 
-  // The ESM client: reti-ghost-sdk resolves a different algosdk than the CJS SDKs above.
   const escrows = await fetchEscrows(AlgorandClient.fromEnvironment(), SOURCES)
 
   // What changed relative to the previous committee, derived rather than restated so they cannot drift.

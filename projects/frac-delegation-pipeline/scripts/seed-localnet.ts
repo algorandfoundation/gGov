@@ -41,7 +41,6 @@ import { GGovRegistrySDK } from 'ggov-sdk'
 import { FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import type { GGovCommitteeFile } from 'ggov-sdk'
 import {
-  CjsAlgorandClient,
   COMMITTEE_PERIOD_END,
   COMMITTEE_PERIOD_START,
   ESCROW_VOTES,
@@ -87,7 +86,7 @@ async function main() {
   execSync('algokit localnet reset', { stdio: 'inherit' })
   await new Promise((r) => setTimeout(r, 3000)) // give localnet a moment to come back up
 
-  const algorand = CjsAlgorandClient.defaultLocalNet()
+  const algorand = AlgorandClient.defaultLocalNet()
   const network = await algorand.client.network()
   const dispenser = await algorand.account.localNetDispenser()
 
@@ -103,7 +102,6 @@ async function main() {
 
   step('Reading real escrows off mainnet…')
 
-  // The ESM client: reti-ghost-sdk resolves a different algosdk than the CJS SDKs above.
   const escrows = await fetchEscrows(AlgorandClient.fromEnvironment(), SOURCES)
   const escrowInstances = instanceNames(escrows)
 
