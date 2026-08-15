@@ -35,131 +35,54 @@
  * 5) Write the seed file and print the summary.
  */
 
-import { createRequire } from 'node:module'
-import { createHash } from 'node:crypto'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { RetiGhostSDK } from 'reti-ghost-sdk'
 import { GGovRegistrySDK } from 'ggov-sdk'
 import { FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import type { GGovCommitteeFile } from 'ggov-sdk'
-import { RETI_REGISTRY_APP_ID, TALGO_APP_ID } from '../src/pipeline.ts'
+import {
+  CjsAlgorandClient,
+  COMMITTEE_PERIOD_END,
+  COMMITTEE_PERIOD_START,
+  ESCROW_VOTES,
+  GOV_VOTES,
+  algosdk,
+  byInstance,
+  configLogger,
+  deterministicAccount,
+  fetchEscrows,
+  hex,
+  instanceNames,
+  num,
+  printSections,
+  writeSeedFile,
+  type SeedAccount,
+} from './seed-common.ts'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-// CJS copy for everything touching the local SDKs, rooted at the ggov-sdk dist.
-// See `discoveryAlgorand` in FracPipelineArgs for why the realms have to stay apart.
-const require = createRequire(fileURLToPath(new URL('../../ggov-sdk/dist/index.js', import.meta.url)))
-const { AlgorandClient: CjsAlgorandClient, Config } = require('@algorandfoundation/algokit-utils') as {
-  AlgorandClient: typeof AlgorandClient
-  Config: { configure: (c: Record<string, unknown>) => void }
-}
-const algosdk = require('algosdk') as typeof import('algosdk')
-
-Config.configure({
-  logger: { error: console.error, warn: console.warn, info: () => {}, verbose: () => {}, debug: () => {} },
-})
+configLogger()
 
 // =========================================================
 // SEED DEFINITION
 // =========================================================
 
-/** Namespace for deterministic key derivation. Change it and every generated address changes. */
-const SEED_NAMESPACE = 'frac-pipeline-localnet'
-
-/** Committee 1 and committee 2 windows, in rounds. */
-const COMMITTEE_PERIOD_START = 60_000_000
-const COMMITTEE_PERIOD_END = 63_000_000
-
-/** Shape of the staking sources which escrows are present in the committee - what gets written on-chain. */
+/**
+ * Shape of the staking sources whose escrows are present in the committee. Since this is the first seed,
+ * all of the instances are created and all escrows are registered for the first time.
+ */
 const SOURCES = {
-  /**
-   * Reti validator ids. Every pool of each becomes an escrow.
-   * # of pools per validator: 1->2, 2->1, 15->1. Total escrows: 4.
-   */
+  /** Reti validator ids. Every pool of each becomes an escrow. */
   reti: [1, 2, 15],
-  /** tALGO `account_N` slots. Slot 0 is the app itself, so it is never a useful escrow. */
-  talgo: [1, 2],
+  /** tALGO `account_N` slots. */
+  talgo: [0, 1],
 }
-
-/** Generated committee members: label → voting power. None of them vote in this seed. */
-const GOV_VOTES: Record<string, number> = {
-  g1: 520,
-  g2: 460,
-  g3: 90,
-  g4: 215,
-  g5: 25,
-  g6: 360,
-  g7: 140,
-  g8: 570,
-}
-
-/** Voting power handed to every real escrow. Escrows hold gGov power but never cast it themselves. */
-const ESCROW_VOTES = 900
 
 /** ALGO for the deployer. It is the only account that signs anything here. */
 const DEPLOYER_FUNDING = 300
 
-// =========================================================
-// HELPERS
-// =========================================================
-
-const hex = (bytes: Uint8Array) =>
-  Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-const num = (n: number) => n.toLocaleString('en-US')
-// const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`
-
 let stepNumber = 0
 const step = (label: string) => console.log(`[${++stepNumber}/5] ${label}`)
 
-type SeedAccount = { label: string; address: string; sk: Uint8Array; mnemonic: string }
-
-/** Derive an account from its label alone, so every run yields the same addresses and mnemonics. */
-function deterministicAccount(label: string): SeedAccount {
-  const seed = new Uint8Array(createHash('sha512-256').update(`${SEED_NAMESPACE}:${label}`).digest())
-  const mnemonic = algosdk.mnemonicFromSeed(seed)
-  const { addr, sk } = algosdk.mnemonicToSecretKey(mnemonic)
-  return { label, address: addr.toString(), sk, mnemonic }
-}
-
-/** An escrow the pipeline will discover: which instance it belongs to, and its real mainnet address. */
-type Escrow = { instance: string; address: string; source: 'reti' | 'talgo' }
-
-/**
- * Read the escrows named in SOURCES off mainnet. Instance names must match what the pipeline
- * generates during discovery, since the reconciliation join is on the name string.
- */
-async function fetchRealEscrows(mainnet: AlgorandClient): Promise<Escrow[]> {
-  const retiSdk = new RetiGhostSDK({ algorand: mainnet, registryAppId: RETI_REGISTRY_APP_ID })
-  const pools = await retiSdk.getPools(SOURCES.reti)
-  const reti: Escrow[] = SOURCES.reti.flatMap((validatorId, i) =>
-    pools[i].map((p) => ({
-      instance: `Reti #${validatorId}`,
-      address: algosdk.getApplicationAddress(p.poolAppId).toString(),
-      source: 'reti' as const,
-    })),
-  )
-
-  const state = await mainnet.app.getGlobalState(TALGO_APP_ID)
-  const talgo: Escrow[] = SOURCES.talgo.map((slot) => {
-    const entry = state[`account_${slot}`]
-    if (!entry || !('valueRaw' in entry)) throw new Error(`talgo: app ${TALGO_APP_ID} has no account_${slot}`)
-    return { instance: 'Tinyman tALGO', address: algosdk.encodeAddress(entry.valueRaw), source: 'talgo' as const }
-  })
-
-  return [...reti, ...talgo]
-}
-
 async function main() {
-  // =========================================================
-  // 1. RESET & ACCOUNTS
-  // =========================================================
-
   step('Resetting LocalNet…')
   execSync('algokit localnet reset', { stdio: 'inherit' })
   await new Promise((r) => setTimeout(r, 3000)) // give localnet a moment to come back up
@@ -178,24 +101,11 @@ async function main() {
   const addr = (label: string) => accounts.get(label)!.address
   const deployer = addr('deployer')
 
-  // =========================================================
-  // 2. REAL ESCROWS OFF MAINNET
-  // =========================================================
-
   step('Reading real escrows off mainnet…')
 
   // The ESM client: reti-ghost-sdk resolves a different algosdk than the CJS SDKs above.
-  const escrows = await fetchRealEscrows(AlgorandClient.fromEnvironment())
-  const escrowInstances = [...new Set(escrows.map((e) => e.instance))]
-
-  // A repeat here would make the pipeline throw `Repeated escrows found across sources` far downstream.
-  if (new Set(escrows.map((e) => e.address)).size !== escrows.length) {
-    throw new Error('SOURCES produced a repeated escrow address')
-  }
-
-  // =========================================================
-  // 3. REGISTRIES
-  // =========================================================
+  const escrows = await fetchEscrows(AlgorandClient.fromEnvironment(), SOURCES)
+  const escrowInstances = instanceNames(escrows)
 
   step('Deploying registries…')
 
@@ -221,10 +131,6 @@ async function main() {
   })
   await sdk.setFracRegistryApp({ appId: fracRegistryApp.appId }) // gGov → frac, the other direction
 
-  // =========================================================
-  // 4. COMMITTEE
-  // =========================================================
-
   step('Uploading committee file…')
 
   const govs = [
@@ -243,33 +149,18 @@ async function main() {
   const committeeId = await sdk.uploadCommitteeFile(committeeFile)
   const committeeIdB64 = Buffer.from(committeeId).toString('base64')
 
-  // =========================================================
-  // 5. OUTPUT
-  // =========================================================
-
   step('Writing seed file…')
 
-  const seedPath = path.resolve(__dirname, '../.localnet-seed.json')
-  fs.writeFileSync(
-    seedPath,
-    `${JSON.stringify(
-      {
-        gGovRegistryAppId: Number(gGovRegistryApp.appId),
-        fracRegistryAppId: Number(fracRegistryApp.appId),
-        committeeId: committeeIdB64,
-        // What the pipeline should create on its first run against this seed.
-        expectedInstances: escrowInstances.map((instance) => ({
-          name: instance,
-          escrows: escrows.filter((e) => e.instance === instance).map((e) => e.address),
-        })),
-        accounts: Object.fromEntries(
-          [...accounts.values()].map((a) => [a.label, { address: a.address, mnemonic: a.mnemonic }]),
-        ),
-      },
-      null,
-      2,
-    )}\n`,
-  )
+  writeSeedFile({
+    gGovRegistryAppId: Number(gGovRegistryApp.appId),
+    fracRegistryAppId: Number(fracRegistryApp.appId),
+    committeeId: committeeIdB64,
+    // What the pipeline should create on its first run against this seed.
+    expectedInstances: byInstance(escrows),
+    accounts: Object.fromEntries(
+      [...accounts.values()].map((a) => [a.label, { address: a.address, mnemonic: a.mnemonic }]),
+    ),
+  })
 
   // Print summary of the seed
   const sections: { label: string; rows: string[] }[] = []
@@ -293,26 +184,13 @@ async function main() {
   const nameWidth = Math.max(...escrowInstances.map((i) => i.length)) + 2
   section(
     'ESCROWS',
-    ...escrowInstances.flatMap((instance) =>
-      escrows
-        .filter((e) => e.instance === instance)
-        .map((e, i) => (i === 0 ? instance : '').padEnd(nameWidth) + e.address),
+    ...byInstance(escrows).flatMap(({ name, escrows: addresses }) =>
+      addresses.map((address, i) => (i === 0 ? name : '').padEnd(nameWidth) + address),
     ),
   )
-  section(
-    'NEXT',
-    `Run \`pnpm run-pipeline\` and expect ${escrowInstances.length} new instances created and ${escrows.length} new escrows registered`,
-  )
 
-  const gutter = Math.max(...sections.map((s) => s.label.length)) + 2
-  const out = sections.flatMap(({ label, rows }) => [
-    ...rows.map((row, i) => (i === 0 ? label : '').padEnd(gutter) + row),
-    '',
-  ])
-  const rule = '═'.repeat(Math.max(...out.map((line) => line.length)))
-  console.log(`\n${rule}\nFRAC PIPELINE LOCALNET SEED\n${rule}\n`)
-  console.log(out.join('\n'))
-  console.log(`Seed details on ${path.basename(seedPath)}.`)
+  printSections('FRAC PIPELINE LOCALNET SEED', sections)
+  console.log('Seed details on .localnet-seed.json.')
 }
 
 main().catch((err) => {
