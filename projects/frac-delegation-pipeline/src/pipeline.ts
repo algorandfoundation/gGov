@@ -27,7 +27,7 @@ interface FracPipelineArgs {
   fracRegistryAppId: number
   ggovRegistryAppId: number
   stakingSources?: string[]
-  debug?: boolean
+  debugSdk?: boolean
 }
 
 interface Instance {
@@ -60,6 +60,7 @@ export class FracDelegationPipeline {
   // cache data
   private instancesCache: Instance[] = []
   private retiCache: RetiValidatorWithPools[] = []
+  ctx: { [key: string]: any } = {}
 
   constructor({
     algorand,
@@ -67,12 +68,12 @@ export class FracDelegationPipeline {
     fracRegistryAppId,
     ggovRegistryAppId,
     stakingSources,
-    debug = false,
+    debugSdk = false,
   }: FracPipelineArgs) {
     this.algorand = algorand
     this.algorand2 = algorand2 ?? algorand
     // TODO: how to handle the different privileges for the frac and gov SDKs? for now, admin for both registries
-    // and operator are the same. how will this be for separate credentials?the pipeline needs admin rights on both
+    // and operator are the same. how will this be for separate credentials? the pipeline needs admin rights on both
     // registries and operator rights for AQ ingestion.
     let adminAccount: { sender: string; signer: ReturnType<AlgorandClient['account']['getSigner']> } | undefined
     if (process.env.ADMIN_MNEMONIC && process.env.ADMIN) {
@@ -83,13 +84,13 @@ export class FracDelegationPipeline {
       algorand,
       registryAppId: fracRegistryAppId,
       writerAccount: adminAccount,
-      debug,
+      debug: debugSdk,
     })
     this.ggovSdk = new GGovRegistrySDK({
       algorand,
       registryAppId: ggovRegistryAppId,
       writerAccount: adminAccount,
-      debug,
+      debug: debugSdk,
     })
     this.retiSdk = new RetiGhostSDK({ algorand: this.algorand2, registryAppId: RETI_REGISTRY_APP_ID })
 
@@ -114,6 +115,13 @@ export class FracDelegationPipeline {
     // discovery appends to the caches, so a re-run must start from empty
     this.instancesCache = []
     this.retiCache = []
+    this.ctx = {
+      committeeId: committee,
+      instancesWithNoEscrows: [],
+      instancesWithExcludedEscrows: [],
+      registeredEscrows: [],
+      createdInstances: [],
+    }
 
     // Stage 1: escrow/instance recognition + on-chain reconciliation
 
@@ -184,7 +192,7 @@ export class FracDelegationPipeline {
         matching.numId = numId
       } else {
         // if the instance is on-chain but not in the fetched data, it may be a stale instance
-        // what should we do here? for now, low and continue
+        // what should we do here? for now, log and continue
         console.warn(`instance ${instance.name} (appId ${instance.appId}) is on-chain but not has not fetched data`)
       }
     }
@@ -199,11 +207,13 @@ export class FracDelegationPipeline {
         if (!isGov) excluded.push(e)
         return isGov
       })
-      if (excluded.length > 0) {
-        console.log(`instance ${instance.name} has excluded escrow addresses (not in committee):`, excluded)
-      }
       if (instance.escrowAddresses.length === 0) {
-        console.log(`instance ${instance.name} has no escrows in the committee, will be removed from cache`)
+        // from the ones fetched, the ones which have no escrows at all in the committee
+        this.ctx.instancesWithNoEscrows.push(instance.name)
+      }
+      if (excluded.length > 0) {
+        // instances with some fetched escrows not in the committee (partially excluded)
+        this.ctx.instancesWithExcludedEscrows.push({ [instance.name]: excluded })
       }
     }
     this.instancesCache = this.instancesCache.filter((i) => i.escrowAddresses.length > 0)
@@ -223,6 +233,7 @@ export class FracDelegationPipeline {
       // safety check: if the escrow is in the list to register, it must belong to an existing instance
       if (instance?.numId === undefined) throw new Error(`cannot find instance for escrow ${e}`)
       await this.fracSdk.registry.registerEscrow({ instanceNumId: instance.numId, account: e })
+      this.ctx.registeredEscrows.push({ instance: instance.name, escrow: e })
     }
 
     // cached instances with no app ID need to be created by admin
@@ -239,6 +250,7 @@ export class FracDelegationPipeline {
       for (const e of i.escrowAddresses) {
         await this.fracSdk.registry.registerEscrow({ instanceNumId, account: e })
       }
+      this.ctx.createdInstances.push({ instance: i.name, escrows: i.escrowAddresses })
     }
 
     // WRITE: import frac delegations from just-registered escrows
