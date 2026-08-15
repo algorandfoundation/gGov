@@ -1,4 +1,4 @@
-import { Network } from './types'
+import { Network } from './types.js'
 
 export const defaultReaderAccount = 'A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE'
 

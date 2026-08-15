@@ -1,7 +1,7 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address } from 'algosdk'
-import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from '../generated/GGovRegistryClient'
-import { APP_SPEC as PERIOD_APP_SPEC } from '../generated/GGovPeriodClient'
+import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from '../generated/GGovRegistryClient.js'
+import { APP_SPEC as PERIOD_APP_SPEC } from '../generated/GGovPeriodClient.js'
 import {
   ConstructorArgs,
   AccountWithVotes,
@@ -10,21 +10,21 @@ import {
   CommitteeId,
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
-} from './types'
-import { requireWriterWithClient } from '../util/requiresSender'
-import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId'
-import { govToTuple } from './gov'
-import { GGovRegistryReaderSDK } from './sdkReader'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { createTxnExecutor } from '../util/txnExecutor'
-import { chunk } from '../util/chunk'
-import { padForRefSlots } from '../util/padForRefSlots'
+} from './types.js'
+import { requireWriterWithClient } from '../util/requiresSender.js'
+import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId.js'
+import { govToTuple } from './gov.js'
+import { GGovRegistryReaderSDK } from './sdkReader.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { createTxnExecutor } from '../util/txnExecutor.js'
+import { chunk } from '../util/chunk.js'
+import { padForRefSlots } from '../util/padForRefSlots.js'
 import {
   MAX_GROUP_SIZE,
   BODY_CHUNK_BYTES,
   DEFAULT_PERIOD_MBR_MICROALGOS,
   MAX_ESCROWS_PER_FD_IMPORT,
-} from '../constants'
+} from '../constants.js'
 
 export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   public writerAccount?: SenderWithSigner

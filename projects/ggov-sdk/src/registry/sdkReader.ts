@@ -10,8 +10,8 @@ import {
   SuperboxMeta,
   GGovPeriodSummary,
   APP_SPEC,
-} from '../generated/GGovRegistryClient'
-import { getConstructorConfig } from '../networkConfig'
+} from '../generated/GGovRegistryClient.js'
+import { getConstructorConfig } from '../networkConfig.js'
 import {
   CommitteeId,
   AccountWithVotes,
@@ -19,13 +19,13 @@ import {
   STORED_GOV_BYTE_LENGTH,
   StoredGov,
   GGovCommitteeFile,
-} from './types'
-import { assertUint } from '../util/assertUint'
-import { chunk } from '../util/chunk'
-import { chunked } from '../util/chunked'
-import { committeeIdToRaw } from '../util/comitteeId'
-import { errorTransformer, wrapErrors } from '../util/wrapErrors'
-import { SIMULATE_PARAMS } from '../util/increaseBudget'
+} from './types.js'
+import { assertUint } from '../util/assertUint.js'
+import { chunk } from '../util/chunk.js'
+import { chunked } from '../util/chunked.js'
+import { committeeIdToRaw } from '../util/comitteeId.js'
+import { errorTransformer, wrapErrors } from '../util/wrapErrors.js'
+import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
 
 /** A registry period summary paired with its periodId. */
 export interface PeriodSummaryWithId {

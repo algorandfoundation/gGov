@@ -1,29 +1,29 @@
 import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
 import { getApplicationAddress } from 'algosdk'
-import { FracDelegationRegistrySDK, SendResult, executeTxns } from '../registry'
-import { FracCommitteeAq, FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient'
+import { FracDelegationRegistrySDK, SendResult, executeTxns } from '../registry/index.js'
+import { FracCommitteeAq, FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient.js'
 import {
   AlgoQuartersFile,
   ConstructorArgs,
   SenderWithSigner,
   InstanceMethodBuilderArgs,
   FracDelegationInstanceContractArgs,
-} from './types'
-import { requireWriter } from '../util/requiresSender'
-import { FracDelegationReaderSDK } from './sdkReader'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { parseAqFile } from '../util/aqFile'
-import { getSpendableBalance } from '../util/spendable'
-import { committeeIdToRaw } from '../util/comitteeId'
-import { chunk } from '../util/chunk'
-import { instanceBoxName, periodBoxName } from '../util/boxes'
-import { padForRefSlots } from '../util/padForRefSlots'
+} from './types.js'
+import { requireWriter } from '../util/requiresSender.js'
+import { FracDelegationReaderSDK } from './sdkReader.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { parseAqFile } from '../util/aqFile.js'
+import { getSpendableBalance } from '../util/spendable.js'
+import { committeeIdToRaw } from '../util/comitteeId.js'
+import { chunk } from '../util/chunk.js'
+import { instanceBoxName, periodBoxName } from '../util/boxes.js'
+import { padForRefSlots } from '../util/padForRefSlots.js'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
   AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS,
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
-} from '../constants'
+} from '../constants.js'
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner

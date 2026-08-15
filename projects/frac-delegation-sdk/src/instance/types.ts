@@ -1,9 +1,12 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { FracDelegationInstanceArgs, FracDelegationInstanceComposer } from '../generated/FracDelegationInstanceClient'
-import { Network, SenderWithSigner } from '../types'
+import {
+  FracDelegationInstanceArgs,
+  FracDelegationInstanceComposer,
+} from '../generated/FracDelegationInstanceClient.js'
+import { Network, SenderWithSigner } from '../types.js'
 
 // Re-export shared primitives so the public surface is unchanged.
-export type { Network, SenderWithSigner, SendResult } from '../types'
+export type { Network, SenderWithSigner, SendResult } from '../types.js'
 
 export type ConstructorArgsOptions =
   | {
