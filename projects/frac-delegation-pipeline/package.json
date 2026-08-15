@@ -6,6 +6,7 @@
   "description": "From a gGov committee, all way into on-chain pooled voting state.",
   "scripts": {
     "seed-localnet-data": "node --experimental-strip-types --env-file=.env.test scripts/seed-localnet.ts",
+    "add-committee": "node --experimental-strip-types --env-file=.env.test scripts/add-committee.ts",
     "test-pipeline": "node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

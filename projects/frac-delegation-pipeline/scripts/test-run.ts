@@ -2,32 +2,23 @@
  * TEST RUN - Reads from mainnet, writes to localnet.
  *
  * USAGE:
- *   pnpm run seed-localnet-data
- *   pnpm run run-pipeline
+ *   pnpm run seed-localnet
+ *   pnpm run test-pipeline
+ *
+ * Always runs against whatever committee the `.localnet-seed.json` file currently names,
+ * so `pnpm add-committee` followed by `pnpm test-pipeline` moves it on to the next one.
  */
 
-import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { FracDelegationPipeline } from '../src/pipeline.ts'
-import { readFileSync } from 'node:fs'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
-
-// CJS copy, rooted at the ggov-sdk dist. See `discoveryAlgorand` in FracPipelineArgs.
-const require = createRequire(fileURLToPath(new URL('../../ggov-sdk/dist/index.js', import.meta.url)))
-const { AlgorandClient: CjsAlgorandClient } = require('@algorandfoundation/algokit-utils') as {
-  AlgorandClient: typeof AlgorandClient
-}
+import { CjsAlgorandClient, readSeedFile } from './seed-common.ts'
 
 const algorand = CjsAlgorandClient.defaultLocalNet()
 const algorandMainnet = AlgorandClient.fromEnvironment()
 
-const seedPath = fileURLToPath(new URL('../.localnet-seed.json', import.meta.url))
-const seed = JSON.parse(readFileSync(seedPath, 'utf-8')) as {
-  gGovRegistryAppId: number
-  fracRegistryAppId: number
-  committeeId: string
-}
+const seed = readSeedFile()
+console.log(`Running against committee ${seed.committeeId}`)
 
 const pipeline = new FracDelegationPipeline({
   algorand,
