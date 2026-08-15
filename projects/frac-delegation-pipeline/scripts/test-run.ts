@@ -12,7 +12,9 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { FracDelegationPipeline } from '../src/pipeline.ts'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
-import { CjsAlgorandClient, readSeedFile } from './seed-common.ts'
+import { CjsAlgorandClient, readSeedFile, configLogger } from './seed-common.ts'
+
+configLogger()
 
 const algorand = CjsAlgorandClient.defaultLocalNet()
 const algorandMainnet = AlgorandClient.fromEnvironment()
@@ -26,7 +28,7 @@ const pipeline = new FracDelegationPipeline({
   fracRegistryAppId: seed.fracRegistryAppId,
   ggovRegistryAppId: seed.gGovRegistryAppId,
   stakingSources: ['reti', 'talgo'],
-  debug: true,
+  debugSdk: true,
 })
 
 const fracSdk = new FracDelegationSDK({ algorand, registryAppId: seed.fracRegistryAppId })
@@ -34,10 +36,12 @@ const fracSdk = new FracDelegationSDK({ algorand, registryAppId: seed.fracRegist
 await pipeline
   .run(seed.committeeId)
   .then(async () => {
-    console.log('Pipeline completed successfully')
-    console.log('Cached instances:')
-    console.log(pipeline.getInstancesCache())
-    console.log('On-chain instances:')
+    console.log('\nPipeline completed successfully!')
+    console.log(`\nCreated instances:`)
+    console.log(pipeline.ctx.createdInstances)
+    console.log(`\nNew escrows registered to existing instances:`)
+    console.log(pipeline.ctx.registeredEscrows)
+    console.log(`\nInstances fetched from chain:`)
     console.log(await fracSdk.registry.getInstances())
   })
   .catch((err) => {
