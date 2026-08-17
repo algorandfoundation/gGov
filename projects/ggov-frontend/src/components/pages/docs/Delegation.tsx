@@ -31,20 +31,20 @@ export default function Delegation() {
 
         <H2>The direct-vote rule</H2>
         <P>
-          If an account votes for itself directly, that vote is locked in for the period — a delegate can't override a
-          direct vote. Direct voting always wins over delegation.
+          If an account votes for itself directly, its delegate is shut out for the rest of the period. Direct voting
+          always wins over delegation.
         </P>
         <Callout variant="warning">
-          <Strong>A delegate can't override a direct vote.</Strong> If an account you act for has already voted on its
-          own, its power is locked for that period.
+          <Strong>A delegate can't override a direct vote.</Strong> If an account you act for has voted on its own, you
+          can no longer vote on its behalf for the rest of that period.
         </Callout>
 
         <H2>Pooled power is included</H2>
         <P>
-          If you stake through xALGO, tALGO or a Réti pool, one delegation covers that too — there's no separate setting
-          for your <InlineLink to="/docs/pooled-voting">pooled share</InlineLink>. Your delegate votes it alongside any
-          power you hold directly, and this works even when all of your power is pooled. If they don't vote, your share
-          counts as <Strong>Abstain</Strong>, just as it would if you hadn't voted yourself.
+          If you stake through xALGO, tALGO or a Réti pool, the same delegation covers your{' '}
+          <InlineLink to="/docs/pooled-voting">pooled share</InlineLink> — there's no separate setting, even if all your
+          power is pooled. Your delegate votes it alongside any power you hold directly, and if they don't vote it
+          counts as <Strong>Abstain</Strong>: the same as any unvoted share.
         </P>
       </div>
       <Pager from="/docs/delegation" />
