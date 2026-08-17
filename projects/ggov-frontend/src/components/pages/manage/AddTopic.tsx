@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Lock } from 'lucide-react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { usePeriodBody } from '@/hooks/queries'
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import BackButton from '@/components/BackButton'
 import { periodTerms } from '@/utils/periodTerms'
+import { ABSTAIN_OPTION, MIN_CUSTOM_OPTIONS, findOptionIssues, withAbstain } from '@/utils/topicOptions'
 import { TxButton } from '@/components/TxButtonContent'
 
 /**
@@ -17,7 +19,7 @@ import { TxButton } from '@/components/TxButtonContent'
  * net (Support − Veto), so every candidate topic must use exactly these
  * options — the operator gets no choice (see `isElection` below).
  */
-const ELECTION_OPTIONS = ['Support', 'Veto', 'Abstain']
+const ELECTION_OPTIONS = ['Support', 'Veto', ABSTAIN_OPTION]
 
 export default function AddTopic() {
   const { periodId: pidParam } = useParams({ strict: false })
@@ -34,6 +36,7 @@ export default function AddTopic() {
   // for the seat/race lookups below.
   const isElection = elect !== undefined
 
+  // Only the operator-typed custom options; Abstain is a fixed row appended on submit.
   const [options, setOptions] = useState<string[]>(['', ''])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -47,18 +50,24 @@ export default function AddTopic() {
   const resolvedElection = !isElection ? undefined : elect.length === 1 ? 0 : electionIdx
   const electionValid = !isElection || resolvedElection !== undefined
 
+  // Unlike EditOptionsDialog, blank rows are dropped on submit rather than flagged.
+  // Preferred this to not add noise in the add form; operator can still remove blank rows manually.
+  const { trimmed, duplicateIdx, abstainIdx } = useMemo(() => findOptionIssues(options), [options])
+  const customOptions = trimmed.filter((o) => o !== '')
+  const optionsValid = customOptions.length >= MIN_CUSTOM_OPTIONS && duplicateIdx.size === 0 && abstainIdx.size === 0
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     // `periodBody` is `undefined` until the query resolves; submitting in that window would
     // treat an election as a standard period (`isElection` false) and let arbitrary options
     // through. Wait until it resolves (to the body or `null`) before allowing submission.
     if (periodBody === undefined) return
-    const filtered = isElection ? ELECTION_OPTIONS : options.filter((o) => o.trim())
-    if (filtered.length < 2 || !title.trim() || !body.trim() || !electionValid) return
+    const finalOptions = isElection ? ELECTION_OPTIONS : withAbstain(customOptions)
+    if ((!isElection && !optionsValid) || !title.trim() || !body.trim() || !electionValid) return
 
     await addTopicMutation.mutateAsync({
       periodId,
-      options: filtered,
+      options: finalOptions,
       title: title.trim(),
       body: body.trim(),
       e: resolvedElection,
@@ -164,18 +173,19 @@ export default function AddTopic() {
               ) : (
                 <>
                   {options.map((opt, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        name={`option-${i}`}
-                        placeholder={`Option ${i + 1}`}
-                        value={opt}
-                        onChange={(e) => {
-                          const next = [...options]
-                          next[i] = e.target.value
-                          setOptions(next)
-                        }}
-                      />
-                      {options.length > 2 && (
+                    <div key={i} className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          name={`option-${i}`}
+                          placeholder={`Option ${i + 1}`}
+                          value={opt}
+                          aria-invalid={abstainIdx.has(i) || duplicateIdx.has(i) || undefined}
+                          onChange={(e) => {
+                            const next = [...options]
+                            next[i] = e.target.value
+                            setOptions(next)
+                          }}
+                        />
                         <Button
                           type="button"
                           variant="ghost"
@@ -184,21 +194,38 @@ export default function AddTopic() {
                         >
                           Remove
                         </Button>
-                      )}
+                      </div>
+                      {duplicateIdx.has(i) ? (
+                        <p className="text-xs text-destructive">Duplicate option.</p>
+                      ) : abstainIdx.has(i) ? (
+                        <p className="text-xs text-destructive">
+                          {ABSTAIN_OPTION} is added automatically as the last option.
+                        </p>
+                      ) : null}
                     </div>
                   ))}
+                  {/* Fixed last option. The hidden Remove sizes the column so the inputs line up. */}
+                  <div className="flex items-center gap-2">
+                    <Input name="option-abstain" value={ABSTAIN_OPTION} readOnly />
+                    <span className="relative inline-flex items-center justify-center">
+                      <Button type="button" variant="ghost" size="sm" className="invisible">
+                        Remove
+                      </Button>
+                      <Lock className="absolute size-4 text-muted-foreground" />
+                    </span>
+                  </div>
+                  {options.length < MIN_CUSTOM_OPTIONS && (
+                    <p className="text-xs text-destructive">
+                      A {terms.item} needs at least {MIN_CUSTOM_OPTIONS} options besides {ABSTAIN_OPTION}.
+                    </p>
+                  )}
                   <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => setOptions([...options, ''])}>
                       Add option
                     </Button>
                     <span className="text-xs text-muted-foreground">or</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setOptions(['Yes', 'No', 'Abstain'])}
-                    >
-                      Use Yes / No / Abstain
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setOptions(['Yes', 'No'])}>
+                      Use Yes / No
                     </Button>
                   </div>
                 </>
@@ -207,11 +234,7 @@ export default function AddTopic() {
 
             <TxButton
               type="submit"
-              disabled={
-                periodBody === undefined ||
-                !electionValid ||
-                (!isElection && options.filter((o) => o.trim()).length < 2)
-              }
+              disabled={periodBody === undefined || !electionValid || (!isElection && !optionsValid)}
               pending={addTopicMutation.isPending}
               success={addTopicMutation.isSuccess}
               idleLabel={`Add ${terms.item}`}

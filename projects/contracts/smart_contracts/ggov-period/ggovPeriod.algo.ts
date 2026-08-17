@@ -26,6 +26,7 @@ import {
   errGGovCannotOverride,
   errGGovDelegationNoAcctRef,
   errGGovHasVotes,
+  errGGovLastOptionAbstain,
   errGGovNoDelegation,
   errGGovNoOptions,
   errGGovNotReady,
@@ -79,7 +80,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Last actual voting round. Used for efficient indexer lookups. 0 until the first vote is cast. */
   lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
 
-  /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). */
+  /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). Last option is always Abstain (enforced). */
   topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
   /** Per-topic vote tallies. Mutated on every vote(). Parallel to topicOptionsArr (same length & order). */
   topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
@@ -193,6 +194,22 @@ export class GGovPeriodContract extends BaseContract {
     return TOPIC_BODY_BOX_PREFIX.concat(encodeArc4(u32(topicIndex)))
   }
 
+  /**
+   * Validate a topic's option list: non-empty, ending in the literal 'Abstain', and carrying
+   * 'Abstain' exactly once. This is an enforcement, not convention: `FracDelegationInstance`
+   * relies on the last option being Abstain when casting instance votes, so relaxing this
+   * check would silently corrupt pooled tallies. Called by `addTopic` and `editTopic`, the
+   * only writers of an option list.
+   */
+  protected ensureValidOptions(options: string[]): void {
+    loggedAssert(options.length > 0, errGGovNoOptions)
+    const lastIndex: uint64 = options.length - 1
+    loggedAssert(options[lastIndex] === 'Abstain', errGGovLastOptionAbstain)
+    for (let i: uint64 = 0; i < lastIndex; i++) {
+      loggedAssert(options[i] !== 'Abstain', errGGovLastOptionAbstain)
+    }
+  }
+
   // ── Operator: period/topic CRUD ──────────────────────────────────
 
   public editPeriod(committeeId: CommitteeId, votingStart: uint64, votingEnd: uint64): void {
@@ -208,7 +225,7 @@ export class GGovPeriodContract extends BaseContract {
   public addTopic(options: string[]): uint64 {
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    loggedAssert(options.length > 0, errGGovNoOptions)
+    this.ensureValidOptions(options)
 
     const votes: Uint32[] = []
     for (let i: uint64 = 0; i < options.length; i++) {
@@ -230,10 +247,11 @@ export class GGovPeriodContract extends BaseContract {
   public editTopic(topicIndex: uint64, options: string[]): void {
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    loggedAssert(options.length > 0, errGGovNoOptions)
     const optionsArr = clone(this.topicOptionsArr.value)
     const votesArr = clone(this.topicVotesArr.value)
     loggedAssert(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
+    // Same enforcement as addTopic — the option list is fully replaced
+    this.ensureValidOptions(options)
 
     const votes: Uint32[] = []
     for (let i: uint64 = 0; i < options.length; i++) {
