@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { Button } from '@/components/ui/button'
-import { PeriodStatusTag } from '@/components/vote/PeriodRow'
+import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import { usePeriodBody, useCommittee, useGovVotingPowers, useProducerRank, toBase64Url } from '@/hooks/queries'
 import { usePooledPositions } from '@/hooks/fracQueries'
 import { periodTurnoutPct } from '@/lib/turnout'
@@ -115,7 +115,7 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   return (
     <section className="mx-auto max-w-[680px] text-center">
       <div className="inline-flex items-center gap-2.5 text-[13px] text-muted-foreground">
-        <PeriodStatusTag status={status} />
+        <PeriodStatusBadge status={status} />
         <span>
           Period {periodId} · {countLabel}
         </span>

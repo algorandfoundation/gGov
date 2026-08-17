@@ -16,7 +16,7 @@ overrides:
   undici: ^7.29.0 # ggov-frontend>@cloudflare/vite-plugin/wrangler>miniflare>undici (GHSA-4cwx-7wf7-3272)
   tar: ^7.5.21 # contracts>@algorandfoundation/puya-ts>tar (GHSA-r292-9mhp-454m)
   postcss: ^8.5.23 # common>ggov-algoquarters>vitest>@vitest/mocker>vite>postcss (GHSA-fxqj-rqcc-2cmp)
-  'js-yaml@4': ^4.3.0 # ggov-frontend>@tanstack/react-start>...>xmlbuilder2>js-yaml (GHSA-52cp-r559-cp3m)
+  'js-yaml@4': ^4.3.1 # ggov-frontend>@tanstack/react-start>...>xmlbuilder2>js-yaml (GHSA-5p4m-2wfm-xmqj)
   'ws@7': ^7.5.11 # ggov-frontend>@blockshake/defly-connect>@walletconnect>ws (GHSA-96hv-2xvq-fx4p)
   # ggov-frontend>@storybook/react-vite pins 0.6.1, which drags in glob@10>minimatch@9>brace-expansion@2.
   # The 2.x line has no fix for GHSA-mh99-v99m-4gvg and 5.x is not API-compatible with minimatch@9, so bump
@@ -25,5 +25,3 @@ overrides:
   'brace-expansion@5': ^5.0.9 # eslint>...>minimatch>brace-expansion (GHSA-rgw5-rvv9-x895)
 
 minimumReleaseAgeExclude:
-  - brace-expansion@5.0.9 # 6 days old at this commit time - remove when minimumReleaseAge is surpassed
-  - fast-uri@3.1.5 # 5 days old at this commit time - remove when minimumReleaseAge is surpassed

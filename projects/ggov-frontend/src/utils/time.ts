@@ -1,3 +1,16 @@
+/**
+ * Date and time helpers. Unless otherwise noted, formatting functions take unix **seconds**
+ * (the unit the period contract stores voting windows in) and return a display string.
+ *
+ * Two families, split by who is reading:
+ *
+ * - **Local** (`formatTimestamp`, `formatDateRange`, `formatMonthDay…`) — the voter-facing
+ *   pages. "When can I vote" is a personal question, so a voter should see their own clock.
+ * - **UTC** (`…UTC`) — the manage panel. The operator types the voting window in UTC and the
+ *   table reads it back in UTC, so the numbers never shift with where the operator happens
+ *   to be.
+ */
+
 export type PeriodStatus = 'upcoming' | 'active' | 'ended'
 
 export function periodStatus(votingStart: number, votingEnd: number): PeriodStatus {
@@ -42,6 +55,15 @@ export function formatDateRange(startSeconds: number, endSeconds: number): strin
   const sameYear = new Date(startSeconds * 1000).getFullYear() === new Date(endSeconds * 1000).getFullYear()
   const start = sameYear ? formatMonthDay(startSeconds) : formatMonthDayYear(startSeconds)
   return `${start} – ${formatMonthDayYear(endSeconds)}`
+}
+
+/** "Jun 2 – Jun 30, 2026" in UTC. The UTC twin of `formatDateRange`. */
+export function formatDateRangeUTC(startSeconds: number, endSeconds: number): string {
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', timeZone: 'UTC' }
+  const start = new Date(startSeconds * 1000)
+  const end = new Date(endSeconds * 1000)
+  const sameYear = start.getUTCFullYear() === end.getUTCFullYear()
+  return `${start.toLocaleDateString(undefined, sameYear ? opts : { ...opts, year: 'numeric' })} – ${end.toLocaleDateString(undefined, { ...opts, year: 'numeric' })}`
 }
 
 /** Whole days from now until `unixSeconds` (negative once it has passed). */

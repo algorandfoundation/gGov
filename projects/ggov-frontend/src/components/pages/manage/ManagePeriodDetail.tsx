@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from '@tanstack/react-router'
+import { useParams, useSearch, Link } from '@tanstack/react-router'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { usePeriod, usePeriods, usePeriodBody, useTopicBodies, useCommittees, toBase64Url } from '@/hooks/queries'
 import {
@@ -30,18 +30,28 @@ import PeriodStatusBadge from '@/components/PeriodStatusBadge'
 import BackButton from '@/components/BackButton'
 import { formatTimestampUTC, toDatetimeLocalUTC, fromDatetimeLocalUTC, periodStatus } from '@/utils/time'
 import { periodTerms } from '@/utils/periodTerms'
+import { periodHasVotes } from '@/utils/periodEditing'
+import { cn } from '@/lib/utils'
 import { TxButton, TxButtonContent } from '@/components/TxButtonContent'
+
+// Keep the View/Edit links visually aligned with TabsTrigger in ui/tabs.tsx
+const SEGMENT =
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const SEGMENT_ACTIVE = 'bg-background text-foreground shadow'
 
 export default function ManagePeriodDetail() {
   const { periodId: pidParam } = useParams({ strict: false })
   const periodId = Number(pidParam)
+  const { mode } = useSearch({ strict: false })
   const { sdk } = useGGovSDK()
 
   const { data: period, isLoading } = usePeriod(periodId)
   const { data: periodBody } = usePeriodBody(periodId)
   const { data: topicBodies = [] } = useTopicBodies(periodId, period?.topics.length ?? 0)
   const { data: committees = [] } = useCommittees()
-  const { data: allPeriods = [] } = usePeriods()
+  // Manage is operator-only and usually reached from the list, so reuse the periods query
+  // for `ready` instead of maintaining a separate single-period query.
+  const { data: allPeriods = [], isLoading: isLoadingPeriods } = usePeriods()
   const ready = allPeriods.find((p) => p.id === periodId)?.ready ?? false
 
   const editPeriodMutation = useEditPeriodMutation()
@@ -153,7 +163,8 @@ export default function ManagePeriodDetail() {
     )
   }
 
-  if (isLoading) {
+  // Wait for both queries; until `usePeriods` lands, `ready` falls back to false and a frozen period reads as a draft.
+  if (isLoading || isLoadingPeriods) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -167,17 +178,20 @@ export default function ManagePeriodDetail() {
   }
 
   const status = periodStatus(period.votingStart, period.votingEnd)
-  // Whether the *period* still accepts edits, as against whether this visitor can
-  // make them — `canEdit` also needs a connected wallet, so it can't be used to
-  // tell an operator whether a problem is still fixable.
-  const editable = status === 'upcoming' && !ready
-  const canEdit = editable && !!sdk
+  const hasVotes = periodHasVotes(period)
+  // Once votes exist, a ready period cannot be reverted.
+  const frozen = ready && hasVotes
+  // An editable period is either a draft, or ready with no votes cast so the operator can revert it to draft.
+  const editable = !frozen
+  // All editable periods, plus a connected wallet, can enter Edit mode. If ready, operator must
+  // revert to draft to make any actual change. Any attempt to edit either with a non-operator
+  // wallet or a non-draft period will be rejected at the contract level.
+  const showEditControls = !!sdk && mode === 'edit' && editable
   // Election topic options are fixed (Support / Veto / Abstain), so the per-topic
   // options editor is suppressed for elections even while the period is otherwise editable.
   const elect = periodBody?.elect
   const terms = periodTerms(elect)
   const isElection = terms.isElection
-  const hasVotes = period.topics.some(([, tallies]) => tallies.some((t) => t > 0))
   const readyWarnings: string[] = []
   // Every topic body readable and accounted for: still fetching (the query resolves the whole
   // array at once, so it's empty until then) and unreadable-box both land here as "not present".
@@ -216,9 +230,9 @@ export default function ManagePeriodDetail() {
             size="sm"
             variant={ready ? 'outline' : 'default'}
             onClick={() => setReadyDialogOpen(true)}
-            disabled={setReadyMutation.isPending || (ready && hasVotes)}
+            disabled={setReadyMutation.isPending || frozen}
             aria-busy={setReadyMutation.isPending}
-            title={ready && hasVotes ? 'Cannot revert to draft: votes have already been cast' : undefined}
+            title={frozen ? 'Cannot revert to draft: votes have already been cast' : undefined}
           >
             <TxButtonContent
               pending={setReadyMutation.isPending}
@@ -227,23 +241,54 @@ export default function ManagePeriodDetail() {
             />
           </Button>
         )}
+        {/* Frozen periods are not editable, so hide the View/Edit toggle; View is the default state.
+            No wallet, no toggle either: it would flip without anything on the page changing. */}
+        {editable && sdk && (
+          <div className="ml-auto inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground">
+            <Link
+              to="/manage/period/$periodId"
+              params={{ periodId: String(periodId) }}
+              className={cn(SEGMENT, mode !== 'edit' && SEGMENT_ACTIVE)}
+            >
+              View
+            </Link>
+            <Link
+              to="/manage/period/$periodId"
+              params={{ periodId: String(periodId) }}
+              search={{ mode: 'edit' }}
+              className={cn(SEGMENT, mode === 'edit' && SEGMENT_ACTIVE)}
+            >
+              Edit
+            </Link>
+          </div>
+        )}
       </div>
+
+      {showEditControls && ready && (
+        <Callout variant="warning" title="Revert to draft to edit this period">
+          Saves will fail while this period is Ready. Revert it to draft to make changes and mark it ready again when
+          confident.
+        </Callout>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Period details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm">
-            <span className="text-muted-foreground">Committee:</span>{' '}
-            {(() => {
-              const key = toBase64Url(period.committeeId)
-              const c = committees.find((c) => c.idBase64Url === key)
-              return c ? `Rounds ${c.periodStart} — ${c.periodEnd}` : '—'
-            })()}
-          </div>
+          {/* View mode only: the select below already names the committee's rounds. */}
+          {!showEditControls && (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Committee:</span>{' '}
+              {(() => {
+                const key = toBase64Url(period.committeeId)
+                const c = committees.find((c) => c.idBase64Url === key)
+                return c ? `Rounds ${c.periodStart} — ${c.periodEnd}` : '—'
+              })()}
+            </div>
+          )}
 
-          {canEdit ? (
+          {showEditControls ? (
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="edit-committee">Committee</Label>
@@ -312,7 +357,7 @@ export default function ManagePeriodDetail() {
           <CardTitle className="text-base">Period body</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {sdk ? (
+          {showEditControls ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="edit-period-title">Title</Label>
@@ -370,11 +415,13 @@ export default function ManagePeriodDetail() {
         <h2 className="text-xl font-semibold">
           {terms.Items} ({period.topics.length})
         </h2>
-        <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
-          <Button variant="outline" size="sm">
-            Add {terms.item}
-          </Button>
-        </Link>
+        {showEditControls && (
+          <Link to="/manage/period/$periodId/add-topic" params={{ periodId: String(periodId) }}>
+            <Button variant="outline" size="sm">
+              Add {terms.item}
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Assignment problems belong on the page, not only in the Mark-ready dialog:
@@ -388,12 +435,15 @@ export default function ManagePeriodDetail() {
               <li key={w}>{w}</li>
             ))}
           </ul>
-          {editable ? (
+          {/* Only voted periods are past fixing; wallet/mode state should not change this message. */}
+          {!ready ? (
             <p className="mt-2">Fix each one below before marking the period ready.</p>
+          ) : !hasVotes ? (
+            <p className="mt-2">Revert the period to draft to fix them, then mark it ready again.</p>
           ) : (
             <p className="mt-2">
-              This period is no longer editable, so these can't be corrected. Unassigned candidates still collect votes,
-              but they are left out of every ranking on the results page.
+              Votes have been cast, so these can't be corrected. Unassigned candidates still collect votes, but they are
+              left out of every ranking on the results page.
             </p>
           )}
         </Callout>
@@ -420,12 +470,12 @@ export default function ManagePeriodDetail() {
                       )}
                     </div>
                     <div className="flex gap-1">
-                      {sdk && (
+                      {showEditControls && (
                         <Button variant="ghost" size="sm" onClick={() => openEditTopicBody(topicIdx)}>
                           {tb ? 'Edit body' : 'Add body'}
                         </Button>
                       )}
-                      {canEdit && (
+                      {showEditControls && (
                         <>
                           {/* `periodBody` is `undefined` while loading; gate on it so the editor
                               isn't briefly exposed for election candidates before `isElection` resolves. */}
@@ -462,7 +512,7 @@ export default function ManagePeriodDetail() {
                   {elect && (elect.length > 1 || (tb && tb.e === undefined)) && (
                     <div className="mb-3 flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">Election:</span>
-                      {canEdit && tb ? (
+                      {showEditControls && tb ? (
                         <select
                           name={`topic-${topicIdx}-election`}
                           className="h-8 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
