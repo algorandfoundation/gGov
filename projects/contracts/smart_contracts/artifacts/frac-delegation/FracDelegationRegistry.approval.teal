@@ -23,9 +23,9 @@ main:
     intc_0 // 0
     app_global_put
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:64
-    // mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
+    // mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
     bytec 6 // "mbrTopUp"
-    pushint 5000000
+    pushint 2000000
     app_global_put
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:66
     // lastAccountId = GlobalState<uint64>({ initialValue: 0 })
@@ -242,7 +242,7 @@ setMBRTopUp:
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:64
-    // mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
+    // mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
     bytec 6 // "mbrTopUp"
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:125
     // this.mbrTopUp.value = amount
@@ -735,7 +735,7 @@ requestMBR_after_assert@5:
     // amount: this.mbrTopUp.value,
     intc_0 // 0
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:64
-    // mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
+    // mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
     bytec 6 // "mbrTopUp"
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:286
     // amount: this.mbrTopUp.value,

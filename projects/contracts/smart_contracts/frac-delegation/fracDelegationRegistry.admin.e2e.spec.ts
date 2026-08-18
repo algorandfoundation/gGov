@@ -113,8 +113,11 @@ describe('FracDelegationRegistry admin', () => {
     test('admin can set the MBR top-up amount', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracRegistry(localnet, testAccount)
-      await sdk.setMBRTopUp({ amount: 2_000_000n })
+      // 2 ALGO default, set at deploy by the global's initialValue.
       expect(await sdk.getMBRTopUp()).toBe(2_000_000n)
+
+      await sdk.setMBRTopUp({ amount: 5_000_000n })
+      expect(await sdk.getMBRTopUp()).toBe(5_000_000n)
     })
   })
 

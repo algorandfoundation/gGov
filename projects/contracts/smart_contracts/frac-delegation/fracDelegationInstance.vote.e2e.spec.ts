@@ -842,7 +842,10 @@ describe('FracDelegationInstance vote', () => {
     // Same 21-byte value, but `voteRecords` is keyed by Account under prefix 'v' — 33 bytes, not 9.
     // Kept in step with ggovPeriod.e2e.spec.ts's VOTE_RECORD_MBR, which covers the direct path.
     const PERIOD_VOTE_RECORD_MBR = 2_500n + 400n * (33n + 21n)
-    const MBR_TOP_UP = 5_000_000n
+    // The two vaults top up by different amounts: `mbrTopUp` defaults to 2 A on the frac
+    // registry (which funds the instance) and 5 A on the gGov registry (which funds the period).
+    const FRAC_MBR_TOP_UP = 2_000_000n
+    const GGOV_MBR_TOP_UP = 5_000_000n
     const REQUEST_FEE = 1_000n
 
     test('a well-funded instance never asks for a top-up', async () => {
@@ -868,8 +871,8 @@ describe('FracDelegationInstance vote', () => {
       const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
 
       expect(voteInnerTxnCount(result)).toBe(5)
-      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - MBR_TOP_UP - REQUEST_FEE)
-      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + FRAC_MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
       // Record is successfully stored
       const accountId = await accountIdOf(ctx, voter.account.toString())
       expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
@@ -885,8 +888,8 @@ describe('FracDelegationInstance vote', () => {
       const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
 
       expect(voteInnerTxnCount(result)).toBe(5)
-      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - MBR_TOP_UP - REQUEST_FEE)
-      expect(await instanceAvailable(localnet, ctx)).toBe(MBR_TOP_UP - REQUEST_FEE)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(FRAC_MBR_TOP_UP - REQUEST_FEE)
       const accountId = await accountIdOf(ctx, voter.account.toString())
       expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
     }, 120_000)
@@ -908,8 +911,8 @@ describe('FracDelegationInstance vote', () => {
 
       // 6 = the delegated path's 5 (gGov getDelegate + registry getAccount + 3 escrow casts) + requestMBR.
       expect(voteInnerTxnCount(result)).toBe(6)
-      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - MBR_TOP_UP - REQUEST_FEE)
-      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + FRAC_MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
       const accountId = await accountIdOf(ctx, voter.account.toString())
       expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
     }, 120_000)
@@ -956,7 +959,7 @@ describe('FracDelegationInstance vote', () => {
       const voteWithTopUp = await second.sdk.vote({ periodId: ctx.periodId, topicVotes: [[0, 40, 0]] })
 
       expect(vaultAfterFirst).toBe(vaultBeforeFirst)
-      expect(await registryAvailable(localnet, ctx)).toBe(vaultAfterFirst - MBR_TOP_UP - REQUEST_FEE)
+      expect(await registryAvailable(localnet, ctx)).toBe(vaultAfterFirst - FRAC_MBR_TOP_UP - REQUEST_FEE)
 
       const registryAppId = ctx.registrySdk.appId
       // Presence of the reference is what this test owns. That its bytes match the contract's
@@ -990,9 +993,9 @@ describe('FracDelegationInstance vote', () => {
 
         // One top-up covers all three escrow casts: the first 5 A lands before the second escrow's
         // record is allocated, so the period is well funded for the rest.
-        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultBefore - MBR_TOP_UP - REQUEST_FEE)
+        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultBefore - GGOV_MBR_TOP_UP - REQUEST_FEE)
         expect(await periodAvailable(localnet, ctx)).toBe(
-          periodVaultBefore + MBR_TOP_UP - REQUEST_FEE - PERIOD_VOTE_RECORD_MBR * 3n,
+          periodVaultBefore + GGOV_MBR_TOP_UP - REQUEST_FEE - PERIOD_VOTE_RECORD_MBR * 3n,
         )
         // The instance is untouched by the period's shortfall — separate vaults, separate branches.
         expect(await registryAvailable(localnet, ctx)).toBe(fracVaultBefore)
@@ -1017,7 +1020,7 @@ describe('FracDelegationInstance vote', () => {
         const voteWithTopUp = await second.sdk.vote({ periodId: ctx.periodId, topicVotes: [[0, 40, 0]] })
 
         expect(ggovVaultAfterFirst).toBe(ggovVaultBefore)
-        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultAfterFirst - MBR_TOP_UP - REQUEST_FEE)
+        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultAfterFirst - GGOV_MBR_TOP_UP - REQUEST_FEE)
 
         const ggovRegistryAppId = ctx.ggovRegistrySdk.appId
         const expectedName = periodBoxName(ctx.periodId)
@@ -1043,8 +1046,8 @@ describe('FracDelegationInstance vote', () => {
 
         await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
 
-        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultBefore - MBR_TOP_UP - REQUEST_FEE)
-        expect(await registryAvailable(localnet, ctx)).toBe(fracVaultBefore - MBR_TOP_UP - REQUEST_FEE)
+        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultBefore - GGOV_MBR_TOP_UP - REQUEST_FEE)
+        expect(await registryAvailable(localnet, ctx)).toBe(fracVaultBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
         const accountId = await accountIdOf(ctx, voter.account.toString())
         expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
       }, 120_000)

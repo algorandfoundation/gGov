@@ -61,7 +61,7 @@ export class FracDelegationRegistryContract extends BaseContract {
   /** gGov registry application ID */
   gGovRegistryApp = GlobalState<Application>({ key: fracRegistryGGovKey, initialValue: Application(0) })
   /** microALGO sent to an instance per `requestMBR` top-up. Configurable via `setMBRTopUp`. */
-  mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
+  mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
   /** Last account numeric ID */
   lastAccountId = GlobalState<uint64>({ initialValue: 0 })
   /** Account registry; account ID + frac instance (numeric) IDs  */
