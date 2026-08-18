@@ -24,11 +24,11 @@ console.log(`Running against committee ${seed.committeeId}`)
 
 const pipeline = new FracDelegationPipeline({
   algorand,
-  algorand2: algorandMainnet,
+  discoveryClient: algorandMainnet,
   fracRegistryAppId: seed.fracRegistryAppId,
   ggovRegistryAppId: seed.gGovRegistryAppId,
   stakingSources: ['reti', 'talgo'],
-  debugSdk: true,
+  debug: true,
 })
 
 const fracSdk = new FracDelegationSDK({ algorand, registryAppId: seed.fracRegistryAppId })
@@ -40,7 +40,7 @@ await pipeline
     console.log(`\nCreated instances:`)
     console.log(pipeline.ctx.createdInstances)
     console.log(`\nNew escrows registered to existing instances:`)
-    console.log(pipeline.ctx.registeredEscrows)
+    console.log(pipeline.ctx.existingInstanceNewEscrows)
     console.log(`\nInstances fetched from chain:`)
     console.log(await fracSdk.registry.getInstances())
   })

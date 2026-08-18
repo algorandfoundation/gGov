@@ -299,6 +299,7 @@ export class FracDelegationRegistryReaderSDK {
    * entries for instance apps that have been deleted.
    */
   async getInstances(): Promise<Map<number, FracInstance>> {
+    // TODO simulate plural logger to get instances in pages
     return this.readClient.state.box.instances.getMap()
   }
 

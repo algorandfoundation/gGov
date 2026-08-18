@@ -1,266 +1,275 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { getApplicationAddress, encodeAddress, mnemonicToSecretKey } from 'algosdk'
+import { getApplicationAddress, mnemonicToSecretKey, TransactionSigner } from 'algosdk'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
-import { GGovRegistrySDK } from 'ggov-sdk'
-import { RetiGhostSDK } from 'reti-ghost-sdk'
+import { GGovRegistrySDK, type GGovCommitteeFile } from 'ggov-sdk'
+import { AVAILABLE_SOURCES, getPlugin, RETI_REGISTRY_APP_ID_MAINNET, TALGO_APP_ID_MAINNET } from './plugins/index.ts'
 
-export const RETI_REGISTRY_APP_ID = 2714516089
-export const TALGO_APP_ID = 2537013674n
+// owned by the plugins now, re-exported for the seeding scripts
+export const RETI_REGISTRY_APP_ID = RETI_REGISTRY_APP_ID_MAINNET
+export const TALGO_APP_ID = TALGO_APP_ID_MAINNET
 export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID).toString()
 
-// each staking sources is identified by an easy string
-// pipeline-integrated sources are defined in this constant for now
-// TODO: add xalgo once implemented
-const STAKING_SOURCES = ['reti', 'talgo']
+// each staking source is identified by an easy string and implemented by a plugin under ./plugins,
+// which the pipeline loads from the registry - adding a source touches nothing in here
+
+/** Admin of the two registries, or the operator that ingests AQ. */
+type PipelineAccount = { sender: string; signer: TransactionSigner }
 
 interface FracPipelineArgs {
   /** Client for ggov-sdk and frac-delegation-sdk. */
   algorand: AlgorandClient
   /**
-   * Client for staking source discovery. Defaults to `algorand`. Two clients initially because
-   * reti-ghost-sdk is ESM, and the other SDKs are CJS, so sharing one client fails the composer's
-   * `instanceof` check (TODO: change in reti-ghost-sdk? leave like this?). Then, realized it is
-   * very useful for testing: discovery can always read mainnet, while the contracts may live
+   * Client the staking source plugins discover with. Defaults to `algorand`. Two clients initially
+   * because reti-ghost-sdk is ESM, and the other SDKs are CJS, so sharing one client fails the
+   * composer's `instanceof` check (TODO: change in reti-ghost-sdk? leave like this?). Then, realized
+   * it is very useful for testing: discovery can always read mainnet, while the contracts may live
    * elsewhere (localnet, testnet). Innocent as not providing collapses to a single client.
    */
-  algorand2?: AlgorandClient
+  discoveryClient?: AlgorandClient
   fracRegistryAppId: number
   ggovRegistryAppId: number
+  /** Staking sources to run, defaulting to every plugin in the registry. */
   stakingSources?: string[]
-  debugSdk?: boolean
+  /** Admin of both registries. Falls back to ADMIN/ADMIN_MNEMONIC in the environment. */
+  adminAccount?: PipelineAccount
+  /** Operator that ingests AQ. Falls back to the admin account. */
+  operatorAccount?: PipelineAccount
+  /** Log step stats and every write to the console, and put the SDKs in debug mode. */
+  debug?: boolean
 }
 
-interface Instance {
+/** A staking instance in this committee that must exist on the frac registry. */
+interface FutureInstance {
+  /** Staking source that recognized the escrows, i.e. the plugin's name. */
   source: string
+  /** Instance name, which is also its on-chain identity. */
   name: string
-  appId?: bigint
-  numId?: number
+  /** Escrows backing it, already narrowed to members of the committee being run. */
   escrowAddresses: string[]
 }
 
-interface RetiValidatorWithPools {
-  validatorId: number
-  pools: {
-    poolAppId: bigint
-    totalStakers: number
-    totalAlgoStaked: bigint
-    poolAppEscrow: string
-  }[]
+/** An instance that exists on the frac registry, i.e. one with an app behind it. */
+interface RegisteredInstance {
+  numId: number
+  appId: bigint
+}
+
+/** What a run did, for the caller to log or assert on. Empty until `run` has been called. */
+interface PipelineRunContext {
+  /** Committee the run was scoped to. */
+  committeeId?: string
+  /** That committee as the gGov registry held it when the run started. */
+  committee?: GGovCommitteeFile
+  /** Escrows this run registered to instances that already existed on the frac registry. */
+  existingInstanceNewEscrows: { instance: string; escrow: string }[]
+  /** Instances this run created, with the escrows registered to them. */
+  createdInstances: { instance: string; escrows: string[] }[]
+}
+
+/** An escrow of an already-registered instance that still has to be registered to it. */
+interface PendingEscrowRegistration {
+  instanceNumId: number
+  instanceName: string
+  escrowAddress: string
 }
 
 export class FracDelegationPipeline {
   /** Main Algorand client, used for writes. */
   private readonly algorand: AlgorandClient
-  /** Secondary Algorand client, used for Reti SDK and discovery. If not provided in constructor, defaults to the main client. */
-  private readonly algorand2: AlgorandClient
+  /** Secondary Algorand client, used by the source plugins. If not provided in constructor, defaults to the main client. */
+  private readonly discoveryClient: AlgorandClient
   private readonly fracSdk: FracDelegationSDK
   private readonly ggovSdk: GGovRegistrySDK
-  private readonly retiSdk: RetiGhostSDK
   private readonly sources: string[]
-  // cache data
-  private instancesCache: Instance[] = []
-  private retiCache: RetiValidatorWithPools[] = []
-  ctx: { [key: string]: any } = {}
+
+  /** Held for stage 3: AQ ingestion is the operator's job, not the admin's. */
+  private readonly operatorAccount?: PipelineAccount
+  private readonly debug: boolean
+  // Per-run caches, cleared at the top of `run` and filled by the step that owns each one.
+  /** What the committee implies must exist, per staking source. The root every other cache derives from. */
+  private futureInstances: FutureInstance[] = []
+  /** Of those, the ones the frac registry already held when the run started, by instance name. */
+  private existingInstances: Map<string, RegisteredInstance> = new Map()
+  /** Of those, the ones with no app behind them yet: what this run creates. */
+  private instancesToCreate: FutureInstance[] = []
+  /** Escrows of already-registered instances that this run registers to them. */
+  private existingInstanceEscrowsToRegister: PendingEscrowRegistration[] = []
+  /** Instances this run created, by instance name. Empty until the create step runs. */
+  private instancesCreated: Map<string, RegisteredInstance> = new Map()
+  ctx: PipelineRunContext = { existingInstanceNewEscrows: [], createdInstances: [] }
 
   constructor({
     algorand,
-    algorand2,
+    discoveryClient,
     fracRegistryAppId,
     ggovRegistryAppId,
     stakingSources,
-    debugSdk = false,
+    adminAccount,
+    operatorAccount,
+    debug = false,
   }: FracPipelineArgs) {
     this.algorand = algorand
-    this.algorand2 = algorand2 ?? algorand
-    // TODO: how to handle the different privileges for the frac and gov SDKs? for now, admin for both registries
-    // and operator are the same. how will this be for separate credentials? the pipeline needs admin rights on both
-    // registries and operator rights for AQ ingestion.
-    let adminAccount: { sender: string; signer: ReturnType<AlgorandClient['account']['getSigner']> } | undefined
-    if (process.env.ADMIN_MNEMONIC && process.env.ADMIN) {
-      algorand.account.setSignerFromAccount(mnemonicToSecretKey(process.env.ADMIN_MNEMONIC))
-      adminAccount = { sender: process.env.ADMIN, signer: algorand.account.getSigner(process.env.ADMIN) }
-    }
+    this.discoveryClient = discoveryClient ?? algorand
+    this.debug = debug
+    adminAccount = adminAccount ?? envAccount(algorand)
+    this.operatorAccount = operatorAccount ?? adminAccount
     this.fracSdk = new FracDelegationSDK({
       algorand,
       registryAppId: fracRegistryAppId,
       writerAccount: adminAccount,
-      debug: debugSdk,
+      debug,
     })
     this.ggovSdk = new GGovRegistrySDK({
       algorand,
       registryAppId: ggovRegistryAppId,
       writerAccount: adminAccount,
-      debug: debugSdk,
+      debug,
     })
-    this.retiSdk = new RetiGhostSDK({ algorand: this.algorand2, registryAppId: RETI_REGISTRY_APP_ID })
-
     if (stakingSources && stakingSources.length !== new Set(stakingSources).size) {
       throw new Error('Duplicate staking sources are not allowed')
     }
-    this.sources = stakingSources ?? STAKING_SOURCES
+    this.sources = stakingSources ?? AVAILABLE_SOURCES
   }
 
-  getInstancesCache() {
-    return this.instancesCache
+  /** Step stats and one line per write, on the console. Silent unless the pipeline is in debug mode. */
+  private log(message: string) {
+    if (this.debug) console.log(`[pipeline] ${message}`)
   }
 
-  getRetiCache() {
-    return this.retiCache
-  }
-
+  /**
+   *
+   * @param committeeId
+   */
   async run(committeeId: string) {
     const committee = await this.ggovSdk.getCommittee(committeeId)
     if (!committee) throw new Error(`Wrong committee ID: ${committeeId} is not on the gGov registry`)
 
-    // discovery appends to the caches, so a re-run must start from empty
-    this.instancesCache = []
-    this.retiCache = []
+    /** new + existing instances that will exist by the end */
+    this.futureInstances = []
+    /** instances that existed on-chain at the start of the run */
+    this.existingInstances = new Map()
+
+    this.instancesToCreate = []
+    this.existingInstanceEscrowsToRegister = []
+    this.instancesCreated = new Map()
     this.ctx = {
-      committeeId: committee,
-      instancesWithNoEscrows: [],
-      instancesWithExcludedEscrows: [],
-      registeredEscrows: [],
+      committeeId,
+      committee,
+      existingInstanceNewEscrows: [],
       createdInstances: [],
     }
 
     // Stage 1: escrow/instance recognition + on-chain reconciliation
 
-    // each of them makes a discovery of the instances and its escrows, and writes cache
-    for (const s of this.sources) {
-      if ('reti' === s) {
-        // get all validators and their pools
-        const numValidators = await this.retiSdk.getNumValidators()
-        const validatorIds = new Array(numValidators).fill(0).map((_, i) => i + 1)
-        const poolsWithValidatorId = (await this.retiSdk.getPools(validatorIds)).map((pools, i) => ({
-          validatorId: validatorIds[i],
-          pools: pools.map((p) => ({
-            poolAppEscrow: getApplicationAddress(p.poolAppId).toString(),
-            ...p,
-          })),
-        }))
-        // cache fetched data for later use
-        poolsWithValidatorId.forEach(({ validatorId, pools }) => {
-          this.retiCache.push({ validatorId, pools })
-          this.instancesCache.push({
-            source: 'reti',
-            name: `Reti #${validatorId}`,
-            escrowAddresses: pools.map((p) => p.poolAppEscrow),
-          })
-        })
-      } else if ('talgo' === s) {
-        // get accounts stored in the tALGO app global state
-        const state = await this.algorand2.app.getGlobalState(TALGO_APP_ID)
-        const escrows = Object.entries(state)
-          .filter(([key]) => key.startsWith('account_'))
-          // stable escrow order across runs - sort in slot order, so escrow indices track account_N
-          .sort(([a], [b]) => Number(a.slice('account_'.length)) - Number(b.slice('account_'.length)))
-          // narrow to byte-typed entries and filter out empty slots which would otherwise decode to the zero address
-          .flatMap(([, v]) =>
-            'valueRaw' in v && v.valueRaw.some((byte) => byte !== 0) ? [encodeAddress(v.valueRaw)] : [],
-          )
-        // account_0 is the app itself and is always set, so an empty result means the wrong app id
-        if (!escrows.length) throw new Error(`talgo: app ${TALGO_APP_ID} exposes no account_* globals`)
-        if (escrows[0] !== TALGO_APP_ADDRESS) throw new Error(`talgo: account_0 must be the app address`)
-        this.instancesCache.push({
-          source: 'talgo',
-          name: 'Tinyman tALGO',
-          escrowAddresses: escrows,
-        })
-      } else if ('xalgo' === s) {
-        // TODO: implement
-        throw new Error(`xalgo staking source not implemented yet`)
-      } else {
-        throw new Error(`Unknown staking source: ${s}`)
+    // escrow recognition: every gov in the committee goes past every source, and the ones a source
+    // claims are its escrows. Sources only ever see committee members, so an escrow outside the
+    // committee cannot enter the analysis in the first place
+    const committeeGovAddresses = committee.govs.map((gov) => gov.address)
+    this.log(`committee ${committeeId}: ${committeeGovAddresses.length} govs, sources: ${this.sources.join(', ')}`)
+    const sourceByEscrow = new Map<string, string>()
+    for (const source of this.sources) {
+      // an unknown source throws out of the registry
+      const plugin = await getPlugin(source, this.discoveryClient)
+      const instanceNameByEscrow = await plugin.getInstanceNameFromEscrowAddrs(committeeGovAddresses)
+      const recognized = Object.entries(instanceNameByEscrow)
+      this.log(
+        `${source}: ${recognized.length} of the committee's govs are escrows, in ${new Set(Object.values(instanceNameByEscrow)).size} instances`,
+      )
+      for (const [escrowAddress, instanceName] of recognized) {
+        // escrows cannot be repeated across sources
+        const claimedBy = sourceByEscrow.get(escrowAddress)
+        if (claimedBy) throw new Error(`Escrow ${escrowAddress} claimed by both ${claimedBy} and ${source}`)
+        sourceByEscrow.set(escrowAddress, source)
+        const known = this.futureInstances.find((i) => i.name === instanceName)
+        // the instance name is its on-chain identity, so two sources cannot answer with the same one
+        if (known && known.source !== source) {
+          throw new Error(`Instance ${instanceName} claimed by both ${known.source} and ${source}`)
+        }
+        if (known) known.escrowAddresses.push(escrowAddress)
+        else this.futureInstances.push({ source, name: instanceName, escrowAddresses: [escrowAddress] })
       }
     }
-
-    // escrow recognition: intersection of committee escrows and fetched escrows
-    const escrowsFetched = this.instancesCache.flatMap((i) => i.escrowAddresses)
-    const escrowsFetchedSet = new Set(escrowsFetched)
-    // escrows cannot be repeated across sources
-    if (escrowsFetchedSet.size !== escrowsFetched.length) throw new Error('Repeated escrows found across sources')
-    const escrowsInCommittee = new Set(
-      committee.govs.map((gov) => gov.address).filter((addr) => escrowsFetchedSet.has(addr)),
-    )
+    this.log(`recognized ${sourceByEscrow.size} escrows in ${this.futureInstances.length} instances`)
+    if (this.debug) {
+      const escrowsBySource = new Map<string, number>()
+      for (const [_, source] of sourceByEscrow.entries()) {
+        escrowsBySource.set(source, (escrowsBySource.get(source) || 0) + 1)
+      }
+      for (const [source, count] of escrowsBySource.entries()) {
+        this.log(`${source}: ${count} escrow(s) recognized`)
+      }
+    }
 
     // get the current data from the contracts
     const onChainInstances = await this.fracSdk.registry.getExistingInstances()
     for (const [numId, instance] of onChainInstances.entries()) {
-      const matching = this.instancesCache.find((i) => i.name === instance.name)
-      if (matching) {
-        matching.appId = instance.appId
-        matching.numId = numId
-      } else {
+      if (!this.futureInstances.some((i) => i.name === instance.name)) {
         // if the instance is on-chain but not in the fetched data, it may be a stale instance
         // what should we do here? for now, log and continue
-        console.warn(`instance ${instance.name} (appId ${instance.appId}) is on-chain but not has not fetched data`)
+        console.warn(
+          `instance ${instance.name} (appId ${instance.appId}) is on-chain but not in committee ${committeeId} data, ignoring`,
+        )
+        continue
       }
+      this.existingInstances.set(instance.name, { numId, appId: instance.appId })
     }
 
-    // mutate the instance cache:
-    // 1. only keep escrow addresses that are in the committee and report the rest as excluded from the pipeline analysis
-    // 2. remove instances that have no escrows in the committee
-    for (const instance of this.instancesCache) {
-      const excluded: string[] = []
-      instance.escrowAddresses = instance.escrowAddresses.filter((e) => {
-        const isGov = escrowsInCommittee.has(e)
-        if (!isGov) excluded.push(e)
-        return isGov
-      })
-      if (instance.escrowAddresses.length === 0) {
-        // from the ones fetched, the ones which have no escrows at all in the committee
-        this.ctx.instancesWithNoEscrows.push(instance.name)
-      }
-      if (excluded.length > 0) {
-        // instances with some fetched escrows not in the committee (partially excluded)
-        this.ctx.instancesWithExcludedEscrows.push({ [instance.name]: excluded })
-      }
-    }
-    this.instancesCache = this.instancesCache.filter((i) => i.escrowAddresses.length > 0)
+    // instances not on chain, need to be created
+    this.instancesToCreate = this.futureInstances.filter((i) => !this.existingInstances.has(i.name))
+    this.log(
+      `${this.existingInstances.size} of them already on the frac registry, ${this.instancesToCreate.length} to create`,
+    )
 
-    // for the created instances, are all their escrows registered? do not include the escrows that are
-    // from a non-yet-created instance, as they will be registered when the instance is created
-    const escrowsToRegister: string[] = []
-    for (const i of this.instancesCache.filter((i) => i.numId !== undefined)) {
-      const onChainEscrows = new Set(await this.fracSdk.getEscrows(i.numId!))
-      const unregistered = i.escrowAddresses.filter((e) => !onChainEscrows.has(e))
-      if (unregistered.length) escrowsToRegister.push(...unregistered)
+    // for the instances that do exist, are all their escrows registered?
+    // the escrows of new instances are skipped as they will be registered when the instance is created
+    for (const future of this.futureInstances) {
+      const onChain = this.existingInstances.get(future.name)
+      if (!onChain) continue
+      const onChainEscrows = new Set(await this.fracSdk.getEscrows(onChain.numId))
+      for (const escrowAddress of future.escrowAddresses) {
+        if (onChainEscrows.has(escrowAddress)) continue
+        this.existingInstanceEscrowsToRegister.push({
+          instanceNumId: onChain.numId,
+          instanceName: future.name,
+          escrowAddress,
+        })
+      }
     }
 
     // WRITE: register escrows for existing instances
-    for (const e of escrowsToRegister) {
-      const instance = this.instancesCache.find((i) => i.escrowAddresses.includes(e))
-      // safety check: if the escrow is in the list to register, it must belong to an existing instance
-      if (instance?.numId === undefined) throw new Error(`cannot find instance for escrow ${e}`)
-      await this.fracSdk.registry.registerEscrow({ instanceNumId: instance.numId, account: e })
-      this.ctx.registeredEscrows.push({ instance: instance.name, escrow: e })
+    this.log(`registering ${this.existingInstanceEscrowsToRegister.length} escrows to existing instances`)
+    for (const { instanceNumId, instanceName, escrowAddress } of this.existingInstanceEscrowsToRegister) {
+      await this.fracSdk.registry.registerEscrow({ instanceNumId, account: escrowAddress })
+      this.ctx.existingInstanceNewEscrows.push({ instance: instanceName, escrow: escrowAddress })
+      this.log(`WRITE registerEscrow(existing): ${escrowAddress} -> ${instanceName} (#${instanceNumId})`)
     }
-
-    // cached instances with no app ID need to be created by admin
-    const instancesToCreate = this.instancesCache.filter((i) => i.appId === undefined)
 
     // WRITE: create new instances and register escrows
-    for (const i of instancesToCreate) {
+    this.log(
+      `creating ${this.instancesToCreate.length} instances with ${this.instancesToCreate.reduce((n, i) => n + i.escrowAddresses.length, 0)} escrows`,
+    )
+    for (const newInstance of this.instancesToCreate) {
       // 1 ALG0 for MBR
-      const instanceNumId = await this.fracSdk.registry.addInstance({ name: i.name, mbrAmount: 1e6 })
-      // update instance cache with on-chain data
-      i.numId = Number(instanceNumId)
-      i.appId = await this.fracSdk.getInstanceAppId(instanceNumId)
+      const instanceNumId = await this.fracSdk.registry.addInstance({ name: newInstance.name, mbrAmount: 1e6 })
+      const appId = await this.fracSdk.getInstanceAppId(instanceNumId)
+      this.instancesCreated.set(newInstance.name, { numId: Number(instanceNumId), appId })
+      this.log(`WRITE addInstance: ${newInstance.name} (#${instanceNumId}, appId ${appId})`)
       // register all escrows for the new instance
-      for (const e of i.escrowAddresses) {
-        await this.fracSdk.registry.registerEscrow({ instanceNumId, account: e })
+      for (const escrowAddress of newInstance.escrowAddresses) {
+        await this.fracSdk.registry.registerEscrow({ instanceNumId, account: escrowAddress })
+        this.log(`WRITE registerEscrow(new): ${escrowAddress} -> ${newInstance.name} (#${instanceNumId})`)
       }
-      this.ctx.createdInstances.push({ instance: i.name, escrows: i.escrowAddresses })
+      this.ctx.createdInstances.push({ instance: newInstance.name, escrows: newInstance.escrowAddresses })
     }
-
-    // WRITE: import frac delegations from just-registered escrows
-    const escrowsToImportDelegations = escrowsToRegister.concat(instancesToCreate.flatMap((i) => i.escrowAddresses))
-    await this.ggovSdk.importFracDelegationsAll({ escrowAccounts: escrowsToImportDelegations })
-
-    // Stage 2: calculate staking share per user and create AQ files per instance
-    // TODO: implement
-
-    // Stage 3: upload AQ files (ingestion) - operator
-    // TODO: implement
   }
+}
+
+/**
+ * The environment's admin account, registered on `algorand` so the SDKs can sign with it.
+ * @returns undefined when ADMIN/ADMIN_MNEMONIC are not both set
+ */
+function envAccount(algorand: AlgorandClient): PipelineAccount | undefined {
+  if (!process.env.ADMIN_MNEMONIC || !process.env.ADMIN) return undefined
+  algorand.account.setSignerFromAccount(mnemonicToSecretKey(process.env.ADMIN_MNEMONIC))
+  return { sender: process.env.ADMIN, signer: algorand.account.getSigner(process.env.ADMIN) }
 }
