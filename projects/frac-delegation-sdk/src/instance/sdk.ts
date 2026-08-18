@@ -16,6 +16,7 @@ import { parseAqFile } from '../util/aqFile'
 import { getSpendableBalance } from '../util/spendable'
 import { committeeIdToRaw } from '../util/comitteeId'
 import { chunk } from '../util/chunk'
+import { instanceBoxName, periodBoxName } from '../util/boxes'
 import { padForRefSlots } from '../util/padForRefSlots'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
@@ -30,6 +31,8 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   declare public registry: FracDelegationRegistrySDK
   /** instanceNumId → cached writer client. */
   protected instanceWriteClientCache: Map<bigint, FracDelegationInstanceClient> = new Map()
+  /** Cached gGov registry app id, read off the frac registry's `gGovRegistryApp` global. */
+  protected gGovRegistryAppIdCache?: bigint
 
   constructor({ writerAccount, ...rest }: ConstructorArgs) {
     super(rest)
@@ -56,6 +59,18 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     })
     this.instanceWriteClientCache.set(id, client)
     return client
+  }
+
+  /**
+   * The configured gGov registry app id, or `0n` when the frac registry has none set. Admin-set and
+   * effectively static, so a resolved id is memoised for this SDK's lifetime — same treatment as the
+   * per-instance client cache. The `0n` sentinel is not cached: it is a misconfiguration, not a value.
+   */
+  protected async getGGovRegistryAppId(): Promise<bigint> {
+    if (this.gGovRegistryAppIdCache) return this.gGovRegistryAppIdCache
+    const appId = await this.registry.getGGovRegistryApp()
+    if (appId) this.gGovRegistryAppIdCache = appId
+    return appId
   }
 
   // ── Executor factory ─────────────────────────────────────────────
@@ -662,8 +677,10 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * re-casts every escrow on every topic. Fees and reference padding are therefore provisioned for
    * the worst case up front (a no-op re-vote still pays them: extraFee is spent, not refunded).
    *
-   * The instance app account pays the `votingRecords` box MBR on an account's first vote — keep it
-   * funded, sized by `committeeAq.numAccounts`.
+   * Vote record MBR is paid by the instance app account on an account's first vote. It pulls a
+   * top-up from the registry when needed, so what needs funding is the REGISTRY app account, not
+   * each instance: keep it above `numVoters * voteRecordMBR + mbrTopUp`, and recover leftovers
+   * from instances via `withdrawInstanceALGO`.
    */
   @requireWriter()
   @wrapErrors()
@@ -683,6 +700,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
     const numEscrows = await this.escrowCountUpperBound(instanceNumId)
+    const gGovRegistryAppId = await this.getGGovRegistryAppId()
     // The sender is always this SDK's writerAccount; the voter defaults to it (self-vote).
     const effectiveSender = String(this.writerAccount!.sender)
     const voter = voterAccount === undefined ? effectiveSender : String(voterAccount)
@@ -694,18 +712,40 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // Slots, worst case (every escrow re-cast): 5 per escrow (the escrow's account ref — the inner
     // vote() passes it in its foreign-accounts array, so it must be available to the group — plus
     // this instance's periodEscrowVotes box, the period app's per-escrow vote record, and the gGov
-    // registry's delegations + accounts boxes), plus a fixed ~20 (3 app refs: period app, frac
+    // registry's delegations + accounts boxes), plus a fixed ~22 (3 app refs: period app, frac
     // registry, gGov registry; this instance's periods/periodVoteCache/committees/committeeAq/
-    // accountAq/votingRecords/escrows boxes; the frac registry's accounts box; the period's tallies
-    // box; the gGov registry's committee metadata + member superbox). Each pad also adds 16
-    // inner-txn allowance and 700 opcodes, both of which the ref demand dominates. Validated
-    // against simulate in the e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
+    // accountAq/votingRecords/escrows boxes; the frac registry's accounts and instances boxes, the
+    // latter for checkNeedMBR's conditional top-up; the gGov registry's periods box, for the
+    // conditional top-up of the period vote nested in this one; the period's tallies box; the gGov
+    // registry's committee metadata + member superbox). Each pad also adds 16 inner-txn allowance
+    // and 700 opcodes, both of which the ref demand dominates. Validated against simulate in the
+    // e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
     // A delegated vote adds 2: the voter's account ref and the gGov registry's delegations box.
-    builder = padForRefSlots(builder, numEscrows * 5 + 20 + (isDelegated ? 2 : 0), 'vote')
+    builder = padForRefSlots(builder, numEscrows * 5 + 22 + (isDelegated ? 2 : 0), 'vote')
     const opts: Parameters<typeof builder.vote>[0] = {
       args: { voterAccount: voter, periodId, topicVotes },
       note,
+      // The two MBR inner calls are deliberately NOT counted here: both pay their own fee, so
+      // the group's fee must not depend on whether the top-up fires.
       extraFee: (innerCalls * 1000).microAlgo(),
+      // Resources whose need is state-dependent must be declared statically for the worst case.
+      // checkNeedMBR reads these boxes only when the app is at or below its minimum balance - a
+      // branch another voter's transaction can flip between simulate and execution. Since resource
+      // population resolves references by simulating, a group that simulated without the top-up
+      // would hit an unavailable box error.
+      // Two of them, because this vote nests another: the frac registry's `instances` box for this
+      // instance's own top-up, and the gGov registry's `periods` box for the GGovPeriod.vote each
+      // re-cast escrow triggers - that inner vote allocates a per-escrow record and runs its own
+      // checkNeedMBR.
+      // The app refs are not redundant with population: algosdk encodes box refs against this txn's
+      // own foreign-apps at build time, before population runs.
+      appReferences: [this.registryReadClient.appId, ...(gGovRegistryAppId ? [gGovRegistryAppId] : [])],
+      boxReferences: [
+        { appId: this.registryReadClient.appId, name: instanceBoxName(Number(instanceNumId)) },
+        // Omitted when unset (0n): an instance with no gGov registry cannot vote at all, and the
+        // on-chain failure names the cause better than an app reference of 0 would.
+        ...(gGovRegistryAppId ? [{ appId: gGovRegistryAppId, name: periodBoxName(periodId) }] : []),
+      ],
     }
     if (isDelegated) {
       // The contract requires the delegator at Txn.accounts(1) so delegated votes are visible to

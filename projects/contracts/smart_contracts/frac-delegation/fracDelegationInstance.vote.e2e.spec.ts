@@ -2,6 +2,7 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
 import { Address, generateAccount, getApplicationAddress } from 'algosdk'
 import { FracDelegationInstanceClient, FracDelegationSDK } from 'frac-delegation-sdk'
+import { instanceBoxName, periodBoxName } from '../../../frac-delegation-sdk/src/util/boxes'
 import { GGovCommitteeFile, GGovSDK } from 'ggov-sdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import committeeTemplate from '../../../common/committee-files/template.json'
@@ -113,8 +114,9 @@ const setupVoting = async (
   // The instance pays votingRecords + periodEscrowVotes box MBR; the frac registry pays per-account
   // MBR when ingestAq first sees a voter. No funding path between them, so top up both.
   const instanceAppAddress = getApplicationAddress(instanceAppId).toString()
+  const registryAppAddress = sdk.registryReadClient.appAddress.toString()
   await localnet.algorand.account.ensureFundedFromEnvironment(instanceAppAddress, (10).algos())
-  await localnet.algorand.account.ensureFundedFromEnvironment(sdk.registryReadClient.appAddress, (5).algos())
+  await localnet.algorand.account.ensureFundedFromEnvironment(registryAppAddress, (5).algos())
 
   // Every escrow delegates its gGov voting power to the instance app account — the mechanism that
   // lets the instance's inner vote() calls pass the period's delegation check.
@@ -163,6 +165,7 @@ const setupVoting = async (
     periodId,
     periodAppId,
     instanceAppAddress,
+    registryAppAddress,
     totalAq,
   }
 }
@@ -219,6 +222,53 @@ const ggovTallies = async (ctx: VotingCtx) =>
 const voteInnerTxnCount = (result: { confirmations?: { innerTxns?: unknown[] }[] }) => {
   const confirmations = result.confirmations!
   return confirmations[confirmations.length - 1].innerTxns?.length ?? 0
+}
+
+/** The instance app account's available balance. */
+const instanceAvailable = async (localnet: AlgorandFixture, ctx: VotingCtx) => {
+  const info = await localnet.algorand.account.getInformation(ctx.instanceAppAddress)
+  return info.balance.microAlgo - info.minBalance.microAlgo
+}
+
+/** The registry app account's available balance. */
+const registryAvailable = async (localnet: AlgorandFixture, ctx: VotingCtx) => {
+  const info = await localnet.algorand.account.getInformation(ctx.registryAppAddress)
+  return info.balance.microAlgo - info.minBalance.microAlgo
+}
+
+/** The gGov period app account's available balance — what the gGov registry tops up. */
+const periodAvailable = async (localnet: AlgorandFixture, ctx: VotingCtx) => {
+  const info = await localnet.algorand.account.getInformation(getApplicationAddress(ctx.periodAppId).toString())
+  return info.balance.microAlgo - info.minBalance.microAlgo
+}
+
+/** The gGov registry app account's available balance — the vault behind the period, not the instance. */
+const ggovRegistryAvailable = async (localnet: AlgorandFixture, ctx: VotingCtx) => {
+  const address = getApplicationAddress(ctx.ggovRegistrySdk.appId).toString()
+  const info = await localnet.algorand.account.getInformation(address)
+  return info.balance.microAlgo - info.minBalance.microAlgo
+}
+
+/** Withdraw the instance's available balance down to `leave` microALGO. */
+const drainInstanceTo = async (localnet: AlgorandFixture, ctx: VotingCtx, leave: bigint) => {
+  const available = await instanceAvailable(localnet, ctx)
+  await ctx.sdk.withdrawInstanceALGO({
+    instanceNumId: ctx.instanceId,
+    receiver: ctx.testAccount.toString(),
+    amount: available - leave,
+  })
+  expect(await instanceAvailable(localnet, ctx)).toBe(leave)
+}
+
+/** Withdraw the period's available balance down to `leave` microALGO. */
+const drainPeriodTo = async (localnet: AlgorandFixture, ctx: VotingCtx, leave: bigint) => {
+  const available = await periodAvailable(localnet, ctx)
+  await ctx.ggovSdk.withdrawPeriodALGO({
+    periodId: ctx.periodId,
+    receiver: ctx.testAccount.toString(),
+    amount: available - leave,
+  })
+  expect(await periodAvailable(localnet, ctx)).toBe(leave)
 }
 
 describe('FracDelegationInstance vote', () => {
@@ -779,5 +829,228 @@ describe('FracDelegationInstance vote', () => {
       ).toEqual(expected)
       expect(await ctx.registrySdk.getAccountVotingRecords(voter.account.toString(), ctx.periodId)).toEqual([expected])
     }, 120_000)
+  })
+
+  describe('MBR self-funding via registry vault', () => {
+    // Acts as well as regression test for the AVM property the whole design rests on: that `box_create`
+    // raises `min_balance` immediately but defers the balance check to the end of the outer transaction.
+
+    // One topic of three options: S = 1 + 3, so the record is 5 + 4*S = 21 bytes over a 9-byte key
+    // ('r' + FracPeriodAccountKey), and box MBR is 2500 + 400 * (key + value).
+    const VOTE_RECORD_MBR = 2_500n + 400n * (9n + 21n)
+    // The period's own per-escrow record, allocated by the GGovPeriod.vote nested in a frac vote.
+    // Same 21-byte value, but `voteRecords` is keyed by Account under prefix 'v' — 33 bytes, not 9.
+    // Kept in step with ggovPeriod.e2e.spec.ts's VOTE_RECORD_MBR, which covers the direct path.
+    const PERIOD_VOTE_RECORD_MBR = 2_500n + 400n * (33n + 21n)
+    // The two vaults top up by different amounts: `mbrTopUp` defaults to 2 A on the frac
+    // registry (which funds the instance) and 5 A on the gGov registry (which funds the period).
+    const FRAC_MBR_TOP_UP = 2_000_000n
+    const GGOV_MBR_TOP_UP = 5_000_000n
+    const REQUEST_FEE = 1_000n
+
+    test('a well-funded instance never asks for a top-up', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const registryAvailableBefore = await registryAvailable(localnet, ctx)
+      const instanceAvailableBefore = await instanceAvailable(localnet, ctx)
+
+      const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+
+      expect(voteInnerTxnCount(result)).toBe(4)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore)
+      expect(await instanceAvailable(localnet, ctx)).toBe(instanceAvailableBefore - VOTE_RECORD_MBR)
+    }, 120_000)
+
+    test('an instance with not enough available balance requests an MBR top-up', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const leftover = VOTE_RECORD_MBR / 3n // positive, well under the record's MBR
+      await drainInstanceTo(localnet, ctx, leftover)
+      const registryAvailableBefore = await registryAvailable(localnet, ctx)
+
+      const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+
+      expect(voteInnerTxnCount(result)).toBe(5)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + FRAC_MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      // Record is successfully stored
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
+    }, 120_000)
+
+    test('an instance at zero available balance requests an MBR top-up', async () => {
+      // This is the `balance === minBalance` case
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      await drainInstanceTo(localnet, ctx, VOTE_RECORD_MBR)
+      const registryAvailableBefore = await registryAvailable(localnet, ctx)
+
+      const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+
+      expect(voteInnerTxnCount(result)).toBe(5)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(FRAC_MBR_TOP_UP - REQUEST_FEE)
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
+    }, 120_000)
+
+    test('a delegated vote requests an MBR top-up too', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      const delegatee = await addDelegatee(localnet, ctx)
+      await delegateTo(localnet, ctx, voter.account, delegatee.account)
+      const leftover = VOTE_RECORD_MBR / 3n
+      await drainInstanceTo(localnet, ctx, leftover)
+      const registryAvailableBefore = await registryAvailable(localnet, ctx)
+
+      const result = await delegatee.sdk.vote({
+        periodId: ctx.periodId,
+        voterAccount: voter.account.toString(),
+        topicVotes: [[50, 30, 20]],
+      })
+
+      // 6 = the delegated path's 5 (gGov getDelegate + registry getAccount + 3 escrow casts) + requestMBR.
+      expect(voteInnerTxnCount(result)).toBe(6)
+      expect(await registryAvailable(localnet, ctx)).toBe(registryAvailableBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+      expect(await instanceAvailable(localnet, ctx)).toBe(leftover + FRAC_MBR_TOP_UP - REQUEST_FEE - VOTE_RECORD_MBR)
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
+    }, 120_000)
+
+    test('a re-vote costs no MBR: one microALGO of headroom carries it', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+      await drainInstanceTo(localnet, ctx, 1n)
+
+      const result = await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[20, 30, 50]] })
+
+      expect(voteInnerTxnCount(result)).toBe(4)
+      expect(await instanceAvailable(localnet, ctx)).toBe(1n)
+      const accountId = await accountIdOf(ctx, voter.account.toString())
+      expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[20, 30, 50]])
+    }, 120_000)
+
+    test('a drained registry fails the user-facing vote call', async () => {
+      const ctx = await setupVoting(localnet)
+      const voter = await addVoter(localnet, ctx, 100)
+      await drainInstanceTo(localnet, ctx, 3n)
+      await ctx.registrySdk.withdrawALGO({
+        receiver: ctx.testAccount.toString(),
+        amount: await registryAvailable(localnet, ctx),
+      })
+
+      await expect(voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })).rejects.toThrow()
+    }, 120_000)
+
+    test('every vote references the registry app and its instances box, top-up or not', async () => {
+      // The vote must name the registry's `instances` box unconditionally: checkNeedMBR reads it only
+      // on a branch another voter's transaction can flip between simulate and execution, and resource
+      // population resolves references BY simulating. Regression test: nothing else in this suite would
+      // notice if the SDK stopped sending it.
+      const ctx = await setupVoting(localnet, { totalAccounts: 2 })
+      const first = await addVoter(localnet, ctx, 60)
+      const second = await addVoter(localnet, ctx, 40)
+
+      const vaultBeforeFirst = await registryAvailable(localnet, ctx)
+      const voteNoTopUp = await first.sdk.vote({ periodId: ctx.periodId, topicVotes: [[60, 0, 0]] })
+      const vaultAfterFirst = await registryAvailable(localnet, ctx)
+      await drainInstanceTo(localnet, ctx, VOTE_RECORD_MBR / 3n)
+      const voteWithTopUp = await second.sdk.vote({ periodId: ctx.periodId, topicVotes: [[0, 40, 0]] })
+
+      expect(vaultAfterFirst).toBe(vaultBeforeFirst)
+      expect(await registryAvailable(localnet, ctx)).toBe(vaultAfterFirst - FRAC_MBR_TOP_UP - REQUEST_FEE)
+
+      const registryAppId = ctx.registrySdk.appId
+      // Presence of the reference is what this test owns. That its bytes match the contract's
+      // `instances` prefix is boxNames.spec.ts's job.
+      const expectedName = instanceBoxName(ctx.instanceId)
+      // The vote app call is the group's last txn; the reference pads come before it.
+      const voteCall = (r: typeof voteNoTopUp) => r.transactions[r.transactions.length - 1]
+
+      for (const result of [voteNoTopUp, voteWithTopUp]) {
+        const { foreignApps, boxes } = voteCall(result).applicationCall!
+        expect(foreignApps).toContain(registryAppId)
+        expect(boxes.some((b) => b.appIndex === registryAppId && Buffer.from(b.name).equals(expectedName))).toBe(true)
+      }
+      // The two MBR inner calls pay their own fees, so the voter pays the same either way.
+      expect(voteCall(voteWithTopUp).fee).toBe(voteCall(voteNoTopUp).fee)
+    }, 120_000)
+
+    describe('the nested period vote funds itself too (escrow re-cast)', () => {
+      // A frac vote nests a GGovPeriod.vote per re-cast escrow, and that inner vote runs its own
+      // checkNeedMBR against the gGov registry. So a frac vote can drain two vaults, and needs the
+      // gGov registry's `periods` box on the wire for the same simulate-vs-execution reason as above.
+      test('a drained period is topped up by the gGov registry mid-frac-vote', async () => {
+        const ctx = await setupVoting(localnet)
+        const voter = await addVoter(localnet, ctx, 100)
+        await drainPeriodTo(localnet, ctx, 1n)
+        const ggovVaultBefore = await ggovRegistryAvailable(localnet, ctx)
+        const periodVaultBefore = await periodAvailable(localnet, ctx)
+        const fracVaultBefore = await registryAvailable(localnet, ctx)
+
+        await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+
+        // One top-up covers all three escrow casts: the first 5 A lands before the second escrow's
+        // record is allocated, so the period is well funded for the rest.
+        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultBefore - GGOV_MBR_TOP_UP - REQUEST_FEE)
+        expect(await periodAvailable(localnet, ctx)).toBe(
+          periodVaultBefore + GGOV_MBR_TOP_UP - REQUEST_FEE - PERIOD_VOTE_RECORD_MBR * 3n,
+        )
+        // The instance is untouched by the period's shortfall — separate vaults, separate branches.
+        expect(await registryAvailable(localnet, ctx)).toBe(fracVaultBefore)
+        // The votes actually landed: a top-up that fires but leaves the group failing is worthless.
+        const accountId = await accountIdOf(ctx, voter.account.toString())
+        expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
+      }, 120_000)
+
+      test('every vote references the gGov registry app and its periods box, top-up or not', async () => {
+        // Same regression risk as the instances-box test above, one layer down: this reference is
+        // only exercised when the PERIOD is short, which no other test in this suite arranges.
+        const ctx = await setupVoting(localnet, { totalAccounts: 2 })
+        const first = await addVoter(localnet, ctx, 60)
+        const second = await addVoter(localnet, ctx, 40)
+
+        const ggovVaultBefore = await ggovRegistryAvailable(localnet, ctx)
+        const voteNoTopUp = await first.sdk.vote({ periodId: ctx.periodId, topicVotes: [[60, 0, 0]] })
+        const ggovVaultAfterFirst = await ggovRegistryAvailable(localnet, ctx)
+        // Exactly zero, not a sliver: the first vote already allocated every escrow's record, so the
+        // second allocates nothing and one microALGO of headroom would carry it without a top-up.
+        await drainPeriodTo(localnet, ctx, 0n)
+        const voteWithTopUp = await second.sdk.vote({ periodId: ctx.periodId, topicVotes: [[0, 40, 0]] })
+
+        expect(ggovVaultAfterFirst).toBe(ggovVaultBefore)
+        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultAfterFirst - GGOV_MBR_TOP_UP - REQUEST_FEE)
+
+        const ggovRegistryAppId = ctx.ggovRegistrySdk.appId
+        const expectedName = periodBoxName(ctx.periodId)
+        const voteCall = (r: typeof voteNoTopUp) => r.transactions[r.transactions.length - 1]
+
+        for (const result of [voteNoTopUp, voteWithTopUp]) {
+          const { foreignApps, boxes } = voteCall(result).applicationCall!
+          expect(foreignApps).toContain(ggovRegistryAppId)
+          expect(boxes.some((b) => b.appIndex === ggovRegistryAppId && Buffer.from(b.name).equals(expectedName))).toBe(
+            true,
+          )
+        }
+        expect(voteCall(voteWithTopUp).fee).toBe(voteCall(voteNoTopUp).fee)
+      }, 120_000)
+
+      test('a drained period + drained instance; two top-ups', async () => {
+        const ctx = await setupVoting(localnet)
+        const voter = await addVoter(localnet, ctx, 100)
+        await drainPeriodTo(localnet, ctx, 1n)
+        await drainInstanceTo(localnet, ctx, 1n)
+        const ggovVaultBefore = await ggovRegistryAvailable(localnet, ctx)
+        const fracVaultBefore = await registryAvailable(localnet, ctx)
+
+        await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: [[50, 30, 20]] })
+
+        expect(await ggovRegistryAvailable(localnet, ctx)).toBe(ggovVaultBefore - GGOV_MBR_TOP_UP - REQUEST_FEE)
+        expect(await registryAvailable(localnet, ctx)).toBe(fracVaultBefore - FRAC_MBR_TOP_UP - REQUEST_FEE)
+        const accountId = await accountIdOf(ctx, voter.account.toString())
+        expect((await ctx.instanceSdk.getVotingRecord(ctx.periodId, accountId))!.topicVotes).toEqual([[50, 30, 20]])
+      }, 120_000)
+    })
   })
 })

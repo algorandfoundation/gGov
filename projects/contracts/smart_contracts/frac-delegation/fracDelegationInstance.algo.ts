@@ -134,8 +134,8 @@ export class FracDelegationInstanceContract extends BaseContract {
   /**
    * Per-[period, account] internal vote record, written by `vote`. Keyed by the frac registry's
    * numeric account ID (like `accountAq`), and holding exactly the rows the account submitted so a
-   * re-vote can subtract them from the aggregate tally. The instance app account pays the box MBR -
-   * size it off `committeeAq.numAccounts` and keep it funded, as `GGovPeriod.voteRecords` does.
+   * re-vote can subtract them from the aggregate tally. The instance app account pays the box MBR,
+   * pulled from the registry on demand via `checkNeedMBR`.
    */
   votingRecords = BoxMap<FracPeriodAccountKey, FracVotingRecord>({ keyPrefix: 'r' })
 
@@ -209,6 +209,27 @@ export class FracDelegationInstanceContract extends BaseContract {
   protected resolveRegistryApp(): Application {
     loggedAssert(this.registryApp.value > 0, errRegistryMissing)
     return Application(this.registryApp.value)
+  }
+
+  /**
+   * Post-condition: if this app account is at or below its minimum balance, pull a top-up from the
+   * registry. The minimum balance requirement itself is enforced for the transaction as a whole, so
+   * an app's account `balance` can be lower than its `minBalance` within the execution of the (outer)
+   * transaction.
+   *
+   * NOTE: pays its own fee, against the usual `fee: 0` pooling rule. The top-up is conditional on a
+   * balance another voter can move between simulate and execution, so with pooling a group that
+   * simulated without it could not cover the extra fee. Own fees make the voter's group fee invariant.
+   * Its counterpart does the same - see `FracDelegationRegistry.requestMBR`.
+   */
+  protected checkNeedMBR(): void {
+    const app = Global.currentApplicationAddress
+    if (app.balance > app.minBalance) return
+    compileArc4(FracDelegationRegistryContract).call.requestMBR({
+      appId: this.resolveRegistryApp(),
+      args: [this.instanceNumId.value],
+      fee: Global.minTxnFee,
+    })
   }
 
   /** Caller must be the configured registry application (inner app call). */
@@ -856,9 +877,10 @@ export class FracDelegationInstanceContract extends BaseContract {
    * accounts that delegated to this instance's app address and must NEVER vote directly - a direct
    * vote is unoverridable in the same way and would brick external casting for the period.
    *
-   * The instance app account pays the `votingRecords` box MBR on an account's first vote; fees for
-   * the inner calls (1 registry resolve + 1 when delegated + 3 per re-cast escrow) come from the
-   * outer group's pool.
+   * Vote record MBR is paid by the instance app account on an account's first vote. A top-up is
+   * requested from the registry via inner call when needed; see the `checkNeedMBR` post-condition.
+   * Fees for the other inner calls come from the outer group's pool; the MBR ones are the exception
+   * and pay their own, so the voter's group fee does not depend on whether the top-up fires.
    * @param voterAccount The account whose AlgoQuarters are being voted. Either `Txn.sender` itself
    *   or an account that has delegated to `Txn.sender` on the gGov registry.
    * @param periodId gGov period ID, as synced by `syncPeriod`
@@ -1048,6 +1070,8 @@ export class FracDelegationInstanceContract extends BaseContract {
 
     userVoteRecordBox.value = { isDelegated, topicVotes: clone(newVotes) }
     this.periodVoteCache(periodId).value = clone(cache)
+    // Must stay after the vote record write
+    this.checkNeedMBR()
   }
 
   /**

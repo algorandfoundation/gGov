@@ -89,6 +89,21 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
 
   @requireWriterWithClient()
   @wrapErrors()
+  makeSetMBRTopUpTxns({
+    amount,
+    builder,
+  }: FracDelegationRegistryContractArgs['setMBRTopUp(uint64)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.setMbrTopUp({ args: { amount } })
+    return builder
+  }
+
+  setMBRTopUp = this.makeTxnExecutor({
+    maker: this.makeSetMBRTopUpTxns,
+  })
+
+  @requireWriterWithClient()
+  @wrapErrors()
   makeWithdrawALGOTxns({
     receiver,
     amount,

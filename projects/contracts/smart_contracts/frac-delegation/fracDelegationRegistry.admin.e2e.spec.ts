@@ -109,6 +109,18 @@ describe('FracDelegationRegistry admin', () => {
     })
   })
 
+  describe('setMBRTopUp', () => {
+    test('admin can set the MBR top-up amount', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployFracRegistry(localnet, testAccount)
+      // 2 ALGO default, set at deploy by the global's initialValue.
+      expect(await sdk.getMBRTopUp()).toBe(2_000_000n)
+
+      await sdk.setMBRTopUp({ amount: 5_000_000n })
+      expect(await sdk.getMBRTopUp()).toBe(5_000_000n)
+    })
+  })
+
   describe('admin transfer and lifecycle', () => {
     test('admin and default operator default to creator; gGov registry app starts unset (zero sentinel)', async () => {
       const { testAccount } = localnet.context
@@ -226,6 +238,10 @@ describe('FracDelegationRegistry admin', () => {
 
     test('non-admin cannot set the gGov registry app id', async () => {
       await expect(nonAdminSDK.setGGovRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot set the MBR top-up amount', async () => {
+      await expect(nonAdminSDK.setMBRTopUp({ amount: 2_000_000n })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot uploadInstanceApprovalPartial', async () => {
