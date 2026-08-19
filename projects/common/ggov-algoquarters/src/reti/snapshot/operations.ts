@@ -3,8 +3,8 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createSnapshotFiles } from '../../snapshots'
-import type { PoolLedger, RetiSnapshotData, StakerInfo } from '../types'
+import { createSnapshotFiles } from '../../snapshots.ts'
+import type { PoolLedger, RetiSnapshotData, StakerInfo } from '../types.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SNAPSHOTS_DIR = join(__dirname, '../../..', 'snapshots', 'reti')

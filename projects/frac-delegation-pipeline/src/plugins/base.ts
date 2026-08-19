@@ -7,8 +7,24 @@ export type FracInstanceName = string
 /** escrow address > instance name */
 export type FracInstanceNameResultMap = Record<string, FracInstanceName>
 
-/** address > AQ */
+/** address > AQ. Floored, uint32-bounded, and already filtered to accounts with at least 1 AQ. */
 export type AQResultMap = Record<string, number>
+
+/**
+ * One source's AlgoQuarters run: the numbers, plus the manifest fields only that source can supply.
+ * The pipeline adds what is not source-specific — the network genesis hash and the totals — when it
+ * assembles the `AlgoQuartersFile` it uploads.
+ */
+export interface AQCalculation {
+  /** Protocol identifier that goes on the manifest, e.g. `tinyman-consensus-staking`. */
+  protocol: string
+  /**
+   * Liquid-token/ALGO rate used for the whole window (12-decimal fixed-point string).
+   * Absent for natively staked sources, which have no such conversion.
+   */
+  rate?: string
+  accounts: AQResultMap
+}
 
 /** The committee an AQ run is scoped to: which committee, and the round window it covers. */
 export type AQCommittee = Pick<CommitteeMetadata, 'numericId' | 'periodStart' | 'periodEnd'>
@@ -48,11 +64,24 @@ export abstract class FracPipelinePlugin {
   public abstract getInstanceNameFromEscrowAddrs(escrowAddrs: string[]): Promise<FracInstanceNameResultMap>
 
   /**
-   * Calculate AQ for a given committee and optional internal id, returning a map of address to AQ
+   * Calculate AQ for a given committee and optional internal id.
+   *
+   * The result covers the source's *depositors* — the accounts whose stake the escrows pool — not
+   * the committee's members, who are the escrows themselves. Scoping is by round window only.
    * @param committee
    * @param internalId source-specific instance id, e.g. a reti validator ID
    */
-  public abstract calculateCommitteeAQ<T>(committee: AQCommittee, internalId?: T): Promise<AQResultMap>
+  public abstract calculateCommitteeAQ<T>(committee: AQCommittee, internalId?: T): Promise<AQCalculation>
+
+  /**
+   * Source-specific instance id parsed back out of an instance name this plugin minted, for sources
+   * that run more than one instance. The pipeline feeds it to `calculateCommitteeAQ` as `internalId`,
+   * so the name-to-id convention stays inside the plugin that invented it.
+   * @returns undefined for single-instance sources, which is every source but reti today
+   */
+  public instanceInternalId(_instanceName: FracInstanceName): unknown {
+    return undefined
+  }
 }
 
 /**

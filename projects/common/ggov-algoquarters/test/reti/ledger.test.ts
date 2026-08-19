@@ -2,9 +2,9 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { STAKING_BLOCK_DELAY } from '../../src/reti/constants'
-import { applyRetiEvent, splitReward, totalStaked } from '../../src/reti/ledger'
-import { ALICE, BOB, CAROL } from '../helpers'
+import { STAKING_BLOCK_DELAY } from '../../src/reti/constants.ts'
+import { applyRetiEvent, splitReward, totalStaked } from '../../src/reti/ledger.ts'
+import { ALICE, BOB, CAROL } from '../helpers.ts'
 import {
   EPOCH_LENGTH,
   EPOCH_LENGTHS,
@@ -14,7 +14,7 @@ import {
   makeStakeRemoved,
   poolOf,
   poolsOf,
-} from './helpers'
+} from './helpers.ts'
 
 // Epoch boundaries are multiples of EPOCH_LENGTH (1000); a payout at round 10_000 settles
 // the epoch [9000, 10000). Entry rounds pick each staker's time-in-epoch bucket:

@@ -1,13 +1,13 @@
 /** Algorand Indexer queries used by the algoquarter pipeline. */
 
-import { type indexerModels } from 'algosdk'
+import { type Indexer, type indexerModels } from 'algosdk'
 
-import { SCAN_WINDOW, createIndexerClient } from './config'
-import type { AssetTransfer } from './types'
+import { SCAN_WINDOW } from './config.ts'
+import type { AssetTransfer } from './types.ts'
 
-// Process-wide client, configured from INDEXER_SERVER/INDEXER_TOKEN at module load.
-// To mix endpoints in one process, refactor the query functions to accept a client.
-export const indexerClient = createIndexerClient()
+// Every query takes its client: one process may read more than one endpoint. The frac delegation
+// pipeline hands these its discovery client's Indexer, which can point at mainnet while the
+// contracts it writes to live on localnet; the CLIs build one with `createIndexerClient()`.
 
 // ---------------------------------------------------------------------------
 // Retry wrapper
@@ -43,15 +43,15 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
 // ---------------------------------------------------------------------------
 
 /** Base64 genesis hash of the network the Indexer serves, from the block-1 header. */
-export async function fetchGenesisHash(): Promise<string> {
-  const data = await withRetry(() => indexerClient.lookupBlock(1n).do())
+export async function fetchGenesisHash(indexer: Indexer): Promise<string> {
+  const data = await withRetry(() => indexer.lookupBlock(1n).do())
   if (!data.genesisHash) throw new Error('Indexer returned no genesis hash for block 1')
   return Buffer.from(data.genesisHash).toString('base64')
 }
 
 /** Get the creation round and total supply for `assetId`. */
-export async function fetchAssetMetadata(assetId: bigint) {
-  const data = await withRetry(() => indexerClient.lookupAssetByID(assetId).do())
+export async function fetchAssetMetadata(indexer: Indexer, assetId: bigint) {
+  const data = await withRetry(() => indexer.lookupAssetByID(assetId).do())
   const creationRound = data.asset.createdAtRound
   if (creationRound === undefined) {
     throw new Error(`Missing creation round for asset ${assetId}`)
@@ -164,6 +164,7 @@ export const INDEXER_PAGE_SIZE = 1_000
  * that way by construction; the scan verifies it per record and throws if the order is ever altered.
  */
 export async function scanTransactionRecords<T extends { round: number; intraOffset: number }>(
+  indexer: Indexer,
   filter: { assetId?: bigint; applicationId?: bigint },
   decodeTransactions: (txns: indexerModels.Transaction[]) => T[],
   startRound: bigint,
@@ -184,7 +185,7 @@ export async function scanTransactionRecords<T extends { round: number; intraOff
     let nextToken: string | undefined
 
     do {
-      let request = indexerClient
+      let request = indexer
         .searchForTransactions()
         .minRound(windowStart)
         .maxRound(windowEnd - 1n)
@@ -223,6 +224,7 @@ export async function scanTransactionRecords<T extends { round: number; intraOff
 
 /** Scan ASA transfers in `[startRound, endRound)`, including nested inner transactions. */
 export async function scanAssetTransfers(
+  indexer: Indexer,
   assetId: bigint,
   startRound: bigint,
   endRound: bigint,
@@ -230,6 +232,7 @@ export async function scanAssetTransfers(
   label?: string,
 ): Promise<void> {
   await scanTransactionRecords(
+    indexer,
     { assetId },
     (txns) => getAssetTransfersFromTransactions(txns, assetId),
     startRound,

@@ -4,11 +4,16 @@ Computes per-account **AlgoQuarters** from Indexer history: ALGO-equivalent stak
 
 **1 algoquarter (AQ) = 1 ALGO staked for 3M rounds**
 
-Two pipelines: tinyman (tALGO/stALGO holders) and reti (Réti open pooling stakers). Output is deterministic JSON: anyone with Indexer access can reproduce it.
+Two pipelines build on this. Reti (Réti open pooling stakers) lives here, as CLIs over the shared
+primitives in `src/`. Tinyman (tALGO/stALGO holders) has moved into the frac delegation pipeline's
+tALGO plugin — [`frac-delegation-pipeline/src/plugins/talgo`](../../frac-delegation-pipeline/src/plugins/talgo/README.md) — where it runs in-process and imports these primitives from this
+package's root. Reti moves the same way once it is wired into the pipeline.
+
+Output is deterministic JSON: anyone with Indexer access can reproduce it.
 
 ## Usage
 
-Every command comes per protocol: `snapshot:<protocol>`, `algoquarters:<protocol>`, `verify:<protocol>`.
+Every command comes per protocol: `snapshot:<protocol>`, `algoquarters:<protocol>`, `verify:<protocol>`. Only reti has them; the tALGO equivalents are plugin methods now, driven by the pipeline.
 
 ```bash
 pnpm install
@@ -24,8 +29,6 @@ pnpm algoquarters:reti 60000000 63000000
 pnpm algoquarters:reti 61000000 64000000
 ```
 
-The tinyman pipeline works the same way with `snapshot:tinyman` / `algoquarters:tinyman`.
-
 Re-running a command is safe: existing snapshots are verified against the re-scan, never overwritten, and a mismatch aborts the run before any output is written.
 
 Flags (`--check`, `--inspect`, `--no-snapshot`, …) are documented in the header comments of each entrypoint.
@@ -36,10 +39,9 @@ The snapshots can be compared against live chain state:
 
 ```bash
 pnpm verify:reti
-pnpm verify:tinyman
 ```
 
-Each replays from the latest committed snapshot and diffs the result against the chain, exiting non-zero on any difference.
+It replays from the latest committed snapshot and diffs the result against the chain, exiting non-zero on any difference.
 
 ### Environment
 
@@ -54,7 +56,7 @@ Each replays from the latest committed snapshot and diffs the result against the
 pnpm test
 ```
 
-Tests run on made-up history and on the committed `snapshots/` and `data/` files — no Indexer needed. Core invariant: all algoquarters together equal the total stake summed over the window's rounds, within per-account flooring. See [`test/`](test/).
+Tests run on made-up history and on the committed `snapshots/reti/` and `data/reti/` files — no Indexer needed. Core invariant: all algoquarters together equal the total stake summed over the window's rounds, within per-account flooring. See [`test/`](test/).
 
 ## Algoquarters file
 
@@ -72,7 +74,7 @@ Tests run on made-up history and on the committed `snapshots/` and `data/` files
 }
 ```
 
-`accounts` holds eligible holders only, sorted by address ascending (codepoint order, matching the committee-file convention). `algoQuarters` and `totalAlgoQuarters` are integer AQ. Tinyman files also carry a `rate` field (see its [README](./src/tinyman/README.md)).
+`accounts` holds eligible holders only, sorted by address ascending (codepoint order, matching the committee-file convention). `algoQuarters` and `totalAlgoQuarters` are integer AQ. Tinyman carries an extra `rate` field, and no longer writes files at all — the plugin computes in memory and ingests on chain (see [`frac-delegation-pipeline/src/plugins/talgo`](../../frac-delegation-pipeline/src/plugins/talgo/README.md)). `data/tinyman/` is kept as an archive of the windows the retired CLI produced.
 
 ## Code structure
 
@@ -83,11 +85,12 @@ src/
 ├── config.ts              Indexer client setup and scan configuration
 ├── types.ts               Shared domain types
 ├── utils/                 bigint-safe JSON, optional transfer log
-├── tinyman/               tALGO/stALGO pipeline — see src/tinyman/README.md
+├── index.ts               Package entry point — the shared primitives above
 └── reti/                  Reti pools pipeline — see src/reti/README.md
-test/{tinyman,reti}/       Unit tests
-snapshots/{tinyman,reti}/  Balance snapshots
-data/{tinyman,reti}/       Algoquarters files
+test/reti/                 Unit tests
+snapshots/reti/            Balance snapshots
+data/reti/                 Algoquarters files
+data/tinyman/              Archive: windows the retired tinyman CLI produced
 ```
 
 ## Design notes
@@ -98,4 +101,4 @@ data/{tinyman,reti}/       Algoquarters files
 - **The unit is the eligibility cutoff.** Accounts flooring below 1 AQ are omitted from the output — no dust entries. Each value is asserted to fit the uint32 per-account slot of the on-chain storage schema.
 - **Fail loud.** The replay throws whenever the chain data and the rebuilt state stop adding up (a balance would go negative, a close-out or full unstake doesn't match).
 
-Protocol specifics: [`src/tinyman/README.md`](src/tinyman/README.md) · [`src/reti/README.md`](src/reti/README.md)
+Protocol specifics: [`frac-delegation-pipeline/src/plugins/talgo`](../../frac-delegation-pipeline/src/plugins/talgo/README.md) · [`src/reti/README.md`](src/reti/README.md)

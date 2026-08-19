@@ -1,7 +1,7 @@
 import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { getApplicationAddress } from 'algosdk'
 import { RetiGhostSDK } from 'reti-ghost-sdk'
-import { FracPipelinePlugin, type AQCommittee, type AQResultMap, type FracInstanceNameResultMap } from './base.ts'
+import { FracPipelinePlugin, type AQCalculation, type AQCommittee, type FracInstanceNameResultMap } from './base.ts'
 
 export const RETI_REGISTRY_APP_ID_MAINNET = 2714516089
 
@@ -58,8 +58,15 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
     return escrows
   }
 
-  public async calculateCommitteeAQ<T>(_committee: AQCommittee, _internalId?: T): Promise<AQResultMap> {
-    // TODO implement
-    return {}
+  /** Reti's validator id, parsed back out of the instance name this plugin mints. */
+  public override instanceInternalId(instanceName: string): number | undefined {
+    const match = /^Reti #(\d+)$/.exec(instanceName)
+    return match ? Number(match[1]) : undefined
+  }
+
+  public async calculateCommitteeAQ<T>(_committee: AQCommittee, _internalId?: T): Promise<AQCalculation> {
+    // TODO implement — port `ggov-algoquarters/src/reti` the way `talgo` was ported.
+    // An empty `accounts` map is how the pipeline recognizes a source with no AQ support yet.
+    return { protocol: RetiPipelinePlugin.source, accounts: {} }
   }
 }

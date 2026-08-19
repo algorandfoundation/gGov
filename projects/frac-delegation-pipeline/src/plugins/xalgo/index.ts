@@ -1,6 +1,6 @@
 import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { encodeAddress } from 'algosdk'
-import { FracPipelinePlugin, type AQCommittee, type AQResultMap, type FracInstanceNameResultMap } from './base.ts'
+import { FracPipelinePlugin, type AQCalculation, type AQCommittee, type FracInstanceNameResultMap } from './base.ts'
 
 export const XALGO_APP_ID_MAINNET = 1134695678n
 
@@ -67,9 +67,10 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
     return escrows
   }
 
-  public async calculateCommitteeAQ<T>(_committee: AQCommittee, _internalId?: T): Promise<AQResultMap> {
-    // TODO implement
-    return {}
+  public async calculateCommitteeAQ<T>(_committee: AQCommittee, _internalId?: T): Promise<AQCalculation> {
+    // TODO implement. An empty `accounts` map is how the pipeline recognizes a source with no AQ
+    // support yet.
+    return { protocol: XalgoPipelinePlugin.source, accounts: {} }
   }
 }
 

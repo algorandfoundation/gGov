@@ -1,8 +1,8 @@
 /** Round-weighted algoquarter calculation for reti staked balances. */
 
-import { applyRetiEvent } from './ledger'
-import { MICROALGO_ROUNDS_PER_AQ } from '../utils/aq'
-import type { PoolLedger, RetiEvent } from './types'
+import { applyRetiEvent } from './ledger.ts'
+import { MICROALGO_ROUNDS_PER_AQ } from '../utils/aq.ts'
+import type { PoolLedger, RetiEvent } from './types.ts'
 
 /**
  * Compute integer AQ over rounds `[startRound, endRound)`.

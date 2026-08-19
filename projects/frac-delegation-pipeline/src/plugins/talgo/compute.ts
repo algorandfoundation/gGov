@@ -1,10 +1,9 @@
 /** Round-weighted algoquarter calculation for tALGO and stALGO balances. */
 
-import { RATE_SCALER } from './constants'
-import { applyTransfer } from './ledger'
-import { MICROALGO_ROUNDS_PER_AQ } from '../utils/aq'
-import type { AssetTransfer } from '../types'
-import type { BalanceMap, TaggedTransfer } from './types'
+import { RATE_SCALER } from './constants.ts'
+import { applyTransfer } from './ledger.ts'
+import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from 'ggov-algoquarters'
+import type { BalanceMap, TaggedTransfer } from './types.ts'
 
 /**
  * Compute integer AQ over rounds `[startRound, endRound)` using a fixed

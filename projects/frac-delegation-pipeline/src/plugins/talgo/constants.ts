@@ -9,12 +9,15 @@ import { getApplicationAddress } from 'algosdk'
 // Protocol identifier, goes on algoquarters output files
 export const PROTOCOL = 'tinyman-consensus-staking'
 
+// tALGO is a single staking instance, so every escrow it exposes resolves to this one name.
+export const TALGO_INSTANCE_NAME = 'Tinyman tALGO'
+
 // tALGO liquid staking token
 // Creation: https://mainnet-idx.4160.nodely.dev/v2/transactions/ONH2OB7BLLT2FTKNKZ77J7SGJJKVAXLQXSIDUEYUFIW26OEHNNSQ
 export const TALGO_ASA_ID = 2537013734n
-export const TALGO_APP_ID = 2537013674n
+export const TALGO_APP_ID_MAINNET = 2537013674n
 // The app created tALGO and holds its undistributed reserve.
-export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID).toString()
+export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID_MAINNET).toString()
 export const TALGO_RATE_UPDATE_SELECTOR = createHash('sha512-256').update('rate_update(uint64)').digest().subarray(0, 4)
 
 // stALGO re-staking token — frozen ASA, clawback authority = app escrow (only the app can move it)

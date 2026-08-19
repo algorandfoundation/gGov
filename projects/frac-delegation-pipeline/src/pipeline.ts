@@ -5,10 +5,18 @@ import {
   mnemonicToSecretKey,
   type TransactionSigner,
 } from 'algosdk'
-import { FracDelegationSDK } from 'frac-delegation-sdk'
+import { FracDelegationSDK, type AlgoQuartersFile, type FracCommitteeAq } from 'frac-delegation-sdk'
 import { GGovRegistrySDK, type GGovCommitteeFile } from 'ggov-sdk'
 import pMap from 'p-map'
-import { AVAILABLE_SOURCES, getPlugin, RETI_REGISTRY_APP_ID_MAINNET, TALGO_APP_ID_MAINNET } from './plugins/index.ts'
+import {
+  AVAILABLE_SOURCES,
+  getPlugin,
+  RETI_REGISTRY_APP_ID_MAINNET,
+  TALGO_APP_ID_MAINNET,
+  type AQCalculation,
+  type AQCommittee,
+  type FracPipelinePlugin,
+} from './plugins/index.ts'
 
 // owned by the plugins now, re-exported for the seeding scripts
 export const RETI_REGISTRY_APP_ID = RETI_REGISTRY_APP_ID_MAINNET
@@ -139,17 +147,51 @@ interface UpsertDelegationsContext {
   delegationsImported: EscrowDelegation[]
 }
 
+/** One instance's AlgoQuarters outcome for the committee: what stage 3 did about it, and why. */
+interface InstanceAqResult {
+  instanceName: string
+  instanceNumId: number
+  source: string
+  /** The committee's numeric id on the instance, once its snapshot exists. */
+  committeeNumId?: number
+  /** The instance's ledger as stage 3 left it. Absent when nothing was uploaded. */
+  committeeAq?: FracCommitteeAq
+  /** Accounts and total AQ the plugin computed. Absent when the ledger was already complete. */
+  calculated?: { totalAccounts: number; totalAlgoQuarters: string }
+}
+
+/**
+ * Everything the AlgoQuarters upsert works from and produces, for the caller to log or assert on.
+ * Empty until `run` has been called, and cleared at the top of every run.
+ */
+interface UpsertAqContext {
+  /** The committee's on-chain metadata: the numeric id and the round window AQ is computed over. */
+  committee?: AQCommittee
+  /** Instances whose ledger was already complete when the run started: nothing computed, nothing written. */
+  alreadyComplete: InstanceAqResult[]
+  /** Instances whose source has no AQ implementation yet, so there was nothing to upload. */
+  skippedNoAqSupport: InstanceAqResult[]
+  /** Instances this run computed AQ for and ingested. */
+  uploaded: InstanceAqResult[]
+}
+
 export class FracDelegationPipeline {
   /** Main Algorand client, used for writes. */
   private readonly algorand: AlgorandClient
   /** Secondary Algorand client, used by the source plugins. If not provided in constructor, defaults to the main client. */
   private readonly discoveryClient: AlgorandClient
   private readonly fracSdk: FracDelegationSDK
+  /**
+   * The same frac registry, signed for by the operator. `syncCommittee`, `startAqIngest` and
+   * `ingestAq` are all operator-only, while every registry write stage 1 makes is admin-only, so
+   * the two roles get a client each rather than one client that swaps its writer mid-run.
+   */
+  private readonly fracOperatorSdk: FracDelegationSDK
   private readonly ggovSdk: GGovRegistrySDK
   private readonly sources: string[]
   private readonly concurrency: number
 
-  /** Held for stage 4: AQ ingestion is the operator's job, not the admin's. */
+  /** AQ ingestion is the operator's job, not the admin's: this is what `fracOperatorSdk` signs with. */
   private readonly operatorAccount?: PipelineAccount
   private readonly debug: boolean
   // Per-run state, cleared at the top of `run` and filled by the step that owns each part.
@@ -157,6 +199,8 @@ export class FracDelegationPipeline {
   upsertInstancesCtx: UpsertInstancesContext = emptyUpsertInstancesContext()
   /** Everything the gGov delegation upsert reads and writes. Public: it is the run's report. */
   upsertDelegationsCtx: UpsertDelegationsContext = emptyUpsertDelegationsContext()
+  /** Everything the AlgoQuarters upsert reads and writes. Public: it is the run's report. */
+  upsertAqCtx: UpsertAqContext = emptyUpsertAqContext()
   /**
    * Every instance this committee needs and its on-chain identity, by instance name: the ones that
    * were already registered plus the ones this run created. Complete once stage 1 is done, and what
@@ -187,6 +231,12 @@ export class FracDelegationPipeline {
       writerAccount: adminAccount,
       debug,
     })
+    this.fracOperatorSdk = new FracDelegationSDK({
+      algorand,
+      registryAppId: fracRegistryAppId,
+      writerAccount: this.operatorAccount,
+      debug,
+    })
     this.ggovSdk = new GGovRegistrySDK({
       algorand,
       registryAppId: ggovRegistryAppId,
@@ -208,8 +258,8 @@ export class FracDelegationPipeline {
    * Run the pipeline for one committee:
    * 1. upsert the instances the committee's escrows imply, with their escrows, on the frac registry
    * 2. point every escrow's gGov delegation at the instance that holds it
-   * 3. (pending) calculate each committee member's AQ, per instance
-   * 4. (pending) ingest that AQ onto the instances
+   * 3. for every instance whose AQ ledger for this committee is not already complete, calculate its
+   *    source's AlgoQuarters and ingest them
    * @param committeeId committee to run, which has to be on the gGov registry already
    */
   async run(committeeId: string) {
@@ -220,9 +270,11 @@ export class FracDelegationPipeline {
     // pipeline after the upsert throws part-way
     this.upsertInstancesCtx = { ...emptyUpsertInstancesContext(), committeeId, committee }
     this.upsertDelegationsCtx = emptyUpsertDelegationsContext()
+    this.upsertAqCtx = emptyUpsertAqContext()
 
     this.instances = await this.upsertInstances(committeeId, committee)
     await this.upsertGGovDelegations()
+    await this.upsertCommitteeAq(committeeId)
   }
 
   /**
@@ -487,6 +539,158 @@ export class FracDelegationPipeline {
       `[STAGE 2] gGov registry delegation upsert done: ${ctx.alreadyDelegated.length + ctx.delegationsImported.length} of ${escrowAddresses.length} escrows delegated to their instance`,
     )
   }
+
+  /**
+   * Stage 3: give every instance the AlgoQuarters its source's depositors earned over the
+   * committee's window, so their pooled votes can be split by weight.
+   *
+   * Works off `this.instances`, so stage 1 has to have finished. Per instance: skip it when its
+   * ledger for this committee is already complete, otherwise ask the source's plugin to compute AQ
+   * and ingest the result immediately.
+   *
+   * Serial across instances on purpose: each `uploadAqFile` is a long run of sequential groups whose
+   * box references depend on account ids the frac registry allocates as it goes, so two instances
+   * ingesting at once would contend for those.
+   */
+  private async upsertCommitteeAq(committeeId: string) {
+    const ctx = this.upsertAqCtx
+
+    // the AQ window is the committee's own, and `numericId` is the `committeeNumId` every instance
+    // keys its ledger by. One read for the whole stage.
+    const metadata = await this.ggovSdk.getCommitteeMetadata(committeeId)
+    if (!metadata) throw new Error(`Committee ${committeeId} has no metadata on the gGov registry`)
+    ctx.committee = {
+      numericId: metadata.numericId,
+      periodStart: metadata.periodStart,
+      periodEnd: metadata.periodEnd,
+    }
+    this.log(
+      `AQ for committee ${committeeId} (#${metadata.numericId}), rounds ` +
+        `[${metadata.periodStart}, ${metadata.periodEnd}) across ${this.instances.size} instances`,
+    )
+
+    // one plugin per source, not per instance: construction is cheap but `init` need not be, and a
+    // source with several instances would otherwise build the same plugin once per instance
+    const plugins = new Map<string, FracPipelinePlugin>()
+    for (const instance of this.instances.values()) {
+      const result: InstanceAqResult = {
+        instanceName: instance.name,
+        instanceNumId: instance.numId,
+        source: instance.source,
+      }
+
+      const ledger = await this.getCommitteeAqLedger(instance.numId, committeeId)
+      if (ledger) {
+        result.committeeNumId = ledger.committeeNumId
+        result.committeeAq = ledger.committeeAq
+        // The contract's own rule, from getCommitteeAq(mustBeComplete): both counters have to land.
+        if (
+          Number(ledger.committeeAq.ingestedAq) === Number(ledger.committeeAq.totalAq) &&
+          Number(ledger.committeeAq.numAccounts) === Number(ledger.committeeAq.totalAccounts)
+        ) {
+          this.log(
+            `${instance.name}: ledger already complete (${ledger.committeeAq.ingestedAq} AQ, ` +
+              `${ledger.committeeAq.numAccounts} accounts), skipping`,
+          )
+          ctx.alreadyComplete.push(result)
+          continue
+        }
+      }
+
+      let plugin = plugins.get(instance.source)
+      if (!plugin) {
+        plugin = await getPlugin(instance.source, this.discoveryClient)
+        plugins.set(instance.source, plugin)
+      }
+      // TODO(perf): one full Indexer scan of the window per instance. Fine while tALGO is the only
+      // source that computes AQ (single instance), but reti will run one per validator over the
+      // same rounds. What is missing is a per-source calculation the pipeline can split by
+      // `internalId` - i.e. scan the window once, then hand each instance its slice.
+      const calculation = await plugin.calculateCommitteeAQ(ctx.committee, plugin.instanceInternalId(instance.name))
+      // A source whose plugin has no AQ implementation yet answers with no accounts. Uploading that
+      // would fail manifest validation, so it is reported and left for when the plugin lands.
+      if (Object.keys(calculation.accounts).length === 0) {
+        console.warn(
+          `no AlgoQuarters computed for ${instance.name}: source ${instance.source} has no AQ implementation yet, skipping`,
+        )
+        ctx.skippedNoAqSupport.push(result)
+        continue
+      }
+
+      const aqFile = await this.buildAqFile(calculation, ctx.committee)
+      result.calculated = { totalAccounts: aqFile.totalAccounts, totalAlgoQuarters: aqFile.totalAlgoQuarters }
+      this.log(
+        `${instance.name}: computed ${aqFile.totalAccounts} accounts, ${aqFile.totalAlgoQuarters} AQ` +
+          `${aqFile.rate ? ` at rate ${aqFile.rate}` : ''}`,
+      )
+
+      const { committeeNumId, committeeAq } = await this.uploadAQ(instance.numId, committeeId, aqFile)
+      result.committeeNumId = committeeNumId
+      result.committeeAq = committeeAq
+      ctx.uploaded.push(result)
+    }
+
+    this.log(
+      `[STAGE 3] AQ upsert done: ${ctx.uploaded.length} instances ingested, ` +
+        `${ctx.alreadyComplete.length} already complete, ${ctx.skippedNoAqSupport.length} without AQ support`,
+    )
+  }
+
+  /**
+   * An instance's AQ ledger for a committee, or undefined when there is nothing to read yet — the
+   * instance has never synced the committee, or has synced it but never opened a ledger.
+   */
+  private async getCommitteeAqLedger(instanceNumId: number, committeeId: string) {
+    const committee = await this.fracOperatorSdk.getCommittee(instanceNumId, committeeId)
+    if (!committee) return undefined
+    const committeeNumId = Number(committee.committeeNumId)
+    const committeeAq = await this.fracOperatorSdk.getCommitteeAq(instanceNumId, committeeNumId)
+    return committeeAq ? { committeeNumId, committeeAq } : undefined
+  }
+
+  /**
+   * Assemble the AQ manifest `uploadAqFile` takes from what the plugin computed. The plugin owns
+   * the source-specific fields (`protocol`, `rate`); the rest is the same for every source.
+   */
+  private async buildAqFile(calculation: AQCalculation, committee: AQCommittee): Promise<AlgoQuartersFile> {
+    // Codepoint order (not locale-dependent), matching the committee-file convention
+    const accounts = Object.entries(calculation.accounts)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([account, aq]) => ({ account, algoQuarters: aq.toString() }))
+    const totalAlgoQuarters = accounts.reduce((sum, { algoQuarters }) => sum + BigInt(algoQuarters), 0n)
+
+    // The genesis hash comes from the WRITE client, not the discovery client: `uploadAqFile` checks
+    // the manifest against the network the contracts live on. Those differ by design - a localnet
+    // run computes its AQ from mainnet history and ingests it onto localnet.
+    const suggestedParams = await this.algorand.getSuggestedParams()
+
+    return {
+      networkGenesisHash: Buffer.from(suggestedParams.genesisHash!).toString('base64'),
+      protocol: calculation.protocol,
+      periodStart: committee.periodStart,
+      periodEnd: committee.periodEnd,
+      ...(calculation.rate === undefined ? {} : { rate: calculation.rate }),
+      totalAccounts: accounts.length,
+      totalAlgoQuarters: totalAlgoQuarters.toString(),
+      accounts,
+    }
+  }
+
+  /**
+   * WRITE: ingest one instance's AQ manifest, as the operator.
+   *
+   * The SDK owns the whole sequence: it validates the manifest, syncs the committee onto the
+   * instance if it has no snapshot yet, opens the ledger with `startAqIngest`, ingests in batches
+   * and asserts the ledger is complete at the end. It is resumable, so a run interrupted part-way
+   * finishes on the next one rather than double-counting.
+   *
+   * `autoFund` because both app accounts pay box MBR per ingested account and there is no funding
+   * path between them: the operator tops up the shortfall rather than the run stopping on it.
+   */
+  private async uploadAQ(instanceNumId: number, committeeId: string, aqFile: AlgoQuartersFile) {
+    this.log(`WRITE uploadAqFile: instance #${instanceNumId}, ${aqFile.totalAccounts} accounts`)
+    return this.fracOperatorSdk.uploadAqFile({ instanceNumId, committeeId, aqFile, autoFund: true })
+  }
 }
 
 /**
@@ -509,6 +713,11 @@ function emptyUpsertDelegationsContext(): UpsertDelegationsContext {
     delegationsToImport: [],
     delegationsImported: [],
   }
+}
+
+/** A blank AQ context, so `upsertAqCtx` is readable (and empty) before the first run. */
+function emptyUpsertAqContext(): UpsertAqContext {
+  return { alreadyComplete: [], skippedNoAqSupport: [], uploaded: [] }
 }
 
 /** A blank upsert context, so `upsertInstancesCtx` is readable (and empty) before the first run. */

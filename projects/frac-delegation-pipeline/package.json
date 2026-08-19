@@ -7,7 +7,9 @@
   "scripts": {
     "seed-localnet-data": "node --experimental-strip-types --env-file=.env.test scripts/seed-localnet.ts",
     "add-committee": "node --experimental-strip-types --env-file=.env.test scripts/add-committee.ts",
-    "test-pipeline": "node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
+    "test-pipeline": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
+    "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
+    "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-talgo-balances.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -18,6 +20,7 @@
     "@algorandfoundation/algokit-utils": "^9.2.0",
     "algosdk": "^3.5.2",
     "frac-delegation-sdk": "link:../frac-delegation-sdk",
+    "ggov-algoquarters": "link:../common/ggov-algoquarters",
     "ggov-sdk": "link:../ggov-sdk",
     "p-map": "^7.0.4",
     "reti-ghost-sdk": "^0.1.3"

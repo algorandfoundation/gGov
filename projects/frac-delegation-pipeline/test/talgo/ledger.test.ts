@@ -2,8 +2,8 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { applyTransfer, totalSupply } from '../../src/tinyman/ledger'
-import { ALICE, BOB, CAROL, balancesOf, makeTransfer } from '../helpers'
+import { applyTransfer, totalSupply } from '../../src/plugins/talgo/ledger.ts'
+import { ALICE, BOB, CAROL, balancesOf, makeTransfer } from '../helpers.ts'
 
 describe('applyTransfer', () => {
   it('throws when a transfer overspends the sender balance', () => {

@@ -2,11 +2,11 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { computeRetiAlgoQuarters } from '../../src/reti/compute'
-import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
-import type { RetiEvent } from '../../src/reti/types'
-import { ALICE, BOB, CAROL } from '../helpers'
-import { EPOCH_LENGTHS, POOL_A, POOL_B, makeEpochReward, makeStakeAdded, makeStakeRemoved, poolsOf } from './helpers'
+import { computeRetiAlgoQuarters } from '../../src/reti/compute.ts'
+import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq.ts'
+import type { RetiEvent } from '../../src/reti/types.ts'
+import { ALICE, BOB, CAROL } from '../helpers.ts'
+import { EPOCH_LENGTHS, POOL_A, POOL_B, makeEpochReward, makeStakeAdded, makeStakeRemoved, poolsOf } from './helpers.ts'
 
 // 1 ALGO held for QUARTER rounds = 1 AQ
 const QUARTER = 3_000_000

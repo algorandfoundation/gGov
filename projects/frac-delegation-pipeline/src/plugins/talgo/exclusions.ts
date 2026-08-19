@@ -10,7 +10,7 @@
  * total supply to be verified.
  */
 
-import { STALGO_APP_ADDRESS, TALGO_APP_ADDRESS } from './constants'
+import { STALGO_APP_ADDRESS, TALGO_APP_ADDRESS } from './constants.ts'
 
 /** Addresses that are NOT eligible for algoquarter calculation. */
 export const EXCLUDED_ADDRESSES: ReadonlySet<string> = new Set([TALGO_APP_ADDRESS, STALGO_APP_ADDRESS])

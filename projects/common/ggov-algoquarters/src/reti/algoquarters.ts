@@ -23,18 +23,19 @@ import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { MAX_WINDOW } from '../config'
-import { fetchGenesisHash } from '../indexer'
-import { checkOrCreateSnapshots } from '../snapshots'
-import { stringifyJson } from '../utils/json'
-import { assertAlgoQuartersFitUint32 } from '../utils/aq'
-import { PROTOCOL } from './constants'
-import { computeRetiAlgoQuarters } from './compute'
-import { fetchRetiEvents } from './indexer'
-import { applyRetiEvent } from './ledger'
-import * as snapshotStore from './snapshot/operations'
-import type { AlgoQuartersData } from '../types'
-import type { PoolLedger, RetiEvent } from './types'
+import { MAX_WINDOW } from '../config.ts'
+import { fetchGenesisHash } from '../indexer.ts'
+import { createIndexerClient } from '../config.ts'
+import { checkOrCreateSnapshots } from '../snapshots.ts'
+import { stringifyJson } from '../utils/json.ts'
+import { assertAlgoQuartersFitUint32 } from '../utils/aq.ts'
+import { PROTOCOL } from './constants.ts'
+import { computeRetiAlgoQuarters } from './compute.ts'
+import { fetchRetiEvents } from './indexer.ts'
+import { applyRetiEvent } from './ledger.ts'
+import * as snapshotStore from './snapshot/operations.ts'
+import type { AlgoQuartersData } from '../types.ts'
+import type { PoolLedger, RetiEvent } from './types.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(__dirname, '../..', 'data', 'reti')
@@ -53,6 +54,7 @@ function stringifyEventLine(event: RetiEvent): string {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  const indexer = createIndexerClient()
   const args = process.argv.slice(2)
   const saveSnapshots = !args.includes('--no-snapshot')
   const saveEvents = args.includes('--save-events')
@@ -88,12 +90,12 @@ async function main() {
   console.log(`  ${pools.size} pools loaded`)
 
   console.log('\nFetching network genesis hash…')
-  const networkGenesisHash = await fetchGenesisHash()
+  const networkGenesisHash = await fetchGenesisHash(indexer)
   console.log(`  networkGenesisHash = ${networkGenesisHash}`)
 
   // Scan events from periodStart to periodEnd and store them in memory
   console.log(`\nScanning reti events [${periodStart}, ${periodEnd})…`)
-  const { events, epochRoundLengths } = await fetchRetiEvents(periodStart, periodEnd)
+  const { events, epochRoundLengths } = await fetchRetiEvents(indexer, periodStart, periodEnd)
   const poolCount = new Set(events.map((event) => event.poolAppId)).size
   console.log(
     `\n  reti events in window: ${events.length} from ${epochRoundLengths.size} validators and ${poolCount} pools`,

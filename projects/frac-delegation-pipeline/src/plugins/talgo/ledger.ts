@@ -8,8 +8,8 @@
  *  - Close-outs (remaining balance transferred to closeTo, sender zeroed)
  */
 
-import type { AssetTransfer } from '../types'
-import type { AccountBalance, BalanceMap } from './types'
+import type { AssetTransfer } from 'ggov-algoquarters'
+import type { AccountBalance, BalanceMap } from './types.ts'
 
 /** Get or init a balance entry for the given address. */
 function getEntry(map: BalanceMap, address: string): AccountBalance {

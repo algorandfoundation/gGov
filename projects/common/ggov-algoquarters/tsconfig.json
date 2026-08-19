@@ -9,6 +9,10 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    // Relative imports carry explicit .ts extensions so Node's native type stripping can resolve
+    // them: the frac delegation pipeline imports this package's sources directly.
+    // Safe with noEmit: nothing is compiled out of this project.
+    "allowImportingTsExtensions": true,
     "types": ["node"]
   },
   "include": ["src", "test"]

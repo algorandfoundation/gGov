@@ -1,6 +1,6 @@
-/** Types for the tinyman (tALGO/stALGO) pipeline. */
+/** Types for the tALGO/stALGO pipeline. */
 
-import type { AssetTransfer } from '../types'
+import type { AssetTransfer } from 'ggov-algoquarters'
 
 /** Tagged tALGO and stALGO transfer. */
 export interface TaggedTransfer extends AssetTransfer {

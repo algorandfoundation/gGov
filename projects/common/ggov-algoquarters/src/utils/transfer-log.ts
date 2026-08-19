@@ -3,7 +3,7 @@
 import { createWriteStream } from 'node:fs'
 import { finished } from 'node:stream/promises'
 
-import type { AssetTransfer } from '../types'
+import type { AssetTransfer } from '../types.ts'
 
 function transferType(transfer: AssetTransfer): string {
   if (transfer.sender === transfer.receiver && transfer.amount === 0n) return 'opt-in'.padEnd(9)

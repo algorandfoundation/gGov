@@ -10,8 +10,8 @@
  *  - Epoch rewards, split with the staking pool contract's own algorithm (see splitReward)
  */
 
-import { STAKING_BLOCK_DELAY, MIN_ENTRY_STAKE } from './constants'
-import type { PoolLedger, RetiEvent, StakerInfo } from './types'
+import { STAKING_BLOCK_DELAY, MIN_ENTRY_STAKE } from './constants.ts'
+import type { PoolLedger, RetiEvent, StakerInfo } from './types.ts'
 
 // Max accepted residue when zeroing a full unstake. Residues accumulate from seeding the
 // reward split with the credited total instead of the contract's pre-dust reward (a few

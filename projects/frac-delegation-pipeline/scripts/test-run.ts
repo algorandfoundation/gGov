@@ -44,6 +44,22 @@ await pipeline
     console.log(`\ngGov delegations already in place: ${pipeline.upsertDelegationsCtx.alreadyDelegated.length}`)
     console.log(`\ngGov delegations imported:`)
     console.log(pipeline.upsertDelegationsCtx.delegationsImported)
+    const aq = pipeline.upsertAqCtx
+    console.log(`\nAlgoQuarters ingested:`)
+    console.log(
+      aq.uploaded.map(({ instanceName, calculated, committeeAq }) => ({
+        instance: instanceName,
+        accounts: calculated?.totalAccounts,
+        algoQuarters: calculated?.totalAlgoQuarters,
+        onChain: committeeAq && `${committeeAq.ingestedAq} AQ / ${committeeAq.numAccounts} accounts`,
+      })),
+    )
+    console.log(
+      `\nAlgoQuarters already complete: ${aq.alreadyComplete.map((r) => r.instanceName).join(', ') || 'none'}`,
+    )
+    console.log(
+      `AlgoQuarters skipped (source has no AQ support): ${aq.skippedNoAqSupport.map((r) => r.instanceName).join(', ') || 'none'}`,
+    )
     console.log(`\nInstances fetched from chain:`)
     console.log(await fracSdk.registry.getInstances())
   })

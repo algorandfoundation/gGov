@@ -2,9 +2,9 @@
 
 import { encodeAddress, type indexerModels } from 'algosdk'
 
-import { getAppEventsFromTransaction } from '../indexer'
-import { EPOCH_REWARD_UPDATE_SELECTOR, RETI_APP_ID, STAKE_ADDED_SELECTOR, STAKE_REMOVED_SELECTOR } from './constants'
-import type { RetiEvent } from './types'
+import { getAppEventsFromTransaction } from '../indexer.ts'
+import { EPOCH_REWARD_UPDATE_SELECTOR, RETI_APP_ID, STAKE_ADDED_SELECTOR, STAKE_REMOVED_SELECTOR } from './constants.ts'
+import type { RetiEvent } from './types.ts'
 
 function hasSelector(log: Uint8Array, selector: Buffer): boolean {
   return log.slice(0, 4).every((byte, i) => byte === selector[i])

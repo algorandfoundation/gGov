@@ -19,9 +19,10 @@
 
 import { existsSync } from 'node:fs'
 
-import { RETI_APP_CREATION_ROUND } from './constants'
-import { fetchRetiEvents } from './indexer'
-import { applyRetiEvent, totalStaked } from './ledger'
+import { RETI_APP_CREATION_ROUND } from './constants.ts'
+import { fetchRetiEvents } from './indexer.ts'
+import { createIndexerClient } from '../config.ts'
+import { applyRetiEvent, totalStaked } from './ledger.ts'
 import {
   createSnapshot,
   deserializePools,
@@ -29,8 +30,8 @@ import {
   getSnapshotPath,
   readSnapshot,
   writeSnapshot,
-} from './snapshot/operations'
-import type { PoolLedger } from './types'
+} from './snapshot/operations.ts'
+import type { PoolLedger } from './types.ts'
 
 /** Log pool, staker, and stake totals for a pool ledger. */
 function logStakeStats(pools: PoolLedger, round: bigint): void {
@@ -43,6 +44,7 @@ function logStakeStats(pools: PoolLedger, round: bigint): void {
 }
 
 async function main() {
+  const indexer = createIndexerClient()
   const args = process.argv.slice(2)
   const check = args.includes('--check')
   const inspect = args.includes('--inspect')
@@ -81,7 +83,7 @@ async function main() {
   // Reconstruct balances from registry creation
   console.log(`\nCreating snapshot at round ${targetRound}\n`)
   console.log(`Scanning reti events [${RETI_APP_CREATION_ROUND}, ${targetRound})…`)
-  const { events, epochRoundLengths } = await fetchRetiEvents(RETI_APP_CREATION_ROUND, targetRound)
+  const { events, epochRoundLengths } = await fetchRetiEvents(indexer, RETI_APP_CREATION_ROUND, targetRound)
   const poolCount = new Set(events.map((event) => event.poolAppId)).size
   console.log(`\n  ${events.length} events from ${epochRoundLengths.size} validators and ${poolCount} pools`)
 

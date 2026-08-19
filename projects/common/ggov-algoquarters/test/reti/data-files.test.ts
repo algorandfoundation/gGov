@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { PROTOCOL } from '../../src/reti/constants'
-import { getSnapshotPath, readSnapshot } from '../../src/reti/snapshot/operations'
-import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
-import { expectAlgoQuarterTotals, expectSortedPositiveUint32AlgoQuarters, readJsonLines } from '../helpers'
-import type { RetiSnapshotData } from '../../src/reti/types'
-import type { AlgoQuartersData } from '../../src/types'
+import { PROTOCOL } from '../../src/reti/constants.ts'
+import { getSnapshotPath, readSnapshot } from '../../src/reti/snapshot/operations.ts'
+import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq.ts'
+import { expectAlgoQuarterTotals, expectSortedPositiveUint32AlgoQuarters, readJsonLines } from '../helpers.ts'
+import type { RetiSnapshotData } from '../../src/reti/types.ts'
+import type { AlgoQuartersData } from '../../src/types.ts'
 
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'reti')
 const SNAPSHOTS_DIR = dirname(getSnapshotPath(0))

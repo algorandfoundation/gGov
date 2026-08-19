@@ -8,8 +8,8 @@ import {
   RETI_APP_ID,
   STAKE_ADDED_SELECTOR,
   STAKE_REMOVED_SELECTOR,
-} from '../../src/reti/constants'
-import { getRetiEventsFromTransactions } from '../../src/reti/events'
+} from '../../src/reti/constants.ts'
+import { getRetiEventsFromTransactions } from '../../src/reti/events.ts'
 
 const STAKER = encodeAddress(new Uint8Array(32).fill(7))
 

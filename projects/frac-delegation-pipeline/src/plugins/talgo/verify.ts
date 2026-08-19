@@ -1,26 +1,25 @@
 /**
  * Verify the transfer replay against live chain state.
  *
- * Replays tALGO/stALGO transfers from the latest committed snapshot up to the Indexer's
- * current round, then diffs every holder's balance against the asset balances the Indexer
- * reported. Exits non-zero on any difference: the replay and the chain disagree.
+ * Replays tALGO/stALGO transfers from the latest committed snapshot up to the Indexer's current
+ * round, then diffs every holder's balance against the asset balances the Indexer reported.
+ * Throws on any difference: the replay and the chain disagree, and every AlgoQuarters figure
+ * derived from that snapshot chain is suspect.
  *
- * Usage:
- *   pnpm verify:tinyman
- *
- * Env:
- *   INDEXER_SERVER   indexer base URL (default: public Nodely mainnet indexer)
- *   INDEXER_TOKEN    API token if required
+ * Reached through `TalgoPipelinePlugin.verifyAgainstChain()`.
  */
 
-import { INDEXER_PAGE_SIZE, indexerClient, scanAssetTransfers, withRetry } from '../indexer'
-import { STALGO_ASA_ID, TALGO_ASA_ID } from './constants'
-import { applyTransfer } from './ledger'
-import { diffBalances, getAllSnapshotBalances, latestSnapshotRound, readSnapshot } from './snapshot/operations'
-import type { BalanceMap } from './types'
+import { type Indexer } from 'algosdk'
+
+import { INDEXER_PAGE_SIZE, scanAssetTransfers, withRetry } from 'ggov-algoquarters'
+import { STALGO_ASA_ID, TALGO_ASA_ID } from './constants.ts'
+import { applyTransfer } from './ledger.ts'
+import { diffBalances, getAllSnapshotBalances, type TalgoSnapshotStore } from './snapshot.ts'
+import type { BalanceMap } from './types.ts'
 
 /** Page every positive holding of `assetId`; retries if the Indexer advances mid-pagination. */
 async function fetchLiveHoldings(
+  indexer: Indexer,
   assetId: bigint,
   label: string,
 ): Promise<{ holdings: Map<string, bigint>; round: bigint }> {
@@ -30,7 +29,7 @@ async function fetchLiveHoldings(
     let nextToken: string | undefined
 
     do {
-      let request = indexerClient.lookupAssetBalances(assetId).currencyGreaterThan(0).limit(INDEXER_PAGE_SIZE)
+      let request = indexer.lookupAssetBalances(assetId).currencyGreaterThan(0).limit(INDEXER_PAGE_SIZE)
       if (nextToken) request = request.nextToken(nextToken)
       const data = await withRetry(() => request.do())
 
@@ -53,24 +52,28 @@ async function fetchLiveHoldings(
   }
 }
 
-async function main() {
-  const baseRound = latestSnapshotRound()
-  console.log(`\nVerifying tinyman replay against live chain state (base snapshot: ${baseRound})\n`)
+/**
+ * Replay from the newest committed snapshot to the current round and diff against live holdings.
+ * @throws if any holder's replayed balance differs from the chain's
+ */
+export async function verifyAgainstChain(indexer: Indexer, store: TalgoSnapshotStore): Promise<void> {
+  const baseRound = store.latestSnapshotRound()
+  console.log(`\nVerifying tALGO replay against live chain state (base snapshot: ${baseRound})\n`)
 
   console.log('Fetching live asset balances…')
   const [talgo, stalgo] = await Promise.all([
-    fetchLiveHoldings(TALGO_ASA_ID, 'tALGO'),
-    fetchLiveHoldings(STALGO_ASA_ID, 'stALGO'),
+    fetchLiveHoldings(indexer, TALGO_ASA_ID, 'tALGO'),
+    fetchLiveHoldings(indexer, STALGO_ASA_ID, 'stALGO'),
   ])
 
   // The two balance fields are independent, so each asset is replayed to the round its
   // holder set was served at — no cross-asset synchronization needed.
   console.log(`\nReplaying transfers…`)
-  const balances = getAllSnapshotBalances(readSnapshot(baseRound))
-  await scanAssetTransfers(TALGO_ASA_ID, baseRound, talgo.round + 1n, (batch) => {
+  const balances = getAllSnapshotBalances(store.readSnapshot(baseRound))
+  await scanAssetTransfers(indexer, TALGO_ASA_ID, baseRound, talgo.round + 1n, (batch) => {
     for (const transfer of batch) applyTransfer(balances, transfer, 'talgo')
   })
-  await scanAssetTransfers(STALGO_ASA_ID, baseRound, stalgo.round + 1n, (batch) => {
+  await scanAssetTransfers(indexer, STALGO_ASA_ID, baseRound, stalgo.round + 1n, (batch) => {
     for (const transfer of batch) applyTransfer(balances, transfer, 'stalgo')
   })
 
@@ -90,8 +93,3 @@ async function main() {
       `(tALGO at round ${talgo.round}, stALGO at round ${stalgo.round})`,
   )
 }
-
-main().catch((err) => {
-  console.error('\nError:', err instanceof Error ? err.message : err)
-  process.exit(1)
-})

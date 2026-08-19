@@ -1,7 +1,9 @@
-/** Indexer queries specific to the tinyman pipeline. */
+/** Indexer queries specific to the tALGO pipeline. */
 
-import { INDEXER_PAGE_SIZE, getAppEventsFromTransaction, indexerClient, withRetry } from '../indexer'
-import { TALGO_APP_ID, TALGO_RATE_UPDATE_SELECTOR } from './constants'
+import { type Indexer } from 'algosdk'
+
+import { INDEXER_PAGE_SIZE, getAppEventsFromTransaction, withRetry } from 'ggov-algoquarters'
+import { TALGO_RATE_UPDATE_SELECTOR } from './constants.ts'
 
 function decodeTAlgoRateUpdateLog(log: Uint8Array): bigint | null {
   if (log.length !== 12) return null
@@ -14,13 +16,18 @@ function decodeTAlgoRateUpdateLog(log: Uint8Array): bigint | null {
  * the tALGO app logged in `[startRound, endRound)`, scanning forward.
  * Checks both outer and inner transaction logs.
  */
-export async function fetchTAlgoRateInRange(startRound: bigint, endRound: bigint): Promise<bigint | null> {
+export async function fetchTAlgoRateInRange(
+  indexer: Indexer,
+  appId: bigint,
+  startRound: bigint,
+  endRound: bigint,
+): Promise<bigint | null> {
   let nextToken: string | undefined
 
   do {
-    let request = indexerClient
+    let request = indexer
       .searchForTransactions()
-      .applicationID(TALGO_APP_ID)
+      .applicationID(appId)
       .minRound(startRound)
       .maxRound(endRound - 1n)
       .limit(INDEXER_PAGE_SIZE)
@@ -29,7 +36,7 @@ export async function fetchTAlgoRateInRange(startRound: bigint, endRound: bigint
     const data = await withRetry(() => request.do())
 
     for (const txn of data.transactions ?? []) {
-      const [rate] = getAppEventsFromTransaction(txn, TALGO_APP_ID, decodeTAlgoRateUpdateLog)
+      const [rate] = getAppEventsFromTransaction(txn, appId, decodeTAlgoRateUpdateLog)
       if (rate !== undefined) return rate
     }
 

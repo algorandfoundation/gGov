@@ -3,8 +3,8 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { SNAPSHOT_INTERVAL } from './config'
-import { stringifyJson } from './utils/json'
+import { SNAPSHOT_INTERVAL } from './config.ts'
+import { stringifyJson } from './utils/json.ts'
 
 /** File persistence for a snapshots directory: path, read (with a regenerate hint), write, latest round. */
 export function createSnapshotFiles<Snapshot extends { round: number }>(snapshotsDir: string, regenerateCmd: string) {

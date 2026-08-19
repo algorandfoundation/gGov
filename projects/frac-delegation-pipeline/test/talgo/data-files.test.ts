@@ -6,23 +6,27 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { PROTOCOL, RATE_SCALER } from '../../src/tinyman/constants'
-import { isExcluded } from '../../src/tinyman/exclusions'
-import { totalSupply } from '../../src/tinyman/ledger'
-import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq'
+import { PROTOCOL, RATE_SCALER } from '../../src/plugins/talgo/constants.ts'
+import { isExcluded } from '../../src/plugins/talgo/exclusions.ts'
+import { totalSupply } from '../../src/plugins/talgo/ledger.ts'
+import { MICROALGO_ROUNDS_PER_AQ } from 'ggov-algoquarters'
 import {
+  createTalgoSnapshotStore,
   deserializeBalances,
   getAllSnapshotBalances,
-  getSnapshotPath,
-  readSnapshot,
-} from '../../src/tinyman/snapshot/operations'
-import { expectAlgoQuarterTotals, expectSortedPositiveUint32AlgoQuarters } from '../helpers'
-import type { AlgoQuartersData } from '../../src/types'
+} from '../../src/plugins/talgo/snapshot.ts'
+import { expectAlgoQuarterTotals, expectSortedPositiveUint32AlgoQuarters } from '../helpers.ts'
+import type { AlgoQuartersData } from 'ggov-algoquarters'
 
 // Tinyman files always carry the tALGO/ALGO rate
 type TinymanAlgoQuartersData = AlgoQuartersData & { rate: string }
 
-const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'data', 'tinyman')
+const { getSnapshotPath, readSnapshot } = createTalgoSnapshotStore()
+
+// Archive of the windows the retired `algoquarters:tinyman` CLI produced, left in ggov-algoquarters
+// next to the reti files it still writes. The plugin computes in memory and never writes here, so
+// these are a fixed record — and the reference these invariants are checked against.
+const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../common/ggov-algoquarters', 'data', 'tinyman')
 const files = existsSync(DATA_DIR) ? readdirSync(DATA_DIR).filter((name) => name.endsWith('.json')) : []
 const datasets = files.map((file) => ({
   file,

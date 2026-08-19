@@ -2,9 +2,9 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { TALGO_APP_ADDRESS } from '../../src/tinyman/constants'
-import { createSnapshot, diffSnapshot, getAllSnapshotBalances } from '../../src/tinyman/snapshot/operations'
-import { ALICE, BOB, CAROL, balancesOf } from '../helpers'
+import { TALGO_APP_ADDRESS } from '../../src/plugins/talgo/constants.ts'
+import { createSnapshot, diffSnapshot, getAllSnapshotBalances } from '../../src/plugins/talgo/snapshot.ts'
+import { ALICE, BOB, CAROL, balancesOf } from '../helpers.ts'
 
 describe('createSnapshot', () => {
   it('drops zero balances and splits eligible from excluded addresses', () => {

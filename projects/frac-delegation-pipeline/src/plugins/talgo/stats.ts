@@ -1,9 +1,9 @@
 /** Snapshot supply, holder statistics, and eligibility checks. */
 
-import { STALGO_APP_ADDRESS, TALGO_APP_ADDRESS } from '../constants'
-import { totalSupply } from '../ledger'
-import { deserializeBalances } from './operations'
-import type { BalanceMap, SnapshotData } from '../types'
+import { STALGO_APP_ADDRESS, TALGO_APP_ADDRESS } from './constants.ts'
+import { totalSupply } from './ledger.ts'
+import { deserializeBalances } from './snapshot.ts'
+import type { BalanceMap, SnapshotData } from './types.ts'
 
 const TOP_N = 5
 const LARGE_HOLDER_THRESHOLD_PERCENT = 40n

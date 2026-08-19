@@ -1,16 +1,19 @@
 /** Self-consistency and cross-file checks for the committed snapshots in snapshots/. */
 
 import { existsSync, readdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { isExcluded } from '../../src/tinyman/exclusions'
-import { totalSupply } from '../../src/tinyman/ledger'
-import { getAllSnapshotBalances, readSnapshot } from '../../src/tinyman/snapshot/operations'
+import { isExcluded } from '../../src/plugins/talgo/exclusions.ts'
+import { totalSupply } from '../../src/plugins/talgo/ledger.ts'
+import {
+  DEFAULT_SNAPSHOTS_DIR,
+  createTalgoSnapshotStore,
+  getAllSnapshotBalances,
+} from '../../src/plugins/talgo/snapshot.ts'
 
-const SNAPSHOTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'snapshots', 'tinyman')
+const { readSnapshot } = createTalgoSnapshotStore()
+const SNAPSHOTS_DIR = DEFAULT_SNAPSHOTS_DIR
 const rounds = existsSync(SNAPSHOTS_DIR)
   ? readdirSync(SNAPSHOTS_DIR)
       .filter((name) => name.endsWith('.json'))

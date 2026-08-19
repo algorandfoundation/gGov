@@ -162,6 +162,9 @@ importers:
       frac-delegation-sdk:
         specifier: link:../frac-delegation-sdk
         version: link:../frac-delegation-sdk
+      ggov-algoquarters:
+        specifier: link:../common/ggov-algoquarters
+        version: link:../common/ggov-algoquarters
       ggov-sdk:
         specifier: link:../ggov-sdk
         version: link:../ggov-sdk
