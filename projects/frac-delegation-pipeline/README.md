@@ -6,6 +6,14 @@ From a given committee:
 - Prepares the contracts for the next voting period (intstance creation, escrow registration).
 - Updates the fractional delegation contracts with the latest committee pooled voting data.
 
+## Stages
+
+1. **Instance upsert** - recognize the committee's escrows through the source plugins, then create the
+   instances they imply on the frac registry and register the escrows to them.
+2. **gGov delegation upsert** - point every escrow's gGov delegation at the instance app that holds it,
+   so the instance can cast its pooled votes.
+3. **AQ calculation+ingest** _(pending)_ - each committee member's AlgoQuarters, per instance. Write that AQ onto the instances, as the operator.
+
 ## Test run
 
 Fetches real escrows and staking data from mainnet (or whatever is on `.env.test`). Writes on localnet.

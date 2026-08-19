@@ -1,5 +1,10 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { getApplicationAddress, mnemonicToSecretKey, TransactionSigner } from 'algosdk'
+import {
+  ALGORAND_ZERO_ADDRESS_STRING,
+  getApplicationAddress,
+  mnemonicToSecretKey,
+  type TransactionSigner,
+} from 'algosdk'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
 import { GGovRegistrySDK, type GGovCommitteeFile } from 'ggov-sdk'
 import { AVAILABLE_SOURCES, getPlugin, RETI_REGISTRY_APP_ID_MAINNET, TALGO_APP_ID_MAINNET } from './plugins/index.ts'
@@ -54,12 +59,27 @@ interface RegisteredInstance {
   appId: bigint
 }
 
-/** What a run did, for the caller to log or assert on. Empty until `run` has been called. */
-interface PipelineRunContext {
+interface FinalInstance extends FutureInstance, RegisteredInstance {}
+
+/**
+ * Everything the instance upsert works from and produces, for the caller to log or assert on.
+ * Empty until `run` has been called, and cleared at the top of every run.
+ */
+interface UpsertInstancesContext {
   /** Committee the run was scoped to. */
   committeeId?: string
   /** That committee as the gGov registry held it when the run started. */
   committee?: GGovCommitteeFile
+  /** What the committee implies must exist, per staking source. The root everything else derives from. */
+  futureInstances: FutureInstance[]
+  /** Of those, the ones the frac registry already held when the run started, by instance name. */
+  existingInstances: Map<string, RegisteredInstance>
+  /** Of future instances, the ones with no app behind them yet: what this run creates. */
+  instancesToCreate: FutureInstance[]
+  /** Escrows of already-existing instances that this run registers to them. */
+  existingInstanceEscrowsToRegister: PendingEscrowRegistration[]
+  /** Instances this run created, by instance name. Empty until the create step runs. */
+  instancesCreated: Map<string, RegisteredInstance>
   /** Escrows this run registered to instances that already existed on the frac registry. */
   existingInstanceNewEscrows: { instance: string; escrow: string }[]
   /** Instances this run created, with the escrows registered to them. */
@@ -73,6 +93,33 @@ interface PendingEscrowRegistration {
   escrowAddress: string
 }
 
+/** A committee escrow and the frac instance its gGov delegation has to point at. */
+interface EscrowDelegation {
+  escrowAddress: string
+  instanceName: string
+  /** Account of the instance's app: the delegatee `importFracDelegations` writes for this escrow. */
+  instanceAppAddress: string
+}
+
+/**
+ * Everything the gGov delegation upsert works from and produces, for the caller to log or assert on.
+ * Empty until `run` has been called, and cleared at the top of every run.
+ */
+interface UpsertDelegationsContext {
+  /** Every escrow of every instance, with the delegatee it must end up on. The root of this stage. */
+  expectedDelegations: Map<string, EscrowDelegation>
+  /** Escrows the gGov registry already delegates to their own instance: nothing to write. */
+  alreadyDelegated: EscrowDelegation[]
+  /** Escrows with no gGov delegation at all yet. */
+  undelegated: EscrowDelegation[]
+  /** Escrows delegated somewhere other than their own instance, which the import overwrites. */
+  misdelegated: (EscrowDelegation & { currentDelegatee: string })[]
+  /** The undelegated plus the misdelegated: what this run imports. */
+  delegationsToImport: EscrowDelegation[]
+  /** Delegations this run imported. Empty unless every group landed, as the import is all-or-nothing here. */
+  delegationsImported: EscrowDelegation[]
+}
+
 export class FracDelegationPipeline {
   /** Main Algorand client, used for writes. */
   private readonly algorand: AlgorandClient
@@ -82,21 +129,20 @@ export class FracDelegationPipeline {
   private readonly ggovSdk: GGovRegistrySDK
   private readonly sources: string[]
 
-  /** Held for stage 3: AQ ingestion is the operator's job, not the admin's. */
+  /** Held for stage 4: AQ ingestion is the operator's job, not the admin's. */
   private readonly operatorAccount?: PipelineAccount
   private readonly debug: boolean
-  // Per-run caches, cleared at the top of `run` and filled by the step that owns each one.
-  /** What the committee implies must exist, per staking source. The root every other cache derives from. */
-  private futureInstances: FutureInstance[] = []
-  /** Of those, the ones the frac registry already held when the run started, by instance name. */
-  private existingInstances: Map<string, RegisteredInstance> = new Map()
-  /** Of those, the ones with no app behind them yet: what this run creates. */
-  private instancesToCreate: FutureInstance[] = []
-  /** Escrows of already-registered instances that this run registers to them. */
-  private existingInstanceEscrowsToRegister: PendingEscrowRegistration[] = []
-  /** Instances this run created, by instance name. Empty until the create step runs. */
-  private instancesCreated: Map<string, RegisteredInstance> = new Map()
-  ctx: PipelineRunContext = { existingInstanceNewEscrows: [], createdInstances: [] }
+  // Per-run state, cleared at the top of `run` and filled by the step that owns each part.
+  /** Everything the instance upsert reads and writes. Public: it is the run's report. */
+  upsertInstancesCtx: UpsertInstancesContext = emptyUpsertInstancesContext()
+  /** Everything the gGov delegation upsert reads and writes. Public: it is the run's report. */
+  upsertDelegationsCtx: UpsertDelegationsContext = emptyUpsertDelegationsContext()
+  /**
+   * Every instance this committee needs and its on-chain identity, by instance name: the ones that
+   * were already registered plus the ones this run created. Complete once stage 1 is done, and what
+   * stage 2 works from - it is the only cache that pairs escrows with the app that holds them.
+   */
+  private instances: Map<string, FinalInstance> = new Map()
 
   constructor({
     algorand,
@@ -137,27 +183,35 @@ export class FracDelegationPipeline {
   }
 
   /**
-   *
-   * @param committeeId
+   * Run the pipeline for one committee:
+   * 1. upsert the instances the committee's escrows imply, with their escrows, on the frac registry
+   * 2. point every escrow's gGov delegation at the instance that holds it
+   * 3. (pending) calculate each committee member's AQ, per instance
+   * 4. (pending) ingest that AQ onto the instances
+   * @param committeeId committee to run, which has to be on the gGov registry already
    */
   async run(committeeId: string) {
     const committee = await this.ggovSdk.getCommittee(committeeId)
     if (!committee) throw new Error(`Wrong committee ID: ${committeeId} is not on the gGov registry`)
 
-    /** new + existing instances that will exist by the end */
-    this.futureInstances = []
-    /** instances that existed on-chain at the start of the run */
-    this.existingInstances = new Map()
+    // a re-run must not see the previous run's state, and neither must a caller inspecting the
+    // pipeline after the upsert throws part-way
+    this.upsertInstancesCtx = { ...emptyUpsertInstancesContext(), committeeId, committee }
+    this.upsertDelegationsCtx = emptyUpsertDelegationsContext()
 
-    this.instancesToCreate = []
-    this.existingInstanceEscrowsToRegister = []
-    this.instancesCreated = new Map()
-    this.ctx = {
-      committeeId,
-      committee,
-      existingInstanceNewEscrows: [],
-      createdInstances: [],
-    }
+    this.instances = await this.upsertInstances(committeeId, committee)
+    await this.upsertGGovDelegations()
+  }
+
+  /**
+   * Recognize the committee's escrows, reconcile the instances behind them against the frac registry
+   * and write the difference: escrows missing from instances that are already registered, and the
+   * instances that do not exist yet, with all of their escrows.
+   * @returns every instance the committee needs, in its final state, by instance name
+   */
+  private async upsertInstances(committeeId: string, committee: GGovCommitteeFile) {
+    const ctx = this.upsertInstancesCtx
+    const allInstances = new Map<string, FinalInstance>()
 
     // Stage 1: escrow/instance recognition + on-chain reconciliation
 
@@ -180,16 +234,17 @@ export class FracDelegationPipeline {
         const claimedBy = sourceByEscrow.get(escrowAddress)
         if (claimedBy) throw new Error(`Escrow ${escrowAddress} claimed by both ${claimedBy} and ${source}`)
         sourceByEscrow.set(escrowAddress, source)
-        const known = this.futureInstances.find((i) => i.name === instanceName)
+        const known = this.upsertInstancesCtx.futureInstances.find((i) => i.name === instanceName)
         // the instance name is its on-chain identity, so two sources cannot answer with the same one
         if (known && known.source !== source) {
           throw new Error(`Instance ${instanceName} claimed by both ${known.source} and ${source}`)
         }
         if (known) known.escrowAddresses.push(escrowAddress)
-        else this.futureInstances.push({ source, name: instanceName, escrowAddresses: [escrowAddress] })
+        else
+          this.upsertInstancesCtx.futureInstances.push({ source, name: instanceName, escrowAddresses: [escrowAddress] })
       }
     }
-    this.log(`recognized ${sourceByEscrow.size} escrows in ${this.futureInstances.length} instances`)
+    this.log(`recognized ${sourceByEscrow.size} escrows in ${this.upsertInstancesCtx.futureInstances.length} instances`)
     if (this.debug) {
       const escrowsBySource = new Map<string, number>()
       for (const [_, source] of sourceByEscrow.entries()) {
@@ -203,7 +258,7 @@ export class FracDelegationPipeline {
     // get the current data from the contracts
     const onChainInstances = await this.fracSdk.registry.getExistingInstances()
     for (const [numId, instance] of onChainInstances.entries()) {
-      if (!this.futureInstances.some((i) => i.name === instance.name)) {
+      if (!ctx.futureInstances.some((i) => i.name === instance.name)) {
         // if the instance is on-chain but not in the fetched data, it may be a stale instance
         // what should we do here? for now, log and continue
         console.warn(
@@ -211,24 +266,26 @@ export class FracDelegationPipeline {
         )
         continue
       }
-      this.existingInstances.set(instance.name, { numId, appId: instance.appId })
+      ctx.existingInstances.set(instance.name, { numId, appId: instance.appId })
     }
 
     // instances not on chain, need to be created
-    this.instancesToCreate = this.futureInstances.filter((i) => !this.existingInstances.has(i.name))
+    ctx.instancesToCreate = ctx.futureInstances.filter((i) => !ctx.existingInstances.has(i.name))
     this.log(
-      `${this.existingInstances.size} of them already on the frac registry, ${this.instancesToCreate.length} to create`,
+      `${ctx.existingInstances.size} of them already on the frac registry, ${ctx.instancesToCreate.length} to create`,
     )
 
     // for the instances that do exist, are all their escrows registered?
     // the escrows of new instances are skipped as they will be registered when the instance is created
-    for (const future of this.futureInstances) {
-      const onChain = this.existingInstances.get(future.name)
+    for (const future of ctx.futureInstances) {
+      const onChain = ctx.existingInstances.get(future.name)
       if (!onChain) continue
+      // already registered, so this one is final as it stands - the rest join as this run creates them
+      allInstances.set(future.name, { ...future, ...onChain })
       const onChainEscrows = new Set(await this.fracSdk.getEscrows(onChain.numId))
       for (const escrowAddress of future.escrowAddresses) {
         if (onChainEscrows.has(escrowAddress)) continue
-        this.existingInstanceEscrowsToRegister.push({
+        ctx.existingInstanceEscrowsToRegister.push({
           instanceNumId: onChain.numId,
           instanceName: future.name,
           escrowAddress,
@@ -237,30 +294,95 @@ export class FracDelegationPipeline {
     }
 
     // WRITE: register escrows for existing instances
-    this.log(`registering ${this.existingInstanceEscrowsToRegister.length} escrows to existing instances`)
-    for (const { instanceNumId, instanceName, escrowAddress } of this.existingInstanceEscrowsToRegister) {
+    this.log(`registering ${ctx.existingInstanceEscrowsToRegister.length} escrows to existing instances`)
+    for (const { instanceNumId, instanceName, escrowAddress } of ctx.existingInstanceEscrowsToRegister) {
       await this.fracSdk.registry.registerEscrow({ instanceNumId, account: escrowAddress })
-      this.ctx.existingInstanceNewEscrows.push({ instance: instanceName, escrow: escrowAddress })
+      ctx.existingInstanceNewEscrows.push({ instance: instanceName, escrow: escrowAddress })
       this.log(`WRITE registerEscrow(existing): ${escrowAddress} -> ${instanceName} (#${instanceNumId})`)
     }
 
     // WRITE: create new instances and register escrows
     this.log(
-      `creating ${this.instancesToCreate.length} instances with ${this.instancesToCreate.reduce((n, i) => n + i.escrowAddresses.length, 0)} escrows`,
+      `creating ${ctx.instancesToCreate.length} instances with ${ctx.instancesToCreate.reduce((n, i) => n + i.escrowAddresses.length, 0)} escrows`,
     )
-    for (const newInstance of this.instancesToCreate) {
+    for (const newInstance of ctx.instancesToCreate) {
       // 1 ALG0 for MBR
       const instanceNumId = await this.fracSdk.registry.addInstance({ name: newInstance.name, mbrAmount: 1e6 })
       const appId = await this.fracSdk.getInstanceAppId(instanceNumId)
-      this.instancesCreated.set(newInstance.name, { numId: Number(instanceNumId), appId })
+      ctx.instancesCreated.set(newInstance.name, { numId: Number(instanceNumId), appId })
+      allInstances.set(newInstance.name, { ...newInstance, numId: Number(instanceNumId), appId })
       this.log(`WRITE addInstance: ${newInstance.name} (#${instanceNumId}, appId ${appId})`)
       // register all escrows for the new instance
       for (const escrowAddress of newInstance.escrowAddresses) {
         await this.fracSdk.registry.registerEscrow({ instanceNumId, account: escrowAddress })
         this.log(`WRITE registerEscrow(new): ${escrowAddress} -> ${newInstance.name} (#${instanceNumId})`)
       }
-      this.ctx.createdInstances.push({ instance: newInstance.name, escrows: newInstance.escrowAddresses })
+      ctx.createdInstances.push({ instance: newInstance.name, escrows: newInstance.escrowAddresses })
     }
+    this.log(
+      `[STAGE 1] instance upsert done: ${allInstances.size} instances hold ${[...allInstances.values()].reduce((n, i) => n + i.escrowAddresses.length, 0)} committee escrows`,
+    )
+    return allInstances
+  }
+
+  /**
+   * Stage 2: make the gGov registry delegate every committee escrow to the frac instance that holds
+   * it, so the instance can cast that escrow's pooled votes.
+   *
+   * Works off `this.instances`, so stage 1 has to have finished: an escrow can only be delegated to
+   * an instance app that exists on chain and already has the escrow registered to it.
+   */
+  private async upsertGGovDelegations() {
+    const ctx = this.upsertDelegationsCtx
+
+    // a correct delegation points at the account of the escrow's instance app, which is what the
+    // registry's `importFracDelegations` resolves (through the frac registry) and writes
+    for (const instance of this.instances.values()) {
+      const instanceAppAddress = getApplicationAddress(instance.appId).toString()
+      for (const escrowAddress of instance.escrowAddresses) {
+        ctx.expectedDelegations.set(escrowAddress, { escrowAddress, instanceName: instance.name, instanceAppAddress })
+      }
+    }
+    const escrowAddresses = [...ctx.expectedDelegations.keys()]
+    this.log(`checking gGov delegations of ${escrowAddresses.length} escrows across ${this.instances.size} instances`)
+    if (escrowAddresses.length === 0) return
+
+    // one batched read for the lot: the SDK chunks it and answers in the order asked, with the zero
+    // address standing in for an escrow that has never delegated
+    const currentDelegatees = await this.ggovSdk.getDelegations(escrowAddresses)
+    for (const [i, escrowAddress] of escrowAddresses.entries()) {
+      const expected = ctx.expectedDelegations.get(escrowAddress)!
+      const currentDelegatee = currentDelegatees[i]
+      if (currentDelegatee === expected.instanceAppAddress) {
+        ctx.alreadyDelegated.push(expected)
+      } else if (currentDelegatee === ALGORAND_ZERO_ADDRESS_STRING) {
+        ctx.undelegated.push(expected)
+      } else {
+        // a gov may have delegated wherever they liked before entering the pool; the import
+        // overwrites that, which is the point of pooled staking, but it is worth seeing
+        ctx.misdelegated.push({ ...expected, currentDelegatee })
+        console.warn(
+          `escrow ${escrowAddress} of ${expected.instanceName} is delegated to ${currentDelegatee}, redirecting it to the instance`,
+        )
+      }
+    }
+    ctx.delegationsToImport = [...ctx.undelegated, ...ctx.misdelegated]
+    this.log(
+      `${ctx.alreadyDelegated.length} already delegated to their instance, ${ctx.undelegated.length} undelegated, ` +
+        `${ctx.misdelegated.length} delegated elsewhere: importing ${ctx.delegationsToImport.length}`,
+    )
+    if (ctx.delegationsToImport.length === 0) return
+
+    // WRITE: import the delegations, which the SDK sends one transaction group per
+    // MAX_ESCROWS_PER_FD_IMPORT escrows.
+    this.log(`WRITE importFracDelegations: ${ctx.delegationsToImport.length} escrows`)
+    await this.ggovSdk.importFracDelegationsAll({
+      escrowAccounts: ctx.delegationsToImport.map(({ escrowAddress }) => escrowAddress),
+    })
+    ctx.delegationsImported = ctx.delegationsToImport
+    this.log(
+      `[STAGE 2] gGov registry delegation upsert done: ${ctx.alreadyDelegated.length + ctx.delegationsImported.length} of ${escrowAddresses.length} escrows delegated to their instance`,
+    )
   }
 }
 
@@ -272,4 +394,29 @@ function envAccount(algorand: AlgorandClient): PipelineAccount | undefined {
   if (!process.env.ADMIN_MNEMONIC || !process.env.ADMIN) return undefined
   algorand.account.setSignerFromAccount(mnemonicToSecretKey(process.env.ADMIN_MNEMONIC))
   return { sender: process.env.ADMIN, signer: algorand.account.getSigner(process.env.ADMIN) }
+}
+
+/** A blank delegation context, so `upsertDelegationsCtx` is readable (and empty) before the first run. */
+function emptyUpsertDelegationsContext(): UpsertDelegationsContext {
+  return {
+    expectedDelegations: new Map(),
+    alreadyDelegated: [],
+    undelegated: [],
+    misdelegated: [],
+    delegationsToImport: [],
+    delegationsImported: [],
+  }
+}
+
+/** A blank upsert context, so `upsertInstancesCtx` is readable (and empty) before the first run. */
+function emptyUpsertInstancesContext(): UpsertInstancesContext {
+  return {
+    futureInstances: [],
+    existingInstances: new Map(),
+    instancesToCreate: [],
+    existingInstanceEscrowsToRegister: [],
+    instancesCreated: new Map(),
+    existingInstanceNewEscrows: [],
+    createdInstances: [],
+  }
 }
