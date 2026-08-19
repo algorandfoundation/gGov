@@ -2,12 +2,12 @@ import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { type FracPipelinePlugin, type FracPipelinePluginConstructor } from './base.ts'
 import { RetiPipelinePlugin } from './reti.ts'
 import { TalgoPipelinePlugin } from './talgo/index.ts'
-import { XalgoPipelinePlugin } from './xalgo.ts'
+import { XalgoPipelinePlugin } from './xalgo/index.ts'
 
 export * from './base.ts'
 export * from './reti.ts'
 export * from './talgo/index.ts'
-export * from './xalgo.ts'
+export * from './xalgo/index.ts'
 
 /**
  * Every plugin the pipeline can load. Adding a source is adding its class here — nothing else in the

@@ -16,9 +16,9 @@ From a given committee:
    already complete, calculate the AlgoQuarters its source's depositors earned over the committee's
    window, and write them onto the instance, as the operator.
 
-Only tALGO calculates AlgoQuarters today — see [`src/plugins/talgo`](src/plugins/talgo/README.md).
-Reti and xALGO are recognized as escrows in stage 1 but answer stage 3 with nothing, so their
-instances are reported and skipped.
+tALGO and xALGO calculate AlgoQuarters today — see [`src/plugins/talgo`](src/plugins/talgo/README.md)
+and [`src/plugins/xalgo`](src/plugins/xalgo/README.md). Reti is recognized as escrows in stage 1 but
+answers stage 3 with nothing, so its instances are reported and skipped.
 
 ## Test run
 
@@ -26,7 +26,7 @@ Fetches real escrows and staking data from mainnet (or whatever is on `.env.test
 
 Stage 3 reads a lot of mainnet history: a committee window is ~3M rounds of asset transfers, held in
 memory, which is why the scripts run with an 8 GB heap. It starts from the balance snapshot at the
-window's `periodStart` under `snapshots/talgo/`; when that one is missing it is rebuilt from asset
+window's `periodStart` under `snapshots/<source>/`; when that one is missing it is rebuilt from asset
 creation first, which takes considerably longer than the run itself.
 
 ```bash
@@ -47,10 +47,15 @@ pnpm test-pipeline
 ...
 ```
 
-## Checking the tALGO numbers
+## Checking the numbers
 
 ```bash
-pnpm verify-talgo-aq   # recompute an archived window and diff it against the manifest it produced
+pnpm verify-talgo-aq                 # recompute an archived tALGO window and diff it against the manifest it produced
+pnpm xalgo-aq 60000000 63000000      # dry run of an xALGO window: totals and top accounts, nothing ingested
+pnpm verify-talgo-balances           # replay vs live chain balances
+pnpm verify-xalgo-balances           # same for xALGO, plus escrow owners vs live Folks local state
 ```
 
-Reads mainnet, writes nothing. See [`src/plugins/talgo`](src/plugins/talgo/README.md).
+All read mainnet and touch no contracts; `xalgo-aq` writes the window's snapshots and the escrow
+cache under `snapshots/xalgo/`, the rest write nothing. See [`src/plugins/talgo`](src/plugins/talgo/README.md)
+and [`src/plugins/xalgo`](src/plugins/xalgo/README.md).

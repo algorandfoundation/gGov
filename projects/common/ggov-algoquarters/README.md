@@ -101,4 +101,4 @@ data/tinyman/              Archive: windows the retired tinyman CLI produced
 - **The unit is the eligibility cutoff.** Accounts flooring below 1 AQ are omitted from the output — no dust entries. Each value is asserted to fit the uint32 per-account slot of the on-chain storage schema.
 - **Fail loud.** The replay throws whenever the chain data and the rebuilt state stop adding up (a balance would go negative, a close-out or full unstake doesn't match).
 
-Protocol specifics: [`frac-delegation-pipeline/src/plugins/talgo`](../../frac-delegation-pipeline/src/plugins/talgo/README.md) · [`src/reti/README.md`](src/reti/README.md)
+Protocol specifics: [`frac-delegation-pipeline/src/plugins/talgo`](../../frac-delegation-pipeline/src/plugins/talgo/README.md) · [`frac-delegation-pipeline/src/plugins/xalgo`](../../frac-delegation-pipeline/src/plugins/xalgo/README.md) · [`src/reti/README.md`](src/reti/README.md)

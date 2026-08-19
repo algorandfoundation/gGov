@@ -20,6 +20,7 @@ import { instanceBoxName, periodBoxName } from '../util/boxes'
 import { padForRefSlots } from '../util/padForRefSlots'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
+  AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS,
   AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS,
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
@@ -434,9 +435,11 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     }
     const committeeNumId = Number(committee.committeeNumId)
 
-    // Address → account ID (frac registry); 0 = never seen (used for both resume and registry MBR).
+    // Address → registry record: account ID (0 = never seen) and the instances it is linked to. Used
+    // for the resume set and for the registry MBR estimate.
     const addresses = rows.map(({ account }) => account)
-    const idMap = await this.registry.getAccountIdMap(addresses)
+    const recordMap = await this.registry.getFracRegAccountsMap(addresses)
+    const idMap = new Map(addresses.map((account) => [account, recordMap.get(account)?.accountId ?? 0]))
 
     const ledger = await this.getCommitteeAq(instanceNumId, committeeNumId)
     const pristine = !ledger || (Number(ledger.ingestedAq) === 0 && Number(ledger.numAccounts) === 0)
@@ -485,9 +488,19 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // MBR pre-check before any ingest lands: an underfunded app otherwise fails resource population
     // with an opaque error, part-way through the batches.
     if (remainder.length > 0) {
-      const newRegistryAccounts = remainder.filter(({ account }) => (idMap.get(account) ?? 0) === 0).length
+      // Registry side: a never-seen account gets a box, a known account joining this instance for the
+      // first time gets one more instance id in its box, an account already linked costs nothing.
+      let newRegistryAccounts = 0
+      let joiningRegistryAccounts = 0
+      for (const { account } of remainder) {
+        const record = recordMap.get(account)
+        if (!record || Number(record.accountId) === 0) newRegistryAccounts++
+        else if (!record.instanceNumIds.some((id) => Number(id) === instanceNumId)) joiningRegistryAccounts++
+      }
       const instanceCost = BigInt(remainder.length) * AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS
-      const registryCost = BigInt(newRegistryAccounts) * AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS
+      const registryCost =
+        BigInt(newRegistryAccounts) * AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS +
+        BigInt(joiningRegistryAccounts) * AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS
       const instanceAddress = getApplicationAddress(await this.getInstanceAppId(instanceNumId)).toString()
       const registryAddress = this.registryReadClient.appAddress.toString()
       const algod = this.algorand.client.algod

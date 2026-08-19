@@ -55,6 +55,8 @@ const SOURCES = {
   reti: [1, 66, 225],
   // B: slot 1 dropped · D: slot 2 is new
   talgo: [0, 2],
+  // same shape for xALGO: proposer 1 dropped, proposer 2 is new
+  xalgo: [0, 2],
 }
 
 let stepNumber = 0

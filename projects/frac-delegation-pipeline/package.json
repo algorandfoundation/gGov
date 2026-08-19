@@ -10,6 +10,8 @@
     "test-pipeline": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
     "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
     "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-talgo-balances.ts",
+    "verify-xalgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-xalgo-balances.ts",
+    "xalgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/xalgo-aq.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

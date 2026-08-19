@@ -74,10 +74,16 @@ const SOURCES = {
   reti: [1, 2, 15],
   /** tALGO `account_N` slots. */
   talgo: [0, 1],
+  /** xALGO proposers, by index into the sorted proposer list. */
+  xalgo: [0, 1],
 }
 
-/** ALGO for the deployer. It is the only account that signs anything here. */
-const DEPLOYER_FUNDING = 300
+/**
+ * ALGO for the deployer. It is the only account that signs anything here, and as the operator it
+ * also funds every ingested AQ account's box MBR (~26,600 µALGO across both apps): xALGO alone
+ * brings ~8k accounts per committee, i.e. ~220 ALGO per run.
+ */
+const DEPLOYER_FUNDING = 1_500
 
 let stepNumber = 0
 const step = (label: string) => console.log(`[${++stepNumber}/5] ${label}`)

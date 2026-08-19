@@ -27,7 +27,7 @@ const pipeline = new FracDelegationPipeline({
   discoveryClient: algorandMainnet,
   fracRegistryAppId: seed.fracRegistryAppId,
   ggovRegistryAppId: seed.gGovRegistryAppId,
-  stakingSources: ['reti', 'talgo'],
+  stakingSources: ['reti', 'talgo', 'xalgo'],
   debug: true,
 })
 

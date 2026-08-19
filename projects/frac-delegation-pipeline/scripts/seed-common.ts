@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { RetiGhostSDK } from 'reti-ghost-sdk'
 import { RETI_REGISTRY_APP_ID, TALGO_APP_ID } from '../src/pipeline.ts'
+import { XALGO_APP_ID_MAINNET, XALGO_INSTANCE_NAME, fetchXalgoProposerAddrs } from '../src/plugins/xalgo/index.ts'
 
 // CJS copy for everything touching the local SDKs, rooted at the ggov-sdk dist.
 // See `algorand2` in FracPipelineArgs for why the realms have to stay apart.
@@ -60,15 +61,15 @@ export function deterministicAccount(label: string): SeedAccount {
 // REAL MAINNET ESCROWS
 // =========================================================
 
-export type Escrow = { instance: string; address: string; source: 'reti' | 'talgo' }
+export type Escrow = { instance: string; address: string; source: 'reti' | 'talgo' | 'xalgo' }
 
 /**
- * Read the escrows named in `spec` off mainnet — `reti` validator ids, whose pools are escrows, and
- * tALGO `account_N` slots.
+ * Read the escrows named in `spec` off mainnet — `reti` validator ids, whose pools are escrows,
+ * tALGO `account_N` slots, and xALGO proposers by index into the sorted proposer list.
  */
 export async function fetchEscrows(
   mainnet: AlgorandClient,
-  spec: { reti: number[]; talgo: number[] },
+  spec: { reti: number[]; talgo: number[]; xalgo?: number[] },
 ): Promise<Escrow[]> {
   const retiSdk = new RetiGhostSDK({ algorand: mainnet, registryAppId: RETI_REGISTRY_APP_ID })
   const pools = await retiSdk.getPools(spec.reti)
@@ -88,7 +89,15 @@ export async function fetchEscrows(
     return { instance: 'Tinyman tALGO', address: algosdk.encodeAddress(entry.valueRaw), source: 'talgo' as const }
   })
 
-  const escrows = [...reti, ...talgo]
+  const proposers = spec.xalgo?.length ? await fetchXalgoProposerAddrs(mainnet, XALGO_APP_ID_MAINNET) : []
+  const xalgo: Escrow[] = (spec.xalgo ?? []).map((index) => {
+    const address = proposers[index]
+    if (!address)
+      throw new Error(`xalgo: app ${XALGO_APP_ID_MAINNET} has only ${proposers.length} proposers, no index ${index}`)
+    return { instance: XALGO_INSTANCE_NAME, address, source: 'xalgo' as const }
+  })
+
+  const escrows = [...reti, ...talgo, ...xalgo]
   // A repeat here would surface far downstream as the pipeline's `Repeated escrows found across sources`.
   if (new Set(escrows.map((e) => e.address)).size !== escrows.length) {
     throw new Error('escrow spec produced a repeated address')

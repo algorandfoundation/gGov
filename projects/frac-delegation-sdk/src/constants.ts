@@ -67,6 +67,14 @@ export const AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS = 6_900n
 export const AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS = 19_700n
 
 /**
+ * Box MBR (µAlgo) the REGISTRY app account pays per account it already knows that joins an instance
+ * it was not in yet: one more `Uint16` in the `accounts` box's `instanceNumIds`, i.e. `400 * 2` bytes.
+ * Users of several sources (tALGO and xALGO holders, say) pay this on their second instance; an
+ * account already linked to the instance costs nothing.
+ */
+export const AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS = 800n
+
+/**
  * Default MBR (µAlgo) sent from admin to registry per createInstance call.
  * Covers the spawned instance app's account MBR: 100k base + X*28.5k global ints +
  * Y*50k global bytes + Z*100k extra pages ≈ ????. 1 ALGO buys a healthy buffer
