@@ -32,6 +32,20 @@ export const MAX_ACCOUNTS_PER_INGEST_AQ = 40
 export const MAX_ACCOUNTS_PER_UNINGEST_AQ = 40
 
 /**
+ * Escrows per batched `registerEscrow` group.
+ *
+ * The 16-transaction group limit is what binds, not box I/O. Every call in the group reads and
+ * rewrites the instance's `escrows` box, but a box counts against the group's I/O budget once, at
+ * its current size, however many times the group touches it — the AVM tracks the size of dirty
+ * boxes, not the number of accesses. Measured on localnet against a 3,074-byte escrows box (96
+ * escrows): 16 lands, 17 is refused client-side as over the group limit.
+ *
+ * Held one below 16 so the executor's opcode-budget `increaseBudget` txn still fits when it fires,
+ * the same reasoning as {@link MAX_ACCOUNTS_PER_INGEST_AQ}.
+ */
+export const MAX_ESCROWS_PER_REGISTER_GROUP = 15
+
+/**
  * Box MBR (µAlgo) the INSTANCE app account pays per ingested account: an `accountAq` box of
  * `2500 + 400 * (7-byte name + 4-byte value)`. Charged once per (account, committee).
  *

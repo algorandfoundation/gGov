@@ -7,6 +7,7 @@ import {
 } from 'algosdk'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
 import { GGovRegistrySDK, type GGovCommitteeFile } from 'ggov-sdk'
+import pMap from 'p-map'
 import { AVAILABLE_SOURCES, getPlugin, RETI_REGISTRY_APP_ID_MAINNET, TALGO_APP_ID_MAINNET } from './plugins/index.ts'
 
 // owned by the plugins now, re-exported for the seeding scripts
@@ -16,6 +17,8 @@ export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID).toString()
 
 // each staking source is identified by an easy string and implemented by a plugin under ./plugins,
 // which the pipeline loads from the registry - adding a source touches nothing in here
+
+// TODO refactor types into standalone file / types.ts
 
 /** Admin of the two registries, or the operator that ingests AQ. */
 type PipelineAccount = { sender: string; signer: TransactionSigner }
@@ -35,6 +38,11 @@ interface FracPipelineArgs {
   ggovRegistryAppId: number
   /** Staking sources to run, defaulting to every plugin in the registry. */
   stakingSources?: string[]
+  /**
+   * How many independent reads, and how many instances' escrow registrations, run at once. Defaults
+   * to 4, matching the SDK readers. Turn it down for a rate-limited node.
+   */
+  concurrency?: number
   /** Admin of both registries. Falls back to ADMIN/ADMIN_MNEMONIC in the environment. */
   adminAccount?: PipelineAccount
   /** Operator that ingests AQ. Falls back to the admin account. */
@@ -93,6 +101,17 @@ interface PendingEscrowRegistration {
   escrowAddress: string
 }
 
+/** One instance's outstanding escrow registrations: the unit the register phase fans out over. */
+interface EscrowRegistrationJob {
+  instanceNumId: number
+  instanceName: string
+  escrowAddresses: string[]
+  /** Whether this run created the instance, which is what decides where the job is reported. */
+  isNew: boolean
+  /** Set once every group of the job has landed. */
+  registered: boolean
+}
+
 /** A committee escrow and the frac instance its gGov delegation has to point at. */
 interface EscrowDelegation {
   escrowAddress: string
@@ -128,6 +147,7 @@ export class FracDelegationPipeline {
   private readonly fracSdk: FracDelegationSDK
   private readonly ggovSdk: GGovRegistrySDK
   private readonly sources: string[]
+  private readonly concurrency: number
 
   /** Held for stage 4: AQ ingestion is the operator's job, not the admin's. */
   private readonly operatorAccount?: PipelineAccount
@@ -150,12 +170,14 @@ export class FracDelegationPipeline {
     fracRegistryAppId,
     ggovRegistryAppId,
     stakingSources,
+    concurrency = 4,
     adminAccount,
     operatorAccount,
     debug = false,
   }: FracPipelineArgs) {
     this.algorand = algorand
     this.discoveryClient = discoveryClient ?? algorand
+    this.concurrency = concurrency
     this.debug = debug
     adminAccount = adminAccount ?? envAccount(algorand)
     this.operatorAccount = operatorAccount ?? adminAccount
@@ -220,11 +242,21 @@ export class FracDelegationPipeline {
     // committee cannot enter the analysis in the first place
     const committeeGovAddresses = committee.govs.map((gov) => gov.address)
     this.log(`committee ${committeeId}: ${committeeGovAddresses.length} govs, sources: ${this.sources.join(', ')}`)
+    // discovery is read-only, so the sources fan out. The merge below stays serial, in `this.sources` order: it is what raises the claim conflicts, and
+    // those have to name the same two sources on every run.
+    const discovered = await pMap(
+      this.sources,
+      async (source) => ({
+        source,
+        // an unknown source throws out of the registry
+        instanceNameByEscrow: await (
+          await getPlugin(source, this.discoveryClient)
+        ).getInstanceNameFromEscrowAddrs(committeeGovAddresses),
+      }),
+      { concurrency: this.concurrency },
+    )
     const sourceByEscrow = new Map<string, string>()
-    for (const source of this.sources) {
-      // an unknown source throws out of the registry
-      const plugin = await getPlugin(source, this.discoveryClient)
-      const instanceNameByEscrow = await plugin.getInstanceNameFromEscrowAddrs(committeeGovAddresses)
+    for (const { source, instanceNameByEscrow } of discovered) {
       const recognized = Object.entries(instanceNameByEscrow)
       this.log(
         `${source}: ${recognized.length} of the committee's govs are escrows, in ${new Set(Object.values(instanceNameByEscrow)).size} instances`,
@@ -277,14 +309,21 @@ export class FracDelegationPipeline {
 
     // for the instances that do exist, are all their escrows registered?
     // the escrows of new instances are skipped as they will be registered when the instance is created
-    for (const future of ctx.futureInstances) {
+    const existingPairs = ctx.futureInstances.flatMap((future) => {
       const onChain = ctx.existingInstances.get(future.name)
-      if (!onChain) continue
+      return onChain ? [{ future, onChain }] : []
+    })
+    // one readonly simulate per instance, each against its own app: independent, so they fan out
+    const escrowsOnChain = await pMap(
+      existingPairs,
+      async ({ onChain }) => new Set(await this.fracSdk.getEscrows(onChain.numId)),
+      { concurrency: this.concurrency },
+    )
+    for (const [i, { future, onChain }] of existingPairs.entries()) {
       // already registered, so this one is final as it stands - the rest join as this run creates them
       allInstances.set(future.name, { ...future, ...onChain })
-      const onChainEscrows = new Set(await this.fracSdk.getEscrows(onChain.numId))
       for (const escrowAddress of future.escrowAddresses) {
-        if (onChainEscrows.has(escrowAddress)) continue
+        if (escrowsOnChain[i].has(escrowAddress)) continue
         ctx.existingInstanceEscrowsToRegister.push({
           instanceNumId: onChain.numId,
           instanceName: future.name,
@@ -293,15 +332,11 @@ export class FracDelegationPipeline {
       }
     }
 
-    // WRITE: register escrows for existing instances
-    this.log(`registering ${ctx.existingInstanceEscrowsToRegister.length} escrows to existing instances`)
-    for (const { instanceNumId, instanceName, escrowAddress } of ctx.existingInstanceEscrowsToRegister) {
-      await this.fracSdk.registry.registerEscrow({ instanceNumId, account: escrowAddress })
-      ctx.existingInstanceNewEscrows.push({ instance: instanceName, escrow: escrowAddress })
-      this.log(`WRITE registerEscrow(existing): ${escrowAddress} -> ${instanceName} (#${instanceNumId})`)
-    }
-
-    // WRITE: create new instances and register escrows
+    // WRITE: create the new instances, one at a time. Sequential on purpose - do NOT pMap these.
+    // createInstance names the box it writes after the incremented `lastInstanceNumId`, and
+    // resource population predicts that name from the pre-state, so concurrent creates would all
+    // reference the same box and every one but the first to commit would fail with an invalid box
+    // reference. Their escrows are registered in the phase below, once every instance exists.
     this.log(
       `creating ${ctx.instancesToCreate.length} instances with ${ctx.instancesToCreate.reduce((n, i) => n + i.escrowAddresses.length, 0)} escrows`,
     )
@@ -312,17 +347,85 @@ export class FracDelegationPipeline {
       ctx.instancesCreated.set(newInstance.name, { numId: Number(instanceNumId), appId })
       allInstances.set(newInstance.name, { ...newInstance, numId: Number(instanceNumId), appId })
       this.log(`WRITE addInstance: ${newInstance.name} (#${instanceNumId}, appId ${appId})`)
-      // register all escrows for the new instance
-      for (const escrowAddress of newInstance.escrowAddresses) {
-        await this.fracSdk.registry.registerEscrow({ instanceNumId, account: escrowAddress })
-        this.log(`WRITE registerEscrow(new): ${escrowAddress} -> ${newInstance.name} (#${instanceNumId})`)
+    }
+
+    // WRITE: register every escrow this run owes - to the instances that already existed and to the
+    // ones just created - as one job per instance.
+    const jobs = this.escrowRegistrationJobs()
+    this.log(
+      `registering ${jobs.reduce((n, j) => n + j.escrowAddresses.length, 0)} escrows across ${jobs.length} instances`,
+    )
+    try {
+      // Two instances share no mutable state: the escrow -> instance box is keyed by the escrow, and
+      // the registry's instances box and the instance app's own escrows list are per instance. So
+      // the jobs fan out, while the calls within one job stay in ordered, atomic groups -
+      // registerEscrowsAll - because they all read and rewrite that one growing escrows box.
+      await pMap(
+        jobs,
+        async (job) => {
+          if (job.escrowAddresses.length === 0) return
+          await this.fracSdk.registry.registerEscrowsAll({
+            instanceNumId: job.instanceNumId,
+            accounts: job.escrowAddresses,
+          })
+          job.registered = true
+          this.log(
+            `WRITE registerEscrows(${job.isNew ? 'new' : 'existing'}): ${job.escrowAddresses.length} escrows -> ${job.instanceName} (#${job.instanceNumId})`,
+          )
+        },
+        { concurrency: this.concurrency },
+      )
+    } finally {
+      // Report in job order whatever landed, so the context still shows the run's progress when a
+      // job throws. A job is all-or-nothing here even though it may span several groups: an
+      // instance whose registration failed part-way reports nothing, and re-running picks up the
+      // remainder (an already-assigned escrow is rejected, not registered twice).
+      for (const job of jobs) {
+        if (!job.registered) continue
+        if (job.isNew) ctx.createdInstances.push({ instance: job.instanceName, escrows: job.escrowAddresses })
+        else
+          for (const escrow of job.escrowAddresses)
+            ctx.existingInstanceNewEscrows.push({ instance: job.instanceName, escrow })
       }
-      ctx.createdInstances.push({ instance: newInstance.name, escrows: newInstance.escrowAddresses })
     }
     this.log(
       `[STAGE 1] instance upsert done: ${allInstances.size} instances hold ${[...allInstances.values()].reduce((n, i) => n + i.escrowAddresses.length, 0)} committee escrows`,
     )
     return allInstances
+  }
+
+  /**
+   * The escrow registrations stage 1 still owes, one job per instance: the escrows missing from the
+   * instances that were already on the registry, plus every escrow of the instances this run has
+   * just created. Grouping by instance is what makes the writes safe to fan out.
+   */
+  private escrowRegistrationJobs(): EscrowRegistrationJob[] {
+    const ctx = this.upsertInstancesCtx
+    const byInstance = new Map<number, EscrowRegistrationJob>()
+    for (const { instanceNumId, instanceName, escrowAddress } of ctx.existingInstanceEscrowsToRegister) {
+      let job = byInstance.get(instanceNumId)
+      if (!job) {
+        job = { instanceNumId, instanceName, escrowAddresses: [], isNew: false, registered: false }
+        byInstance.set(instanceNumId, job)
+      }
+      job.escrowAddresses.push(escrowAddress)
+    }
+    for (const newInstance of ctx.instancesToCreate) {
+      // invariant: the create phase awaits every addInstance and throws out of the run on failure,
+      // so getting here means every instance to create was created. Assert rather than skip - a
+      // skipped instance would silently never have its escrows registered, and the run would still
+      // report success.
+      const created = ctx.instancesCreated.get(newInstance.name)
+      if (!created) throw new Error(`Instance ${newInstance.name} was not created, cannot register its escrows`)
+      byInstance.set(created.numId, {
+        instanceNumId: created.numId,
+        instanceName: newInstance.name,
+        escrowAddresses: newInstance.escrowAddresses,
+        isNew: true,
+        registered: false,
+      })
+    }
+    return [...byInstance.values()]
   }
 
   /**
