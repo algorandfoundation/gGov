@@ -312,8 +312,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    *
    * One group per call — use {@link ingestAqAll} to push a whole file. Both app accounts must be
    * funded first: the instance pays `AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS` of box MBR per account,
-   * and the registry `AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS` per account it has never seen (see
-   * `constants.ts`). There is no funding path from the instance to the registry.
+   * and the registry `AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS` per account it has never seen plus
+   * `AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS` per known account joining this instance for the
+   * first time (see `constants.ts`). There is no funding path from the instance to the registry.
    */
   @requireWriter()
   @wrapErrors()

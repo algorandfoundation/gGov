@@ -148,7 +148,7 @@ pnpm verify-xalgo-balances        # replay vs live chain balances + escrow owner
 pnpm test                         # invariants: conservation, see-through, escrow folding, single flooring, …
 ```
 
-The first call for a `periodStart` with no snapshot on disk rebuilds it from asset creation (xALGO from round 30058590, fxALGO from 45366725 — ~13 minutes); every later window starts from a committed snapshot and only scans its own 3M rounds (~5 minutes including escrow resolution). `snapshots/xalgo/` is committed so CI and teammates never pay the cold path. First window computed: `[60000000, 63000000)` → 8130 accounts, 275,523,604 AQ at rate 1.203132107809 (≈ 227.7M circulating xALGO × rate, as it should be), with the largest ultrastaker's owner on top at 3%.
+The plugin refuses a window whose `periodEnd` the chain has not reached yet: an open window would be replayed as far as the chain goes and its boundary snapshots written with state that is not final. The first call for a `periodStart` with no snapshot on disk rebuilds it from asset creation (xALGO from round 30058590, fxALGO from 45366725 — ~13 minutes); every later window starts from a committed snapshot and only scans its own 3M rounds (~5 minutes including escrow resolution). `snapshots/xalgo/` is committed so CI and teammates never pay the cold path. First window computed: `[60000000, 63000000)` → 8130 accounts, 275,523,604 AQ at rate 1.203132107809 (≈ 227.7M circulating xALGO × rate, as it should be), with the largest ultrastaker's owner on top at 3%.
 
 ## Open points
 
