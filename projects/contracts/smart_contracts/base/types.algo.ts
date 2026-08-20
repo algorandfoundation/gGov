@@ -270,6 +270,95 @@ export function getEmptyFracInstanceCommittee(): FracInstanceCommittee {
 }
 
 /**
+ * A Frac Instance's headline position in one gGov committee: what its synced snapshot says it is
+ * worth, joined with the AlgoQuarters ledger backing it. Returned by
+ * `FracDelegationInstance.getCommitteeStanding`.
+ *
+ * The two halves live in separate boxes keyed differently (`committees` by 32-byte committee ID,
+ * `committeeAq` by the locally-synced numeric ID), so reading them apart costs a caller two
+ * round-trips plus a join it cannot even start without the first result. This is that join, done
+ * where both boxes already are.
+ *
+ * Deliberately excludes `FracInstanceCommittee.escrowsVotes`: it grows with the escrow count, and
+ * this struct exists to be logged - one line per instance, against a 1024-byte log limit. Callers
+ * that want the per-escrow breakdown want `getCommittee`.
+ *
+ * Two independent sentinels, inherited from the getters this composes:
+ * - `committeeNumId` 0 - the instance has never `syncCommittee`'d this committee, so every other
+ *   field is 0 as well (see `getEmptyFracInstanceCommittee`).
+ * - `totalAq` 0 - no AlgoQuarters ledger is open, which is a *different* state from an unsynced
+ *   committee: a committee can be synced (real `totalVotes`) with ingestion not yet started (see
+ *   `getEmptyFracCommitteeAq`).
+ */
+export type FracCommitteeStanding = {
+  /** Committee numeric ID as synced locally, or 0 if the committee is not synced */
+  committeeNumId: Uint16
+  /** The instance's gGov voting power in the committee (the snapshot's `totalVotes`) */
+  totalVotes: Uint32
+  /** The committee's declared total AlgoQuarters, 0 if no ledger is open */
+  totalAq: Uint32
+  /** AlgoQuarters ingested so far; equal to `totalAq` once ingestion is complete */
+  ingestedAq: Uint32
+  /** Accounts the ledger declares for the committee, 0 if no ledger is open */
+  totalAccounts: Uint32
+  /** Accounts whose AlgoQuarters are on chain, window-scoped (see `FracCommitteeAq.numAccounts`) */
+  numAccounts: Uint32
+}
+
+/** Empty/"not synced" standing - both sentinels at once. */
+export function getEmptyFracCommitteeStanding(): FracCommitteeStanding {
+  return {
+    committeeNumId: u16(0),
+    totalVotes: u32(0),
+    totalAq: u32(0),
+    ingestedAq: u32(0),
+    totalAccounts: u32(0),
+    numAccounts: u32(0),
+  }
+}
+
+/**
+ * One frac instance's standing in one gGov committee, tagged with the instance's identity. Logged
+ * per instance by `FracDelegationRegistry.logInstanceCommittees` so a caller can ask "which pools
+ * hold power in this committee, and how much stake is behind it" in one paged simulate - instead of
+ * listing instances, then reading each one's snapshot, then each one's ledger.
+ *
+ * The identity half (`instanceNumId`, `instanceAppId`, `instanceName`, `instanceNumAccounts`) is
+ * supplied by the registry from its own `instances` box; the committee half is the
+ * `FracCommitteeStanding` fetched from the instance, flattened in so the whole record is one ARC-4
+ * tuple on the wire.
+ *
+ * `instanceNumAccounts` and `numAccounts` are different populations and both are wanted: the former
+ * is the instance's live registry-wide roster, the latter is who actually held stake during this
+ * committee's window.
+ *
+ * The committee ID is not echoed back - unlike `FracAccountCommitteeAq`, every record a given call
+ * produces is about the single committee the caller named.
+ */
+export type FracInstanceCommitteeStanding = {
+  /** Registry-assigned numeric ID of the instance */
+  instanceNumId: Uint16
+  /** On-chain app ID of the instance */
+  instanceAppId: uint64
+  /** Human-readable instance label */
+  instanceName: string
+  /** Accounts registered to the instance registry-wide - its live roster, not window-scoped */
+  instanceNumAccounts: uint64
+  /** Committee numeric ID as synced locally, or 0 if the committee is not synced */
+  committeeNumId: Uint16
+  /** The instance's gGov voting power in the committee */
+  totalVotes: Uint32
+  /** The committee's declared total AlgoQuarters, 0 if no ledger is open */
+  totalAq: Uint32
+  /** AlgoQuarters ingested so far */
+  ingestedAq: Uint32
+  /** Accounts the ledger declares for the committee */
+  totalAccounts: Uint32
+  /** Accounts whose AlgoQuarters are on chain for this committee */
+  numAccounts: Uint32
+}
+
+/**
  * A Frac Instance's synced snapshot of one gGov period, written by `syncPeriod`.
  *
  * `committeeNumId` is copied from the instance's local `committees` box rather than re-read from

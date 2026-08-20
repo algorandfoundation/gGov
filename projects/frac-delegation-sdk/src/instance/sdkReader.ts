@@ -9,6 +9,7 @@ import {
   APP_SPEC as INSTANCE_APP_SPEC,
   FracAccountCommitteeAq,
   FracCommitteeAq,
+  FracCommitteeStanding,
   FracEscrowVotes,
   FracInstanceCommittee,
   FracInstancePeriod,
@@ -215,6 +216,32 @@ export class FracDelegationReaderSDK {
     const aq = returns[0]!
     // Sentinel: totalAq 0 is never written by `startAqIngest`, so it marks "no ledger".
     return Number(aq.totalAq) === 0 ? undefined : aq
+  }
+
+  /**
+   * This instance's headline position in a committee: the synced snapshot's `totalVotes` joined
+   * with the AlgoQuarters ledger behind it, in one call — `getCommittee` + `getCommitteeAq` without
+   * the round-trip between them (`committeeAq` is keyed by the numeric ID only the first read
+   * yields). Omits `escrowsVotes`; use `getCommittee` when the per-escrow split is wanted.
+   *
+   * Undefined when the instance has never synced the committee. A synced committee with no ledger
+   * open comes back with real `totalVotes` and `totalAq` 0 — the two states are distinct.
+   *
+   * The cross-instance form of this is the registry's `getInstanceCommitteeStandings`, which drives
+   * the same instance method through `logInstanceCommittees`.
+   */
+  async getCommitteeStanding(
+    instanceNumId: bigint | number,
+    committeeId: Uint8Array | string,
+  ): Promise<FracCommitteeStanding | undefined> {
+    const client = await this.getInstanceReadClient(instanceNumId)
+    const { returns } = await client
+      .newGroup()
+      .getCommitteeStanding({ args: { committeeId: committeeIdToRaw(committeeId) } })
+      .simulate(SIMULATE_PARAMS)
+    const standing = returns[0]!
+    // Sentinel: committeeNumId 0 is never assigned by the gGov registry, so it marks "not synced".
+    return Number(standing.committeeNumId) === 0 ? undefined : standing
   }
 
   /**

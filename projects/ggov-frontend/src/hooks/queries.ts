@@ -66,6 +66,9 @@ export const queryKeys = {
   // Committee-scoped rather than account-scoped, so it shares nothing with the
   // account-side keys above.
   fracCommitteePools: (committeeId: string) => ['fracCommitteePools', committeeId] as const,
+  // One pool's aggregate internal tally for one period — how much of its stake voted.
+  fracPeriodVoteCache: (instanceNumId: number, periodId: number) =>
+    ['fracPeriodVoteCache', instanceNumId, periodId] as const,
 }
 
 export function useGlobalState() {

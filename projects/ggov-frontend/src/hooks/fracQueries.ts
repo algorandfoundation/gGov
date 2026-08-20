@@ -90,8 +90,9 @@ export function useFracAccount(account: string | null | undefined) {
  * TODO(perf): this fans out one read per instance, because `logCommittees` batches
  * committee ids but is instance-scoped — there is no cross-instance equivalent.
  * The registry already has the right shape for one (`logAccountInstanceAq` pages
- * across an account's instances), so the fix is a registry-side
- * `logInstanceCommittees(instanceNumIds[], committeeIds[], limit, offset)`.
+ * across an account's instances); `logInstanceCommittees` is the same idea for
+ * the committee-scoped transpose, but it takes one committee, so it does not
+ * cover this hook's many-committees case.
  * Better still, fold `totalVotes` into `FracAccountCommitteeAq` and extend
  * `logAccountInstanceAq` to take several committees (see the TODO on
  * `usePooledCommitteeAqs`) — that collapses this whole module to a single read
@@ -251,12 +252,25 @@ export function usePooledPositions(
 /** One pool's stake in a committee. */
 export interface CommitteePool {
   instanceNumId: number
+  /** The committee's *numeric* id as this instance knows it — instance-local. */
+  committeeNumId: number
   /** Pool label as the registry reports it, e.g. "Folks Finance xALGO". */
   name: string
   /** Accounts registered to the pool. Registry-wide — see {@link CommitteePools}. */
   members: number
+  /**
+   * Accounts holding AlgoQuarters in *this* committee — window-scoped, unlike
+   * {@link members}. 0 when the pool has no ledger open (so is `aq`).
+   */
+  stakers: number
   /** The pool's gGov power in this committee: the sum of its escrows' votes. */
   votes: number
+  /**
+   * The AlgoQuarters behind that power — the denominator a member's share is split
+   * against. Voting power says how much weight the pool carries; this says how much
+   * ALGO-time its members put in to earn it. 0 when ingestion has not started.
+   */
+  aq: number
 }
 
 /** Every pool holding gGov power in one committee. */
@@ -295,13 +309,12 @@ const EMPTY_TOTALS: CommitteePoolTotals = { pools: [], pooledVotes: 0, participa
  * votes, has no pooled stake from that pool — that is a provable absence, not a
  * gap in the data.
  *
- * TODO(perf): one `getCommittees` read per instance, for the same reason
- * {@link useFracInstanceCommittees} fans out — `logCommittees` batches committee
- * ids but is instance-scoped. A registry-side
- * `logInstanceCommittees(instanceNumIds[], committeeIds[], limit, offset)` would
- * collapse this to a single read; it needs contract work, so it is a follow-up.
- * Instance counts are small (one per pool operator), so the fan-out is bounded in
- * practice — but it grows with pool adoption, unlike the rest of this module.
+ * One paged read, whatever the pool count: the registry's `logInstanceCommittees`
+ * enumerates its own instances and inner-calls each one's `getCommitteeStanding`,
+ * so a page carries identity, voting power and AlgoQuarters together. It also
+ * drops instances whose app has been deleted on chain, which is what retires the
+ * `getExistingInstances()` pre-read this used to open with — that cost an algod
+ * lookup per instance on top of a snapshot read per instance.
  */
 export function useCommitteePools(committeeIdBase64Url: string | undefined): CommitteePools {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
@@ -310,23 +323,22 @@ export function useCommitteePools(committeeIdBase64Url: string | undefined): Com
     queryFn: async (): Promise<CommitteePoolTotals> => {
       const sdk = await getFracReaderSDK()
       if (!sdk) return EMPTY_TOTALS
-      // `instances` boxes are never removed, so filter to instances whose app is
-      // still on-chain — a deleted one has no snapshot to read.
-      const instances = await sdk.registry.getExistingInstances()
-      const committeeId = fromBase64Url(committeeIdBase64Url!)
-      const found = await Promise.all(
-        [...instances].map(async ([instanceNumId, instance]): Promise<CommitteePool | null> => {
-          const [snapshot] = await sdk.getCommittees(instanceNumId, [committeeId])
-          if (!snapshot || snapshot.totalVotes <= 0) return null
-          return {
-            instanceNumId,
-            name: instance.name,
-            members: Number(instance.numAccounts),
-            votes: snapshot.totalVotes,
-          }
-        }),
-      )
-      const pools = found.filter((pool): pool is CommitteePool => pool !== null)
+      const standings = await sdk.registry.getInstanceCommitteeStandings(fromBase64Url(committeeIdBase64Url!))
+      const pools = standings
+        // A standing with no votes is an instance that never synced this committee,
+        // or synced it and holds nothing — either way it has no pooled stake here.
+        .filter((standing) => standing.totalVotes > 0)
+        .map(
+          (standing): CommitteePool => ({
+            instanceNumId: standing.instanceNumId,
+            committeeNumId: standing.committeeNumId,
+            name: standing.instanceName,
+            members: Number(standing.instanceNumAccounts),
+            stakers: standing.numAccounts,
+            votes: standing.totalVotes,
+            aq: standing.totalAq,
+          }),
+        )
       pools.sort((a, b) => b.votes - a.votes)
       return {
         pools,
@@ -347,6 +359,64 @@ export function useCommitteePools(committeeIdBase64Url: string | undefined): Com
     isError,
     fracEnabled,
   }
+}
+
+// ─── Pool turnout (the pools index) ──────────────────────────────────────────
+//
+// `useCommitteePools` answers "which pools, how much power, and how much stake
+// behind it" in one read. Turnout is the one figure it cannot carry: it is
+// period-scoped, and a committee can back several periods.
+
+/**
+ * How much of each pool's stake has cast an internal ballot on one period.
+ *
+ * `periodVoteCache.internal` is the pool's own tally in AlgoQuarters ([topic]
+ * [option], written by the instance's `vote`), so summing a topic's options gives
+ * the AQ that voted. gGov makes every voter spend their full weight on every
+ * topic, so any topic's sum is the same figure — we take the max across topics
+ * for the same robustness reason `lib/turnout.ts` does.
+ *
+ * Returned raw rather than as a percentage: the denominator is the pool's `aq`
+ * from {@link useCommitteePools}, which resolves independently.
+ *
+ * A pool that never synced the period is absent — it *cannot* have voted, which
+ * is a different statement from "voted nothing", and the index says so.
+ */
+export function useCommitteePoolVotedAq(
+  pools: CommitteePool[],
+  periodId: number | undefined,
+): { byInstance: Record<number, number>; isLoading: boolean } {
+  const { fracEnabled, getFracReaderSDK } = useGGovSDK()
+
+  const results = useQueries({
+    queries: pools.map((pool) => ({
+      queryKey: queryKeys.fracPeriodVoteCache(pool.instanceNumId, periodId ?? 0),
+      queryFn: async (): Promise<number | null> => {
+        const sdk = await getFracReaderSDK()
+        if (!sdk) return null
+        const cache = await sdk.getPeriodVoteCache(pool.instanceNumId, periodId!)
+        if (!cache) return null
+        return cache.internal.reduce(
+          (max, topic) =>
+            Math.max(
+              max,
+              topic.reduce((a, b) => a + b, 0),
+            ),
+          0,
+        )
+      },
+      enabled: fracEnabled && periodId !== undefined,
+      // Live while the period is open, so much shorter than the committee reads.
+      staleTime: 30_000,
+    })),
+  })
+
+  const byInstance: Record<number, number> = {}
+  pools.forEach((pool, i) => {
+    const data = results[i]?.data
+    if (data !== null && data !== undefined) byInstance[pool.instanceNumId] = data
+  })
+  return { byInstance, isLoading: results.some((r) => r.isPending && r.fetchStatus !== 'idle') }
 }
 
 // ─── Pooled ballot (the voting page) ──────────────────────────────────────────
