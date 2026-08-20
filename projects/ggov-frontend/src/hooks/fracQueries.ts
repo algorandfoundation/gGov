@@ -242,6 +242,113 @@ export function usePooledPositions(
   }
 }
 
+// ─── Committee composition (the committees page) ─────────────────────────────
+//
+// The hooks above are account-scoped: what one member holds. This one is the
+// aggregate — how much of a committee's power sits in pools at all, and in which.
+// No account is involved, so it reads with no wallet connected.
+
+/** One pool's stake in a committee. */
+export interface CommitteePool {
+  instanceNumId: number
+  /** Pool label as the registry reports it, e.g. "Folks Finance xALGO". */
+  name: string
+  /** Accounts registered to the pool. Registry-wide — see {@link CommitteePools}. */
+  members: number
+  /** The pool's gGov power in this committee: the sum of its escrows' votes. */
+  votes: number
+}
+
+/** Every pool holding gGov power in one committee. */
+export interface CommitteePools {
+  /** Pools with power here, strongest first. Pools that never synced are absent. */
+  pools: CommitteePool[]
+  /** Their combined gGov power — exact, unlike a member's split of it. */
+  pooledVotes: number
+  /**
+   * Σ `members` over those pools. Registry-wide per pool, not window-scoped: a
+   * pool's roster is a live figure, so this counts who is in the pools that held
+   * power here, not who held stake during the window.
+   */
+  participants: number
+  isLoading: boolean
+  /** The registry read failed — callers say so rather than rendering zeros. */
+  isError: boolean
+  /** False on networks with no frac registry — no pooled query is issued at all. */
+  fracEnabled: boolean
+}
+
+type CommitteePoolTotals = Pick<CommitteePools, 'pools' | 'pooledVotes' | 'participants'>
+
+const EMPTY_TOTALS: CommitteePoolTotals = { pools: [], pooledVotes: 0, participants: 0 }
+
+/**
+ * Which pools hold a committee's voting power, and how much.
+ *
+ * Each pool is a frac *instance* whose escrows produce blocks; the instance's
+ * synced snapshot of a committee carries `totalVotes` — that pool's gGov power
+ * for the window, already summed over its escrows. So unlike a member's share
+ * (`floor`-split, hence the "≈" convention in this module's docblock), these are
+ * exact integers and are rendered without one.
+ *
+ * A committee absent from an instance's snapshot map, or present with zero
+ * votes, has no pooled stake from that pool — that is a provable absence, not a
+ * gap in the data.
+ *
+ * TODO(perf): one `getCommittees` read per instance, for the same reason
+ * {@link useFracInstanceCommittees} fans out — `logCommittees` batches committee
+ * ids but is instance-scoped. A registry-side
+ * `logInstanceCommittees(instanceNumIds[], committeeIds[], limit, offset)` would
+ * collapse this to a single read; it needs contract work, so it is a follow-up.
+ * Instance counts are small (one per pool operator), so the fan-out is bounded in
+ * practice — but it grows with pool adoption, unlike the rest of this module.
+ */
+export function useCommitteePools(committeeIdBase64Url: string | undefined): CommitteePools {
+  const { fracEnabled, getFracReaderSDK } = useGGovSDK()
+  const { data, isPending, fetchStatus, isError } = useQuery({
+    queryKey: queryKeys.fracCommitteePools(committeeIdBase64Url ?? ''),
+    queryFn: async (): Promise<CommitteePoolTotals> => {
+      const sdk = await getFracReaderSDK()
+      if (!sdk) return EMPTY_TOTALS
+      // `instances` boxes are never removed, so filter to instances whose app is
+      // still on-chain — a deleted one has no snapshot to read.
+      const instances = await sdk.registry.getExistingInstances()
+      const committeeId = fromBase64Url(committeeIdBase64Url!)
+      const found = await Promise.all(
+        [...instances].map(async ([instanceNumId, instance]): Promise<CommitteePool | null> => {
+          const [snapshot] = await sdk.getCommittees(instanceNumId, [committeeId])
+          if (!snapshot || snapshot.totalVotes <= 0) return null
+          return {
+            instanceNumId,
+            name: instance.name,
+            members: Number(instance.numAccounts),
+            votes: snapshot.totalVotes,
+          }
+        }),
+      )
+      const pools = found.filter((pool): pool is CommitteePool => pool !== null)
+      pools.sort((a, b) => b.votes - a.votes)
+      return {
+        pools,
+        pooledVotes: pools.reduce((sum, pool) => sum + pool.votes, 0),
+        participants: pools.reduce((sum, pool) => sum + pool.members, 0),
+      }
+    },
+    enabled: fracEnabled && !!committeeIdBase64Url,
+    // A committee is a closed historical window; its snapshots only change while
+    // a pool is still syncing it.
+    staleTime: 300_000,
+  })
+  return {
+    ...(data ?? EMPTY_TOTALS),
+    // A disabled query sits at `isPending` forever, which would leave the section
+    // in a skeleton on a network with no frac registry — same guard the hooks above use.
+    isLoading: isPending && fetchStatus !== 'idle',
+    isError,
+    fracEnabled,
+  }
+}
+
 // ─── Pooled ballot (the voting page) ──────────────────────────────────────────
 //
 // The account page needs one account across many committees; the ballot needs the

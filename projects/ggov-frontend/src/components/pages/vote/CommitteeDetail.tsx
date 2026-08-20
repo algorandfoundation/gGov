@@ -19,6 +19,7 @@ import { useAddressName } from '@/hooks/use-nfd'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { AccountAvatar } from '@/components/AccountAvatar'
 import BackButton from '@/components/BackButton'
+import PooledVotingCard from '@/components/PooledVotingCard'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE = 25
@@ -205,7 +206,23 @@ function StartEndPanel({ committee }: { committee: CommitteeOption }) {
 
 // ── Members leaderboard ──────────────────────────────────────────────────────
 
-const LEADERBOARD_GRID = 'grid grid-cols-[36px_1fr_minmax(120px,200px)_90px] items-center gap-3.5'
+/**
+ * Four columns on tablet and up. Narrower than that the share column's 120px
+ * minimum left the account column ~46px — enough for the avatar and nothing
+ * else — so below `sm` the row drops to rank / account / votes and the share
+ * bar moves inline under the account name (matching the design's mobile frame).
+ */
+const LEADERBOARD_GRID =
+  'grid grid-cols-[28px_1fr_auto] items-center gap-3 sm:grid-cols-[36px_1fr_minmax(120px,200px)_90px] sm:gap-3.5'
+
+/** Share-of-total meter. Same track/fill at both breakpoints, different height. */
+function ShareBar({ barPct, className }: { barPct: number; className?: string }) {
+  return (
+    <div className={cn('overflow-hidden rounded-full bg-muted', className)}>
+      <div className="h-full rounded-full bg-algo-blue dark:bg-algo-teal" style={{ width: `${barPct}%` }} />
+    </div>
+  )
+}
 
 function MemberRow({
   address,
@@ -228,7 +245,7 @@ function MemberRow({
       params={{ address }}
       className={cn(
         LEADERBOARD_GRID,
-        'border-b border-border px-4.5 py-3 transition-colors last:border-0 hover:bg-muted/40',
+        'border-b border-border px-3.5 py-3 transition-colors last:border-0 hover:bg-muted/40 sm:px-4.5',
       )}
     >
       <span
@@ -240,23 +257,23 @@ function MemberRow({
         {rank}
       </span>
       <div className="flex min-w-0 items-center gap-2.5">
-        <AccountAvatar address={address} name={name} size={28} />
-        <div className="min-w-0">
+        <AccountAvatar address={address} name={name} size={28} className="shrink-0" />
+        <div className="min-w-0 flex-1">
           <div className="truncate text-[13.5px] font-semibold text-algo-blue dark:text-algo-teal">
             {name ?? ellipsed}
           </div>
           {name && <div className="truncate font-mono text-[11.5px] text-muted-foreground">{ellipsed}</div>}
+          {/* Below `sm` the share column is gone, so the bar rides under the name. */}
+          <ShareBar barPct={barPct} className="mt-1.5 h-[5px] sm:hidden" />
         </div>
       </div>
-      <div className="flex items-center gap-2.5">
-        <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-algo-blue dark:bg-algo-teal" style={{ width: `${barPct}%` }} />
-        </div>
+      <div className="hidden items-center gap-2.5 sm:flex">
+        <ShareBar barPct={barPct} className="h-[7px] flex-1" />
         <span className="w-[46px] shrink-0 text-right text-xs tabular-nums text-muted-foreground">
           {share.toFixed(2)}%
         </span>
       </div>
-      <span className="text-right text-sm font-semibold tabular-nums">{votes.toLocaleString()}</span>
+      <span className="text-right text-[13px] font-semibold tabular-nums sm:text-sm">{votes.toLocaleString()}</span>
     </Link>
   )
 }
@@ -353,6 +370,18 @@ export default function CommitteeDetail() {
         </div>
       )}
 
+      {/* Pooled voting. Part of the summary, so it follows the block panel in
+          being omitted when the committee isn't found — but it fetches its own
+          pool data and fills in independently of everything above it. */}
+      {(loadingCommittee || committee) && (
+        <PooledVotingCard
+          className="mt-5"
+          committeeId={committeeId}
+          totalVotes={committee?.totalVotes}
+          loadingTotalVotes={loadingCommittee}
+        />
+      )}
+
       {/* Members leaderboard. */}
       <div className="mt-7 flex items-baseline justify-between gap-3">
         <Eyebrow>Members</Eyebrow>
@@ -363,17 +392,18 @@ export default function CommitteeDetail() {
         <div
           className={cn(
             LEADERBOARD_GRID,
-            'border-b border-input px-4.5 py-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground',
+            'border-b border-input px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground sm:px-4.5',
           )}
         >
           <span>#</span>
           <span>Account</span>
-          <span>Share of total</span>
+          {/* Hidden below `sm`, where the row has no share column of its own. */}
+          <span className="hidden sm:block">Share of total</span>
           <span className="text-right">Votes</span>
         </div>
 
         {loadingMembers ? (
-          <div className="flex flex-col gap-2 p-4.5">
+          <div className="flex flex-col gap-2 p-3.5 sm:p-4.5">
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
@@ -400,7 +430,7 @@ export default function CommitteeDetail() {
             })}
 
             {/* Pager + caption on an inset footer. */}
-            <div className="flex items-center justify-between gap-3.5 bg-muted/40 px-4.5 py-3">
+            <div className="flex items-center justify-between gap-2 bg-muted/40 px-3.5 py-3 sm:gap-3.5 sm:px-4.5">
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}

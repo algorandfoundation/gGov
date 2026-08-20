@@ -15,9 +15,23 @@ import { useMockScenario } from './queries'
 import { cakey } from './scenarios'
 
 // Public types — single source of truth in the real module.
-export type { PooledPosition, PooledPositions, PooledBallotPosition, PooledBallot } from '../../src/hooks/fracQueries'
+export type {
+  PooledPosition,
+  PooledPositions,
+  PooledBallotPosition,
+  PooledBallot,
+  CommitteePool,
+  CommitteePools,
+} from '../../src/hooks/fracQueries'
 
-import type { PooledPosition, PooledPositions, PooledBallotPosition, PooledBallot } from '../../src/hooks/fracQueries'
+import type {
+  PooledPosition,
+  PooledPositions,
+  PooledBallotPosition,
+  PooledBallot,
+  CommitteePool,
+  CommitteePools,
+} from '../../src/hooks/fracQueries'
 
 export function usePooledPositions(
   account: string | null | undefined,
@@ -105,6 +119,50 @@ export function usePooledBallot({
   const byId: Record<string, PooledBallotPosition> = {}
   for (const position of positions) byId[position.id] = position
   return { positions, byId, isLoading, fracEnabled: true }
+}
+
+/**
+ * Committee composition — the aggregate the committee page shows, derived from
+ * the same `pooled` fixture. The fixture is keyed by (committee, account), so a
+ * pool's committee-wide power is summed over whichever accounts a story defines
+ * for it; `members` counts those accounts. Enough to exercise the section's
+ * stats, bar and legend without a registry.
+ */
+export function useCommitteePools(committeeIdBase64Url: string | undefined): CommitteePools {
+  const s = useMockScenario()
+  const pooled = s.pooled ?? {}
+  const isLoading = !!s.flags?.pooledLoading
+
+  const byInstance = new Map<number, CommitteePool>()
+  if (committeeIdBase64Url && !isLoading) {
+    const prefix = `${committeeIdBase64Url}:`
+    for (const [key, positions] of Object.entries(pooled)) {
+      if (!key.startsWith(prefix)) continue
+      for (const position of positions) {
+        const pool = byInstance.get(position.instanceNumId)
+        if (pool) {
+          pool.members += 1
+        } else {
+          byInstance.set(position.instanceNumId, {
+            instanceNumId: position.instanceNumId,
+            name: position.instanceName,
+            members: 1,
+            votes: position.poolVotes,
+          })
+        }
+      }
+    }
+  }
+
+  const pools = [...byInstance.values()].sort((a, b) => b.votes - a.votes)
+  return {
+    pools,
+    pooledVotes: pools.reduce((sum, pool) => sum + pool.votes, 0),
+    participants: pools.reduce((sum, pool) => sum + pool.members, 0),
+    isLoading,
+    isError: false,
+    fracEnabled: true,
+  }
 }
 
 /** Present for completeness; the pages only use {@link usePooledPositions}. */
