@@ -665,7 +665,7 @@ export default function PoolDetail() {
       <SidebarCard title="Pool facts">
         <div className="mt-3 flex flex-col gap-2.5">
           <FactRow label="Type">{pool ? KIND_LABEL[poolKind(pool.name)] : '—'}</FactRow>
-          <FactRow label="Instance app">
+          <FactRow label="Voting Pool App">
             {pool ? <AppExplorerLink appId={pool.appId} prefix="" className="font-mono" /> : '—'}
           </FactRow>
           {/* The protocol itself, as opposed to the frac instance that represents
