@@ -129,6 +129,11 @@ export default function PooledVoting() {
           stays separate is the validator: a stake with a second validator earns its own share there, so you vote once
           for each validator you stake with.
         </P>
+
+        {/* TODO(docs): an xALGO section to match — the third pooled source, and the only one still
+            without its own "how your holding becomes AQ" explainer. Its plugin converts xALGO to
+            ALGO at a rate like tALGO's, but the beneficiary rules (a holding can accrue to an
+            account other than the holder) need covering too. */}
       </div>
       <Pager from="/docs/pooled-voting" />
     </div>
