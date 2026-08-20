@@ -13,6 +13,7 @@ export {
   type FracCommitteeAq,
   type FracInstanceCommittee,
   type FracInstancePeriod,
+  type FracPeriodVoteCache,
   type FracVotingRecord,
 } from './generated/FracDelegationInstanceClient.js'
 

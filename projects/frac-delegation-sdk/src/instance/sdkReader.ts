@@ -441,6 +441,50 @@ export class FracDelegationReaderSDK {
   }
 
   /**
+   * Batch `getVotingRecord`: index-aligned with `accountIds`, `undefined` for an account that has
+   * not voted on the period. Prefer this over N x `getVotingRecord` when rendering a roster — a
+   * member table wants "did this account vote" for every row at once.
+   *
+   * There is no `logVotingRecords` on the instance (unlike `logAccountAqs` for the AlgoQuarters
+   * ledger), so this packs several plain `getVotingRecord` calls into one simulate group instead of
+   * one call over many ids. That still collapses a page of members into a single round-trip.
+   */
+  async getVotingRecords(
+    instanceNumId: bigint | number,
+    periodId: bigint | number,
+    accountIds: (bigint | number)[],
+  ): Promise<(FracVotingRecord | undefined)[]> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    accountIds.forEach((accountId, i) => assertUint(accountId, 32, `accountIds[${i}]`))
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return this._getVotingRecordsChunked(accountIds, client, periodIdArg)
+  }
+
+  /**
+   * One call per account rather than one call over many, so the group's 16-transaction capacity is
+   * the binding limit here — not the 128 unnamed-reference budget the `log*` readers chunk against
+   * (each call references a single `votingRecords` box). The decorator fans out larger requests
+   * concurrently.
+   */
+  @chunked(16)
+  private async _getVotingRecordsChunked(
+    accountIds: (bigint | number)[],
+    client: FracDelegationInstanceClient,
+    periodId: bigint | number,
+  ): Promise<(FracVotingRecord | undefined)[]> {
+    if (accountIds.length === 0) return []
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    for (const accountId of accountIds) {
+      builder = builder.getVotingRecord({ args: { periodId, accountId } })
+    }
+    const { returns } = await builder.simulate(SIMULATE_PARAMS)
+    // The builder is accumulated in a loop, so its per-call return types are erased.
+    const records = returns as (FracVotingRecord | undefined)[]
+    // Same sentinel as the singular reader: a cast vote has one row per topic.
+    return records.map((record) => (record && record.topicVotes.length > 0 ? record : undefined))
+  }
+
+  /**
    * Whether `senderAccount` may cast `voterAccount`'s internal vote on a gGov period, and the
    * AlgoQuarters weight it would carry — the read-only mirror of `vote`'s gates, like
    * `GGovReaderSDK.canVote` is for the period contract. `senderAccount` defaults to `voterAccount`

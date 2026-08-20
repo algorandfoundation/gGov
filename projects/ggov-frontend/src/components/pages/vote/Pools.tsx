@@ -1,50 +1,25 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowRight, Check, ChevronDown } from 'lucide-react'
+import { ArrowRight, ChevronRight } from 'lucide-react'
 import { useWallet } from '@txnlab/use-wallet-react'
-import { useCommittee, useCommittees, usePeriods, toBase64Url, type CommitteeOption } from '@/hooks/queries'
+import { useCommittee, useCommittees } from '@/hooks/queries'
 import { useCommitteePoolVotedAq, useCommitteePools, usePooledPositions, type CommitteePool } from '@/hooks/fracQueries'
+import { useCommitteePeriods } from '@/hooks/useCommitteePeriods'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Avatar, avatarTone } from '@/components/ui/avatar'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { EmptyPanel } from '@/components/ui/empty-panel'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tag } from '@/components/ui/tag'
 import PoolCompositionBar from '@/components/PoolCompositionBar'
+import PoolCommitteeSelector from '@/components/PoolCommitteeSelector'
+import { poolKind, KIND_LABEL, type PoolKind } from '@/lib/poolKind'
 import { pctOf, segmentColor } from '@/lib/poolComposition'
-import { formatBlockRange, formatCompact } from '@/utils/format'
+import { formatCompact } from '@/utils/format'
 import { cn } from '@/lib/utils'
 
-// ── Pool kind ────────────────────────────────────────────────────────────────
-
-type PoolKind = 'liquid' | 'reti'
-
 type KindFilter = PoolKind | 'all'
-
-/**
- * Liquid-staking token vs. Réti validator pool.
- *
- * TODO(data): derived from the pool's name, because that is the only descriptive
- * field the registry keeps — `FracInstance` is `{ appId, name, numAccounts,
- * numEscrows }` and nothing in it records what kind of pool an instance wraps.
- * So this is a naming convention, not a fact: a Réti instance that doesn't say
- * "Reti" lands in the liquid bucket. The fix is a `kind` (or a free-form tag) on
- * the instance record, set at `createInstance` — contract work, so a follow-up.
- * Until then the filter is only offered when both buckets are actually populated.
- */
-function poolKind(name: string): PoolKind {
-  // Fold diacritics first: operators write both "Reti" and "Réti", and \b never
-  // matches across the combining mark in the latter.
-  const folded = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  return /\breti\b/i.test(folded) ? 'reti' : 'liquid'
-}
-
-const KIND_LABEL: Record<PoolKind, string> = {
-  liquid: 'Liquid staking',
-  reti: 'Réti pool',
-}
 
 const FILTERS: { value: KindFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -57,81 +32,6 @@ const HELD_LABEL: Record<KindFilter, string> = {
   all: 'Voting power held by pools',
   liquid: 'Voting power held by liquid staking',
   reti: 'Voting power held by Réti pools',
-}
-
-// ── Committee selector ───────────────────────────────────────────────────────
-
-/**
- * Committee picker. Changing it navigates rather than setting state — a
- * committee's pool composition is its own URL, so it can be linked and shared.
- */
-function CommitteeSelector({
-  committees,
-  selected,
-  periodLabels,
-  loading,
-}: {
-  committees: CommitteeOption[]
-  selected: CommitteeOption | undefined
-  /** Committee id (base64url) → "Period 19" / "Periods 18, 19", when one used it. */
-  periodLabels: Map<string, string>
-  loading: boolean
-}) {
-  const navigate = useNavigate()
-  // Committees come back newest-first, so the head is the live window.
-  const currentId = committees[0]?.idBase64Url
-
-  if (loading && !selected) return <Skeleton className="h-[52px] w-full sm:w-[210px]" />
-
-  return (
-    <div className="w-full sm:w-auto">
-      <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
-        Committee
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          disabled={committees.length === 0}
-          className="group flex min-h-12 w-full items-center justify-between gap-2.5 rounded-md border border-input bg-background px-3.5 py-2 text-left transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto"
-        >
-          <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate font-mono text-[13px] font-semibold">
-              {selected ? formatBlockRange(selected.periodStart, selected.periodEnd) : '—'}
-            </span>
-            <span className="truncate text-[11.5px] text-muted-foreground">
-              {selected ? (periodLabels.get(selected.idBase64Url) ?? 'Not used by a period') : 'No committee'}
-            </span>
-          </span>
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="max-h-80 w-[288px] overflow-y-auto">
-          {committees.map((c) => (
-            <DropdownMenuItem
-              key={c.idBase64Url}
-              onSelect={() => navigate({ to: '/pools/$committeeId', params: { committeeId: c.idBase64Url } })}
-              className="gap-2.5 px-3 py-2.5"
-            >
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate font-mono text-[13px] font-semibold text-algo-blue dark:text-algo-teal">
-                  {formatBlockRange(c.periodStart, c.periodEnd)}
-                </span>
-                <span className="truncate text-[11.5px] text-muted-foreground">
-                  {periodLabels.get(c.idBase64Url) ?? `${(c.periodEnd - c.periodStart).toLocaleString()} rounds`}
-                </span>
-              </span>
-              {c.idBase64Url === currentId && (
-                <Tag tone="teal" className="shrink-0 px-2 py-0.5 text-[10px]">
-                  Current
-                </Tag>
-              )}
-              {c.idBase64Url === selected?.idBase64Url && (
-                <Check className="size-4 shrink-0 !text-algo-blue dark:!text-algo-teal" />
-              )}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
 }
 
 // ── Ranked list ──────────────────────────────────────────────────────────────
@@ -197,7 +97,7 @@ function turnoutClass(pct: number): string {
   return 'text-warning-strong'
 }
 
-function PoolRow({ pool, showKind }: { pool: PoolRowData; showKind: boolean }) {
+function PoolRow({ pool, showKind, committeeId }: { pool: PoolRowData; showKind: boolean; committeeId: string }) {
   const meta: ReactNode[] = [
     // Dropped on a phone: it is the least load-bearing of the four and the row is
     // tight there. Decided in JS rather than with `hidden sm:inline` because the
@@ -213,10 +113,12 @@ function PoolRow({ pool, showKind }: { pool: PoolRowData; showKind: boolean }) {
   ].filter((part) => part !== null)
 
   return (
-    <div
+    <Link
+      to="/pools/$committeeId/$instanceNumId"
+      params={{ committeeId, instanceNumId: String(pool.instanceNumId) }}
       className={cn(
         POOL_ROW_GRID,
-        'border-b border-border px-3.5 py-3 last:border-0 sm:px-4.5',
+        'border-b border-border px-3.5 py-3 transition-colors last:border-0 hover:bg-muted/40 sm:px-4.5',
         pool.yours && 'shadow-[inset_2px_0_0_var(--algo-teal)]',
       )}
     >
@@ -264,8 +166,9 @@ function PoolRow({ pool, showKind }: { pool: PoolRowData; showKind: boolean }) {
             {pool.votes.toLocaleString()} votes
           </span>
         </span>
+        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -287,37 +190,17 @@ export default function Pools() {
   const [kind, setKind] = useState<KindFilter>('all')
   const [page, setPage] = useState(0)
 
+  const navigate = useNavigate()
   const { data: committees = [], isLoading: loadingCommittees } = useCommittees()
-  const { data: periods = [] } = usePeriods()
   const { data: committee, isLoading: loadingCommittee } = useCommittee(committeeId)
   const { pools, isLoading: loadingPools, isError, fracEnabled } = useCommitteePools(committeeId)
 
-  // Map each committee → the period(s) that used its window, mirroring the
-  // committees index. Doubles as the turnout period: pooled ballots are cast per
-  // period, so "how much of this pool voted" needs one to be about.
-  const { periodLabels, turnoutPeriodId } = useMemo(() => {
-    const byCommittee = new Map<string, number[]>()
-    for (const p of periods) {
-      const id = toBase64Url(p.period.committeeId)
-      const list = byCommittee.get(id) ?? []
-      list.push(p.id)
-      byCommittee.set(id, list)
-    }
-    const periodLabels = new Map<string, string>()
-    for (const [id, list] of byCommittee) {
-      list.sort((a, b) => a - b)
-      periodLabels.set(id, list.length === 1 ? `Period ${list[0]}` : `Periods ${list.join(', ')}`)
-    }
-    // Turnout period: the newest period on this committee whose voting has
-    // actually opened. A committee can back several periods, and defaulting to
-    // the newest would report a flat 0% for one that hasn't started — which reads
-    // as "nobody voted" rather than "there was nothing to vote on".
-    const started = new Set(
-      periods.filter((p) => p.ready && p.period.votingStart * 1000 <= Date.now()).map((p) => p.id),
-    )
-    const used = (committeeId ? (byCommittee.get(committeeId) ?? []) : []).filter((id) => started.has(id))
-    return { periodLabels, turnoutPeriodId: used[used.length - 1] }
-  }, [periods, committeeId])
+  // Which periods ran on each committee: the picker's subtitles, and the ballot
+  // turnout is measured against. Pooled votes are cast per period, so "how much
+  // of this pool voted" needs one to be about — the newest that actually opened.
+  const { periodLabels, startedOn } = useCommitteePeriods()
+  const started = startedOn(committeeId)
+  const turnoutPeriodId = started[started.length - 1]
 
   const selected = useMemo(
     () => committees.find((c) => c.idBase64Url === committeeId) ?? (committeeId ? committee : undefined) ?? undefined,
@@ -444,11 +327,12 @@ export default function Pools() {
             </div>
           )}
         </div>
-        <CommitteeSelector
+        <PoolCommitteeSelector
           committees={committees}
           selected={selected}
           periodLabels={periodLabels}
           loading={loadingCommittees}
+          onSelect={(id) => navigate({ to: '/pools/$committeeId', params: { committeeId: id } })}
         />
       </div>
 
@@ -507,7 +391,7 @@ export default function Pools() {
             ) : (
               <>
                 {rows.map((pool) => (
-                  <PoolRow key={pool.instanceNumId} pool={pool} showKind={!isMobile} />
+                  <PoolRow key={pool.instanceNumId} pool={pool} showKind={!isMobile} committeeId={committeeId ?? ''} />
                 ))}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between gap-2 bg-muted/40 px-3.5 py-3 sm:gap-3.5 sm:px-4.5">

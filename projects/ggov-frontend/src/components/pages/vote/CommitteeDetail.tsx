@@ -20,6 +20,7 @@ import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { AccountAvatar } from '@/components/AccountAvatar'
 import BackButton from '@/components/BackButton'
 import PooledVotingCard from '@/components/PooledVotingCard'
+import { csvDocument, downloadBlob } from '@/utils/download'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE = 25
@@ -32,11 +33,6 @@ function ellipseCommitteeId(id: string): string {
 // ── Export dropdown ─────────────────────────────────────────────────────────
 
 type ExportKind = 'csv' | 'json'
-
-function csvCell(value: string | number): string {
-  const s = String(value)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-}
 
 /** Build and download the full committee as CSV or the canonical ARC-86 JSON. */
 async function downloadCommittee(
@@ -52,12 +48,11 @@ async function downloadCommittee(
     const sharePct = (votes: number) => (total > 0 ? (votes / total) * 100 : 0)
     // Members are stored ranked by votes; mirror that ordering in the export.
     const ranked = [...members].sort((a, b) => b.votes - a.votes)
-    const header = 'rank,account,votes,share_pct'
-    const body = ranked.map((m, i) => {
-      const addr = m.account.toString()
-      return [i + 1, addr, m.votes, sharePct(m.votes).toFixed(4)].map(csvCell).join(',')
-    })
-    blob = new Blob([[header, ...body].join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const csv = csvDocument(
+      ['rank', 'account', 'votes', 'share_pct'],
+      ranked.map((m, i) => [i + 1, m.account.toString(), m.votes, sharePct(m.votes).toFixed(4)]),
+    )
+    blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     filename = `${committee.periodStart}-${committee.periodEnd}-${committee.idBase64Url}.csv`
   } else {
     // Read the committee straight from chain and serialise it as the canonical
@@ -70,14 +65,7 @@ async function downloadCommittee(
     filename = `${file.periodStart}-${file.periodEnd}-${committee.idBase64Url}.json`
   }
 
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  downloadBlob(blob, filename)
 }
 
 function ExportMenu({ onExport, disabled }: { onExport: (kind: ExportKind) => void; disabled: boolean }) {

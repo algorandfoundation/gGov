@@ -56,7 +56,8 @@ function PowerRow({ row, approximate }: { row: Row; approximate: boolean }) {
  * a pool member's power is otherwise invisible.
  *
  * Rendered as a sibling of the row's `<Link>`, not inside it, so these lines
- * aren't swallowed into the committee anchor.
+ * aren't swallowed into the committee anchor — which is also what lets each pool
+ * name carry its own link, to that pool's standing in *this* row's committee.
  */
 function Breakdown({ row, loading }: { row: Row; loading: boolean }) {
   return (
@@ -74,7 +75,14 @@ function Breakdown({ row, loading }: { row: Row; loading: boolean }) {
             className="flex items-baseline justify-between gap-3 border-l-2 border-algo-teal/60 pl-3"
           >
             <span className="truncate text-[12px] text-muted-foreground">
-              {p.instanceName} · {p.sharePct.toFixed(1)}% share
+              <Link
+                to="/pools/$committeeId/$instanceNumId"
+                params={{ committeeId: row.idBase64Url, instanceNumId: String(p.instanceNumId) }}
+                className="font-medium text-algo-blue transition-colors hover:underline dark:text-algo-teal"
+              >
+                {p.instanceName}
+              </Link>{' '}
+              · {p.sharePct.toFixed(1)}% share
             </span>
             <span className="shrink-0 text-[12px] font-medium tabular-nums text-teal-strong">
               ≈ {formatApprox(p.votes)}
