@@ -12,7 +12,7 @@
  * of these in one instant: xALGO holder → pool, then fxALGO pool (reserve) → holder.
  */
 
-import type { AssetTransfer } from 'ggov-algoquarters'
+import type { AssetTransfer } from '../../aq/index.ts'
 import type { AccountBalance, BalanceMap, XalgoAsset } from './types.ts'
 
 /** Get or init a balance entry for the given address. */

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 
 import { expect } from 'vitest'
 
-import type { AccountWithAlgoQuarters, AlgoQuartersData, AssetTransfer } from 'ggov-algoquarters'
+import type { AccountWithAlgoQuarters, AlgoQuartersData, AssetTransfer } from '../src/aq/index.ts'
 import type { BalanceMap, TaggedTransfer } from '../src/plugins/talgo/types.ts'
 
 // ledger.ts and compute.ts never validate address format, so readable ids keep fixtures legible

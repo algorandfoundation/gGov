@@ -1,6 +1,6 @@
 /** Types for the tALGO/stALGO pipeline. */
 
-import type { AssetTransfer } from 'ggov-algoquarters'
+import type { AssetTransfer } from '../../aq/index.ts'
 
 /** Tagged tALGO and stALGO transfer. */
 export interface TaggedTransfer extends AssetTransfer {

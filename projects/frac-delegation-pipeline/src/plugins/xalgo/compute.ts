@@ -6,7 +6,7 @@
  * fxALGO holders pro rata, with Folks escrows resolved to their owners. See README.md.
  */
 
-import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from 'ggov-algoquarters'
+import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from '../../aq/index.ts'
 import { beneficiaryOf } from './beneficiaries.ts'
 import { INDEX_SCALE, RATE_SCALER, XALGO_POOL_ADDRESS } from './constants.ts'
 import { isExcluded } from './exclusions.ts'

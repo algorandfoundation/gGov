@@ -11,7 +11,7 @@
 
 import { type Indexer } from 'algosdk'
 
-import { INDEXER_PAGE_SIZE, scanAssetTransfers, withRetry } from 'ggov-algoquarters'
+import { INDEXER_PAGE_SIZE, scanAssetTransfers, withRetry } from '../../aq/index.ts'
 import { STALGO_ASA_ID, TALGO_ASA_ID } from './constants.ts'
 import { applyTransfer } from './ledger.ts'
 import { diffBalances, getAllSnapshotBalances, type TalgoSnapshotStore } from './snapshot.ts'

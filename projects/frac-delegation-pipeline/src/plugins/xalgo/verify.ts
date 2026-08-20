@@ -18,7 +18,7 @@
 
 import { type Indexer } from 'algosdk'
 
-import { INDEXER_PAGE_SIZE, scanAssetTransfers, withRetry } from 'ggov-algoquarters'
+import { INDEXER_PAGE_SIZE, scanAssetTransfers, withRetry } from '../../aq/index.ts'
 import { escrowLikeWarnings, ownerFromLocalState, resolveBeneficiary, type SelfHolderCustody } from './beneficiaries.ts'
 import {
   FOLKS_ESCROW_APPS,

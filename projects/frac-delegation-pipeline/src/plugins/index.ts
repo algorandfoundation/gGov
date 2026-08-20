@@ -1,11 +1,11 @@
 import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { type FracPipelinePlugin, type FracPipelinePluginConstructor } from './base.ts'
-import { RetiPipelinePlugin } from './reti.ts'
+import { RetiPipelinePlugin } from './reti/index.ts'
 import { TalgoPipelinePlugin } from './talgo/index.ts'
 import { XalgoPipelinePlugin } from './xalgo/index.ts'
 
 export * from './base.ts'
-export * from './reti.ts'
+export * from './reti/index.ts'
 export * from './talgo/index.ts'
 export * from './xalgo/index.ts'
 

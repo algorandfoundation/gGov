@@ -1,6 +1,6 @@
 /** Types for the xALGO pipeline. */
 
-import type { AssetTransfer } from 'ggov-algoquarters'
+import type { AssetTransfer } from '../../aq/index.ts'
 
 /** The two assets the replay tracks: xALGO itself, and the Folks pool's deposit receipt for it. */
 export type XalgoAsset = 'xalgo' | 'fxalgo'

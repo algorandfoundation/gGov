@@ -2,7 +2,7 @@
 
 AlgoQuarters for **tALGO** and **stALGO** holders — [Tinyman's consensus staking tokens](https://github.com/tinymanorg/tinyman-consensus-staking). Balances are rebuilt by replaying every ASA transfer of the two assets (inner transactions included).
 
-The plugin covers both halves of the source: it recognizes tALGO's escrows (the `account_N` slots of the tALGO app's global state) for stage 1, and computes each holder's AlgoQuarters over a committee window for stage 3. It builds on the shared scan and snapshot primitives in [`ggov-algoquarters`](../../../../common/ggov-algoquarters), which is also where the reti pipeline still lives.
+The plugin covers both halves of the source: it recognizes tALGO's escrows (the `account_N` slots of the tALGO app's global state) for stage 1, and computes each holder's AlgoQuarters over a committee window for stage 3. It builds on the shared scan and snapshot primitives in [`src/aq`](../../aq/README.md).
 
 This was a standalone CLI (`pnpm algoquarters:tinyman <start> <end>`) that wrote a manifest for someone to upload by hand. It now runs in-process: the pipeline calls `calculateCommitteeAQ`, gets the numbers in memory, and ingests them on chain in the same run. No manifest file is read or written.
 
@@ -50,7 +50,7 @@ types.ts               Plugin types
 
 ## Checking the work
 
-`pnpm verify-talgo-aq` recomputes an archived window and diffs it against the manifest the retired CLI produced for it — the regression check that the in-process engine still agrees with what was ingested on chain.
+`pnpm verify-talgo-aq` recomputes an archived window and diffs it against the manifest the retired CLI produced for it (`data/talgo/`, at the package root) — the regression check that the in-process engine still agrees with what was ingested on chain.
 
 `TalgoPipelinePlugin.verifyAgainstChain()` replays from the newest snapshot to the current round and diffs every holder against live asset balances.
 

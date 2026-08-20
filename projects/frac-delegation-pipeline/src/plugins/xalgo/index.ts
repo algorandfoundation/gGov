@@ -9,12 +9,13 @@ import {
   checkOrCreateSnapshots,
   scanAssetTransfers,
   type AssetTransfer,
-} from 'ggov-algoquarters'
+} from '../../aq/index.ts'
 import {
   FracPipelinePlugin,
   type AQCalculation,
   type AQCommittee,
   type AQResultMap,
+  type FracInstanceName,
   type FracInstanceNameResultMap,
 } from '../base.ts'
 import { createBeneficiaryStore, resolveBeneficiaries, type BeneficiaryStore } from './beneficiaries.ts'
@@ -34,6 +35,7 @@ import { fetchXAlgoRateInRange } from './indexer.ts'
 import { applyTransfer } from './ledger.ts'
 import { buildSnapshot, createXalgoSnapshotStore, getAllSnapshotBalances, type XalgoSnapshotStore } from './snapshot.ts'
 import { checkLargeHolders, logSnapshotStats } from './stats.ts'
+import type { FinalInstance } from '../../types.ts'
 import type { BalanceMap, SnapshotData } from './types.ts'
 import { verifyAgainstChain } from './verify.ts'
 
@@ -147,9 +149,13 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
    * with a fresh replay throws before anything is returned), and every newly resolved escrow owner
    * is persisted, so the next committee's window starts from what this run produced.
    *
-   * `internalId` is unused: xALGO is a single instance.
+   * `instances` is unused: xALGO is a single instance, so the pipeline can only ever pass the one,
+   * and the result is the single-entry map keyed by `XALGO_INSTANCE_NAME`.
    */
-  public async calculateCommitteeAQ<T>(committee: AQCommittee, _internalId?: T): Promise<AQCalculation> {
+  public async calculateCommitteeAQ(
+    committee: AQCommittee,
+    _instances: FinalInstance[],
+  ): Promise<Map<FracInstanceName, AQCalculation>> {
     const periodStart = BigInt(committee.periodStart)
     const periodEnd = BigInt(committee.periodEnd)
     if (periodEnd <= periodStart) {
@@ -236,7 +242,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
       )
     }
 
-    return { protocol: this.protocol, rate: formatRate(observed.rate), accounts }
+    return new Map([[XALGO_INSTANCE_NAME, { protocol: this.protocol, rate: formatRate(observed.rate), accounts }]])
   }
 
   /**

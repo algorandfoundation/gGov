@@ -1,6 +1,6 @@
 /** Shared fixtures for the xALGO invariant unit tests. */
 
-import type { AssetTransfer } from 'ggov-algoquarters'
+import type { AssetTransfer } from '../../src/aq/index.ts'
 import { XALGO_APP_ADDRESS, XALGO_POOL_ADDRESS } from '../../src/plugins/xalgo/constants.ts'
 import type { BalanceMap, BeneficiaryMap, TaggedTransfer, XalgoAsset } from '../../src/plugins/xalgo/types.ts'
 import { makeTransfer } from '../helpers.ts'

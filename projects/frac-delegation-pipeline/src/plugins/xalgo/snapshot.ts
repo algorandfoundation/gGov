@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 import { type Indexer } from 'algosdk'
 
-import { createSnapshotFiles, fetchAssetMetadata, scanAssetTransfers } from 'ggov-algoquarters'
+import { createSnapshotFiles, fetchAssetMetadata, scanAssetTransfers } from '../../aq/index.ts'
 import { FXALGO_ASA_ID, XALGO_APP_ADDRESS, XALGO_ASA_ID, XALGO_POOL_ADDRESS } from './constants.ts'
 import { isExcluded } from './exclusions.ts'
 import { applyTransfer } from './ledger.ts'

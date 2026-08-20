@@ -2,8 +2,8 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { STAKING_BLOCK_DELAY } from '../../src/reti/constants.ts'
-import { applyRetiEvent, splitReward, totalStaked } from '../../src/reti/ledger.ts'
+import { STAKING_BLOCK_DELAY } from '../../src/plugins/reti/constants.ts'
+import { applyRetiEvent, splitReward, totalStaked } from '../../src/plugins/reti/ledger.ts'
 import { ALICE, BOB, CAROL } from '../helpers.ts'
 import {
   EPOCH_LENGTH,

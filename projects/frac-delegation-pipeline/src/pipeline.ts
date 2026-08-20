@@ -15,8 +15,8 @@ import {
   TALGO_APP_ID_MAINNET,
   type AQCalculation,
   type AQCommittee,
-  type FracPipelinePlugin,
 } from './plugins/index.ts'
+import type { FinalInstance, FutureInstance, RegisteredInstance } from './types.ts'
 
 // owned by the plugins now, re-exported for the seeding scripts
 export const RETI_REGISTRY_APP_ID = RETI_REGISTRY_APP_ID_MAINNET
@@ -25,8 +25,6 @@ export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID).toString()
 
 // each staking source is identified by an easy string and implemented by a plugin under ./plugins,
 // which the pipeline loads from the registry - adding a source touches nothing in here
-
-// TODO refactor types into standalone file / types.ts
 
 /** Admin of the two registries, or the operator that ingests AQ. */
 type PipelineAccount = { sender: string; signer: TransactionSigner }
@@ -58,24 +56,6 @@ interface FracPipelineArgs {
   /** Log step stats and every write to the console, and put the SDKs in debug mode. */
   debug?: boolean
 }
-
-/** A staking instance in this committee that must exist on the frac registry. */
-interface FutureInstance {
-  /** Staking source that recognized the escrows, i.e. the plugin's name. */
-  source: string
-  /** Instance name, which is also its on-chain identity. */
-  name: string
-  /** Escrows backing it, already narrowed to members of the committee being run. */
-  escrowAddresses: string[]
-}
-
-/** An instance that exists on the frac registry, i.e. one with an app behind it. */
-interface RegisteredInstance {
-  numId: number
-  appId: bigint
-}
-
-interface FinalInstance extends FutureInstance, RegisteredInstance {}
 
 /**
  * Everything the instance upsert works from and produces, for the caller to log or assert on.
@@ -171,6 +151,16 @@ interface UpsertAqContext {
   alreadyComplete: InstanceAqResult[]
   /** Instances whose source has no AQ implementation yet, so there was nothing to upload. */
   skippedNoAqSupport: InstanceAqResult[]
+  /**
+   * Instances whose source computed AQ for them and found no eligible account. Routine for a
+   * multi-instance source — a reti validator whose committee pools held no stake over the window
+   * earns nobody anything — and nothing to upload, since a manifest with no accounts is invalid.
+   *
+   * Such an instance never opens a ledger, so it stays pending and its source is re-computed on
+   * every run. Unavoidable without a way to record "computed, nobody qualified" on chain: whether
+   * an instance has eligible accounts is only knowable by scanning the window.
+   */
+  noEligibleAccounts: InstanceAqResult[]
   /** Instances this run computed AQ for and ingested. */
   uploaded: InstanceAqResult[]
 }
@@ -544,13 +534,15 @@ export class FracDelegationPipeline {
    * Stage 3: give every instance the AlgoQuarters its source's depositors earned over the
    * committee's window, so their pooled votes can be split by weight.
    *
-   * Works off `this.instances`, so stage 1 has to have finished. Per instance: skip it when its
-   * ledger for this committee is already complete, otherwise ask the source's plugin to compute AQ
-   * and ingest the result immediately.
+   * Works off `this.instances`, so stage 1 has to have finished. Grouped by source, not by
+   * instance: each source's ledgers are read first and only the instances still needing AQ are
+   * carried forward, so a source whose instances are all complete is skipped before its plugin is
+   * even constructed — which is what makes a re-run free. The pending instances then go to the
+   * source's plugin in one call, and it decides how to split the window it scans among them.
    *
-   * Serial across instances on purpose: each `uploadAqFile` is a long run of sequential groups whose
-   * box references depend on account ids the frac registry allocates as it goes, so two instances
-   * ingesting at once would contend for those.
+   * Ingestion stays serial across instances on purpose: each `uploadAqFile` is a long run of
+   * sequential groups whose box references depend on account ids the frac registry allocates as it
+   * goes, so two instances ingesting at once would contend for those.
    */
   private async upsertCommitteeAq(committeeId: string) {
     const ctx = this.upsertAqCtx
@@ -569,70 +561,98 @@ export class FracDelegationPipeline {
         `[${metadata.periodStart}, ${metadata.periodEnd}) across ${this.instances.size} instances`,
     )
 
-    // one plugin per source, not per instance: construction is cheap but `init` need not be, and a
-    // source with several instances would otherwise build the same plugin once per instance
-    const plugins = new Map<string, FracPipelinePlugin>()
+    // instances by source, in the order stage 1 produced them, so logs and claim conflicts read
+    // the same way on every run
+    const instancesBySource = new Map<string, FinalInstance[]>()
     for (const instance of this.instances.values()) {
-      const result: InstanceAqResult = {
-        instanceName: instance.name,
-        instanceNumId: instance.numId,
-        source: instance.source,
-      }
+      const forSource = instancesBySource.get(instance.source)
+      if (forSource) forSource.push(instance)
+      else instancesBySource.set(instance.source, [instance])
+    }
 
-      const ledger = await this.getCommitteeAqLedger(instance.numId, committeeId)
-      if (ledger) {
-        result.committeeNumId = ledger.committeeNumId
-        result.committeeAq = ledger.committeeAq
-        // The contract's own rule, from getCommitteeAq(mustBeComplete): both counters have to land.
-        if (
-          Number(ledger.committeeAq.ingestedAq) === Number(ledger.committeeAq.totalAq) &&
-          Number(ledger.committeeAq.numAccounts) === Number(ledger.committeeAq.totalAccounts)
-        ) {
-          this.log(
-            `${instance.name}: ledger already complete (${ledger.committeeAq.ingestedAq} AQ, ` +
-              `${ledger.committeeAq.numAccounts} accounts), skipping`,
-          )
-          ctx.alreadyComplete.push(result)
-          continue
+    for (const [source, instances] of instancesBySource) {
+      // Ledgers first: an instance whose ledger is already complete needs no computation, and a
+      // source with no incomplete instance left needs no plugin and no Indexer scan at all
+      const pending: FinalInstance[] = []
+      const resultByInstance = new Map<string, InstanceAqResult>()
+      for (const instance of instances) {
+        const result: InstanceAqResult = {
+          instanceName: instance.name,
+          instanceNumId: instance.numId,
+          source: instance.source,
         }
+        resultByInstance.set(instance.name, result)
+
+        const ledger = await this.getCommitteeAqLedger(instance.numId, committeeId)
+        if (ledger) {
+          result.committeeNumId = ledger.committeeNumId
+          result.committeeAq = ledger.committeeAq
+          // The contract's own rule, from getCommitteeAq(mustBeComplete): both counters have to land.
+          if (
+            Number(ledger.committeeAq.ingestedAq) === Number(ledger.committeeAq.totalAq) &&
+            Number(ledger.committeeAq.numAccounts) === Number(ledger.committeeAq.totalAccounts)
+          ) {
+            this.log(
+              `${instance.name}: ledger already complete (${ledger.committeeAq.ingestedAq} AQ, ` +
+                `${ledger.committeeAq.numAccounts} accounts), skipping`,
+            )
+            ctx.alreadyComplete.push(result)
+            continue
+          }
+        }
+        pending.push(instance)
       }
 
-      let plugin = plugins.get(instance.source)
-      if (!plugin) {
-        plugin = await getPlugin(instance.source, this.discoveryClient)
-        plugins.set(instance.source, plugin)
-      }
-      // TODO(perf): one full Indexer scan of the window per instance. Fine while tALGO is the only
-      // source that computes AQ (single instance), but reti will run one per validator over the
-      // same rounds. What is missing is a per-source calculation the pipeline can split by
-      // `internalId` - i.e. scan the window once, then hand each instance its slice.
-      const calculation = await plugin.calculateCommitteeAQ(ctx.committee, plugin.instanceInternalId(instance.name))
-      // A source whose plugin has no AQ implementation yet answers with no accounts. Uploading that
-      // would fail manifest validation, so it is reported and left for when the plugin lands.
-      if (Object.keys(calculation.accounts).length === 0) {
-        console.warn(
-          `no AlgoQuarters computed for ${instance.name}: source ${instance.source} has no AQ implementation yet, skipping`,
-        )
-        ctx.skippedNoAqSupport.push(result)
+      if (pending.length === 0) {
+        this.log(`${source}: every instance's ledger is already complete, nothing to compute`)
         continue
       }
 
-      const aqFile = await this.buildAqFile(calculation, ctx.committee)
-      result.calculated = { totalAccounts: aqFile.totalAccounts, totalAlgoQuarters: aqFile.totalAlgoQuarters }
-      this.log(
-        `${instance.name}: computed ${aqFile.totalAccounts} accounts, ${aqFile.totalAlgoQuarters} AQ` +
-          `${aqFile.rate ? ` at rate ${aqFile.rate}` : ''}`,
-      )
+      // One call, one window scan, however many instances the source has in this committee
+      this.log(`${source}: computing AQ for ${pending.length} instance(s): ${pending.map((i) => i.name).join(', ')}`)
+      const plugin = await getPlugin(source, this.discoveryClient)
+      const calculations = await plugin.calculateCommitteeAQ(ctx.committee, pending)
 
-      const { committeeNumId, committeeAq } = await this.uploadAQ(instance.numId, committeeId, aqFile)
-      result.committeeNumId = committeeNumId
-      result.committeeAq = committeeAq
-      ctx.uploaded.push(result)
+      for (const instance of pending) {
+        const result = resultByInstance.get(instance.name)!
+        // A source whose plugin has no AQ implementation yet leaves the instance out of the map.
+        // Uploading nothing would fail manifest validation, so it is reported and left for when the
+        // plugin lands.
+        const calculation = calculations.get(instance.name)
+        if (!calculation) {
+          console.warn(
+            `no AlgoQuarters computed for ${instance.name}: source ${source} has no AQ implementation yet, skipping`,
+          )
+          ctx.skippedNoAqSupport.push(result)
+          continue
+        }
+        // Computed, and nobody qualified. Not an error: an instance whose committee pools held no
+        // stake over the window has nothing to distribute, and a manifest with no accounts is
+        // invalid, so there is nothing to write either.
+        if (Object.keys(calculation.accounts).length === 0) {
+          this.log(`${instance.name}: no account earned a whole AlgoQuarter over the window, nothing to ingest`)
+          ctx.noEligibleAccounts.push(result)
+          continue
+        }
+
+        const aqFile = await this.buildAqFile(calculation, ctx.committee)
+        result.calculated = { totalAccounts: aqFile.totalAccounts, totalAlgoQuarters: aqFile.totalAlgoQuarters }
+        this.log(
+          `${instance.name}: computed ${aqFile.totalAccounts} accounts, ${aqFile.totalAlgoQuarters} AQ` +
+            `${aqFile.rate ? ` at rate ${aqFile.rate}` : ''}`,
+        )
+
+        const { committeeNumId, committeeAq } = await this.uploadAQ(instance.numId, committeeId, aqFile)
+        result.committeeNumId = committeeNumId
+        result.committeeAq = committeeAq
+        ctx.uploaded.push(result)
+      }
     }
 
     this.log(
       `[STAGE 3] AQ upsert done: ${ctx.uploaded.length} instances ingested, ` +
-        `${ctx.alreadyComplete.length} already complete, ${ctx.skippedNoAqSupport.length} without AQ support`,
+        `${ctx.alreadyComplete.length} already complete, ${ctx.noEligibleAccounts.length} with no eligible ` +
+        `accounts, ${ctx.skippedNoAqSupport.length} without AQ support`,
     )
   }
 
@@ -717,7 +737,7 @@ function emptyUpsertDelegationsContext(): UpsertDelegationsContext {
 
 /** A blank AQ context, so `upsertAqCtx` is readable (and empty) before the first run. */
 function emptyUpsertAqContext(): UpsertAqContext {
-  return { alreadyComplete: [], skippedNoAqSupport: [], uploaded: [] }
+  return { alreadyComplete: [], skippedNoAqSupport: [], noEligibleAccounts: [], uploaded: [] }
 }
 
 /** A blank upsert context, so `upsertInstancesCtx` is readable (and empty) before the first run. */

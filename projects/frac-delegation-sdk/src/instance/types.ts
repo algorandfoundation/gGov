@@ -34,7 +34,7 @@ export type FracDelegationInstanceContractArgs = FracDelegationInstanceArgs['obj
 
 /**
  * Off-chain AlgoQuarters manifest — the `AlgoQuartersData` shape emitted by the
- * `ggov-algoquarters` pipeline (one file per protocol per period window).
+ * frac delegation pipeline (one manifest per protocol per period window).
  */
 export interface AlgoQuartersFile {
   networkGenesisHash: string

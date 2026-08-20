@@ -58,6 +58,9 @@ await pipeline
       `\nAlgoQuarters already complete: ${aq.alreadyComplete.map((r) => r.instanceName).join(', ') || 'none'}`,
     )
     console.log(
+      `AlgoQuarters skipped (no account earned a whole AQ): ${aq.noEligibleAccounts.map((r) => r.instanceName).join(', ') || 'none'}`,
+    )
+    console.log(
       `AlgoQuarters skipped (source has no AQ support): ${aq.skippedNoAqSupport.map((r) => r.instanceName).join(', ') || 'none'}`,
     )
     console.log(`\nInstances fetched from chain:`)

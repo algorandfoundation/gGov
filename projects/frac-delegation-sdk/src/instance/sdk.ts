@@ -375,7 +375,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   }
 
   /**
-   * Upload a whole AQ manifest (`AlgoQuartersFile`, the `ggov-algoquarters` pipeline output) into
+   * Upload a whole AQ manifest (`AlgoQuartersFile`, the frac delegation pipeline's AQ output) into
    * committee `committeeId`'s ledger on instance `instanceNumId`. Operator only.
    *
    * End-to-end orchestration of the AQ primitives: validates the manifest client-side (totals,

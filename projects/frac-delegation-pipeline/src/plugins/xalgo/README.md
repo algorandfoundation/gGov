@@ -10,7 +10,7 @@ Crediting raw xALGO balances would be wrong for most of the supply. On 2026-08-1
 
 ## Methodology
 
-Shared conventions apply unchanged ([`ggov-algoquarters`](../../../../common/ggov-algoquarters/README.md)): windows are `[periodStart, periodEnd)`, a snapshot at `R` is the state after all transactions in rounds `< R`, accrual is exact bigint micro-unit·rounds floored **once per beneficiary** at the final conversion, accounts below 1 AQ are omitted, every value is asserted to fit uint32, the replay fails loud, and snapshots are chained verify-first at 1M-round boundaries.
+Shared conventions apply unchanged ([`src/aq`](../../aq/README.md)): windows are `[periodStart, periodEnd)`, a snapshot at `R` is the state after all transactions in rounds `< R`, accrual is exact bigint micro-unit·rounds floored **once per beneficiary** at the final conversion, accounts below 1 AQ are omitted, every value is asserted to fit uint32, the replay fails loud, and snapshots are chained verify-first at 1M-round boundaries.
 
 ### 1. Custody-based attribution — each xALGO unit counted exactly once, at every instant
 

@@ -6,7 +6,7 @@
  * non-zero on any difference: the snapshot chain and the chain disagree, and every AlgoQuarters
  * figure derived from it is suspect.
  *
- * Replaces the retired `pnpm --filter ggov-algoquarters verify:tinyman`.
+ * Replaces the retired `pnpm --filter ggov-algoquarters verify:tinyman`, along with the package.
  *
  * USAGE
  *   pnpm verify-talgo-balances

@@ -2,7 +2,7 @@
 
 import { type Indexer } from 'algosdk'
 
-import { INDEXER_PAGE_SIZE, getAppEventsFromTransaction, withRetry } from 'ggov-algoquarters'
+import { INDEXER_PAGE_SIZE, getAppEventsFromTransaction, withRetry } from '../../aq/index.ts'
 import { TALGO_RATE_UPDATE_SELECTOR } from './constants.ts'
 
 function decodeTAlgoRateUpdateLog(log: Uint8Array): bigint | null {

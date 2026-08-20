@@ -3,12 +3,13 @@ import { type Indexer, encodeAddress, getApplicationAddress } from 'algosdk'
 
 import { existsSync } from 'node:fs'
 
-import { MAX_WINDOW, assertAlgoQuartersFitUint32, checkOrCreateSnapshots, scanAssetTransfers } from 'ggov-algoquarters'
+import { MAX_WINDOW, assertAlgoQuartersFitUint32, checkOrCreateSnapshots, scanAssetTransfers } from '../../aq/index.ts'
 import {
   FracPipelinePlugin,
   type AQCalculation,
   type AQCommittee,
   type AQResultMap,
+  type FracInstanceName,
   type FracInstanceNameResultMap,
 } from '../base.ts'
 import { computeAlgoQuarters, mergeAssetTransfers } from './compute.ts'
@@ -26,7 +27,8 @@ import { applyTransfer } from './ledger.ts'
 import { buildSnapshot, createTalgoSnapshotStore, getAllSnapshotBalances, type TalgoSnapshotStore } from './snapshot.ts'
 import { checkLargeHolders, logSnapshotStats } from './stats.ts'
 import { verifyAgainstChain } from './verify.ts'
-import type { AssetTransfer } from 'ggov-algoquarters'
+import type { FinalInstance } from '../../types.ts'
+import type { AssetTransfer } from '../../aq/index.ts'
 import type { BalanceMap, SnapshotData } from './types.ts'
 
 export * from './constants.ts'
@@ -134,9 +136,13 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
    * snapshot disagreeing with a fresh replay throws before anything is returned) and what makes the
    * next committee's window cheap, since its `periodStart` snapshot is one this run just produced.
    *
-   * `internalId` is unused: tALGO is a single instance.
+   * `instances` is unused: tALGO is a single instance, so the pipeline can only ever pass the one,
+   * and the result is the single-entry map keyed by `TALGO_INSTANCE_NAME`.
    */
-  public async calculateCommitteeAQ<T>(committee: AQCommittee, _internalId?: T): Promise<AQCalculation> {
+  public async calculateCommitteeAQ(
+    committee: AQCommittee,
+    _instances: FinalInstance[],
+  ): Promise<Map<FracInstanceName, AQCalculation>> {
     const periodStart = BigInt(committee.periodStart)
     const periodEnd = BigInt(committee.periodEnd)
     if (periodEnd <= periodStart) {
@@ -192,7 +198,7 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
       console.log(`  [talgo] snapshot saved: ${this.snapshots.writeSnapshot(pending)}`)
     }
 
-    return { protocol: this.protocol, rate: formatRate(tAlgoRate), accounts }
+    return new Map([[TALGO_INSTANCE_NAME, { protocol: this.protocol, rate: formatRate(tAlgoRate), accounts }]])
   }
 
   /**

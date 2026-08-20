@@ -1,10 +1,15 @@
-/** Round-weighted accrual invariants for src/reti/compute.ts. */
+/** Round-weighted accrual invariants for src/plugins/reti/compute.ts. */
 
 import { describe, it, expect } from 'vitest'
 
-import { computeRetiAlgoQuarters } from '../../src/reti/compute.ts'
-import { MICROALGO_ROUNDS_PER_AQ } from '../../src/utils/aq.ts'
-import type { RetiEvent } from '../../src/reti/types.ts'
+import {
+  computeRetiAlgoQuarters,
+  computeRetiMicroAlgoRounds,
+  sumMicroAlgoRounds,
+  toAlgoQuarters,
+} from '../../src/plugins/reti/compute.ts'
+import { MICROALGO_ROUNDS_PER_AQ } from '../../src/aq/index.ts'
+import type { RetiEvent } from '../../src/plugins/reti/types.ts'
 import { ALICE, BOB, CAROL } from '../helpers.ts'
 import { EPOCH_LENGTHS, POOL_A, POOL_B, makeEpochReward, makeStakeAdded, makeStakeRemoved, poolsOf } from './helpers.ts'
 
@@ -143,5 +148,116 @@ describe('computeRetiAlgoQuarters', () => {
     const pools = poolsOf([POOL_A, [[ALICE, 3_600n, 320]]])
     const events = [makeStakeAdded(ALICE, 1_000n, { round: 500 }), makeStakeAdded(ALICE, 1_000n, { round: 400 })]
     expect(() => compute(pools, events, 0, QUARTER)).toThrow(/Non-monotonic/)
+  })
+})
+
+// The accrual underneath, keyed by (pool, staker) and unfloored. This is what lets one window scan
+// serve every frac instance of the committee: an instance covers one validator's committee pools,
+// so it is credited from exactly those pools' entries.
+describe('computeRetiMicroAlgoRounds', () => {
+  function accrue(pools: ReturnType<typeof poolsOf>, events: RetiEvent[], start: number, end: number) {
+    return computeRetiMicroAlgoRounds(pools, events, EPOCH_LENGTHS, start, end)
+  }
+
+  it('keys a multi-pool staker per pool, and the pools sum to the aggregate', () => {
+    const perPool = accrue(
+      poolsOf([POOL_A, [[ALICE, 10_000_000n, 320]]], [POOL_B, [[ALICE, 20_000_000n, 320]]]),
+      [],
+      0,
+      QUARTER,
+    )
+
+    expect(perPool.get(POOL_A)?.get(ALICE)).toBe(10_000_000n * BigInt(QUARTER))
+    expect(perPool.get(POOL_B)?.get(ALICE)).toBe(20_000_000n * BigInt(QUARTER))
+    expect(sumMicroAlgoRounds(perPool).get(ALICE)).toBe(30_000_000n * BigInt(QUARTER))
+  })
+
+  it('credits a pool slice only the stake held in that pool', () => {
+    const perPool = accrue(
+      poolsOf([POOL_A, [[ALICE, 10_000_000n, 320]]], [POOL_B, [[ALICE, 20_000_000n, 320]]]),
+      [],
+      0,
+      QUARTER,
+    )
+
+    expect(sumMicroAlgoRounds(perPool, [POOL_A]).get(ALICE)).toBe(10_000_000n * BigInt(QUARTER))
+    expect(sumMicroAlgoRounds(perPool, [POOL_B]).get(ALICE)).toBe(20_000_000n * BigInt(QUARTER))
+  })
+
+  it("keeps a pool's epoch reward out of the other pools it does not touch", () => {
+    // ALICE is in both pools; only POOL_A pays out, so only POOL_A's accrual rises
+    const events = [makeEpochReward(2_000_000n, { round: QUARTER / 2 })]
+    const perPool = accrue(
+      poolsOf([POOL_A, [[ALICE, 2_000_000n, 5_320]]], [POOL_B, [[ALICE, 2_000_000n, 5_320]]]),
+      events,
+      0,
+      QUARTER,
+    )
+
+    expect(perPool.get(POOL_A)?.get(ALICE)).toBe(2_000_000n * BigInt(QUARTER / 2) + 4_000_000n * BigInt(QUARTER / 2))
+    expect(perPool.get(POOL_B)?.get(ALICE)).toBe(2_000_000n * BigInt(QUARTER))
+  })
+
+  // Where the floor lands is the whole reason accrual is returned unfloored: 0.6 AQ in each of two
+  // pools is 1 AQ protocol-wide but below the eligibility cutoff on either instance
+  it('floors once per pool set, so slicing can drop what the aggregate keeps', () => {
+    const perPool = accrue(
+      poolsOf([POOL_A, [[ALICE, 600_000n, 320]]], [POOL_B, [[ALICE, 600_000n, 320]]]),
+      [],
+      0,
+      QUARTER,
+    )
+
+    expect(toAlgoQuarters(sumMicroAlgoRounds(perPool)).get(ALICE)).toBe(1n)
+    expect(toAlgoQuarters(sumMicroAlgoRounds(perPool, [POOL_A])).get(ALICE)).toBe(0n)
+    expect(toAlgoQuarters(sumMicroAlgoRounds(perPool, [POOL_B])).get(ALICE)).toBe(0n)
+  })
+
+  // The invariant no archived manifest can check, since every archived figure is already floored:
+  // slicing must only move where the floor is applied, never the accrual it is applied to
+  it('sums every pool slice to the exact integral of total stake over rounds', () => {
+    const makePools = () =>
+      poolsOf(
+        [
+          POOL_A,
+          [
+            [ALICE, 7_000_000_000n, 320],
+            [BOB, 3_000_000_123n, 500],
+          ],
+        ],
+        [POOL_B, [[CAROL, 5_500_000_000n, 320]]],
+      )
+    const events = [
+      makeStakeAdded(CAROL, 2_000_000_777n, { round: 700 }),
+      makeEpochReward(1_234_567n, { round: 2_500 }), // POOL_A, mixed full/partial
+      makeEpochReward(999_983n, { poolAppId: POOL_B, round: 3_100 }),
+      makeStakeRemoved(BOB, 1_000_000_000n, { round: 3_600 }), // partial
+      makeStakeAdded(BOB, 500_000_009n, { round: 4_200 }), // top-up, resets entryRound
+      makeStakeAdded(ALICE, 900_000_000n, { poolAppId: POOL_B, round: 5_000 }), // ALICE now spans both pools
+    ]
+    const endRound = 14_537
+
+    // Integral of total stake over rounds, folded independently from the raw event amounts
+    let total = 7_000_000_000n + 3_000_000_123n + 5_500_000_000n
+    let microAlgoRounds = 0n
+    let last = 0
+    for (const event of events) {
+      microAlgoRounds += total * BigInt(event.round - last)
+      last = event.round
+      if (event.type === 'stakeAdded') total += event.amount
+      else if (event.type === 'stakeRemoved') total -= event.amount
+      else total += event.algoAdded
+    }
+    microAlgoRounds += total * BigInt(endRound - last)
+
+    const perPool = accrue(makePools(), events, 0, endRound)
+    const summed = [...sumMicroAlgoRounds(perPool).values()].reduce((sum, contribution) => sum + contribution, 0n)
+    // Exact, not within-flooring: nothing has been floored yet
+    expect(summed).toBe(microAlgoRounds)
+
+    // And the same accrual, aggregated and floored, is what the whole-protocol path returns
+    expect(toAlgoQuarters(sumMicroAlgoRounds(perPool))).toEqual(
+      computeRetiAlgoQuarters(makePools(), events, EPOCH_LENGTHS, 0, endRound),
+    )
   })
 })

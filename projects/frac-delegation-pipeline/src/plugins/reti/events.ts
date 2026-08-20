@@ -2,8 +2,8 @@
 
 import { encodeAddress, type indexerModels } from 'algosdk'
 
-import { getAppEventsFromTransaction } from '../indexer.ts'
-import { EPOCH_REWARD_UPDATE_SELECTOR, RETI_APP_ID, STAKE_ADDED_SELECTOR, STAKE_REMOVED_SELECTOR } from './constants.ts'
+import { getAppEventsFromTransaction } from '../../aq/index.ts'
+import { EPOCH_REWARD_UPDATE_SELECTOR, STAKE_ADDED_SELECTOR, STAKE_REMOVED_SELECTOR } from './constants.ts'
 import type { RetiEvent } from './types.ts'
 
 function hasSelector(log: Uint8Array, selector: Buffer): boolean {
@@ -35,13 +35,14 @@ function decodeRetiEventLog(log: Uint8Array, round: number, intraOffset: number)
 /**
  * Get reti events from indexer transactions, including nested inner transactions. Note
  * `stakeRemoved`/`epochRewardUpdate` are logged in inner pool to registry calls.
+ * @param registryAppId ValidatorRegistry whose logs are decoded; logs of any other app are ignored
  */
-export function getRetiEventsFromTransactions(txns: indexerModels.Transaction[]): RetiEvent[] {
+export function getRetiEventsFromTransactions(txns: indexerModels.Transaction[], registryAppId: bigint): RetiEvent[] {
   const all: RetiEvent[] = []
   for (const txn of txns) {
     const round = Number(txn.confirmedRound ?? 0)
     const intraOffset = txn.intraRoundOffset ?? 0
-    for (const event of getAppEventsFromTransaction(txn, RETI_APP_ID, (log) =>
+    for (const event of getAppEventsFromTransaction(txn, registryAppId, (log) =>
       decodeRetiEventLog(log, round, intraOffset),
     )) {
       all.push(event)

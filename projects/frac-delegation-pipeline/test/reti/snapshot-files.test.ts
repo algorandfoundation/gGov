@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, it, expect } from 'vitest'
 
-import { RETI_APP_CREATION_ROUND, STAKING_BLOCK_DELAY } from '../../src/reti/constants.ts'
-import { readSnapshot } from '../../src/reti/snapshot/operations.ts'
+import { RETI_APP_CREATION_ROUND, STAKING_BLOCK_DELAY } from '../../src/plugins/reti/constants.ts'
+import { readSnapshot } from '../../src/plugins/reti/snapshot.ts'
 
 const SNAPSHOTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../..', 'snapshots', 'reti')
 const rounds = existsSync(SNAPSHOTS_DIR)

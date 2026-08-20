@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { MICROALGO_ROUNDS_PER_AQ } from 'ggov-algoquarters'
+import { MICROALGO_ROUNDS_PER_AQ } from '../../src/aq/index.ts'
 import { computeAttribution, mergeAssetTransfers, toAlgoQuarters } from '../../src/plugins/xalgo/compute.ts'
 import { INDEX_SCALE, RATE_SCALER } from '../../src/plugins/xalgo/constants.ts'
 import { isExcluded } from '../../src/plugins/xalgo/exclusions.ts'

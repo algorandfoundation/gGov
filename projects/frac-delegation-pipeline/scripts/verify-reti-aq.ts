@@ -1,16 +1,21 @@
 /**
- * Regression check for the migrated tALGO AlgoQuarters engine.
+ * Regression check for the migrated reti AlgoQuarters engine.
  *
- * Recomputes a window the retired `algoquarters:tinyman` CLI already produced — and whose output
- * was ingested on chain — through `TalgoPipelinePlugin.calculateCommitteeAQ`, and diffs the result
- * against the archived manifest in `data/talgo/`. Every account has to match.
+ * Recomputes a window the retired `algoquarters:reti` CLI already produced through
+ * `RetiPipelinePlugin.calculateWholeProtocolAQ` — the unsliced, protocol-wide path — and diffs the
+ * result against the archived manifest in `data/reti/`. Every account has to match exactly.
+ *
+ * That exactness is the point: the engine now accrues per (pool, staker) instead of per staker, so
+ * a committee's instances can each be credited for their own pools. Accrual is linear, so summing
+ * every pool's unfloored microALGO-rounds and flooring once has to reproduce the old
+ * aggregate-then-floor numbers to the AlgoQuarter. Any difference means the replay itself moved.
  *
  * It also exercises the snapshot chain: the boundary snapshots inside the window are committed, so
  * the verify-first chaining re-derives and compares them rather than writing anything.
  *
  * USAGE
- *   pnpm verify-talgo-aq                       # defaults to the newest archived window
- *   pnpm verify-talgo-aq 59000000 62000000
+ *   pnpm verify-reti-aq                        # defaults to the newest archived window
+ *   pnpm verify-reti-aq 59000000 62000000
  *
  * Reads mainnet only — writes nothing on chain, and touches no contracts.
  */
@@ -21,13 +26,13 @@ import { fileURLToPath } from 'node:url'
 
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import type { AlgoQuartersData } from '../src/aq/index.ts'
-import { TALGO_INSTANCE_NAME, TalgoPipelinePlugin } from '../src/plugins/talgo/index.ts'
+import { RetiPipelinePlugin } from '../src/plugins/reti/index.ts'
 
-const ARCHIVE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'talgo')
+const ARCHIVE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'reti')
 
 function resolveWindow(args: string[]): { periodStart: number; periodEnd: number } {
   if (args.length === 2) return { periodStart: Number(args[0]), periodEnd: Number(args[1]) }
-  if (args.length !== 0) throw new Error('Usage: pnpm verify-talgo-aq [<periodStart> <periodEnd>]')
+  if (args.length !== 0) throw new Error('Usage: pnpm verify-reti-aq [<periodStart> <periodEnd>]')
   const windows = readdirSync(ARCHIVE_DIR)
     .flatMap((name) => {
       const match = /^(\d+)-(\d+)\.json$/.exec(name)
@@ -44,23 +49,18 @@ async function main() {
     readFileSync(join(ARCHIVE_DIR, `${periodStart}-${periodEnd}.json`), 'utf-8'),
   ) as AlgoQuartersData
 
-  console.log(`\nRecomputing tALGO AQ for rounds [${periodStart}, ${periodEnd})`)
-  console.log(`Expecting ${expected.totalAccounts} accounts, ${expected.totalAlgoQuarters} AQ, rate ${expected.rate}\n`)
+  console.log(`\nRecomputing reti AQ for rounds [${periodStart}, ${periodEnd}) — whole protocol, every pool`)
+  console.log(`Expecting ${expected.totalAccounts} accounts, ${expected.totalAlgoQuarters} AQ\n`)
 
-  const plugin = new TalgoPipelinePlugin(AlgorandClient.fromEnvironment())
+  const plugin = new RetiPipelinePlugin(AlgorandClient.fromEnvironment())
   await plugin.init()
-  // No instances: tALGO ignores them, being a single instance, and answers with the one entry
-  const calculated = await plugin.calculateCommitteeAQ({ numericId: 0, periodStart, periodEnd }, [])
-  const calculation = calculated.get(TALGO_INSTANCE_NAME)
-  if (!calculation) throw new Error(`Plugin returned no calculation for ${TALGO_INSTANCE_NAME}`)
-  const { protocol, rate, accounts } = calculation
+  const { protocol, accounts } = await plugin.calculateWholeProtocolAQ(periodStart, periodEnd)
 
   const problems: string[] = []
   const check = (label: string, actual: unknown, want: unknown) => {
     if (actual !== want) problems.push(`${label}: got ${String(actual)}, expected ${String(want)}`)
   }
   check('protocol', protocol, expected.protocol)
-  check('rate', rate, expected.rate)
   check('totalAccounts', Object.keys(accounts).length, expected.totalAccounts)
 
   const total = Object.values(accounts).reduce((sum, aq) => sum + BigInt(aq), 0n)

@@ -19,7 +19,7 @@ import { dirname } from 'node:path'
 import { type Indexer, type indexerModels, decodeAddress, encodeAddress } from 'algosdk'
 import pMap from 'p-map'
 
-import { stringifyJson, withRetry } from 'ggov-algoquarters'
+import { stringifyJson, withRetry } from '../../aq/index.ts'
 import {
   ESCROW_NOTE_LENGTH,
   FOLKS_ESCROW_APP_BY_ID,

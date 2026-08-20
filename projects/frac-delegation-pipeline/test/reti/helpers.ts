@@ -6,7 +6,7 @@ import type {
   StakeAddedEvent,
   StakeRemovedEvent,
   StakerInfo,
-} from '../../src/reti/types.ts'
+} from '../../src/plugins/reti/types.ts'
 
 export const POOL_A = 101n
 export const POOL_B = 202n

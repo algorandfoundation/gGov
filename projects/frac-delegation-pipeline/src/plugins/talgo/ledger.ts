@@ -8,7 +8,7 @@
  *  - Close-outs (remaining balance transferred to closeTo, sender zeroed)
  */
 
-import type { AssetTransfer } from 'ggov-algoquarters'
+import type { AssetTransfer } from '../../aq/index.ts'
 import type { AccountBalance, BalanceMap } from './types.ts'
 
 /** Get or init a balance entry for the given address. */

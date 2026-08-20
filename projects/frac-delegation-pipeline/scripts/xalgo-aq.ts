@@ -15,7 +15,7 @@
  */
 
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { XalgoPipelinePlugin } from '../src/plugins/xalgo/index.ts'
+import { XALGO_INSTANCE_NAME, XalgoPipelinePlugin } from '../src/plugins/xalgo/index.ts'
 
 const TOP_N = 10
 
@@ -34,7 +34,11 @@ async function main() {
   const plugin = new XalgoPipelinePlugin(AlgorandClient.fromEnvironment())
   await plugin.init()
   const started = Date.now()
-  const { protocol, rate, accounts } = await plugin.calculateCommitteeAQ({ numericId: 0, periodStart, periodEnd })
+  // No instances: xALGO ignores them, being a single instance, and answers with the one entry
+  const calculated = await plugin.calculateCommitteeAQ({ numericId: 0, periodStart, periodEnd }, [])
+  const calculation = calculated.get(XALGO_INSTANCE_NAME)
+  if (!calculation) throw new Error(`Plugin returned no calculation for ${XALGO_INSTANCE_NAME}`)
+  const { protocol, rate, accounts } = calculation
 
   const entries = Object.entries(accounts).sort(([, a], [, b]) => b - a)
   const total = entries.reduce((sum, [, aq]) => sum + aq, 0)

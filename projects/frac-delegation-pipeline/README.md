@@ -16,9 +16,15 @@ From a given committee:
    already complete, calculate the AlgoQuarters its source's depositors earned over the committee's
    window, and write them onto the instance, as the operator.
 
-tALGO and xALGO calculate AlgoQuarters today — see [`src/plugins/talgo`](src/plugins/talgo/README.md)
-and [`src/plugins/xalgo`](src/plugins/xalgo/README.md). Reti is recognized as escrows in stage 1 but
-answers stage 3 with nothing, so its instances are reported and skipped.
+All three sources calculate AlgoQuarters — see [`src/plugins/talgo`](src/plugins/talgo/README.md),
+[`src/plugins/xalgo`](src/plugins/xalgo/README.md) and [`src/plugins/reti`](src/plugins/reti/README.md),
+over the shared scan and snapshot primitives in [`src/aq`](src/aq/README.md).
+
+Stage 3 groups by source, not by instance: a source's ledgers are read first and only the instances
+still needing AQ go to its plugin, in one call. A source whose instances are all complete is skipped
+before its plugin is even constructed, so a re-run costs nothing. This matters for reti, the only
+multi-instance source — one instance per validator, one window scan for all of them, sliced per
+instance by the pools that instance holds in the committee.
 
 ### What stage 3 needs
 
@@ -33,12 +39,14 @@ answers stage 3 with nothing, so its instances are reported and skipped.
   instance id in its box; an account already linked costs nothing). `uploadAqFile` pre-computes
   both shortfalls and, with `autoFund` (which the pipeline sets), tops the apps up from the
   operator. Order of magnitude: xALGO brings ~8,000 accounts per committee, i.e. ~220 ALGO of MBR
-  per run; tALGO ~2,700 accounts, ~70 ALGO. Leftover MBR stays on the apps and is recoverable via
-  `withdrawALGO`.
-- **Time and memory.** A committee window is ~3M rounds of asset transfers held in memory (hence the
-  8 GB heap), starting from the balance snapshot at `periodStart` under `snapshots/<source>/`. With
-  the snapshot and the xALGO escrow cache committed, a window takes minutes; without them the
-  cold rebuild from asset creation comes first (~13 minutes for xALGO, see its README).
+  per run; tALGO ~2,700 accounts, ~70 ALGO. Reti spreads its stakers over one instance per
+  validator, so its cost scales with how many validators the committee brings and how many stakers
+  each one has. Leftover MBR stays on the apps and is recoverable via `withdrawALGO`.
+- **Time and memory.** A committee window is ~3M rounds of transfers (reti: registry events) held in
+  memory (hence the 8 GB heap), starting from the snapshot at `periodStart` under
+  `snapshots/<source>/`. With the snapshot and the xALGO escrow cache committed, a window takes
+  minutes; without them the cold rebuild from protocol creation comes first (~13 minutes for xALGO,
+  see its README).
 
 The ingest is resumable and idempotent: a run interrupted part-way (an unfunded app, a dropped
 connection) finishes on the next run, which detects the accounts already on chain and ingests the
@@ -57,10 +65,15 @@ pnpm test-pipeline
 
 The seed funds the deployer — admin and operator of both registries — with 1,500 ALGO, enough for
 the instance creations plus the AQ ingest of every source in the first committee (see _What stage 3
-needs_). Its committee spans rounds `60,000,000–63,000,000`: the tALGO and xALGO snapshots for
-`60000000` and the xALGO escrow cache are committed, so a first `test-pipeline` runs stage 3 in a
-few minutes and ingests both — on 2026-08-19: Tinyman tALGO 2,654 accounts / 40,632,134 AQ and Folks
-xALGO 8,130 accounts / 275,523,604 AQ.
+needs_). Its committee spans rounds `60,000,000–63,000,000`: the `60000000` snapshot of all three
+sources and the xALGO escrow cache are committed, so a first `test-pipeline` runs stage 3 in a few
+minutes and ingests them all — on 2026-08-19/20: Tinyman tALGO 2,654 accounts / 40,632,134 AQ, Folks
+xALGO 8,130 accounts / 275,523,604 AQ, Reti #1 222 / 2,696,026 and Reti #2 171 / 574,877.
+
+The seed's third validator, `Reti #15`, holds two pools that carried no stake over the window, so it
+ends up with no eligible account and nothing to ingest — reported separately from a source that has
+no AQ engine at all. An instance in that state never opens a ledger, so it stays pending and its
+source recomputes on every run: whether anyone qualified is only knowable by scanning the window.
 
 Each run also writes the boundary snapshots inside the window it scanned, so the next committee's
 `periodStart` snapshot is normally already there. `add-committee` advances the window by 3M rounds
@@ -80,11 +93,15 @@ pnpm test-pipeline
 
 ```bash
 pnpm verify-talgo-aq                 # recompute an archived tALGO window and diff it against the manifest it produced
+pnpm verify-reti-aq                  # same for reti, through the whole-protocol (unsliced) path
 pnpm xalgo-aq 60000000 63000000      # dry run of an xALGO window: totals and top accounts, nothing ingested
 pnpm verify-talgo-balances           # replay vs live chain balances
 pnpm verify-xalgo-balances           # same for xALGO, plus escrow owners vs live Folks local state
+pnpm verify-reti-balances            # same for reti: every pool's stakers box, and the registry's staked total
 ```
 
-All read mainnet and touch no contracts; `xalgo-aq` writes the window's snapshots and the escrow
-cache under `snapshots/xalgo/`, the rest write nothing. See [`src/plugins/talgo`](src/plugins/talgo/README.md)
-and [`src/plugins/xalgo`](src/plugins/xalgo/README.md).
+All read mainnet and touch no contracts. The two `verify-*-aq` checks and `xalgo-aq` chain the
+window's boundary snapshots under `snapshots/<source>/` (verifying the committed ones rather than
+rewriting them), and `xalgo-aq` also writes the escrow cache; the rest write nothing. See
+[`src/plugins/talgo`](src/plugins/talgo/README.md), [`src/plugins/xalgo`](src/plugins/xalgo/README.md)
+and [`src/plugins/reti`](src/plugins/reti/README.md).

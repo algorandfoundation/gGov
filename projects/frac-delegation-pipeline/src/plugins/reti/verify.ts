@@ -3,25 +3,19 @@
  *
  * Replays registry events from the latest committed snapshot and compares each pool's
  * stakers (balance and entryRound) against its live `stakers` box. The registry's
- * `staked` global is also checked for completeness. Exits non-zero on any difference:
- * the replay and the chain disagree.
+ * `staked` global is also checked for completeness. Throws on any difference: the
+ * replay and the chain disagree, and every AlgoQuarters figure derived from the
+ * snapshot chain is suspect.
  *
- * Usage:
- *   pnpm verify:reti
- *
- * Env:
- *   INDEXER_SERVER   indexer base URL (default: public Nodely mainnet indexer)
- *   INDEXER_TOKEN    API token if required
+ * Driven by `RetiPipelinePlugin.verifyAgainstChain`.
  */
 
 import { type Indexer, encodeAddress } from 'algosdk'
 
-import { withRetry } from '../indexer.ts'
-import { createIndexerClient } from '../config.ts'
-import { RETI_APP_ID } from './constants.ts'
+import { withRetry } from '../../aq/index.ts'
 import { fetchRetiEvents } from './indexer.ts'
 import { applyRetiEvent, totalStaked } from './ledger.ts'
-import { deserializePools, latestSnapshotRound, readSnapshot } from './snapshot/operations.ts'
+import { deserializePools, type RetiSnapshotStore } from './snapshot.ts'
 import type { PoolLedger, RetiEvent, StakerInfo } from './types.ts'
 
 const STAKER_SLOT_SIZE = 64
@@ -83,8 +77,11 @@ async function fetchLiveBoxes(indexer: Indexer, poolAppIds: Iterable<bigint>): P
 }
 
 /** The registry's protocol-wide `staked` total — an aggregate independent of our event-derived pool set. */
-async function fetchRegistryTotalStaked(indexer: Indexer): Promise<{ staked: bigint; round: bigint }> {
-  const data = await withRetry(() => indexer.lookupApplications(RETI_APP_ID).do())
+async function fetchRegistryTotalStaked(
+  indexer: Indexer,
+  registryAppId: bigint,
+): Promise<{ staked: bigint; round: bigint }> {
+  const data = await withRetry(() => indexer.lookupApplications(registryAppId).do())
   for (const entry of data.application?.params.globalState ?? []) {
     if (Buffer.from(entry.key).equals(Buffer.from('staked')))
       return { staked: entry.value.uint, round: data.currentRound }
@@ -137,19 +134,27 @@ function comparePool(
   return { errors, maxDrift }
 }
 
-async function main() {
-  const indexer = createIndexerClient()
-  const baseRound = latestSnapshotRound()
+/**
+ * Replay from the newest committed snapshot to the current round and diff every pool against its
+ * live `stakers` box.
+ * @throws if the replay and the chain disagree beyond the reward-split rounding tolerance
+ */
+export async function verifyAgainstChain(
+  indexer: Indexer,
+  registryAppId: bigint,
+  snapshots: RetiSnapshotStore,
+): Promise<void> {
+  const baseRound = snapshots.latestSnapshotRound()
   console.log(`\nVerifying reti replay against live chain state (base snapshot: ${baseRound})\n`)
 
-  const storedPools = deserializePools(readSnapshot(baseRound))
+  const storedPools = deserializePools(snapshots.readSnapshot(baseRound))
   const storedTotalStaked = totalStaked(storedPools)
 
   // The registry lookup doubles as the "current round" source that bounds the scan
-  const registry = await fetchRegistryTotalStaked(indexer)
+  const registry = await fetchRegistryTotalStaked(indexer, registryAppId)
   const scannedTo = registry.round
   console.log(`Scanning events [${baseRound}, ${scannedTo + 1n})…`)
-  const { events, epochRoundLengths } = await fetchRetiEvents(indexer, baseRound, scannedTo + 1n)
+  const { events, epochRoundLengths } = await fetchRetiEvents(indexer, registryAppId, baseRound, scannedTo + 1n)
 
   const poolAppIds = new Set([...storedPools.keys(), ...events.map((event) => event.poolAppId)])
   console.log(`\nFetching ${poolAppIds.size} live stakers boxes…`)
@@ -160,7 +165,7 @@ async function main() {
   let latestBoxRound = scannedTo
   for (const { round } of liveBoxes.values()) if (round > latestBoxRound) latestBoxRound = round
   if (latestBoxRound > scannedTo) {
-    const late = await fetchRetiEvents(indexer, scannedTo + 1n, latestBoxRound + 1n)
+    const late = await fetchRetiEvents(indexer, registryAppId, scannedTo + 1n, latestBoxRound + 1n)
     events.push(...late.events)
     for (const [validatorId, length] of late.epochRoundLengths) epochRoundLengths.set(validatorId, length)
   }
@@ -206,8 +211,3 @@ async function main() {
       `registry total accounted for, entry rounds exact, max per-staker drift ${maxDrift} microALGO (flooring ambiguity)`,
   )
 }
-
-main().catch((err) => {
-  console.error('\nError:', err instanceof Error ? err.message : err)
-  process.exit(1)
-})

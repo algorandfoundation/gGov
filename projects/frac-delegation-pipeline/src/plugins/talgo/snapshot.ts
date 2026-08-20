@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 
 import { type Indexer } from 'algosdk'
 
-import { createSnapshotFiles, fetchAssetMetadata, scanAssetTransfers } from 'ggov-algoquarters'
+import { createSnapshotFiles, fetchAssetMetadata, scanAssetTransfers } from '../../aq/index.ts'
 import { STALGO_APP_ADDRESS, STALGO_ASA_ID, TALGO_APP_ADDRESS, TALGO_ASA_ID } from './constants.ts'
 import { isExcluded } from './exclusions.ts'
 import { applyTransfer } from './ledger.ts'

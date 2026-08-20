@@ -1,5 +1,6 @@
 import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import type { CommitteeMetadata } from 'ggov-sdk'
+import type { FinalInstance } from '../types.ts'
 
 /** Display name of a frac delegation instance, e.g. `Reti #12`. Matches the on-chain instance name. */
 export type FracInstanceName = string
@@ -64,24 +65,28 @@ export abstract class FracPipelinePlugin {
   public abstract getInstanceNameFromEscrowAddrs(escrowAddrs: string[]): Promise<FracInstanceNameResultMap>
 
   /**
-   * Calculate AQ for a given committee and optional internal id.
+   * Calculate AQ for every instance of this source that the committee implies.
+   *
+   * Called **once per source per committee**, not once per instance: a source that runs many
+   * instances (reti, one per validator) scans the window once and slices the result, rather than
+   * repeating the same scan per instance. Single-instance sources get a one-element array and
+   * answer with a one-entry map.
    *
    * The result covers the source's *depositors* — the accounts whose stake the escrows pool — not
-   * the committee's members, who are the escrows themselves. Scoping is by round window only.
-   * @param committee
-   * @param internalId source-specific instance id, e.g. a reti validator ID
+   * the committee's members, who are the escrows themselves. Which depositors land on which
+   * instance is the plugin's own business: it holds the name-to-source-id convention it minted in
+   * `getInstanceNameFromEscrowAddrs`, and `instance.escrowAddresses` names exactly the escrows of
+   * that instance which are in this committee.
+   *
+   * @param committee the committee's numeric id and the round window `[periodStart, periodEnd)`
+   * @param instances instances of this source still needing AQ for `committee`, never empty
+   * @returns one calculation per instance, keyed by instance name. An instance left out of the map
+   *   (or given an empty `accounts`) is reported as having no AQ support and is not uploaded.
    */
-  public abstract calculateCommitteeAQ<T>(committee: AQCommittee, internalId?: T): Promise<AQCalculation>
-
-  /**
-   * Source-specific instance id parsed back out of an instance name this plugin minted, for sources
-   * that run more than one instance. The pipeline feeds it to `calculateCommitteeAQ` as `internalId`,
-   * so the name-to-id convention stays inside the plugin that invented it.
-   * @returns undefined for single-instance sources, which is every source but reti today
-   */
-  public instanceInternalId(_instanceName: FracInstanceName): unknown {
-    return undefined
-  }
+  public abstract calculateCommitteeAQ(
+    committee: AQCommittee,
+    instances: FinalInstance[],
+  ): Promise<Map<FracInstanceName, AQCalculation>>
 }
 
 /**

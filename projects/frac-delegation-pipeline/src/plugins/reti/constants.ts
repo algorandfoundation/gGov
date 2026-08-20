@@ -14,6 +14,9 @@ export const PROTOCOL = 'reti'
 export const RETI_APP_ID = 2714516089n
 export const RETI_APP_CREATION_ROUND = 46_518_891n
 
+/** The same registry as `RETI_APP_ID`, as the number `RetiGhostSDK` and the plugin overrides take. */
+export const RETI_REGISTRY_APP_ID_MAINNET = Number(RETI_APP_ID)
+
 function eventSelector(signature: string): Buffer {
   return createHash('sha512-256').update(signature).digest().subarray(0, 4)
 }

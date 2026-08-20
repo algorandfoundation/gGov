@@ -2,7 +2,7 @@
 
 import { RATE_SCALER } from './constants.ts'
 import { applyTransfer } from './ledger.ts'
-import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from 'ggov-algoquarters'
+import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from '../../aq/index.ts'
 import type { BalanceMap, TaggedTransfer } from './types.ts'
 
 /**

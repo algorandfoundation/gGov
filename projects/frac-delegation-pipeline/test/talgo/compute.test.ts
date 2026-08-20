@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 
 import { computeAlgoQuarters, mergeAssetTransfers } from '../../src/plugins/talgo/compute.ts'
 import { RATE_SCALER } from '../../src/plugins/talgo/constants.ts'
-import { MICROALGO_ROUNDS_PER_AQ } from 'ggov-algoquarters'
+import { MICROALGO_ROUNDS_PER_AQ } from '../../src/aq/index.ts'
 import { ALICE, BOB, CAROL, ESCROW, balancesOf, makeTagged, makeTransfer } from '../helpers.ts'
 
 // 1 ALGO held for QUARTER rounds = 1 AQ

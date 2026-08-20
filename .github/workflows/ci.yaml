@@ -23,7 +23,6 @@ jobs:
       contracts: ${{ steps.detect.outputs.contracts }}
       puya_ts: ${{ steps.detect.outputs.puya_ts }}
       committee_uploader: ${{ steps.detect.outputs.committee_uploader }}
-      algoquarters: ${{ steps.detect.outputs.algoquarters }}
       pipeline: ${{ steps.detect.outputs.pipeline }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -41,7 +40,6 @@ jobs:
               echo "contracts=true"
               echo "puya_ts=true"
               echo "committee_uploader=true"
-              echo "algoquarters=true"
               echo "pipeline=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
@@ -57,7 +55,6 @@ jobs:
             echo "contracts=false"
             echo "puya_ts=false"
             echo "committee_uploader=false"
-            echo "algoquarters=false"
             echo "pipeline=false"
           } >> "$GITHUB_OUTPUT"
 
@@ -67,11 +64,9 @@ jobs:
             <<<"$changed" && echo "puya_ts=true"   >> "$GITHUB_OUTPUT" || true
           grep -qE '^projects/common/ggov-committee-uploader/|^projects/ggov-sdk/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
             <<<"$changed" && echo "committee_uploader=true" >> "$GITHUB_OUTPUT" || true
-          grep -qE '^projects/common/ggov-algoquarters/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
-            <<<"$changed" && echo "algoquarters=true" >> "$GITHUB_OUTPUT" || true
-          # The pipeline imports ggov-algoquarters' sources directly and holds the tALGO AQ engine,
-          # so a change to either side has to run it.
-          grep -qE '^projects/frac-delegation-pipeline/|^projects/common/ggov-algoquarters/|^projects/(frac-delegation|ggov)-sdk/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
+          # The pipeline holds every AlgoQuarters engine — reti, tALGO and xALGO — and the shared
+          # scan/snapshot primitives they build on, so any change under it has to run it.
+          grep -qE '^projects/frac-delegation-pipeline/|^projects/(frac-delegation|ggov)-sdk/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
             <<<"$changed" && echo "pipeline=true" >> "$GITHUB_OUTPUT" || true
 
   audit:
@@ -117,16 +112,8 @@ jobs:
           pnpm --filter ggov-committees lint
           pnpm --filter ggov-committees typecheck
 
-      - name: Validate algoquarters
-        if: needs.changes.outputs.algoquarters == 'true'
-        run: |
-          pnpm --filter ggov-algoquarters format:check
-          pnpm --filter ggov-algoquarters lint
-          pnpm --filter ggov-algoquarters typecheck
-          pnpm --filter ggov-algoquarters test
-
-      # Holds the tALGO AlgoQuarters engine, and the unit suites that used to run under
-      # ggov-algoquarters/test/tinyman.
+      # Holds every AlgoQuarters engine and the unit suites that used to run under the retired
+      # ggov-algoquarters package.
       - name: Validate frac delegation pipeline
         if: needs.changes.outputs.pipeline == 'true'
         run: |
@@ -229,7 +216,7 @@ jobs:
   algoquarters-live-verification:
     name: algoquarters live verification
     needs: changes
-    if: needs.changes.outputs.algoquarters == 'true' || needs.changes.outputs.pipeline == 'true'
+    if: needs.changes.outputs.pipeline == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -247,11 +234,10 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      # The tALGO engine lives in the frac delegation pipeline now. Unlike the reti CLIs, which
-      # build their own Indexer client from INDEXER_SERVER, the plugin reads through an
-      # AlgorandClient — so both endpoints have to be set or it would resolve to localnet.
+      # Every engine lives in the frac delegation pipeline now, and each plugin reads through an
+      # AlgorandClient — so both endpoints have to be set explicitly or `fromEnvironment()` would
+      # resolve to localnet.
       - name: Verify tALGO balances against live chain state
-        if: needs.changes.outputs.pipeline == 'true'
         env:
           ALGOD_SERVER: https://mainnet-api.4160.nodely.dev
           ALGOD_PORT: '443'
@@ -261,7 +247,7 @@ jobs:
 
       # Same engine for xALGO, plus the escrow-owner cross-check against live Folks local state.
       - name: Verify xALGO balances and escrow owners against live chain state
-        if: always() && steps.install.outcome == 'success' && needs.changes.outputs.pipeline == 'true'
+        if: always() && steps.install.outcome == 'success'
         env:
           ALGOD_SERVER: https://mainnet-api.4160.nodely.dev
           ALGOD_PORT: '443'
@@ -269,6 +255,13 @@ jobs:
           INDEXER_PORT: '443'
         run: pnpm --filter frac-delegation-pipeline verify-xalgo-balances
 
+      # Replays the registry event stream from the newest committed snapshot and diffs every pool
+      # against its live `stakers` box.
       - name: Verify reti balances against live chain state
-        if: always() && steps.install.outcome == 'success' && needs.changes.outputs.algoquarters == 'true'
-        run: pnpm --filter ggov-algoquarters verify:reti
+        if: always() && steps.install.outcome == 'success'
+        env:
+          ALGOD_SERVER: https://mainnet-api.4160.nodely.dev
+          ALGOD_PORT: '443'
+          INDEXER_SERVER: https://mainnet-idx.4160.nodely.dev
+          INDEXER_PORT: '443'
+        run: pnpm --filter frac-delegation-pipeline verify-reti-balances
