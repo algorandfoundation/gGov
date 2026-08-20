@@ -15,6 +15,7 @@ import {
   TALGO_APP_ID_MAINNET,
   type AQCalculation,
   type AQCommittee,
+  type FracPipelinePlugin,
 } from './plugins/index.ts'
 import type { FinalInstance, FutureInstance, RegisteredInstance } from './types.ts'
 
@@ -138,6 +139,27 @@ interface InstanceAqResult {
   calculated?: { totalAccounts: number; totalAlgoQuarters: string }
 }
 
+/** One instance's computed AlgoQuarters, waiting its turn in the serial ingest phase. */
+interface PendingIngest {
+  instance: FinalInstance
+  /** The instance's entry in the run report, filled in with the ledger once the ingest lands. */
+  result: InstanceAqResult
+  aqFile: AlgoQuartersFile
+}
+
+/**
+ * What one source's compute phase produced: its instances sorted into the outcomes that need no
+ * write, plus the ones that do. Returned rather than pushed onto the run context, because the
+ * compute phase runs concurrently across sources and the report has to read the same on every run —
+ * the caller merges these in source order.
+ */
+interface SourceAqComputation {
+  alreadyComplete: InstanceAqResult[]
+  skippedNoAqSupport: InstanceAqResult[]
+  noEligibleAccounts: InstanceAqResult[]
+  pendingIngest: PendingIngest[]
+}
+
 /**
  * Everything the AlgoQuarters upsert works from and produces, for the caller to log or assert on.
  * Empty until `run` has been called, and cleared at the top of every run.
@@ -195,6 +217,11 @@ export class FracDelegationPipeline {
    * stage 2 works from - it is the only cache that pairs escrows with the app that holds them.
    */
   private instances: Map<string, FinalInstance> = new Map()
+  /**
+   * Plugins built for this run, by source — as promises, so concurrent callers share one build
+   * rather than racing to make two. Cleared at the top of every run.
+   */
+  private pluginsBySource: Map<string, Promise<FracPipelinePlugin>> = new Map()
 
   constructor({
     algorand,
@@ -243,6 +270,41 @@ export class FracDelegationPipeline {
   }
 
   /**
+   * Run `work` and log how long it took, so a slow run can be attributed to a stage rather than
+   * guessed at. Logged even when `work` throws — where the time went is most interesting then.
+   */
+  private async timed<T>(label: string, work: () => Promise<T>): Promise<T> {
+    const started = Date.now()
+    try {
+      return await work()
+    } finally {
+      this.log(`⏱ ${label}: ${elapsed(started)}`)
+    }
+  }
+
+  /**
+   * The plugin for a staking source, built at most once per run. Stage 1 and stage 3 both need it,
+   * and building one is not free — reti resolves every validator's pools to answer either call — so
+   * the second caller reuses the first's instance and whatever that instance has cached. It also
+   * guarantees both stages see the *same* live registry read, which is what reti's escrow-to-pool
+   * mapping already assumes.
+   *
+   * Lazy on purpose: a source whose instances are all complete must never construct its plugin, so
+   * that a re-run stays free.
+   */
+  private getSourcePlugin(source: string): Promise<FracPipelinePlugin> {
+    let plugin = this.pluginsBySource.get(source)
+    if (!plugin) {
+      // The promise is cached, not the resolved plugin, so two concurrent callers share one build.
+      // A rejected build is cached too, which is harmless: a source that cannot be built throws the
+      // run either way.
+      plugin = getPlugin(source, this.discoveryClient)
+      this.pluginsBySource.set(source, plugin)
+    }
+    return plugin
+  }
+
+  /**
    * Run the pipeline for one committee:
    * 1. upsert the instances the committee's escrows imply, with their escrows, on the frac registry
    * 2. point every escrow's gGov delegation at the instance that holds it
@@ -259,10 +321,13 @@ export class FracDelegationPipeline {
     this.upsertInstancesCtx = { ...emptyUpsertInstancesContext(), committeeId, committee }
     this.upsertDelegationsCtx = emptyUpsertDelegationsContext()
     this.upsertAqCtx = emptyUpsertAqContext()
+    this.pluginsBySource = new Map()
 
-    this.instances = await this.upsertInstances(committeeId, committee)
-    await this.upsertGGovDelegations()
-    await this.upsertCommitteeAq(committeeId)
+    const started = Date.now()
+    this.instances = await this.timed('stage 1 (instance upsert)', () => this.upsertInstances(committeeId, committee))
+    await this.timed('stage 2 (gGov delegations)', () => this.upsertGGovDelegations())
+    await this.timed('stage 3 (AlgoQuarters)', () => this.upsertCommitteeAq(committeeId))
+    this.log(`⏱ run total: ${elapsed(started)}`)
   }
 
   /**
@@ -290,7 +355,7 @@ export class FracDelegationPipeline {
         source,
         // an unknown source throws out of the registry
         instanceNameByEscrow: await (
-          await getPlugin(source, this.discoveryClient)
+          await this.getSourcePlugin(source)
         ).getInstanceNameFromEscrowAddrs(committeeGovAddresses),
       }),
       { concurrency: this.concurrency },
@@ -538,9 +603,16 @@ export class FracDelegationPipeline {
    * even constructed — which is what makes a re-run free. The pending instances then go to the
    * source's plugin in one call, and it decides how to split the window it scans among them.
    *
-   * Ingestion stays serial across instances on purpose: each `uploadAqFile` is a long run of
-   * sequential groups whose box references depend on account ids the frac registry allocates as it
-   * goes, so two instances ingesting at once would contend for those.
+   * Two phases, because reading and writing have opposite concurrency rules:
+   *
+   * - **Compute** — ledger reads, the Indexer window scan and the replay. Minutes per source and
+   *   entirely independent between sources, so the sources run concurrently and the longest scan
+   *   (xALGO) covers the others instead of being added to them.
+   * - **Ingest** — strictly serial, across sources as well as instances. `uploadAqFile` is a long
+   *   run of sequential groups whose box names derive from account ids the frac *registry* hands
+   *   out as it goes. That counter is registry-wide, so two instances ingesting at once predict the
+   *   same next ids and all but the first to commit fail with an invalid box reference — exactly the
+   *   reason the SDK refuses to parallelize the batches within one upload.
    */
   private async upsertCommitteeAq(committeeId: string) {
     const ctx = this.upsertAqCtx
@@ -549,11 +621,12 @@ export class FracDelegationPipeline {
     // keys its ledger by. One read for the whole stage.
     const metadata = await this.ggovSdk.getCommitteeMetadata(committeeId)
     if (!metadata) throw new Error(`Committee ${committeeId} has no metadata on the gGov registry`)
-    ctx.committee = {
+    const committee: AQCommittee = {
       numericId: metadata.numericId,
       periodStart: metadata.periodStart,
       periodEnd: metadata.periodEnd,
     }
+    ctx.committee = committee
     this.log(
       `AQ for committee ${committeeId} (#${metadata.numericId}), rounds ` +
         `[${metadata.periodStart}, ${metadata.periodEnd}) across ${this.instances.size} instances`,
@@ -567,84 +640,42 @@ export class FracDelegationPipeline {
       if (forSource) forSource.push(instance)
       else instancesBySource.set(instance.source, [instance])
     }
+    if (instancesBySource.size === 0) return
 
-    for (const [source, instances] of instancesBySource) {
-      // Ledgers first: an instance whose ledger is already complete needs no computation, and a
-      // source with no incomplete instance left needs no plugin and no Indexer scan at all
-      const pending: FinalInstance[] = []
-      const resultByInstance = new Map<string, InstanceAqResult>()
-      for (const instance of instances) {
-        const result: InstanceAqResult = {
-          instanceName: instance.name,
-          instanceNumId: instance.numId,
-          source: instance.source,
+    // The genesis hash stamped on every manifest is the *write* network's and cannot change during
+    // a run, so it is read once here rather than once per instance down in `buildAqFile`.
+    const networkGenesisHash = await this.networkGenesisHash()
+
+    // PHASE 1 - compute, concurrent across sources. Reads and CPU only: nothing here writes.
+    const computations = await pMap(
+      [...instancesBySource.entries()],
+      ([source, instances]) =>
+        this.timed(`stage 3 compute (${source})`, () =>
+          this.computeSourceAq(source, instances, committee, committeeId, networkGenesisHash),
+        ),
+      { concurrency: this.concurrency },
+    )
+
+    // pMap answers in input order, so merging here restores the per-source ordering the concurrent
+    // phase could not keep - the run report reads identically on every run.
+    const pendingIngest: PendingIngest[] = []
+    for (const computation of computations) {
+      ctx.alreadyComplete.push(...computation.alreadyComplete)
+      ctx.skippedNoAqSupport.push(...computation.skippedNoAqSupport)
+      ctx.noEligibleAccounts.push(...computation.noEligibleAccounts)
+      pendingIngest.push(...computation.pendingIngest)
+    }
+
+    // PHASE 2 - ingest, strictly serial. See the note above: do NOT pMap this loop.
+    if (pendingIngest.length > 0) {
+      await this.timed(`stage 3 ingest (${pendingIngest.length} instances)`, async () => {
+        for (const { instance, result, aqFile } of pendingIngest) {
+          const { committeeNumId, committeeAq } = await this.uploadAQ(instance.numId, committeeId, aqFile)
+          result.committeeNumId = committeeNumId
+          result.committeeAq = committeeAq
+          ctx.uploaded.push(result)
         }
-        resultByInstance.set(instance.name, result)
-
-        const ledger = await this.getCommitteeAqLedger(instance.numId, committeeId)
-        if (ledger) {
-          result.committeeNumId = ledger.committeeNumId
-          result.committeeAq = ledger.committeeAq
-          // The contract's own rule, from getCommitteeAq(mustBeComplete): both counters have to land.
-          if (
-            Number(ledger.committeeAq.ingestedAq) === Number(ledger.committeeAq.totalAq) &&
-            Number(ledger.committeeAq.numAccounts) === Number(ledger.committeeAq.totalAccounts)
-          ) {
-            this.log(
-              `${instance.name}: ledger already complete (${ledger.committeeAq.ingestedAq} AQ, ` +
-                `${ledger.committeeAq.numAccounts} accounts), skipping`,
-            )
-            ctx.alreadyComplete.push(result)
-            continue
-          }
-        }
-        pending.push(instance)
-      }
-
-      if (pending.length === 0) {
-        this.log(`${source}: every instance's ledger is already complete, nothing to compute`)
-        continue
-      }
-
-      // One call, one window scan, however many instances the source has in this committee
-      this.log(`${source}: computing AQ for ${pending.length} instance(s): ${pending.map((i) => i.name).join(', ')}`)
-      const plugin = await getPlugin(source, this.discoveryClient)
-      const calculations = await plugin.calculateCommitteeAQ(ctx.committee, pending)
-
-      for (const instance of pending) {
-        const result = resultByInstance.get(instance.name)!
-        // A source whose plugin has no AQ implementation yet leaves the instance out of the map.
-        // Uploading nothing would fail manifest validation, so it is reported and left for when the
-        // plugin lands.
-        const calculation = calculations.get(instance.name)
-        if (!calculation) {
-          console.warn(
-            `no AlgoQuarters computed for ${instance.name}: source ${source} has no AQ implementation yet, skipping`,
-          )
-          ctx.skippedNoAqSupport.push(result)
-          continue
-        }
-        // Computed, and nobody qualified. Not an error: an instance whose committee pools held no
-        // stake over the window has nothing to distribute, and a manifest with no accounts is
-        // invalid, so there is nothing to write either.
-        if (Object.keys(calculation.accounts).length === 0) {
-          this.log(`${instance.name}: no account earned a whole AlgoQuarter over the window, nothing to ingest`)
-          ctx.noEligibleAccounts.push(result)
-          continue
-        }
-
-        const aqFile = await this.buildAqFile(calculation, ctx.committee)
-        result.calculated = { totalAccounts: aqFile.totalAccounts, totalAlgoQuarters: aqFile.totalAlgoQuarters }
-        this.log(
-          `${instance.name}: computed ${aqFile.totalAccounts} accounts, ${aqFile.totalAlgoQuarters} AQ` +
-            `${aqFile.rate ? ` at rate ${aqFile.rate}` : ''}`,
-        )
-
-        const { committeeNumId, committeeAq } = await this.uploadAQ(instance.numId, committeeId, aqFile)
-        result.committeeNumId = committeeNumId
-        result.committeeAq = committeeAq
-        ctx.uploaded.push(result)
-      }
+      })
     }
 
     this.log(
@@ -652,6 +683,122 @@ export class FracDelegationPipeline {
         `${ctx.alreadyComplete.length} already complete, ${ctx.noEligibleAccounts.length} with no eligible ` +
         `accounts, ${ctx.skippedNoAqSupport.length} without AQ support`,
     )
+  }
+
+  /**
+   * The compute half of stage 3 for one source: read its instances' ledgers, scan and replay the
+   * committee's window for the ones still pending, and assemble a manifest per instance.
+   *
+   * Writes nothing and touches no shared state, which is what lets the sources run concurrently.
+   */
+  private async computeSourceAq(
+    source: string,
+    instances: FinalInstance[],
+    committee: AQCommittee,
+    committeeId: string,
+    networkGenesisHash: string,
+  ): Promise<SourceAqComputation> {
+    const computation: SourceAqComputation = {
+      alreadyComplete: [],
+      skippedNoAqSupport: [],
+      noEligibleAccounts: [],
+      pendingIngest: [],
+    }
+
+    // Ledgers first: an instance whose ledger is already complete needs no computation, and a
+    // source with no incomplete instance left needs no plugin and no Indexer scan at all.
+    // Independent read-only lookups, so they fan out - a multi-instance source (reti runs one per
+    // validator) would otherwise spend a serial round trip per instance before any scan starts.
+    const ledgers = await this.timed(`stage 3 precheck (${source}, ${instances.length} instances)`, () =>
+      pMap(instances, (instance) => this.getCommitteeAqLedger(instance.numId, committeeId), {
+        concurrency: this.concurrency,
+      }),
+    )
+
+    const pending: FinalInstance[] = []
+    const resultByInstance = new Map<string, InstanceAqResult>()
+    for (const [i, instance] of instances.entries()) {
+      const result: InstanceAqResult = {
+        instanceName: instance.name,
+        instanceNumId: instance.numId,
+        source: instance.source,
+      }
+      resultByInstance.set(instance.name, result)
+
+      const ledger = ledgers[i]
+      if (ledger) {
+        result.committeeNumId = ledger.committeeNumId
+        result.committeeAq = ledger.committeeAq
+        // The contract's own rule, from getCommitteeAq(mustBeComplete): both counters have to land.
+        if (
+          Number(ledger.committeeAq.ingestedAq) === Number(ledger.committeeAq.totalAq) &&
+          Number(ledger.committeeAq.numAccounts) === Number(ledger.committeeAq.totalAccounts)
+        ) {
+          this.log(
+            `${instance.name}: ledger already complete (${ledger.committeeAq.ingestedAq} AQ, ` +
+              `${ledger.committeeAq.numAccounts} accounts), skipping`,
+          )
+          computation.alreadyComplete.push(result)
+          continue
+        }
+      }
+      pending.push(instance)
+    }
+
+    if (pending.length === 0) {
+      this.log(`${source}: every instance's ledger is already complete, nothing to compute`)
+      return computation
+    }
+
+    // One call, one window scan, however many instances the source has in this committee
+    this.log(`${source}: computing AQ for ${pending.length} instance(s): ${pending.map((i) => i.name).join(', ')}`)
+    const plugin = await this.getSourcePlugin(source)
+    const calculations = await plugin.calculateCommitteeAQ(committee, pending)
+
+    for (const instance of pending) {
+      const result = resultByInstance.get(instance.name)!
+      // A source whose plugin has no AQ implementation yet leaves the instance out of the map.
+      // Uploading nothing would fail manifest validation, so it is reported and left for when the
+      // plugin lands.
+      const calculation = calculations.get(instance.name)
+      if (!calculation) {
+        console.warn(
+          `no AlgoQuarters computed for ${instance.name}: source ${source} has no AQ implementation yet, skipping`,
+        )
+        computation.skippedNoAqSupport.push(result)
+        continue
+      }
+      // Computed, and nobody qualified. Not an error: an instance whose committee pools held no
+      // stake over the window has nothing to distribute, and a manifest with no accounts is
+      // invalid, so there is nothing to write either.
+      if (Object.keys(calculation.accounts).length === 0) {
+        this.log(`${instance.name}: no account earned a whole AlgoQuarter over the window, nothing to ingest`)
+        computation.noEligibleAccounts.push(result)
+        continue
+      }
+
+      const aqFile = buildAqFile(calculation, committee, networkGenesisHash)
+      result.calculated = { totalAccounts: aqFile.totalAccounts, totalAlgoQuarters: aqFile.totalAlgoQuarters }
+      this.log(
+        `${instance.name}: computed ${aqFile.totalAccounts} accounts, ${aqFile.totalAlgoQuarters} AQ` +
+          `${aqFile.rate ? ` at rate ${aqFile.rate}` : ''}`,
+      )
+      computation.pendingIngest.push({ instance, result, aqFile })
+    }
+
+    return computation
+  }
+
+  /**
+   * Genesis hash of the network the contracts live on, base64 as the manifest carries it.
+   *
+   * From the WRITE client, not the discovery client: `uploadAqFile` checks the manifest against the
+   * network being written to. Those differ by design - a localnet run computes its AQ from mainnet
+   * history and ingests it onto localnet.
+   */
+  private async networkGenesisHash(): Promise<string> {
+    const suggestedParams = await this.algorand.getSuggestedParams()
+    return Buffer.from(suggestedParams.genesisHash!).toString('base64')
   }
 
   /**
@@ -664,34 +811,6 @@ export class FracDelegationPipeline {
     const committeeNumId = Number(committee.committeeNumId)
     const committeeAq = await this.fracOperatorSdk.getCommitteeAq(instanceNumId, committeeNumId)
     return committeeAq ? { committeeNumId, committeeAq } : undefined
-  }
-
-  /**
-   * Assemble the AQ manifest `uploadAqFile` takes from what the plugin computed. The plugin owns
-   * the source-specific fields (`protocol`, `rate`); the rest is the same for every source.
-   */
-  private async buildAqFile(calculation: AQCalculation, committee: AQCommittee): Promise<AlgoQuartersFile> {
-    // Codepoint order (not locale-dependent), matching the committee-file convention
-    const accounts = Object.entries(calculation.accounts)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([account, aq]) => ({ account, algoQuarters: aq.toString() }))
-    const totalAlgoQuarters = accounts.reduce((sum, { algoQuarters }) => sum + BigInt(algoQuarters), 0n)
-
-    // The genesis hash comes from the WRITE client, not the discovery client: `uploadAqFile` checks
-    // the manifest against the network the contracts live on. Those differ by design - a localnet
-    // run computes its AQ from mainnet history and ingests it onto localnet.
-    const suggestedParams = await this.algorand.getSuggestedParams()
-
-    return {
-      networkGenesisHash: Buffer.from(suggestedParams.genesisHash!).toString('base64'),
-      protocol: calculation.protocol,
-      periodStart: committee.periodStart,
-      periodEnd: committee.periodEnd,
-      ...(calculation.rate === undefined ? {} : { rate: calculation.rate }),
-      totalAccounts: accounts.length,
-      totalAlgoQuarters: totalAlgoQuarters.toString(),
-      accounts,
-    }
   }
 
   /**
@@ -709,6 +828,40 @@ export class FracDelegationPipeline {
     this.log(`WRITE uploadAqFile: instance #${instanceNumId}, ${aqFile.totalAccounts} accounts`)
     return this.fracOperatorSdk.uploadAqFile({ instanceNumId, committeeId, aqFile, autoFund: true })
   }
+}
+
+/**
+ * Assemble the AQ manifest `uploadAqFile` takes from what the plugin computed. The plugin owns the
+ * source-specific fields (`protocol`, `rate`); the rest is the same for every source.
+ *
+ * Pure: `networkGenesisHash` is read once per run by the caller rather than per instance here.
+ */
+function buildAqFile(calculation: AQCalculation, committee: AQCommittee, networkGenesisHash: string): AlgoQuartersFile {
+  // Codepoint order (not locale-dependent), matching the committee-file convention
+  const accounts = Object.entries(calculation.accounts)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([account, aq]) => ({ account, algoQuarters: aq.toString() }))
+  const totalAlgoQuarters = accounts.reduce((sum, { algoQuarters }) => sum + BigInt(algoQuarters), 0n)
+
+  return {
+    networkGenesisHash,
+    protocol: calculation.protocol,
+    periodStart: committee.periodStart,
+    periodEnd: committee.periodEnd,
+    ...(calculation.rate === undefined ? {} : { rate: calculation.rate }),
+    totalAccounts: accounts.length,
+    totalAlgoQuarters: totalAlgoQuarters.toString(),
+    accounts,
+  }
+}
+
+/** How long since `started`, as a short human-readable duration. */
+function elapsed(started: number): string {
+  const seconds = (Date.now() - started) / 1000
+  if (seconds < 60) return `${seconds.toFixed(1)}s`
+  return `${Math.floor(seconds / 60)}m${Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, '0')}s`
 }
 
 /**
