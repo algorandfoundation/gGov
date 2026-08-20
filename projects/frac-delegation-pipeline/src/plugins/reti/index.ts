@@ -160,6 +160,7 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
         `reti: window of ${periodEnd - periodStart} rounds exceeds the ${MAX_WINDOW} maximum — wrong committee?`,
       )
     }
+    await this.assertWindowIsClosed(periodEnd)
 
     // Escrow to pool app id, from the same live registry read that minted the instance names in
     // stage 1 — so the plugin and the pipeline can never disagree about which pools an instance holds
@@ -196,6 +197,7 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
    * archived manifests are the regression check against (`pnpm verify-reti-aq`).
    */
   public async calculateWholeProtocolAQ(periodStart: number, periodEnd: number): Promise<AQCalculation> {
+    await this.assertWindowIsClosed(BigInt(periodEnd))
     const { microAlgoRounds } = await this.replayWindow(BigInt(periodStart), BigInt(periodEnd))
     return { protocol: this.protocol, accounts: this.toAccounts(microAlgoRounds) }
   }
@@ -220,6 +222,18 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
    */
   public async verifyAgainstChain(): Promise<void> {
     await verifyAgainstChain(this.indexer, this.registryAppId, this.snapshots)
+  }
+
+  /**
+   * Every round of the window has to be on chain. A window still open would be replayed as far as
+   * the chain goes, and its boundary snapshots written with state that is not final — poisoning the
+   * committed chain every later window starts from.
+   */
+  private async assertWindowIsClosed(periodEnd: bigint): Promise<void> {
+    const { lastRound } = await this.algorand.client.algod.status().do()
+    if (periodEnd - 1n > lastRound) {
+      throw new Error(`reti: window ending at ${periodEnd} is not over yet — the chain is at round ${lastRound}`)
+    }
   }
 
   /**

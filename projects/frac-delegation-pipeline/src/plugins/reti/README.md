@@ -52,6 +52,9 @@ disagrees with a fresh replay throws before any AQ figure is returned.
 When `periodStart` has no snapshot at all, `buildSnapshot` rebuilds it by scanning from the
 registry's creation round. That is minutes of Indexer work, and the reason the files are committed.
 
+A window that is not over yet is refused outright: replaying it as far as the chain goes would write
+boundary snapshots holding state that is not final, and every later window starts from those.
+
 ## Overrides
 
 Passed through the plugin's `overrides` argument:

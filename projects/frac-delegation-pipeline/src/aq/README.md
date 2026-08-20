@@ -22,9 +22,9 @@ same run. No manifest file is read or written.
 index.ts             Barrel — everything the plugins import from here
 indexer.ts           Windowed transaction scans, ASA transfer and ARC-28 event extraction, retries
 snapshots.ts         Snapshot file persistence and verify-first snapshot chaining
-config.ts            Scan window and snapshot interval; standalone Indexer client
+config.ts            Scan window and snapshot interval
 types.ts             Shared domain types
-utils/               bigint-safe JSON, the AQ unit and its uint32 assertion, optional transfer log
+utils/               bigint-safe JSON, the AQ unit and its uint32 assertion
 ```
 
 The committed artifacts each engine works from live at the package root, one directory per source:
@@ -81,6 +81,4 @@ sources carry an extra `rate`; reti does not, its stake being native ALGO.
 
 The plugins read through the pipeline's discovery `AlgorandClient`, so they take their endpoints from
 `ALGOD_SERVER`/`ALGOD_PORT` and `INDEXER_SERVER`/`INDEXER_PORT` the way `AlgorandClient.fromEnvironment()`
-does — set both, or it resolves to localnet. `createIndexerClient()` here is the standalone
-alternative (`INDEXER_SERVER`, `INDEXER_TOKEN`), kept for anything that wants an Indexer without a
-full client.
+does — set both, or it resolves to localnet.

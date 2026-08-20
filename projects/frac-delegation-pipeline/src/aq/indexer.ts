@@ -5,9 +5,9 @@ import { type Indexer, type indexerModels } from 'algosdk'
 import { SCAN_WINDOW } from './config.ts'
 import type { AssetTransfer } from './types.ts'
 
-// Every query takes its client: one process may read more than one endpoint. The frac delegation
-// pipeline hands these its discovery client's Indexer, which can point at mainnet while the
-// contracts it writes to live on localnet; the CLIs build one with `createIndexerClient()`.
+// Every query takes its client: one process may read more than one endpoint. The plugins hand these
+// the pipeline's discovery client's Indexer, which can point at mainnet while the contracts being
+// written to live on localnet.
 
 // ---------------------------------------------------------------------------
 // Retry wrapper
@@ -39,15 +39,8 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 // ---------------------------------------------------------------------------
-// Asset and block lookups
+// Asset lookups
 // ---------------------------------------------------------------------------
-
-/** Base64 genesis hash of the network the Indexer serves, from the block-1 header. */
-export async function fetchGenesisHash(indexer: Indexer): Promise<string> {
-  const data = await withRetry(() => indexer.lookupBlock(1n).do())
-  if (!data.genesisHash) throw new Error('Indexer returned no genesis hash for block 1')
-  return Buffer.from(data.genesisHash).toString('base64')
-}
 
 /** Get the creation round and total supply for `assetId`. */
 export async function fetchAssetMetadata(indexer: Indexer, assetId: bigint) {

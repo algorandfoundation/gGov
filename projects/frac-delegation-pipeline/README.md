@@ -29,10 +29,10 @@ instance by the pools that instance holds in the committee.
 ### What stage 3 needs
 
 - **A closed window.** AlgoQuarters are replayed over `[periodStart, periodEnd)`, so every round of
-  the window has to be on chain (on the discovery network, i.e. mainnet). The xALGO plugin refuses a
-  window that is still open rather than replay it as far as the chain goes and write boundary
-  snapshots with state that is not final; the tALGO plugin does not check yet — do not run it on an
-  open window.
+  the window has to be on chain (on the discovery network, i.e. mainnet). The xALGO and reti plugins
+  refuse a window that is still open rather than replay it as far as the chain goes and write
+  boundary snapshots with state that is not final; the tALGO plugin does not check yet — do not run
+  it on an open window.
 - **ALGO on the operator.** Ingesting an account costs box MBR on two app accounts: 6,900 µALGO on
   the instance (its `accountAq` box) and, on the frac registry, 19,700 µALGO for an account it has
   never seen or 800 µALGO for a known account joining an instance it was not in yet (one more
