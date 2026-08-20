@@ -44,7 +44,8 @@ interface FracPipelineArgs {
   /** Staking sources to run, defaulting to every plugin in the registry. */
   stakingSources?: string[]
   /**
-   * How many independent reads, and how many instances' escrow registrations, run at once. Defaults
+   * How many independent reads, and how many instances' escrow registrations, run at once — also
+   * passed through to the SDKs' own chunked readers, and to the AlgoQuarters window scans. Defaults
    * to 4, matching the SDK readers. Turn it down for a rate-limited node.
    */
   concurrency?: number
@@ -240,22 +241,27 @@ export class FracDelegationPipeline {
     this.debug = debug
     adminAccount = adminAccount ?? envAccount(algorand)
     this.operatorAccount = operatorAccount ?? adminAccount
+    // `concurrency` goes to the SDKs too: their chunked readers each default to 4 of their own, so
+    // without this the pipeline's knob would only move half of what it names.
     this.fracSdk = new FracDelegationSDK({
       algorand,
       registryAppId: fracRegistryAppId,
       writerAccount: adminAccount,
+      concurrency,
       debug,
     })
     this.fracOperatorSdk = new FracDelegationSDK({
       algorand,
       registryAppId: fracRegistryAppId,
       writerAccount: this.operatorAccount,
+      concurrency,
       debug,
     })
     this.ggovSdk = new GGovRegistrySDK({
       algorand,
       registryAppId: ggovRegistryAppId,
       writerAccount: adminAccount,
+      concurrency,
       debug,
     })
     if (stakingSources && stakingSources.length !== new Set(stakingSources).size) {
