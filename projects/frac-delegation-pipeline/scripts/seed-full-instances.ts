@@ -11,8 +11,8 @@
  * delegations at their instances, and stage 3 ingests the window's real AlgoQuarters.
  *
  * USAGE
- *   pnpm test-full-run                       # seed (or resume) + stages 1-3
- *   pnpm test-full-run <committee-file>      # same, for a different committee file
+ *   pnpm seed-full-instances                       # seed (or resume) + stages 1-3
+ *   pnpm seed-full-instances <committee-file>      # same, for a different committee file
  *
  * RESUMABLE
  *   Interrupted part-way — a dropped connection during the committee upload or the AQ ingest — run
@@ -37,7 +37,6 @@ import type { GGovCommitteeFile } from 'ggov-sdk'
 import { FracDelegationSDK, FracDelegationRegistrySDK } from 'frac-delegation-sdk'
 import { FracDelegationPipeline } from '../src/pipeline.ts'
 import {
-  CjsAlgorandClient,
   algosdk,
   configLogger,
   deterministicAccount,
@@ -107,7 +106,7 @@ async function main() {
     )
   }
 
-  const algorand = CjsAlgorandClient.defaultLocalNet()
+  const algorand = AlgorandClient.defaultLocalNet()
 
   // The same deterministic deployer as the other seeds (= ADMIN in .env.test, which the pipeline
   // signs with). Admin and operator of both registries.

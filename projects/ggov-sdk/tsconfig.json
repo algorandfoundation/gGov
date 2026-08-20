@@ -1,20 +1,3 @@
 {
-  "compilerOptions": {
-    "outDir": "dist",
-    "declaration": true,
-    "target": "ES2022",
-    "moduleResolution": "node",
-    "module": "commonjs",
-    "types": ["node"],
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    // TODO: algokit generated clients have unused imports and is blocking this rule
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    "skipLibCheck": true,
-    "experimentalDecorators": true
-  },
-  "include": ["src"]
+  "extends": "./tsconfig.esm.json"
 }

@@ -10,14 +10,33 @@
     "url": "https://github.com/algorandfoundation/gGov/issues"
   },
   "homepage": "https://github.com/algorandfoundation/gGov/tree/main/projects/frac-delegation-sdk#readme",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
   "files": [
     "dist/"
   ],
   "scripts": {
     "prebuild": "cp ../contracts/smart_contracts/artifacts/frac-delegation/FracDelegationRegistryClient.ts src/generated/FracDelegationRegistryClient.ts && cp ../contracts/smart_contracts/artifacts/frac-delegation/FracDelegationInstanceClient.ts src/generated/FracDelegationInstanceClient.ts && tsx ../common/sdks/generate-errors.ts .",
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "pnpm run clean && pnpm run build:esm && pnpm run build:cjs && pnpm run build:dist-pkg",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:dist-pkg": "node scripts/write-dist-package-json.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",

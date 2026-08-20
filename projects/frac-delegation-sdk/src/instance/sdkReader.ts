@@ -1,8 +1,8 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { getABIDecodedValue } from '@algorandfoundation/algokit-utils/types/app-arc56'
 import { makeEmptyTransactionSigner } from 'algosdk'
-import { FracDelegationRegistryReaderSDK, SIMULATE_PARAMS } from '../registry'
-import { FracDelegationRegistryClient } from '../generated/FracDelegationRegistryClient'
+import { FracDelegationRegistryReaderSDK, SIMULATE_PARAMS } from '../registry/index.js'
+import { FracDelegationRegistryClient } from '../generated/FracDelegationRegistryClient.js'
 import {
   FracDelegationInstanceClient,
   FracDelegationInstanceComposer,
@@ -15,14 +15,14 @@ import {
   FracInstancePeriod,
   FracPeriodVoteCache,
   FracVotingRecord,
-} from '../generated/FracDelegationInstanceClient'
-import { getConstructorConfig } from '../networkConfig'
-import { errorTransformer, wrapErrors } from '../util/wrapErrors'
-import { assertUint } from '../util/assertUint'
-import { chunk } from '../util/chunk'
-import { chunked } from '../util/chunked'
-import { committeeIdToRaw } from '../util/comitteeId'
-import { ReaderConstructorArgs } from './types'
+} from '../generated/FracDelegationInstanceClient.js'
+import { getConstructorConfig } from '../networkConfig.js'
+import { errorTransformer, wrapErrors } from '../util/wrapErrors.js'
+import { assertUint } from '../util/assertUint.js'
+import { chunk } from '../util/chunk.js'
+import { chunked } from '../util/chunked.js'
+import { committeeIdToRaw } from '../util/comitteeId.js'
+import { ReaderConstructorArgs } from './types.js'
 
 export class FracDelegationReaderSDK {
   static INSTANCE_APP_SPEC = INSTANCE_APP_SPEC

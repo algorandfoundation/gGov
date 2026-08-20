@@ -1,11 +1,11 @@
-export * from './constants'
+export * from './constants.js'
 export {
   FracDelegationRegistryFactory,
   FracDelegationRegistryClient,
   type FracRegAccount,
   type FracInstance,
   type FracEscrowInstance,
-} from './generated/FracDelegationRegistryClient'
+} from './generated/FracDelegationRegistryClient.js'
 export {
   FracDelegationInstanceFactory,
   FracDelegationInstanceClient,
@@ -14,7 +14,7 @@ export {
   type FracInstanceCommittee,
   type FracInstancePeriod,
   type FracVotingRecord,
-} from './generated/FracDelegationInstanceClient'
+} from './generated/FracDelegationInstanceClient.js'
 
 // Registry SDK surface.
 export {
@@ -24,10 +24,10 @@ export {
   executeTxns,
   getIncreaseBudgetBuilder,
   SIMULATE_PARAMS,
-} from './registry'
-export type { FracAccountVotingRecord } from './registry'
+} from './registry/index.js'
+export type { FracAccountVotingRecord } from './registry/index.js'
 
 // Instance SDK surface.
-export * from './instance/sdk'
-export * from './instance/sdkReader'
-export * from './instance/types'
+export * from './instance/sdk.js'
+export * from './instance/sdkReader.js'
+export * from './instance/types.js'

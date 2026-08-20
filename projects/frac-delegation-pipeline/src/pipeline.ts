@@ -33,9 +33,7 @@ interface FracPipelineArgs {
   /** Client for ggov-sdk and frac-delegation-sdk. */
   algorand: AlgorandClient
   /**
-   * Client the staking source plugins discover with. Defaults to `algorand`. Two clients initially
-   * because reti-ghost-sdk is ESM, and the other SDKs are CJS, so sharing one client fails the
-   * composer's `instanceof` check (TODO: change in reti-ghost-sdk? leave like this?). Then, realized
+   * Client the staking source plugins discover with. Defaults to `algorand`. Kept separate because
    * it is very useful for testing: discovery can always read mainnet, while the contracts may live
    * elsewhere (localnet, testnet). Innocent as not providing collapses to a single client.
    */

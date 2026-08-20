@@ -5,11 +5,8 @@
  *   npx tsx scripts/print-committees.ts
  */
 
-import { createRequire } from 'node:module'
-
-const require = createRequire(import.meta.url)
-const { AlgorandClient } = require('@algorandfoundation/algokit-utils')
-const { GGovReaderSDK } = require('../../ggov-sdk/dist/index.js')
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { GGovReaderSDK } from 'ggov-sdk'
 
 const KMD_TOKEN = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 const APP_ID = Number(process.env.VITE_GGOV_REGISTRY_APP_ID || process.env.VITE_GGOV_APP_ID || 1002)

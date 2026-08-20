@@ -7,7 +7,12 @@
 import { describe, it, expect } from 'vitest'
 
 import { MICROALGO_ROUNDS_PER_AQ } from '../../src/aq/index.ts'
-import { computeAttribution, mergeAssetTransfers, toAlgoQuarters } from '../../src/plugins/xalgo/compute.ts'
+import {
+  collectBeneficiaryCandidates,
+  computeAttribution,
+  mergeAssetTransfers,
+  toAlgoQuarters,
+} from '../../src/plugins/xalgo/compute.ts'
 import { INDEX_SCALE, RATE_SCALER } from '../../src/plugins/xalgo/constants.ts'
 import { isExcluded } from '../../src/plugins/xalgo/exclusions.ts'
 import { applyTransfer } from '../../src/plugins/xalgo/ledger.ts'
@@ -310,6 +315,33 @@ describe('computeAttribution', () => {
       )
     }
     expect(first.unattributed + second.unattributed).toBe(whole.unattributed)
+  })
+})
+
+describe('collectBeneficiaryCandidates', () => {
+  it('covers holders of either asset at the window start and receivers of either inside it', () => {
+    // ESCROW1 holds bare xALGO and touches no fxALGO all window — the PR-106 review case: it must
+    // still be a candidate, or its accrual is credited to the un-votable escrow instead of OWNER
+    const balances = xalgoBalancesOf([ESCROW1, 7_000_000n, 0n], [ALICE, 0n, F], [POOL, 5_000_000n, RESERVE_FX])
+    const transfers: TaggedTransfer[] = [
+      makeXalgoTagged('xalgo', { sender: ALICE, receiver: BOB, amount: 1n, round: 10 }),
+      makeXalgoTagged('fxalgo', { sender: ALICE, receiver: CAROL, amount: 1n, round: 20, closeTo: ESCROW2 }),
+    ]
+    const candidates = collectBeneficiaryCandidates(balances, transfers)
+    expect(candidates).toEqual(new Set([ESCROW1, ALICE, BOB, CAROL, ESCROW2]))
+  })
+
+  it('never nominates excluded addresses, as holder or receiver', () => {
+    const balances = xalgoBalancesOf([POOL, 5_000_000n, RESERVE_FX], [RESERVE, 1_000_000n, 0n])
+    const transfers: TaggedTransfer[] = [
+      makeXalgoTagged('xalgo', { sender: ALICE, receiver: POOL, amount: 1n, round: 10, closeTo: RESERVE }),
+    ]
+    expect(collectBeneficiaryCandidates(balances, transfers)).toEqual(new Set())
+  })
+
+  it('zero-balance untouched addresses are not candidates', () => {
+    const balances = xalgoBalancesOf([ALICE, 0n, 0n], [BOB, 1n, 0n])
+    expect(collectBeneficiaryCandidates(balances, [])).toEqual(new Set([BOB]))
   })
 })
 

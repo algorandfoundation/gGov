@@ -1,10 +1,10 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address } from 'algosdk'
-import { GGovRegistryArgs, GGovRegistryComposer } from '../generated/GGovRegistryClient'
-import { Network, SenderWithSigner } from '../types'
+import { GGovRegistryArgs, GGovRegistryComposer } from '../generated/GGovRegistryClient.js'
+import { Network, SenderWithSigner } from '../types.js'
 
 // Re-export shared primitives so existing imports from this module keep working.
-export type { Network, SenderWithSigner, SendResult, CommitteeId } from '../types'
+export type { Network, SenderWithSigner, SendResult, CommitteeId } from '../types.js'
 
 export type ConstructorArgsOptions =
   | {

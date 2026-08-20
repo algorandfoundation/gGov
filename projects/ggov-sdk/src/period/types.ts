@@ -1,10 +1,10 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { GGovRegistryArgs } from '../generated/GGovRegistryClient'
-import { GGovPeriodArgs, GGovPeriodComposer } from '../generated/GGovPeriodClient'
-import { Network, SenderWithSigner } from '../types'
+import { GGovRegistryArgs } from '../generated/GGovRegistryClient.js'
+import { GGovPeriodArgs, GGovPeriodComposer } from '../generated/GGovPeriodClient.js'
+import { Network, SenderWithSigner } from '../types.js'
 
 // Re-export shared primitives so the public surface is unchanged.
-export type { Network, SenderWithSigner, SendResult, CommitteeId } from '../types'
+export type { Network, SenderWithSigner, SendResult, CommitteeId } from '../types.js'
 
 export type ConstructorArgsOptions =
   | {

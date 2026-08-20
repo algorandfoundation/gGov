@@ -4,21 +4,29 @@ import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
   FracDelegationRegistryFactory,
-} from '../generated/FracDelegationRegistryClient'
-import { FracDelegationInstanceClient, APP_SPEC as INSTANCE_APP_SPEC } from '../generated/FracDelegationInstanceClient'
-import { ConstructorArgs, SenderWithSigner, CommonMethodBuilderArgs, FracDelegationRegistryContractArgs } from './types'
-import { requireWriterWithClient } from '../util/requiresSender'
-import { FracDelegationRegistryReaderSDK } from './sdkReader'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { createTxnExecutor } from '../util/txnExecutor'
-import { chunk } from '../util/chunk'
-import { noteNonce } from '../util/noteNonce'
+} from '../generated/FracDelegationRegistryClient.js'
+import {
+  FracDelegationInstanceClient,
+  APP_SPEC as INSTANCE_APP_SPEC,
+} from '../generated/FracDelegationInstanceClient.js'
+import {
+  ConstructorArgs,
+  SenderWithSigner,
+  CommonMethodBuilderArgs,
+  FracDelegationRegistryContractArgs,
+} from './types.js'
+import { requireWriterWithClient } from '../util/requiresSender.js'
+import { FracDelegationRegistryReaderSDK } from './sdkReader.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { createTxnExecutor } from '../util/txnExecutor.js'
+import { chunk } from '../util/chunk.js'
+import { noteNonce } from '../util/noteNonce.js'
 import {
   BODY_CHUNK_BYTES,
   DEFAULT_INSTANCE_MBR_MICROALGOS,
   MAX_ESCROWS_PER_REGISTER_GROUP,
   MAX_GROUP_SIZE,
-} from '../constants'
+} from '../constants.js'
 
 export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
   public writerAccount?: SenderWithSigner

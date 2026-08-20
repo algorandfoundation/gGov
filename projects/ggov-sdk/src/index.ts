@@ -1,16 +1,16 @@
-export * from './period/sdk'
-export * from './period/sdkReader'
-export * from './constants'
-export * from './period/types'
-export * from './period/elections'
-export { GGovRegistryFactory, GGovRegistryClient } from './generated/GGovRegistryClient'
+export * from './period/sdk.js'
+export * from './period/sdkReader.js'
+export * from './constants.js'
+export * from './period/types.js'
+export * from './period/elections.js'
+export { GGovRegistryFactory, GGovRegistryClient } from './generated/GGovRegistryClient.js'
 export {
   GGovPeriodFactory,
   GGovPeriodClient,
   type GGovPeriod,
   type GGovPeriodShort,
   type GGovVoteRecord,
-} from './generated/GGovPeriodClient'
+} from './generated/GGovPeriodClient.js'
 
 // Registry SDK surface.
 export {
@@ -22,11 +22,11 @@ export {
   getIncreaseBudgetBuilder,
   SIMULATE_PARAMS,
   STORED_GOV_BYTE_LENGTH,
-} from './registry'
+} from './registry/index.js'
 export {
   type CommitteeMetadata,
   type AccountWithVotes,
   type GGovCommitteeFile,
   type StoredGov,
   type GGovAccount,
-} from './registry'
+} from './registry/index.js'

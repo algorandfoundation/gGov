@@ -8,12 +8,13 @@
     "seed-localnet-data": "node --experimental-strip-types --env-file=.env.test scripts/seed-localnet.ts",
     "add-committee": "node --experimental-strip-types --env-file=.env.test scripts/add-committee.ts",
     "test-pipeline": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
-    "test-full-run": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-full-run.ts",
+    "seed-full-instances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/seed-full-instances.ts",
+    "seed-periods": "node --experimental-strip-types scripts/seed-periods.ts",
     "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
-    "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-talgo-balances.ts",
-    "verify-xalgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-xalgo-balances.ts",
+    "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-balances.ts",
+    "verify-xalgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-xalgo-balances.ts",
     "verify-reti-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-reti-aq.ts",
-    "verify-reti-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-reti-balances.ts",
+    "verify-reti-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-reti-balances.ts",
     "xalgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/xalgo-aq.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -27,7 +28,7 @@
     "frac-delegation-sdk": "link:../frac-delegation-sdk",
     "ggov-sdk": "link:../ggov-sdk",
     "p-map": "^7.0.4",
-    "reti-ghost-sdk": "^0.1.3"
+    "reti-ghost-sdk": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.10",

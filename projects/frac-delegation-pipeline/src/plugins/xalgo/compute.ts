@@ -169,6 +169,29 @@ export function toAlgoQuarters(byBeneficiary: Map<string, bigint>, xAlgoRate: bi
 }
 
 /**
+ * The addresses whose beneficiary matters for a window: everyone who holds xALGO or fxALGO at the
+ * window start or receives either inside it (a sender must be one of those two first, so senders add
+ * nothing). Both assets, deliberately: `computeAttribution` folds *direct* xALGO through the
+ * beneficiary map exactly like pool share, so a Folks escrow keeping bare xALGO with no fxALGO all
+ * window must still be resolved to its owner. Excluded addresses are never credited, so they are
+ * never candidates.
+ */
+export function collectBeneficiaryCandidates(balances: BalanceMap, transfers: TaggedTransfer[]): Set<string> {
+  const candidates = new Set<string>()
+  const consider = (address: string) => {
+    if (!isExcluded(address)) candidates.add(address)
+  }
+  for (const [address, balance] of balances) {
+    if (balance.xalgo > 0n || balance.fxalgo > 0n) consider(address)
+  }
+  for (const transfer of transfers) {
+    consider(transfer.receiver)
+    if (transfer.closeTo) consider(transfer.closeTo)
+  }
+  return candidates
+}
+
+/**
  * Merge and chronologically sort xALGO and fxALGO transfers by `(round, intraOffset)`, tagging each
  * with its asset. Same-instant events keep a stable order (xALGO first); the replay does not depend
  * on it.

@@ -98,8 +98,8 @@ the committee id is production's, discovery finds exactly the escrows the real c
 and stage 3 ingests the window's real AlgoQuarters.
 
 ```bash
-pnpm test-full-run                       # reset localnet, deploy registries, upload the committee, stages 1-3
-pnpm test-full-run <committee-file>      # same, for a different committee file
+pnpm seed-full-instances                       # reset localnet, deploy registries, upload the committee, stages 1-3
+pnpm seed-full-instances <committee-file>      # same, for a different committee file
 ```
 
 It is resumable end to end: run it again after an interruption and, as long as
@@ -111,6 +111,31 @@ up to 3,000 ALGO per run: the real committee brings the member-ingest MBR (~66 A
 instance creation — which also lands ~0.9 ALGO of creator-side MBR on the frac registry app itself,
 so that app is topped up too (62 instances overran its 50 ALGO deploy funding) — and the full AQ
 ingest of tALGO + xALGO (see _What stage 3 needs_).
+
+## Voting periods
+
+Nothing in the pipeline creates a gGov period, so neither run above leaves one behind.
+`seed-periods` adds three, in the same shape the frontend seed builds
+(`ggov-frontend/scripts/deploy-sample-data.ts`): an ended election, an active two-election period
+and an upcoming standard vote, each `syncPeriod`-ed onto every instance holding the committee's
+snapshot.
+
+```bash
+pnpm seed-periods                    # for the committee .localnet-seed.json names
+pnpm seed-periods <committee-id>     # for another committee already on the gGov registry
+```
+
+Nothing votes: this committee's escrows and AlgoQuarters holders are real mainnet accounts and none
+of them can sign here, unlike the frontend seed's generated ones. What it exercises is the operator
+half — create, topics, ready, sync — against the instances' real escrow counts. An instance whose AQ
+was skipped (no eligible account, or a source with no AQ engine) never had `syncCommittee` run for
+the committee, so it is reported as not synced and left alone.
+
+Each run appends a new set of periods rather than editing the last: `setReady` freezes a period, and
+the ended one is created with a window already in the past. Every instance is topped up to 3 ALGO of
+headroom first — `syncPeriod`'s boxes are paid by the instance app, which (unlike `vote`) has no
+`checkNeedMBR` path to pull a top-up from the registry, and the AQ ingest leaves it sitting at
+exactly its MBR. Three periods cost it ~0.5 ALGO at these shapes.
 
 ## Checking the numbers
 

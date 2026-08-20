@@ -1,5 +1,5 @@
 /**
- * Who an fxALGO holder stands for: a Folks escrow (→ its owner) or itself.
+ * Who a holder stands for: a Folks escrow (→ its owner) or itself.
  *
  * Escrows are fresh accounts rekeyed to a Folks app (loan, deposits, deposit staking), holding the
  * user's fxALGO as collateral or deposit. The owner is in the escrow's local state (`u` / `ua`) while
@@ -8,8 +8,9 @@
  * from the owner to the app address with note `prefix + escrow pubkey` in that very round. Both are
  * immutable facts, so every resolution is cached and never recomputed.
  *
- * Candidate-driven on purpose: only addresses that actually hold fxALGO in the window are resolved
- * (a few thousand, ~0.1 s each, and only once). The bulk alternative — note-prefix scans of all
+ * Candidate-driven on purpose: only addresses that actually hold or receive xALGO or fxALGO in the
+ * window are resolved (~10k, ~0.1 s each, and only once) — both assets, because the attribution
+ * credits an escrow's direct xALGO to its owner too. The bulk alternative — note-prefix scans of all
  * escrow creations — times out on the GENERAL loan app even in 1M-round windows.
  */
 

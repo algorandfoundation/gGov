@@ -81,27 +81,20 @@
  *   - Keep escrows out of the ballot tables, they must never cast a direct gGov vote.
  */
 
-import { createRequire } from 'node:module'
 import { randomBytes, createHash } from 'node:crypto'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
+import { AlgorandClient, Config, algo } from '@algorandfoundation/algokit-utils'
+import * as algosdk from 'algosdk'
+import { GGovRegistrySDK, GGovSDK } from 'ggov-sdk'
 import type { Election, GGovCommitteeFile } from 'ggov-sdk'
+import { FracDelegationRegistrySDK, FracDelegationSDK } from 'frac-delegation-sdk'
 import type { AlgoQuartersFile } from 'frac-delegation-sdk'
 
-const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-// Use require for packages that have CJS dist but ESM source issues.
-// `as typeof import(...)` restores the types require() erases (it returns `any`); the cast is erased at runtime.
-const { AlgorandClient, Config, algo } =
-  require('@algorandfoundation/algokit-utils') as typeof import('@algorandfoundation/algokit-utils')
-const { GGovSDK, GGovRegistrySDK } = require('../../ggov-sdk/dist/index.js') as typeof import('ggov-sdk')
-const { FracDelegationSDK, FracDelegationRegistrySDK } =
-  require('../../frac-delegation-sdk/dist/index.js') as typeof import('frac-delegation-sdk')
-const algosdk = require('algosdk') as typeof import('algosdk')
 
 type Kmd = InstanceType<typeof algosdk.Kmd>
 
