@@ -76,6 +76,29 @@ pnpm test-pipeline
 ...
 ```
 
+## Full run — production mirror
+
+The test run above works a synthetic committee. This one mirrors production: it uploads the real
+committee file for the latest closed mainnet window — currently
+[`61000000-64000000.json`](../common/committee-files/61000000-64000000.json), 1,651 members — so
+the committee id is production's, discovery finds exactly the escrows the real committee contains,
+and stage 3 ingests the window's real AlgoQuarters.
+
+```bash
+pnpm test-full-run                       # reset localnet, deploy registries, upload the committee, stages 1-3
+pnpm test-full-run <committee-file>      # same, for a different committee file
+```
+
+It is resumable end to end: run it again after an interruption and, as long as
+`.localnet-seed.json` still names this committee on a live localnet, it skips the reset and both
+the committee upload and the pipeline finish what is left. Any other seed state is replaced with a
+full reset. The window must be closed on mainnet (checked up front) and the window-start snapshots
+under `snapshots/` must exist — `61000000` for tALGO and xALGO is committed. The deployer is topped
+up to 3,000 ALGO per run: the real committee brings the member-ingest MBR (~66 ALGO), every
+instance creation — which also lands ~0.9 ALGO of creator-side MBR on the frac registry app itself,
+so that app is topped up too (62 instances overran its 50 ALGO deploy funding) — and the full AQ
+ingest of tALGO + xALGO (see _What stage 3 needs_).
+
 ## Checking the numbers
 
 ```bash
