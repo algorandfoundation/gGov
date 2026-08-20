@@ -8,6 +8,7 @@
     "seed-localnet-data": "node --experimental-strip-types --env-file=.env.test scripts/seed-localnet.ts",
     "add-committee": "node --experimental-strip-types --env-file=.env.test scripts/add-committee.ts",
     "test-pipeline": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
+    "test-full-run": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-full-run.ts",
     "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
     "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-talgo-balances.ts",
     "verify-xalgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types scripts/verify-xalgo-balances.ts",
