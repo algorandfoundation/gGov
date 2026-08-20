@@ -19,7 +19,7 @@ import {
   type FracInstanceNameResultMap,
 } from '../base.ts'
 import { createBeneficiaryStore, resolveBeneficiaries, type BeneficiaryStore } from './beneficiaries.ts'
-import { computeAttribution, mergeAssetTransfers, toAlgoQuarters } from './compute.ts'
+import { collectBeneficiaryCandidates, computeAttribution, mergeAssetTransfers, toAlgoQuarters } from './compute.ts'
 import {
   FXALGO_ASA_ID,
   PROPOSER_BOX_NAME_LENGTH,
@@ -185,17 +185,14 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
     await this.scanWindow(FXALGO_ASA_ID, periodStart, periodEnd, fxAlgoTransfers, 'fxALGO')
     const transfers = mergeAssetTransfers(xAlgoTransfers, fxAlgoTransfers)
 
-    // Whoever holds fxALGO at any point of the window held it at the start or received it inside:
-    // those are the addresses whose beneficiary matters. Resolved once, cached for every later window.
+    // Whoever holds xALGO or fxALGO at any point of the window held it at the start or received it
+    // inside: those are the addresses whose beneficiary matters. Both assets — direct xALGO folds
+    // through the beneficiary map too, so an escrow keeping bare xALGO (say, its fxALGO converted
+    // before the window) must credit its owner, not itself. Resolved once, cached for every later window.
     const beneficiaries = this.beneficiaries.readMap()
-    const candidates = new Set<string>()
-    for (const [address, balance] of balances) if (balance.fxalgo > 0n) candidates.add(address)
-    for (const transfer of fxAlgoTransfers) {
-      candidates.add(transfer.receiver)
-      if (transfer.closeTo) candidates.add(transfer.closeTo)
-    }
+    const candidates = collectBeneficiaryCandidates(balances, transfers)
     const { added, warnings } = await resolveBeneficiaries(this.indexer, candidates, beneficiaries)
-    console.log(`  [xalgo] ${candidates.size} fxALGO holders in the window, ${added.length} newly resolved`)
+    console.log(`  [xalgo] ${candidates.size} xALGO/fxALGO holders in the window, ${added.length} newly resolved`)
     for (const warning of warnings) console.warn(`  [xalgo] ⚠ ${warning}`)
 
     const observed = await fetchXAlgoRateInRange(this.indexer, this.appId, periodStart, periodEnd)
