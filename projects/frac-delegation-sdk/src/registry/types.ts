@@ -1,9 +1,12 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { FracDelegationRegistryArgs, FracDelegationRegistryComposer } from '../generated/FracDelegationRegistryClient'
-import { Network, SenderWithSigner } from '../types'
+import {
+  FracDelegationRegistryArgs,
+  FracDelegationRegistryComposer,
+} from '../generated/FracDelegationRegistryClient.js'
+import { Network, SenderWithSigner } from '../types.js'
 
 // Re-export shared primitives so existing imports from this module keep working.
-export type { Network, SenderWithSigner, SendResult } from '../types'
+export type { Network, SenderWithSigner, SendResult } from '../types.js'
 
 export type ConstructorArgsOptions =
   | {

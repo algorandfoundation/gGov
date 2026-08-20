@@ -39,12 +39,12 @@
  */
 
 import { randomBytes } from 'node:crypto'
-import { microAlgos } from '@algorandfoundation/algokit-utils'
+import { AlgorandClient, microAlgos } from '@algorandfoundation/algokit-utils'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
 import { GGovSDK } from 'ggov-sdk'
 import type { Election } from 'ggov-sdk'
 import pMap from 'p-map'
-import { CjsAlgorandClient, algosdk, configLogger, num, printSections, readSeedFile } from './seed-common.ts'
+import { algosdk, configLogger, num, printSections, readSeedFile } from './seed-common.ts'
 
 configLogger()
 
@@ -180,7 +180,7 @@ async function main() {
   step('Reading seed file…')
 
   const seed = readSeedFile()
-  const algorand = CjsAlgorandClient.defaultLocalNet()
+  const algorand = AlgorandClient.defaultLocalNet()
 
   // The registries' creator is their operator, and only the operator may create a period or sync one.
   const deployer = algorand.account.fromMnemonic(seed.accounts.deployer.mnemonic)

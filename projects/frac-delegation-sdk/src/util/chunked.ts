@@ -1,6 +1,6 @@
 /** Verbatim copy of ggov-sdk/src/util/chunked.ts */
 import pMap from 'p-map'
-import { chunk } from './chunk'
+import { chunk } from './chunk.js'
 
 /**
  * Decorator that automatically chunks array arguments and aggregates results

@@ -1,21 +1,14 @@
-import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
 import * as fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { AlgorandClient, Config } from '@algorandfoundation/algokit-utils'
+import * as algosdk from 'algosdk'
 import { RetiGhostSDK } from 'reti-ghost-sdk'
 import { RETI_REGISTRY_APP_ID, TALGO_APP_ID } from '../src/pipeline.ts'
 import { XALGO_APP_ID_MAINNET, XALGO_INSTANCE_NAME, fetchXalgoProposerAddrs } from '../src/plugins/xalgo/index.ts'
 
-// CJS copy for everything touching the local SDKs, rooted at the ggov-sdk dist.
-// See `algorand2` in FracPipelineArgs for why the realms have to stay apart.
-const require = createRequire(fileURLToPath(new URL('../../ggov-sdk/dist/index.js', import.meta.url)))
-const { AlgorandClient: CjsAlgorandClient, Config } = require('@algorandfoundation/algokit-utils') as {
-  AlgorandClient: typeof AlgorandClient
-  Config: { configure: (c: Record<string, unknown>) => void }
-}
-export { CjsAlgorandClient }
-export const algosdk = require('algosdk') as typeof import('algosdk')
+// Re-exported so the seeding scripts reach algosdk through one import alongside the helpers below.
+export { algosdk }
 
 export const configLogger = () =>
   Config.configure({

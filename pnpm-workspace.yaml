@@ -27,3 +27,4 @@ overrides:
 
 minimumReleaseAgeExclude:
   - nanoid # 3.3.18 published 2026-08-07T16:41Z; drop this once it clears the 1-week age
+  - reti-ghost-sdk # first-party (d13co); 0.2.0 published 2026-08-20T15:45Z for the dual ESM/CJS entry

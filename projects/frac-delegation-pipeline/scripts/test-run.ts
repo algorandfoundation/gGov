@@ -12,11 +12,11 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { FracDelegationPipeline } from '../src/pipeline.ts'
 import { FracDelegationSDK } from 'frac-delegation-sdk'
-import { CjsAlgorandClient, readSeedFile, configLogger } from './seed-common.ts'
+import { readSeedFile, configLogger } from './seed-common.ts'
 
 configLogger()
 
-const algorand = CjsAlgorandClient.defaultLocalNet()
+const algorand = AlgorandClient.defaultLocalNet()
 const algorandMainnet = AlgorandClient.fromEnvironment()
 
 const seed = readSeedFile()

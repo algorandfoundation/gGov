@@ -1,4 +1,4 @@
-import { AlgoQuartersFile } from '../instance/types'
+import { AlgoQuartersFile } from '../instance/types.js'
 
 const UINT32_MAX = 0xffffffffn
 

@@ -14,26 +14,14 @@
  *                          creator + name "GGovRegistry")
  */
 
-import { createRequire } from 'node:module'
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
-import { type CommitteeFile } from './ggov'
+import { AlgorandClient, microAlgos } from '@algorandfoundation/algokit-utils'
+import { GGovRegistryFactory, GGovRegistrySDK } from 'ggov-sdk'
 
-// Loaded via require(): algokit-utils is dual-package and the ggov-sdk dist
-// uses ESM syntax without "type": "module", so neither resolves cleanly as a
-// static ESM named import here.
-//
-// Both the SDK and algokit-utils MUST be resolved from the *same* module root
-// so they share one `algosdk` instance — the SDK hands back `algosdk.Address`
-// objects that the AlgorandClient's composer validates with `instanceof`, which
-// fails across duplicate copies. Rooting the require at the ggov-sdk dist makes
-// everything resolve from the workspace node_modules the SDK itself uses.
-const sdkEntry = fileURLToPath(new URL('../../../ggov-sdk/dist/index.js', import.meta.url))
-const require = createRequire(sdkEntry)
-const { AlgorandClient, microAlgos } = require('@algorandfoundation/algokit-utils')
-const { GGovRegistrySDK, GGovRegistryFactory } = require(sdkEntry)
+import { type CommitteeFile } from './ggov'
 
 const COMMITTEES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'committees')
 
