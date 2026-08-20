@@ -11,8 +11,8 @@
  * delegations at their instances, and stage 3 ingests the window's real AlgoQuarters.
  *
  * USAGE
- *   pnpm test-full-run                       # seed (or resume) + stages 1-3
- *   pnpm test-full-run <committee-file>      # same, for a different committee file
+ *   pnpm seed-full-instances                       # seed (or resume) + stages 1-3
+ *   pnpm seed-full-instances <committee-file>      # same, for a different committee file
  *
  * RESUMABLE
  *   Interrupted part-way — a dropped connection during the committee upload or the AQ ingest — run
