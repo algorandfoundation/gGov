@@ -4,7 +4,7 @@ import { RetiGhostSDK } from 'reti-ghost-sdk'
 
 import { existsSync } from 'node:fs'
 
-import { MAX_WINDOW, assertAlgoQuartersFitUint32, checkOrCreateSnapshots } from '../../aq/index.ts'
+import { MAX_WINDOW, assertAlgoQuartersFitUint32, createSnapshotChain } from '../../aq/index.ts'
 import {
   FracPipelinePlugin,
   type AQCalculation,
@@ -21,11 +21,10 @@ import {
 } from './compute.ts'
 import { PROTOCOL, RETI_REGISTRY_APP_ID_MAINNET } from './constants.ts'
 import { fetchRetiEvents } from './indexer.ts'
-import { applyRetiEvent } from './ledger.ts'
 import { buildSnapshot, createRetiSnapshotStore, deserializePools, type RetiSnapshotStore } from './snapshot.ts'
 import { verifyAgainstChain } from './verify.ts'
 import type { FinalInstance } from '../../types.ts'
-import type { PoolLedger, RetiSnapshotData } from './types.ts'
+import type { RetiSnapshotData } from './types.ts'
 
 // Selective on purpose: `export *` would collide with tALGO's and xALGO's `PROTOCOL` in the plugin
 // registry's re-exports. Everything else is importable from './constants.ts'.
@@ -259,26 +258,20 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
       `  [reti] ${events.length} events in the window, from ${epochRoundLengths.size} validators and ${poolCount} pools`,
     )
 
-    // computeRetiMicroAlgoRounds mutates the ledger as it replays, so the snapshot chaining below
-    // needs its own copy of where the window started
-    const snapshotPools = clonePools(pools)
+    // The replay below passes through the state of every 1M-round boundary in the window, so the
+    // snapshots are captured off it rather than replaying the events a second time over a copy
+    const snapshots = createSnapshotChain(this.snapshots, pools, periodStart, periodEnd)
     const microAlgoRounds = computeRetiMicroAlgoRounds(
       pools,
       events,
       epochRoundLengths,
       Number(periodStart),
       Number(periodEnd),
+      snapshots.recorder,
     )
 
     // Verify-first: a stored snapshot that disagrees with this replay throws, and nothing is written
-    const pendingSnapshots = checkOrCreateSnapshots(
-      this.snapshots,
-      snapshotPools,
-      events,
-      (ledger, event) => applyRetiEvent(ledger, event, epochRoundLengths),
-      periodStart,
-      periodEnd,
-    )
+    const pendingSnapshots = snapshots.verify()
     for (const pending of pendingSnapshots) {
       console.log(`  [reti] snapshot saved: ${this.snapshots.writeSnapshot(pending)}`)
     }
@@ -316,8 +309,4 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
 /** The on-chain instance name this plugin mints for a validator. */
 function instanceNameOf(validatorId: number): FracInstanceName {
   return `Reti #${validatorId}`
-}
-
-function clonePools(pools: PoolLedger): PoolLedger {
-  return new Map([...pools].map(([poolAppId, stakers]) => [poolAppId, new Map(stakers)]))
 }

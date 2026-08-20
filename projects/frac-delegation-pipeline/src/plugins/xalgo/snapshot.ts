@@ -28,7 +28,7 @@ export const BENEFICIARIES_FILE_NAME = 'beneficiaries.json'
 
 /**
  * File persistence bound to one snapshots directory, plus the pure snapshot operations. Satisfies
- * `SnapshotStore`, so it can be handed straight to `checkOrCreateSnapshots`.
+ * `SnapshotStore`, so it can be handed straight to `createSnapshotChain`.
  */
 export function createXalgoSnapshotStore(snapshotsDir: string = DEFAULT_SNAPSHOTS_DIR) {
   const files = createSnapshotFiles<SnapshotData>(snapshotsDir, 'XalgoPipelinePlugin.buildSnapshot')
@@ -38,6 +38,7 @@ export function createXalgoSnapshotStore(snapshotsDir: string = DEFAULT_SNAPSHOT
     beneficiariesPath: join(snapshotsDir, BENEFICIARIES_FILE_NAME),
     createSnapshot,
     diffSnapshot,
+    toState: getAllSnapshotBalances,
   }
 }
 
@@ -120,26 +121,31 @@ export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Prom
     [XALGO_POOL_ADDRESS, { xalgo: 0n, fxalgo: fxAlgoInfo.totalSupply }],
   ])
 
-  await scanAssetTransfers(
-    indexer,
-    XALGO_ASA_ID,
-    xAlgoInfo.creationRound,
-    targetRound,
-    (transfers) => {
-      for (const transfer of transfers) applyTransfer(balances, transfer, 'xalgo')
-    },
-    'xALGO',
-  )
-  await scanAssetTransfers(
-    indexer,
-    FXALGO_ASA_ID,
-    fxAlgoInfo.creationRound,
-    targetRound,
-    (transfers) => {
-      for (const transfer of transfers) applyTransfer(balances, transfer, 'fxalgo')
-    },
-    'fxALGO',
-  )
+  // The two scans overlap even though they share `balances`: `applyTransfer` only ever touches the
+  // field it is given, the two assets never write each other's, and `onBatch` runs synchronously —
+  // so interleaving the batches cannot make the two streams observe each other.
+  await Promise.all([
+    scanAssetTransfers(
+      indexer,
+      XALGO_ASA_ID,
+      xAlgoInfo.creationRound,
+      targetRound,
+      (transfers) => {
+        for (const transfer of transfers) applyTransfer(balances, transfer, 'xalgo')
+      },
+      'xALGO',
+    ),
+    scanAssetTransfers(
+      indexer,
+      FXALGO_ASA_ID,
+      fxAlgoInfo.creationRound,
+      targetRound,
+      (transfers) => {
+        for (const transfer of transfers) applyTransfer(balances, transfer, 'fxalgo')
+      },
+      'fxALGO',
+    ),
+  ])
 
   return createSnapshot(targetRound, balances)
 }

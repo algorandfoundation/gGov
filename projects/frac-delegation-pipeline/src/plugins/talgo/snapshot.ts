@@ -24,11 +24,11 @@ export const DEFAULT_SNAPSHOTS_DIR = join(__dirname, '../../..', 'snapshots', 't
 
 /**
  * File persistence bound to one snapshots directory, plus the pure snapshot operations. Satisfies
- * `SnapshotStore`, so it can be handed straight to `checkOrCreateSnapshots`.
+ * `SnapshotStore`, so it can be handed straight to `createSnapshotChain`.
  */
 export function createTalgoSnapshotStore(snapshotsDir: string = DEFAULT_SNAPSHOTS_DIR) {
   const files = createSnapshotFiles<SnapshotData>(snapshotsDir, 'TalgoPipelinePlugin.buildSnapshot')
-  return { ...files, snapshotsDir, createSnapshot, diffSnapshot }
+  return { ...files, snapshotsDir, createSnapshot, diffSnapshot, toState: getAllSnapshotBalances }
 }
 
 export type TalgoSnapshotStore = ReturnType<typeof createTalgoSnapshotStore>
@@ -106,26 +106,31 @@ export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Prom
     [STALGO_APP_ADDRESS, { talgo: 0n, stalgo: stAlgoInfo.totalSupply }],
   ])
 
-  await scanAssetTransfers(
-    indexer,
-    TALGO_ASA_ID,
-    tAlgoInfo.creationRound,
-    targetRound,
-    (transfers) => {
-      for (const transfer of transfers) applyTransfer(balances, transfer, 'talgo')
-    },
-    'tALGO',
-  )
-  await scanAssetTransfers(
-    indexer,
-    STALGO_ASA_ID,
-    stAlgoInfo.creationRound,
-    targetRound,
-    (transfers) => {
-      for (const transfer of transfers) applyTransfer(balances, transfer, 'stalgo')
-    },
-    'stALGO',
-  )
+  // The two scans overlap even though they share `balances`: `applyTransfer` only ever touches the
+  // field it is given, the two assets never write each other's, and `onBatch` runs synchronously —
+  // so interleaving the batches cannot make the two streams observe each other.
+  await Promise.all([
+    scanAssetTransfers(
+      indexer,
+      TALGO_ASA_ID,
+      tAlgoInfo.creationRound,
+      targetRound,
+      (transfers) => {
+        for (const transfer of transfers) applyTransfer(balances, transfer, 'talgo')
+      },
+      'tALGO',
+    ),
+    scanAssetTransfers(
+      indexer,
+      STALGO_ASA_ID,
+      stAlgoInfo.creationRound,
+      targetRound,
+      (transfers) => {
+        for (const transfer of transfers) applyTransfer(balances, transfer, 'stalgo')
+      },
+      'stALGO',
+    ),
+  ])
 
   return createSnapshot(targetRound, balances)
 }

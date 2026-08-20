@@ -46,20 +46,22 @@ export interface SnapshotStore<State, Snapshot extends { round: number }> {
   readSnapshot(round: bigint | number): Snapshot
   createSnapshot(round: bigint, state: State): Snapshot
   diffSnapshot(state: State, stored: Snapshot): string[]
+  /** Rebuild replay state from a snapshot — the inverse of `createSnapshot`. */
+  toState(snapshot: Snapshot): State
 }
 
 /**
- * Verify computed state against an existing snapshot, or build the snapshot
- * to persist later. Throws on mismatch so the caller can abort before writing
- * any output derived from a non-matching replay.
+ * Verify a computed snapshot against the one on disk, or hand it back to persist later. Throws on
+ * mismatch so the caller can abort before writing any output derived from a non-matching replay.
+ * @returns the snapshot to persist, or null when a matching one is already stored
  */
-function checkOrCreateSnapshot<State, Snapshot extends { round: number }>(
+function checkStoredSnapshot<State, Snapshot extends { round: number }>(
   store: SnapshotStore<State, Snapshot>,
-  round: bigint,
-  state: State,
+  computed: Snapshot,
 ): Snapshot | null {
+  const round = BigInt(computed.round)
   if (existsSync(store.getSnapshotPath(round))) {
-    const diffs = store.diffSnapshot(state, store.readSnapshot(round))
+    const diffs = store.diffSnapshot(store.toState(computed), store.readSnapshot(round))
     if (diffs.length > 0) {
       throw new Error(
         `Snapshot ${round}.json has ${diffs.length} mismatch(es):\n${diffs.join('\n')}\n` +
@@ -69,40 +71,94 @@ function checkOrCreateSnapshot<State, Snapshot extends { round: number }>(
     console.log(`  ✓ ${round}: snapshot exists and matches`)
     return null
   }
-  return store.createSnapshot(round, state)
+  return computed
 }
 
 /**
- * Check or build snapshots (multiples of SNAPSHOT_INTERVAL) in the window (periodStart, periodEnd],
- * advancing `state` by replaying `items` (chronologically ordered) up to each snapshot round.
- * Verification runs before anything is persisted: a mismatch throws with nothing written.
- * Returns the missing snapshots for the caller to persist once every round verified.
+ * The snapshot rounds a window covers: the `SNAPSHOT_INTERVAL` multiples in
+ * `(periodStart, periodEnd]`, ascending.
  */
-export function checkOrCreateSnapshots<State, Snapshot extends { round: number }, Item extends { round: number }>(
+export function snapshotRoundsIn(periodStart: bigint, periodEnd: bigint): bigint[] {
+  const rounds: bigint[] = []
+  const first = (periodStart / SNAPSHOT_INTERVAL + 1n) * SNAPSHOT_INTERVAL
+  for (let round = first; round <= periodEnd; round += SNAPSHOT_INTERVAL) rounds.push(round)
+  return rounds
+}
+
+/**
+ * What a replay reports its progress to, so state can be captured at the snapshot boundaries it
+ * crosses.
+ *
+ * `crossing(round)` must be called immediately **before** applying each item, in replay order, and
+ * `finish()` once every item has been applied. That is exactly the rule the snapshots follow: the
+ * state at round `R` is every item with `round < R` applied and nothing else.
+ */
+export interface BoundaryRecorder {
+  crossing(round: number): void
+  finish(): void
+}
+
+/** A recorder that captures nothing — for a replay that is not building snapshots. */
+export const NO_BOUNDARIES: BoundaryRecorder = {
+  crossing() {},
+  finish() {},
+}
+
+/**
+ * Verify-first snapshot chaining, driven by the replay that computes the AlgoQuarters rather than by
+ * a second replay of its own.
+ *
+ * Hand `recorder` to the compute function and call `verify()` once it returns. Each of a window's
+ * `SNAPSHOT_INTERVAL` boundaries is captured off the live `state` as the replay crosses it — the
+ * compute functions apply the very same ledger mutations, in the same order, that a separate replay
+ * would, and `store.createSnapshot` serializes into fresh objects, so the captures are independent
+ * of the mutations that follow.
+ *
+ * Verification runs in `verify()`, before anything is persisted: a stored snapshot that disagrees
+ * with this replay throws with nothing written, and the missing ones are returned for the caller to
+ * persist.
+ */
+export function createSnapshotChain<State, Snapshot extends { round: number }>(
   store: SnapshotStore<State, Snapshot>,
   state: State,
-  items: Item[],
-  applyItem: (state: State, item: Item) => void,
   periodStart: bigint,
   periodEnd: bigint,
-): Snapshot[] {
-  console.log('\nChecking snapshots…')
+): { recorder: BoundaryRecorder; verify: () => Snapshot[] } {
   if (periodStart % SNAPSHOT_INTERVAL !== 0n) {
     console.warn(`Warning: periodStart is not multiple of ${SNAPSHOT_INTERVAL}`)
   }
 
-  const pendingSnapshots: Snapshot[] = []
-  const first = (periodStart / SNAPSHOT_INTERVAL + 1n) * SNAPSHOT_INTERVAL
-  let itemIdx = 0
+  const rounds = snapshotRoundsIn(periodStart, periodEnd)
+  const captured: Snapshot[] = []
+  let next = 0
 
-  for (let snapshotRound = first; snapshotRound <= periodEnd; snapshotRound += SNAPSHOT_INTERVAL) {
-    while (itemIdx < items.length && BigInt(items[itemIdx].round) < snapshotRound) {
-      applyItem(state, items[itemIdx])
-      itemIdx++
+  /** Capture every boundary at or below `round` — or all that are left, when `round` is undefined. */
+  function captureUpTo(round?: number): void {
+    while (next < rounds.length && (round === undefined || rounds[next] <= BigInt(round))) {
+      captured.push(store.createSnapshot(rounds[next], state))
+      next++
     }
-    const snapshot = checkOrCreateSnapshot(store, snapshotRound, state)
-    if (snapshot) pendingSnapshots.push(snapshot)
   }
 
-  return pendingSnapshots
+  return {
+    recorder: {
+      crossing: (round) => captureUpTo(round),
+      finish: () => captureUpTo(),
+    },
+    verify() {
+      if (next < rounds.length) {
+        throw new Error(
+          `Snapshot chain was not finished: ${rounds.length - next} of ${rounds.length} boundaries were ` +
+            'never captured — the replay did not call finish()',
+        )
+      }
+      console.log('\nChecking snapshots…')
+      const pendingSnapshots: Snapshot[] = []
+      for (const snapshot of captured) {
+        const pending = checkStoredSnapshot(store, snapshot)
+        if (pending) pendingSnapshots.push(pending)
+      }
+      return pendingSnapshots
+    },
+  }
 }

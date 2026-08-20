@@ -2,7 +2,7 @@
 
 import { type Indexer, type indexerModels } from 'algosdk'
 
-import { SCAN_WINDOW } from './config.ts'
+import { SCAN_CONCURRENCY, SCAN_WINDOW } from './config.ts'
 import type { AssetTransfer } from './types.ts'
 
 // Every query takes its client: one process may read more than one endpoint. The plugins hand these
@@ -153,8 +153,14 @@ export const INDEXER_PAGE_SIZE = 1_000
  * decoding each page into records and passing them to `onBatch` to avoid storing
  * everything in memory.
  *
+ * Windows cover disjoint round ranges, so `concurrency` of them are fetched at once; pagination
+ * *within* a window stays serial, `nextToken` being opaque. Records are still delivered to
+ * `onBatch` strictly in window order, and at most `concurrency` windows are held in memory at a
+ * time — a completed window waits its turn rather than the scan running ahead.
+ *
  * Replay depends on ascending (round, intra) order. The Indexer returns results
- * that way by construction; the scan verifies it per record and throws if the order is ever altered.
+ * that way by construction; the scan verifies it per record, on the ordered delivery, and throws if
+ * the order is ever altered.
  */
 export async function scanTransactionRecords<T extends { round: number; intraOffset: number }>(
   indexer: Indexer,
@@ -164,44 +170,40 @@ export async function scanTransactionRecords<T extends { round: number; intraOff
   endRound: bigint,
   onBatch: (records: T[]) => void,
   tag: string,
+  concurrency: number = SCAN_CONCURRENCY,
 ): Promise<void> {
-  let windowStart = startRound
-  let lastRound = -1
-  let lastIntraOffset = -1
-
-  while (windowStart < endRound) {
+  /** The disjoint round ranges to fetch, in ascending order — the unit both of work and of delivery. */
+  const windows: { start: bigint; end: bigint }[] = []
+  for (let windowStart = startRound; windowStart < endRound; ) {
     const nextEnd = windowStart + SCAN_WINDOW
     const windowEnd = nextEnd > endRound ? endRound : nextEnd
+    windows.push({ start: windowStart, end: windowEnd })
+    windowStart = windowEnd
+  }
+  if (windows.length === 0) return
 
-    console.log(`  [${tag}] scanning rounds [${windowStart}, ${windowEnd - 1n}]…`)
-    let recordCount = 0
+  const inFlight = Math.max(1, Math.min(concurrency, windows.length))
+  console.log(
+    `  [${tag}] scanning rounds [${startRound}, ${endRound - 1n}] in ${windows.length} window(s), ${inFlight} at a time…`,
+  )
+
+  /** Page through one window to exhaustion. Serial: `nextToken` is opaque, so there is no splitting it. */
+  async function fetchWindow(window: { start: bigint; end: bigint }): Promise<T[]> {
+    const records: T[] = []
     let nextToken: string | undefined
 
     do {
       let request = indexer
         .searchForTransactions()
-        .minRound(windowStart)
-        .maxRound(windowEnd - 1n)
+        .minRound(window.start)
+        .maxRound(window.end - 1n)
         .limit(INDEXER_PAGE_SIZE)
       if (filter.assetId !== undefined) request = request.assetID(filter.assetId)
       if (filter.applicationId !== undefined) request = request.applicationID(filter.applicationId)
       if (nextToken) request = request.nextToken(nextToken)
 
       const data = await withRetry(() => request.do())
-      const records = decodeTransactions(data.transactions ?? [])
-      for (const record of records) {
-        if (record.round < lastRound || (record.round === lastRound && record.intraOffset < lastIntraOffset)) {
-          throw new Error(
-            `Indexer returned transactions out of order: (${record.round}, ${record.intraOffset}) after (${lastRound}, ${lastIntraOffset})`,
-          )
-        }
-        lastRound = record.round
-        lastIntraOffset = record.intraOffset
-      }
-      if (records.length > 0) {
-        onBatch(records)
-        recordCount += records.length
-      }
+      for (const record of decodeTransactions(data.transactions ?? [])) records.push(record)
 
       nextToken = data.nextToken
       if (nextToken && data.transactions?.length === 0) {
@@ -210,8 +212,46 @@ export async function scanTransactionRecords<T extends { round: number; intraOff
       }
     } while (nextToken)
 
-    console.log(`  [${tag}] ${recordCount} records found`)
-    windowStart = windowEnd
+    return records
+  }
+
+  // Bounded look-ahead: keep `inFlight` fetches running, but consume them in window order, so
+  // memory holds at most that many windows and `onBatch` sees the same sequence a serial scan would.
+  const pending = new Map<number, Promise<T[]>>()
+  let nextToStart = 0
+  const fillQueue = () => {
+    while (pending.size < inFlight && nextToStart < windows.length) {
+      const index = nextToStart++
+      const promise = fetchWindow(windows[index])
+      // A later window can reject while an earlier one is still being awaited, and that rejection
+      // would be unhandled until the loop reaches it. Park a no-op handler now; the real failure
+      // still surfaces from the `await` below, in window order.
+      void promise.catch(() => {})
+      pending.set(index, promise)
+    }
+  }
+  fillQueue()
+
+  let lastRound = -1
+  let lastIntraOffset = -1
+
+  for (const [index, window] of windows.entries()) {
+    const records = await pending.get(index)!
+    pending.delete(index)
+    fillQueue()
+
+    for (const record of records) {
+      if (record.round < lastRound || (record.round === lastRound && record.intraOffset < lastIntraOffset)) {
+        throw new Error(
+          `Indexer returned transactions out of order: (${record.round}, ${record.intraOffset}) after (${lastRound}, ${lastIntraOffset})`,
+        )
+      }
+      lastRound = record.round
+      lastIntraOffset = record.intraOffset
+    }
+    if (records.length > 0) onBatch(records)
+
+    console.log(`  [${tag}] rounds [${window.start}, ${window.end - 1n}]: ${records.length} records found`)
   }
 }
 
@@ -223,6 +263,7 @@ export async function scanAssetTransfers(
   endRound: bigint,
   onBatch: (transfers: AssetTransfer[]) => void,
   label?: string,
+  concurrency?: number,
 ): Promise<void> {
   await scanTransactionRecords(
     indexer,
@@ -232,5 +273,6 @@ export async function scanAssetTransfers(
     endRound,
     onBatch,
     label ?? `ASA ${assetId}`,
+    concurrency,
   )
 }

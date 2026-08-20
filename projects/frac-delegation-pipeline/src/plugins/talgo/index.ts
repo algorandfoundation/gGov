@@ -3,7 +3,7 @@ import { type Indexer, encodeAddress, getApplicationAddress } from 'algosdk'
 
 import { existsSync } from 'node:fs'
 
-import { MAX_WINDOW, assertAlgoQuartersFitUint32, checkOrCreateSnapshots, scanAssetTransfers } from '../../aq/index.ts'
+import { MAX_WINDOW, assertAlgoQuartersFitUint32, createSnapshotChain, scanAssetTransfers } from '../../aq/index.ts'
 import {
   FracPipelinePlugin,
   type AQCalculation,
@@ -23,13 +23,12 @@ import {
 } from './constants.ts'
 import { isExcluded } from './exclusions.ts'
 import { fetchTAlgoRateInRange } from './indexer.ts'
-import { applyTransfer } from './ledger.ts'
 import { buildSnapshot, createTalgoSnapshotStore, getAllSnapshotBalances, type TalgoSnapshotStore } from './snapshot.ts'
 import { checkLargeHolders, logSnapshotStats } from './stats.ts'
 import { verifyAgainstChain } from './verify.ts'
 import type { FinalInstance } from '../../types.ts'
 import type { AssetTransfer } from '../../aq/index.ts'
-import type { BalanceMap, SnapshotData } from './types.ts'
+import type { SnapshotData } from './types.ts'
 
 export * from './constants.ts'
 
@@ -162,19 +161,23 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
 
     const tAlgoTransfers: AssetTransfer[] = []
     const stAlgoTransfers: AssetTransfer[] = []
-    await this.scanWindow(TALGO_ASA_ID, periodStart, periodEnd, tAlgoTransfers, 'tALGO')
-    await this.scanWindow(STALGO_ASA_ID, periodStart, periodEnd, stAlgoTransfers, 'stALGO')
+    // Two independent scans collecting into their own arrays, merged below — so they overlap
+    await Promise.all([
+      this.scanWindow(TALGO_ASA_ID, periodStart, periodEnd, tAlgoTransfers, 'tALGO'),
+      this.scanWindow(STALGO_ASA_ID, periodStart, periodEnd, stAlgoTransfers, 'stALGO'),
+    ])
 
-    // computeAlgoQuarters mutates the balances as it replays, so the snapshot chaining below needs
-    // its own copy of where the window started
-    const snapshotBalances = cloneBalances(balances)
+    // The replay below passes through the state of every 1M-round boundary in the window, so the
+    // snapshots are captured off it rather than replaying the transfers a second time over a copy
     const transfers = mergeAssetTransfers(tAlgoTransfers, stAlgoTransfers)
+    const snapshots = createSnapshotChain(this.snapshots, balances, periodStart, periodEnd)
     const algoQuartersByAddress = computeAlgoQuarters(
       balances,
       transfers,
       Number(periodStart),
       Number(periodEnd),
       tAlgoRate,
+      snapshots.recorder,
     )
 
     // The unit is the eligibility cutoff: accounts flooring below 1 AQ are omitted
@@ -186,14 +189,7 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
     }
 
     // Verify-first: a stored snapshot that disagrees with this replay throws, and nothing is written
-    const pendingSnapshots = checkOrCreateSnapshots(
-      this.snapshots,
-      snapshotBalances,
-      transfers,
-      (balances, transfer) => applyTransfer(balances, transfer, transfer.asset),
-      periodStart,
-      periodEnd,
-    )
+    const pendingSnapshots = snapshots.verify()
     for (const pending of pendingSnapshots) {
       console.log(`  [talgo] snapshot saved: ${this.snapshots.writeSnapshot(pending)}`)
     }
@@ -260,8 +256,4 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
       console.warn(`[talgo] ${err instanceof Error ? err.message : err}`)
     }
   }
-}
-
-function cloneBalances(balances: BalanceMap): BalanceMap {
-  return new Map([...balances].map(([address, balance]) => [address, { talgo: balance.talgo, stalgo: balance.stalgo }]))
 }

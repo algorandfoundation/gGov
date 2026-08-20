@@ -24,11 +24,11 @@ export const DEFAULT_SNAPSHOTS_DIR = join(__dirname, '../../..', 'snapshots', 'r
 
 /**
  * File persistence bound to one snapshots directory, plus the pure snapshot operations. Satisfies
- * `SnapshotStore`, so it can be handed straight to `checkOrCreateSnapshots`.
+ * `SnapshotStore`, so it can be handed straight to `createSnapshotChain`.
  */
 export function createRetiSnapshotStore(snapshotsDir: string = DEFAULT_SNAPSHOTS_DIR) {
   const files = createSnapshotFiles<RetiSnapshotData>(snapshotsDir, 'RetiPipelinePlugin.buildSnapshot')
-  return { ...files, snapshotsDir, createSnapshot, diffSnapshot }
+  return { ...files, snapshotsDir, createSnapshot, diffSnapshot, toState: deserializePools }
 }
 
 export type RetiSnapshotStore = ReturnType<typeof createRetiSnapshotStore>

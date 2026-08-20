@@ -2,7 +2,7 @@
 
 import { RATE_SCALER } from './constants.ts'
 import { applyTransfer } from './ledger.ts'
-import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from '../../aq/index.ts'
+import { MICROALGO_ROUNDS_PER_AQ, NO_BOUNDARIES, type AssetTransfer, type BoundaryRecorder } from '../../aq/index.ts'
 import type { BalanceMap, TaggedTransfer } from './types.ts'
 
 /**
@@ -11,6 +11,9 @@ import type { BalanceMap, TaggedTransfer } from './types.ts'
  *
  * Contributions retain their fixed-point precision and are floored once per
  * account when converting accumulated microALGO-rounds to AQ.
+ *
+ * `boundaries` lets the caller capture the window's snapshots off this replay — the balances pass
+ * through exactly the states a separate replay would produce, so there is no reason to run one.
  */
 export function computeAlgoQuarters(
   balances: BalanceMap,
@@ -18,6 +21,7 @@ export function computeAlgoQuarters(
   startRound: number,
   endRound: number,
   tAlgoRate: bigint,
+  boundaries: BoundaryRecorder = NO_BOUNDARIES,
 ): Map<string, bigint> {
   const scaledMicroAlgoRounds = new Map<string, bigint>()
   const lastAccruedRound = new Map<string, number>()
@@ -55,12 +59,17 @@ export function computeAlgoQuarters(
   }
 
   for (const t of transfers) {
+    // Before the transfer lands, so a snapshot at round R holds every transfer with round < R
+    boundaries.crossing(t.round)
+
     accrueUntil(t.sender, t.round)
     accrueUntil(t.receiver, t.round)
     if (t.closeTo) accrueUntil(t.closeTo, t.round)
 
     applyTransfer(balances, t, t.asset)
   }
+  // Boundaries past the last transfer see the final balances
+  boundaries.finish()
 
   for (const address of lastAccruedRound.keys()) {
     accrueUntil(address, endRound)

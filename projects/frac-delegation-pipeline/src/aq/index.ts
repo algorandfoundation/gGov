@@ -15,7 +15,14 @@ export {
 
 export { MAX_WINDOW, SCAN_WINDOW, SNAPSHOT_INTERVAL } from './config.ts'
 
-export { checkOrCreateSnapshots, createSnapshotFiles, type SnapshotStore } from './snapshots.ts'
+export {
+  NO_BOUNDARIES,
+  createSnapshotChain,
+  createSnapshotFiles,
+  snapshotRoundsIn,
+  type BoundaryRecorder,
+  type SnapshotStore,
+} from './snapshots.ts'
 
 export { MICROALGO_ROUNDS_PER_AQ, assertAlgoQuartersFitUint32 } from './utils/aq.ts'
 export { stringifyJson } from './utils/json.ts'
