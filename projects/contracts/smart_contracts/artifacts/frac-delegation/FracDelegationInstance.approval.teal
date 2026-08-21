@@ -4,7 +4,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 2 1 4
-    bytecblock 0x151f7c75 0x0000 0x000000000000000000 "registryApp" "escrows" "c" "A" "q" "p" "ERR:RM" 0x0002 "operator" "instanceNumId" "ERR:FA_NS" "V" "E" "ERR:C_NX" "ERR:FA_NC" 0xec402f3c "ready" "r" 0x0008 0x0035 "name" "admin" "ERR:FA_NX" "ERR:GP_NX" "ERR:GP_NR" "ERR:FP_MM" "votingStart" "votingEnd" "committeeId" 0xc8d461ab "ERR:GV_MM" base64(C4EBQw==) "ERR:AUTH"
+    bytecblock 0x151f7c75 0x0000 0x000000000000000000 "registryApp" "escrows" "c" "A" "q" "p" "ERR:RM" 0x0002 "operator" "instanceNumId" "ERR:FA_NS" "V" "E" "r" "ERR:C_NX" "ERR:FA_NC" 0xec402f3c "ready" 0x0008 0x0035 "name" "admin" "ERR:FA_NX" "ERR:GP_NX" "ERR:GP_NR" "ERR:FP_MM" "votingStart" "votingEnd" "committeeId" 0xc8d461ab "ERR:GV_MM" 0x0000030000 base64(C4EBQw==) "ERR:AUTH"
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:88
@@ -23,18 +23,18 @@ main_after_if_else@2:
     // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
     txn NumAppArgs
-    bz main_bare_routing@39
+    bz main_bare_routing@40
     txn OnCompletion
     !
     assert
     txn ApplicationID
-    bz main_create_NoOp@35
-    pushbytess 0xac8b24de 0xbe48a207 0x440d953b 0x8ede09b3 0x928ddc5e 0x010cfd9f 0xa71ba7e0 0xbf72f7e8 0x23df9b8d 0x06d0b4c6 0xcb08ea72 0xdd647e3b 0x9019a501 0xf0ee19c4 0xa585ea28 0x962bed8e 0x648b38d4 0x65484e62 0xd44bac7a 0x082ea20b 0x04c5849e 0x5ef7cba2 0x0bf3149e 0xd8da6257 0xb0a80e2d 0xf77d190c 0x92d03753 0x4118ecbf // method "getAdmin()address", method "getOperator()address", method "setOperator(address)void", method "setRegistryApp(uint64)void", method "withdrawALGO(address,uint64)void", method "registerEscrow(address)void", method "getEscrows()address[]", method "syncCommittee(byte[32])(uint16,uint32[],uint32)", method "getCommittee(byte[32])(uint16,uint32[],uint32)", method "logCommittees(byte[32][])void", method "getCommitteeStanding(byte[32])(uint16,uint32,uint32,uint32,uint32,uint32)", method "startAqIngest(byte[32],uint32,uint32)(uint32,uint32,uint32,uint32)", method "ingestAq(uint16,(address,uint32)[])void", method "getCommitteeAq(uint16,bool)(uint32,uint32,uint32,uint32)", method "tryGetAccountAq(uint32,uint16)uint32", method "logAccountAqs(uint16,uint32[])void", method "getAccountCommitteeAq(uint32,byte[32])(uint16,uint64,uint16,byte[32],string,uint32,uint32)", method "uningestAq(uint16,address[])void", method "syncPeriod(uint64)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)", method "getPeriod(uint32)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)", method "logPeriods(uint32[])void", method "vote(address,uint32,uint32[][])void", method "canVote(address,address,uint32)(bool,uint64)", method "logPeriodVotingState(uint32)void", method "getPeriodVoteCache(uint32)(uint32[][],uint32[][])", method "getPeriodEscrowVotes(uint32,uint8)(uint32[][])", method "getVotingRecord(uint32,uint32)(bool,uint32[][])", method "increaseBudget(uint64)void"
+    bz main_create_NoOp@36
+    pushbytess 0xac8b24de 0xbe48a207 0x440d953b 0x8ede09b3 0x928ddc5e 0x010cfd9f 0xa71ba7e0 0xbf72f7e8 0x23df9b8d 0x06d0b4c6 0xcb08ea72 0xdd647e3b 0x9019a501 0xf0ee19c4 0xa585ea28 0x962bed8e 0x648b38d4 0x65484e62 0xd44bac7a 0x082ea20b 0x04c5849e 0x5ef7cba2 0x0bf3149e 0xd8da6257 0xb0a80e2d 0xf77d190c 0x92d03753 0xf7694998 0x4118ecbf // method "getAdmin()address", method "getOperator()address", method "setOperator(address)void", method "setRegistryApp(uint64)void", method "withdrawALGO(address,uint64)void", method "registerEscrow(address)void", method "getEscrows()address[]", method "syncCommittee(byte[32])(uint16,uint32[],uint32)", method "getCommittee(byte[32])(uint16,uint32[],uint32)", method "logCommittees(byte[32][])void", method "getCommitteeStanding(byte[32])(uint16,uint32,uint32,uint32,uint32,uint32)", method "startAqIngest(byte[32],uint32,uint32)(uint32,uint32,uint32,uint32)", method "ingestAq(uint16,(address,uint32)[])void", method "getCommitteeAq(uint16,bool)(uint32,uint32,uint32,uint32)", method "tryGetAccountAq(uint32,uint16)uint32", method "logAccountAqs(uint16,uint32[])void", method "getAccountCommitteeAq(uint32,byte[32])(uint16,uint64,uint16,byte[32],string,uint32,uint32)", method "uningestAq(uint16,address[])void", method "syncPeriod(uint64)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)", method "getPeriod(uint32)(uint64,byte[32],uint16,uint32,uint32,uint32[],uint8)", method "logPeriods(uint32[])void", method "vote(address,uint32,uint32[][])void", method "canVote(address,address,uint32)(bool,uint64)", method "logPeriodVotingState(uint32)void", method "getPeriodVoteCache(uint32)(uint32[][],uint32[][])", method "getPeriodEscrowVotes(uint32,uint8)(uint32[][])", method "getVotingRecord(uint32,uint32)(bool,uint32[][])", method "logVotingRecords(uint32,uint32[])void", method "increaseBudget(uint64)void"
     txna ApplicationArgs 0
-    match getAdmin getOperator setOperator setRegistryApp withdrawALGO registerEscrow getEscrows syncCommittee getCommittee logCommittees getCommitteeStanding startAqIngest ingestAq getCommitteeAq tryGetAccountAq logAccountAqs getAccountCommitteeAq uningestAq syncPeriod getPeriod logPeriods vote canVote logPeriodVotingState getPeriodVoteCache getPeriodEscrowVotes getVotingRecord increaseBudget
+    match getAdmin getOperator setOperator setRegistryApp withdrawALGO registerEscrow getEscrows syncCommittee getCommittee logCommittees getCommitteeStanding startAqIngest ingestAq getCommitteeAq tryGetAccountAq logAccountAqs getAccountCommitteeAq uningestAq syncPeriod getPeriod logPeriods vote canVote logPeriodVotingState getPeriodVoteCache getPeriodEscrowVotes getVotingRecord logVotingRecords increaseBudget
     err
 
-main_create_NoOp@35:
+main_create_NoOp@36:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:85-86
     // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
@@ -43,38 +43,38 @@ main_create_NoOp@35:
     match createApplication
     err
 
-main_bare_routing@39:
+main_bare_routing@40:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:85-86
     // @contract({ name: 'FracDelegationInstance' })
     // export class FracDelegationInstanceContract extends BaseContract {
     intc_3 // UpdateApplication
     pushint 5 // DeleteApplication
     txn OnCompletion
-    match main_updateApplication@40 main_deleteApplication@41
+    match main_updateApplication@41 main_deleteApplication@42
     err
 
-main_deleteApplication@41:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1276
+main_deleteApplication@42:
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1309
     // @baremethod({ allowActions: ['DeleteApplication'] })
     txn ApplicationID
     assert
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1278
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1311
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1276
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1309
     // @baremethod({ allowActions: ['DeleteApplication'] })
     intc_2 // 1
     return
 
-main_updateApplication@40:
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1270
+main_updateApplication@41:
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1303
     // @baremethod({ allowActions: ['UpdateApplication'] })
     txn ApplicationID
     assert
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1272
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1305
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1270
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1303
     // @baremethod({ allowActions: ['UpdateApplication'] })
     intc_2 // 1
     return
@@ -805,7 +805,7 @@ syncCommittee_after_assert@6:
     intc_3 // 4
     extract_uint16
     bnz syncCommittee_after_assert@9
-    bytec 16 // "ERR:C_NX"
+    bytec 17 // "ERR:C_NX"
     log
     err // ERR:C_NX
 
@@ -1302,7 +1302,7 @@ startAqIngest_after_assert@5:
     box_len
     bury 1
     bnz startAqIngest_after_assert@7
-    bytec 16 // "ERR:C_NX"
+    bytec 17 // "ERR:C_NX"
     log
     err // ERR:C_NX
 
@@ -1737,7 +1737,7 @@ getCommitteeAq_after_if_else@5:
     extract 0 4
     ==
     bnz getCommitteeAq_after_assert@8
-    bytec 17 // "ERR:FA_NC"
+    bytec 18 // "ERR:FA_NC"
     log
     err // ERR:FA_NC
 
@@ -1750,7 +1750,7 @@ getCommitteeAq_after_assert@8:
     extract 8 4
     ==
     bnz getCommitteeAq_after_if_else@11
-    bytec 17 // "ERR:FA_NC"
+    bytec 18 // "ERR:FA_NC"
     log
     err // ERR:FA_NC
 
@@ -2140,7 +2140,7 @@ uningestAq_for_header@4:
     itxn_field OnCompletion
     dig 7
     itxn_field ApplicationID
-    bytec 18 // method "getAccount(address)(uint32,uint16[])"
+    bytec 19 // method "getAccount(address)(uint32,uint16[])"
     itxn_field ApplicationArgs
     itxn_field ApplicationArgs
     pushint 6 // appl
@@ -2286,7 +2286,7 @@ syncPeriod_after_assert@3:
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:814
     // const [ready, _hasReady] = op.AppGlobal.getExUint64(periodApp, Bytes`ready`)
     dig 1
-    bytec 19 // "ready"
+    bytec 20 // "ready"
     app_global_get_ex
     pop
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:815
@@ -2362,7 +2362,7 @@ syncPeriod_after_assert@5:
     box_len
     bury 1
     bnz syncPeriod_after_assert@8
-    bytec 16 // "ERR:C_NX"
+    bytec 17 // "ERR:C_NX"
     log
     err // ERR:C_NX
 
@@ -3179,7 +3179,7 @@ vote_after_assert@7:
     btoi
     dup
     bury 9
-    bytec 19 // "ready"
+    bytec 20 // "ready"
     app_global_get_ex
     pop
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:949
@@ -3277,7 +3277,7 @@ vote_after_assert@17:
     extract 0 4
     ==
     bnz vote_after_assert@19
-    bytec 17 // "ERR:FA_NC"
+    bytec 18 // "ERR:FA_NC"
     log
     err // ERR:FA_NC
 
@@ -3392,7 +3392,7 @@ vote_after_if_else@30:
     intc_0 // 0
     itxn_field OnCompletion
     itxn_field ApplicationID
-    bytec 18 // method "getAccount(address)(uint32,uint16[])"
+    bytec 19 // method "getAccount(address)(uint32,uint16[])"
     itxn_field ApplicationArgs
     dig 4
     itxn_field ApplicationArgs
@@ -3505,7 +3505,7 @@ vote_after_assert@37:
     concat
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:142
     // votingRecords = BoxMap<FracPeriodAccountKey, FracVotingRecord>({ keyPrefix: 'r' })
-    bytec 20 // "r"
+    bytec 16 // "r"
     swap
     concat
     dup
@@ -4804,7 +4804,7 @@ canVote_after_if_else@3:
     box_extract // on error: index out of bounds
     btoi
     dup
-    bytec 19 // "ready"
+    bytec 20 // "ready"
     app_global_get_ex
     pop
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1150
@@ -5020,7 +5020,7 @@ canVote_after_if_else@22:
     intc_0 // 0
     itxn_field OnCompletion
     itxn_field ApplicationID
-    bytec 18 // method "getAccount(address)(uint32,uint16[])"
+    bytec 19 // method "getAccount(address)(uint32,uint16[])"
     itxn_field ApplicationArgs
     uncover 2
     itxn_field ApplicationArgs
@@ -5083,7 +5083,7 @@ canVote_after_if_else@25:
     concat
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:142
     // votingRecords = BoxMap<FracPeriodAccountKey, FracVotingRecord>({ keyPrefix: 'r' })
-    bytec 20 // "r"
+    bytec 16 // "r"
     swap
     concat
     dup
@@ -5367,7 +5367,7 @@ getVotingRecord:
     concat
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:142
     // votingRecords = BoxMap<FracPeriodAccountKey, FracVotingRecord>({ keyPrefix: 'r' })
-    bytec 20 // "r"
+    bytec 16 // "r"
     swap
     concat
     dup
@@ -5396,10 +5396,97 @@ getVotingRecord_after_if_else@3:
     //   isDelegated: false,
     //   topicVotes: [] as Uint32[][],
     // }
-    pushbytes 0x0000030000
+    bytec 34 // 0x0000030000
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1260
     // @abimethod({ readonly: true })
     b getVotingRecord_after_inlined_smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.getVotingRecord@4
+
+
+// smart_contracts/frac-delegation/fracDelegationInstance.algo.ts::FracDelegationInstanceContract.logVotingRecords[routing]() -> void:
+logVotingRecords:
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1288
+    // @abimethod({ readonly: true })
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_3 // 4
+    ==
+    assert // invalid number of bytes for arc4.uint32
+    txna ApplicationArgs 2
+    dupn 2
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    dup
+    cover 2
+    intc_3 // 4
+    *
+    intc_1 // 2
+    +
+    swap
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint32>
+    intc_0 // 0
+
+logVotingRecords_for_header@2:
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1290
+    // for (const accountId of accountIds) {
+    dup
+    dig 2
+    <
+    bz logVotingRecords_after_for@8
+    dig 2
+    extract 2 0
+    dig 1
+    intc_3 // 4
+    *
+    intc_3 // 4
+    extract3 // on error: index access is out of bounds
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1291
+    // const box = this.votingRecords([periodId, accountId])
+    dig 4
+    swap
+    concat
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:142
+    // votingRecords = BoxMap<FracPeriodAccountKey, FracVotingRecord>({ keyPrefix: 'r' })
+    bytec 16 // "r"
+    swap
+    concat
+    dup
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1292
+    // if (box.exists) {
+    box_len
+    bury 1
+    bz logVotingRecords_else_body@5
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1293
+    // log(encodeArc4(box.value))
+    box_get
+    assert // Box must have value
+    log
+
+logVotingRecords_after_if_else@6:
+    intc_2 // 1
+    +
+    b logVotingRecords_for_header@2
+
+logVotingRecords_else_body@5:
+    pop
+    // smart_contracts/base/types.algo.ts:571-574
+    // return {
+    //   isDelegated: false,
+    //   topicVotes: [] as Uint32[][],
+    // }
+    bytec 34 // 0x0000030000
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1295
+    // log(encodeArc4(getEmptyFracVotingRecord()))
+    log
+    b logVotingRecords_after_if_else@6
+
+logVotingRecords_after_for@8:
+    // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:1288
+    // @abimethod({ readonly: true })
+    intc_2 // 1
+    return
 
 
 // smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]() -> void:
@@ -5434,9 +5521,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
-    bytec 34 // base64(C4EBQw==)
+    bytec 35 // base64(C4EBQw==)
     itxn_field ClearStateProgramPages
-    bytec 34 // base64(C4EBQw==)
+    bytec 35 // base64(C4EBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:33-38
     // itxn
@@ -5568,7 +5655,7 @@ ensureCallerIsAdmin_after_if_else@2:
     callsub resolveAdmin
     ==
     bnz ensureCallerIsAdmin_after_assert@4
-    bytec 35 // "ERR:AUTH"
+    bytec 36 // "ERR:AUTH"
     log
     err // ERR:AUTH
 
@@ -5584,7 +5671,7 @@ ensureCallerIsOperator:
     callsub resolveOperator
     ==
     bnz ensureCallerIsOperator_after_assert@2
-    bytec 35 // "ERR:AUTH"
+    bytec 36 // "ERR:AUTH"
     log
     err // ERR:AUTH
 

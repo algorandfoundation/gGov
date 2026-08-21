@@ -1264,6 +1264,36 @@ export class FracDelegationInstanceContract extends BaseContract {
     return getEmptyFracVotingRecord()
   }
 
+  /**
+   * Batch-log several accounts' vote records for gGov period `periodId`, one line per entry of
+   * `accountIds` in input order: the record if the account voted, else the empty sentinel (empty
+   * `topicVotes`). Readonly - meant to be simulated with `allowMoreLogging`.
+   *
+   * The plural sibling of `getVotingRecord`, and what `logAccountAqs` is to `tryGetAccountAq`: each
+   * id is one `votingRecords` box reference, so callers supply the ids to probe.
+   *
+   * What bounds a call here is the log cap rather than references, unlike its siblings:
+   * `allowMoreLogging` lifts the total to 65,536 bytes, and a row cannot exceed ~950 bytes for the
+   * reason given on `logPeriodVotingState` - `GGovPeriod.setReady` refuses any period whose vote
+   * event would pass 1024. So the SDK's usual 63 ids per call fits with room to spare, arriving at
+   * the same number as `logCommittees` for an unrelated reason (there it is the 2048-byte app-arg
+   * cap).
+   *
+   * @param periodId gGov period ID
+   * @param accountIds Frac registry numeric account IDs
+   */
+  @abimethod({ readonly: true })
+  public logVotingRecords(periodId: Uint32, accountIds: Uint32[]): void {
+    for (const accountId of accountIds) {
+      const box = this.votingRecords([periodId, accountId])
+      if (box.exists) {
+        log(encodeArc4(box.value))
+      } else {
+        log(encodeArc4(getEmptyFracVotingRecord()))
+      }
+    }
+  }
+
   // ── Admin: lifecycle ──────────────────────────────────────────────
 
   /** App updatable by the resolved admin */

@@ -925,15 +925,12 @@ export function usePoolMembers(
  * `topicVotes` is [topic][option] in AlgoQuarters, exactly as submitted, and an
  * account that has not voted is absent.
  *
- * The SDK packs one `getVotingRecord` call per account into a single simulate
- * group (16 per group, the group's transaction capacity), so a page of members
- * costs one round-trip rather than one each. Pass the rendered page, not the
- * whole roster: the group count still scales with the list.
- *
- * TODO(perf): 16 per group is the ceiling because the instance has no
- * `logVotingRecords(periodId, accountIds[])` — the direct sibling of the
- * `logAccountAqs` this page's stake column already uses, which would put a whole
- * page of members in one call rather than one group. Contract work, so a follow-up.
+ * The SDK batches these through the instance's `logVotingRecords` at 63 ids per
+ * call and 126 per simulate group — the same shape as the `logAccountAqs` read
+ * behind this page's stake column — so a page of members costs one round-trip.
+ * Pass the rendered page rather than the whole roster anyway: the group count
+ * still scales with the list, just two orders of magnitude more slowly than when
+ * this packed one `getVotingRecord` call per account into a 16-txn group.
  */
 export function usePoolMemberRecords(
   instanceNumId: number | undefined,

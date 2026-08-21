@@ -147,6 +147,8 @@ const setupVoting = async (
       sdk.getPeriodEscrowVotes(instanceId, periodId, escrowIndex),
     getVotingRecord: (periodId: bigint | number, accountId: bigint | number) =>
       sdk.getVotingRecord(instanceId, periodId, accountId),
+    getVotingRecords: (periodId: bigint | number, accountIds: (bigint | number)[]) =>
+      sdk.getVotingRecords(instanceId, periodId, accountIds),
     canVote: (periodId: bigint | number, voterAccount: string, senderAccount?: string) =>
       sdk.canVote(instanceId, periodId, voterAccount, senderAccount),
   }
@@ -829,6 +831,63 @@ describe('FracDelegationInstance vote', () => {
       ).toEqual(expected)
       expect(await ctx.registrySdk.getAccountVotingRecords(voter.account.toString(), ctx.periodId)).toEqual([expected])
     }, 120_000)
+  })
+
+  describe('batch voting record reader', () => {
+    test('getVotingRecords: index-aligned across voted, unvoted and unknown accounts', async () => {
+      const ctx = await setupVoting(localnet, { totalAq: 100, totalAccounts: 2 })
+      const voted = await addVoter(localnet, ctx, 60)
+      const silent = await addVoter(localnet, ctx, 40)
+      await voted.sdk.vote({ periodId: ctx.periodId, topicVotes: [[30, 20, 10]] })
+
+      const votedId = await accountIdOf(ctx, voted.account.toString())
+      const silentId = await accountIdOf(ctx, silent.account.toString())
+      // 0 is the registry's "unknown account" sentinel — never assigned, so its box never exists.
+      const records = await ctx.instanceSdk.getVotingRecords(ctx.periodId, [silentId, votedId, 0])
+
+      // Ingested-but-never-voted and unknown are both absent, and only the caster has a record.
+      expect(records).toEqual([undefined, { isDelegated: false, topicVotes: [[30, 20, 10]] }, undefined])
+      // Pin the decoded numeric type: the batch path decodes the struct out of a log rather than
+      // taking the client's typed return, and a bigint here would break every arithmetic consumer.
+      expect(typeof records[1]!.topicVotes[0][0]).toBe('number')
+      // The plural path agrees with the singular one it replaces.
+      expect(records[1]).toEqual(await ctx.instanceSdk.getVotingRecord(ctx.periodId, votedId))
+    }, 120_000)
+
+    test('getVotingRecords: known accounts at chunk boundaries in 129 ids stay index-aligned', async () => {
+      // 129 > the 126-per-group chunk, so the @chunked decorator fans this into more than one
+      // simulate group, and each group packs two 63-id calls. Place the voters at the first,
+      // middle and last positions to prove the aggregate stays aligned across both boundaries.
+      const ctx = await setupVoting(localnet, { totalAq: 120, totalAccounts: 3 })
+      const voters = [
+        await addVoter(localnet, ctx, 40),
+        await addVoter(localnet, ctx, 40),
+        await addVoter(localnet, ctx, 40),
+      ]
+      const ballots = [[[40, 0, 0]], [[0, 40, 0]], [[0, 0, 40]]]
+      for (const [i, voter] of voters.entries()) {
+        await voter.sdk.vote({ periodId: ctx.periodId, topicVotes: ballots[i] })
+      }
+
+      // Unknown ids everywhere else: an id with no box logs the empty sentinel, which is exactly
+      // what makes the cheap version of this stress possible without ingesting 129 accounts.
+      const ids: number[] = new Array(129).fill(0)
+      ids[0] = await accountIdOf(ctx, voters[0].account.toString())
+      ids[64] = await accountIdOf(ctx, voters[1].account.toString())
+      ids[128] = await accountIdOf(ctx, voters[2].account.toString())
+
+      const records = await ctx.instanceSdk.getVotingRecords(ctx.periodId, ids)
+
+      expect(records).toHaveLength(129)
+      expect(records[0]!.topicVotes).toEqual(ballots[0])
+      expect(records[64]!.topicVotes).toEqual(ballots[1])
+      expect(records[128]!.topicVotes).toEqual(ballots[2])
+      // Spot-check either side of the 126-id group boundary resolves to "has not voted".
+      expect(records[1]).toBeUndefined()
+      expect(records[125]).toBeUndefined()
+      expect(records[126]).toBeUndefined()
+      expect(records[127]).toBeUndefined()
+    }, 180_000)
   })
 
   describe('MBR self-funding via registry vault', () => {
