@@ -5,7 +5,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { useCommittee, useCommittees, usePeriod, usePeriodBody, useTopicBodies } from '@/hooks/queries'
 import {
   useCommitteePools,
-  useFracInstanceCommittees,
+  usePoolSyncedCommittees,
   usePoolMemberRecords,
   usePoolMembers,
   usePooledPositions,
@@ -440,13 +440,11 @@ export default function PoolDetail() {
   // "Voting since": the oldest committee this pool ever synced with power in it.
   // One read over every committee, batched 63 ids per call by the SDK.
   const allCommitteeIds = useMemo(() => committees.map((c) => c.idBase64Url), [committees])
-  const { byInstance: syncedCommittees } = useFracInstanceCommittees(
-    Number.isInteger(instanceNumId) && instanceNumId > 0 ? [instanceNumId] : [],
+  const { byCommittee: synced } = usePoolSyncedCommittees(
+    Number.isInteger(instanceNumId) && instanceNumId > 0 ? instanceNumId : undefined,
     allCommitteeIds,
   )
   const votingSince = useMemo(() => {
-    const synced = syncedCommittees[instanceNumId]
-    if (!synced) return undefined
     // `committees` is newest-first, so the last one the pool synced is its first.
     const oldest = [...committees].reverse().find((c) => synced[c.idBase64Url] !== undefined)
     if (!oldest) return undefined
@@ -455,7 +453,7 @@ export default function PoolDetail() {
     // nonsense after "Voting since". A window no period used has only its rounds.
     const first = byCommittee.get(oldest.idBase64Url)?.[0]
     return first === undefined ? formatBlockRange(oldest.periodStart, oldest.periodEnd) : `Period ${first}`
-  }, [syncedCommittees, instanceNumId, committees, byCommittee])
+  }, [synced, committees, byCommittee])
 
   const selected = useMemo(
     () => committees.find((c) => c.idBase64Url === committeeId) ?? committee ?? undefined,

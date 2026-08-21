@@ -53,8 +53,11 @@ export const queryKeys = {
   // and two different single-committee requests would otherwise share an entry.
   fracInstanceCommittees: (instanceNumId: number, committeeIds: string[]) =>
     ['fracInstanceCommittees', instanceNumId, [...committeeIds].sort().join(',')] as const,
-  fracAccountCommitteeAq: (account: string, committeeId: string) =>
-    ['fracAccountCommitteeAq', account, committeeId] as const,
+  // One account's AQ standing across every instance it's in, over a *set* of committees — the
+  // registry reads both axes in one call. Sorted+joined for the same reason as
+  // `fracInstanceCommittees`: two different slices of the committee list are different reads.
+  fracAccountCommitteeAqs: (account: string, committeeIds: string[]) =>
+    ['fracAccountCommitteeAqs', account, [...committeeIds].sort().join(',')] as const,
   // Several accounts' frac registry records in one read. Sorted+joined so the key
   // is order-independent; overlaps `fracAccount` for a single account by design,
   // since the two callers batch differently (see hooks/fracQueries.ts).

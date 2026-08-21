@@ -648,20 +648,28 @@ export class FracDelegationInstanceContract extends BaseContract {
 
   /**
    * Bundled read of `accountId`'s AlgoQuarters standing in committee `committeeId`: the instance's
-   * own identity, the committee's identity, and the account's weight against the committee total, in
-   * one readonly call so a caller (e.g. a wallet showing "your voting weight here") needs no
-   * follow-up lookups.
+   * own identity, the committee's identity, the account's weight against the committee total, and
+   * the instance's own gGov power there, in one readonly call so a caller (e.g. a wallet showing
+   * "your voting weight here") needs no follow-up lookups.
+   *
+   * `totalVotes` comes free with the `committees` box already read to resolve `committeeNumId`, and
+   * is what lets a caller price the position (`userAq / totalAq * totalVotes`) without a second,
+   * per-instance read. Taken field-wise rather than by cloning the snapshot: `escrowsVotes` sits
+   * between the two fields wanted here and grows with the escrow count, and this is on the hot path
+   * of a paged logger. Same reasoning as `getCommitteeStanding`.
    *
    * Non-throwing: an unsynced committee resolves `committeeNumId` to 0 (never assigned by the
-   * registry), and `userAq`/`totalAq` then read from the sentinel numeric ID, so both come back 0.
-   * `committeeId` echoes the input regardless.
+   * registry) with `totalVotes` 0, and `userAq`/`totalAq` then read from the sentinel numeric ID, so
+   * both come back 0 too. `committeeId` echoes the input regardless.
    * @param accountId Frac registry numeric account ID
    * @param committeeId 32-byte gGov committee ID
    */
   @abimethod({ readonly: true })
   public getAccountCommitteeAq(accountId: Uint32, committeeId: CommitteeId): FracAccountCommitteeAq {
     const committeeBox = this.committees(committeeId)
-    const committeeNumId = committeeBox.exists ? committeeBox.value.committeeNumId : u16(0)
+    const committeeExists = committeeBox.exists
+    const committeeNumId = committeeExists ? committeeBox.value.committeeNumId : u16(0)
+    const totalVotes = committeeExists ? committeeBox.value.totalVotes : u32(0)
 
     const aqBox = this.committeeAq(committeeNumId)
     const totalAq = aqBox.exists ? aqBox.value.totalAq : u32(0)
@@ -677,6 +685,7 @@ export class FracDelegationInstanceContract extends BaseContract {
       instanceName: this.name.value,
       userAq,
       totalAq,
+      totalVotes,
     }
   }
 

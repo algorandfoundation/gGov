@@ -31,12 +31,21 @@ import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
  * page covers `floor((128 - fixed) / perInstance)` instances and longer instance lists span
  * successive pages.
  *
- * Fixed cost, both methods: 1 reference — the caller's `accounts` box, read once by
+ * Fixed cost, both account-scoped methods: 1 reference — the caller's `accounts` box, read once by
  * `getAccountIfExists`.
  *
- * `logAccountInstanceAQ` — 5 references per instance: the registry `instances` box, the instance app
- * (its inner call), and the 3 boxes `getAccountCommitteeAq` reads on that instance (`committees`,
- * `committeeAq`, `accountAq`). => floor((128 - 1) / 5) = 25.
+ * `logAccountInstanceAQ` — the only one with a second axis, since it reports on `C` committees per
+ * instance. Per instance: the registry `instances` box and the instance app (its inner calls, which
+ * double as the `app_params_get` existence probe) = 2. Per (instance, committee) pair: the 3 boxes
+ * `getAccountCommitteeAq` reads on that instance (`committees`, `committeeAq`, `accountAq`) = 3C.
+ * So a page of `I` instances over `C` committees costs
+ *
+ *     refs(I, C) = 1 + I·(2 + 3C) ≤ 128     =>     instancesPerPage(C) = floor(127 / (2 + 3C))
+ *
+ * C = 1 gives floor(127 / 5) = 25 — the single-committee page size this method had before it grew
+ * the committee axis, and the `1 + 25×5 = 126` the extended spec measures. C = 41 is the widest
+ * that still fits one instance (`1 + 1×125 = 126`); C = 42 fits none, which is why the committee
+ * axis needs its own cap (`AQ_MAX_COMMITTEES_PER_CALL`) rather than only a page size.
  *
  * `logAccountVotingRecords` — 3 references per instance: the registry `instances` box, the instance
  * app (its inner call), and the 1 box `getVotingRecord` reads on that instance (`votingRecords`).
@@ -50,6 +59,19 @@ import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
 const AQ_PAGE_SIZE = 25
 const VOTING_RECORDS_PAGE_SIZE = 42
 const INSTANCE_COMMITTEES_PAGE_SIZE = 32
+
+/**
+ * The reference pool one AQ page has left after its fixed cost — `128 - 1`, the caller's `accounts`
+ * box. The numerator of `instancesPerPage(C)` above.
+ */
+const AQ_REF_BUDGET = 127
+
+/**
+ * Widest committee list one `logAccountInstanceAQ` call can carry: `floor((127 - 2) / 3) = 41`, the
+ * point at which a single instance exhausts the budget. Also comfortably inside the 2,048-byte ABI
+ * argument cap (41 × 32 + 2 = 1,314 bytes for the encoded array).
+ */
+const AQ_MAX_COMMITTEES_PER_CALL = 41
 
 /**
  * Struct layouts for decoding the per-instance log payloads of `logAccountInstanceAQ`
@@ -74,10 +96,21 @@ export class FracDelegationRegistryReaderSDK {
   public debug?: boolean
 
   /** Per-page instance counts for the paged cross-instance log methods (see the constants above).
-   *  Mutable so a caller can dial them down (or a test can force paging with few instances). */
+   *  Mutable so a caller can dial them down (or a test can force paging with few instances).
+   *
+   *  `aqPageSize` is an *upper bound* on instances per page, not the page size itself: the AQ
+   *  reader sizes its two axes against each other, so the instances it actually puts in a page is
+   *  `min(instanceCount, aqPageSize)` and the committee list is then sized to fit. It only binds
+   *  when the committee list is short enough that instances are the scarce axis. */
   public aqPageSize = AQ_PAGE_SIZE
   public votingRecordsPageSize = VOTING_RECORDS_PAGE_SIZE
   public instanceCommitteesPageSize = INSTANCE_COMMITTEES_PAGE_SIZE
+
+  /** Reference budget one AQ page may spend, and the widest committee list one call may carry (see
+   *  `AQ_REF_BUDGET` / `AQ_MAX_COMMITTEES_PER_CALL`). Mutable for the same reason as the page sizes:
+   *  a test dials them down to force chunking on either axis with only a handful of instances. */
+  public aqRefBudget = AQ_REF_BUDGET
+  public aqMaxCommitteesPerCall = AQ_MAX_COMMITTEES_PER_CALL
 
   constructor({ algorand, concurrency = 4, debug, ...rest }: ReaderConstructorArgs) {
     const { appId, readerAccount } = getConstructorConfig(rest)
@@ -200,27 +233,100 @@ export class FracDelegationRegistryReaderSDK {
   }
 
   /**
-   * An account's AlgoQuarters standing in gGov committee `committeeId` across every frac instance it
-   * belongs to — one `FracAccountCommitteeAq` per instance, in the account's `instanceNumIds` order.
-   * Each entry joins the instance's identity, the committee's local numeric ID, and the account's
-   * weight (`userAq`) against the committee total (`totalAq`).
+   * An account's AlgoQuarters standing in each of gGov committees `committeeIds` across every frac
+   * instance it belongs to — one `FracAccountCommitteeAq` per (instance, committee) pair. Each entry
+   * joins the instance's identity, the committee's local numeric ID, the account's weight (`userAq`)
+   * against the committee total (`totalAq`), and the instance's gGov power there (`totalVotes`), so
+   * a caller can price a position from this read alone.
    *
-   * Drives the registry's paged `logAccountInstanceAQ`: every page inner-calls its instances, so the
-   * page size is bounded by the simulate unnamed-reference budget (`aqPageSize`) and long instance
-   * lists span multiple simulate round-trips. Empty if the account is not registered; per instance,
-   * an unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0.
+   * Returns a flat list rather than a map: every entry echoes its own `committeeId`, so callers
+   * group by it and never index-align. Within one call rows come back instance-major (the account's
+   * `instanceNumIds` order, then `committeeIds` order); across chunks the order of the committee
+   * axis follows the chunking, so treat the aggregate as unordered on that axis.
+   *
+   * Drives the registry's paged `logAccountInstanceAQ`, whose reference cost grows on both axes
+   * (`1 + I·(2 + 3C) ≤ 128`, see the page-size block at the top of this file). The two axes are
+   * sized against each other rather than paging instances serially, because committee chunks are
+   * independent and go out in parallel: instances per page is capped at the account's own instance
+   * count (`opts.numInstances`, when the caller already knows it) and the committee list is then
+   * chunked to whatever the remaining budget allows. Without the hint the committee list — always
+   * known — is sized first and the instance axis takes the remainder, which for one committee is
+   * the 25-instance page this reader has always used. See `_sizeAqAxes`.
+   *
+   * Empty if the account is not registered or `committeeIds` is empty; per pair, an unsynced
+   * committee comes back with `committeeNumId`/`userAq`/`totalAq`/`totalVotes` 0, and an instance
+   * whose app has been deleted is skipped on chain rather than taking the page down.
+   *
+   * @param opts.numInstances How many instances the account belongs to, if already known (e.g. from
+   *   `getFracRegAccountsMap`). Only sizes the axes — a wrong value costs round-trips, not results.
    */
-  async getAccountInstanceAQs(account: string, committeeId: Uint8Array | string): Promise<FracAccountCommitteeAq[]> {
-    const committeeIdRaw = committeeIdToRaw(committeeId)
-    return this._pageInstanceLogs<FracAccountCommitteeAq>(
-      this.aqPageSize,
-      (limit, offset) =>
-        this.readClient.newGroup().logAccountInstanceAq({
-          args: { account, committeeId: committeeIdRaw, limit, offset },
-          staticFee: ((limit + 1) * 1000).microAlgo(),
-        }),
-      'FracAccountCommitteeAq',
+  async getAccountInstanceAQs(
+    account: string,
+    committeeIds: (Uint8Array | string)[],
+    opts?: { numInstances?: number },
+  ): Promise<FracAccountCommitteeAq[]> {
+    const committeeIdsRaw = committeeIds.map(committeeIdToRaw)
+    if (committeeIdsRaw.length === 0) return []
+
+    const { instancesPerPage, committeesPerCall } = this._sizeAqAxes(committeeIdsRaw.length, opts?.numInstances)
+    const chunks = chunk(committeeIdsRaw, committeesPerCall)
+
+    const pages = await pMap(
+      chunks,
+      (committeeIdsChunk) =>
+        this._pageInstanceLogs<FracAccountCommitteeAq>(
+          instancesPerPage,
+          (limit, offset) =>
+            this.readClient.newGroup().logAccountInstanceAq({
+              args: { account, committeeIds: committeeIdsChunk, limit, offset },
+              // The outer call plus one inner call per (instance, committee) pair it covers.
+              staticFee: ((limit * committeeIdsChunk.length + 1) * 1000).microAlgo(),
+            }),
+          'FracAccountCommitteeAq',
+        ),
+      { concurrency: this.concurrency },
     )
+    return pages.flat()
+  }
+
+  /**
+   * Split one AQ read's reference budget (`1 + I·(2 + 3C) ≤ 128`) between its two axes. Both
+   * branches below satisfy that inequality; they differ in which axis is solved for.
+   *
+   * Sizing them against each other beats paging one serially, because the two axes cost differently:
+   * instance pages are discovered (page 1 reports the total, so the rest go out in parallel behind
+   * it) while committee chunks are known up front and all go out at once. So:
+   *
+   * - With a `numInstances` hint, the instance axis is solved first — capped at what the account
+   *   actually has, since a page sized for more instances than exist just starves the committee axis
+   *   into extra chunks — and the committee axis takes whatever budget is left.
+   * - Without one, the committee axis is solved first (it is the caller's own list, so its size is
+   *   always known) and the instance axis takes the remainder. `C = 1` lands on
+   *   `floor(127 / 5) = 25`, the single-committee page size this reader has always used, so the
+   *   uninformed path costs exactly what it did before the committee axis existed.
+   *
+   * `aqPageSize` bounds the instance axis in both branches, which is what lets a test dial it down
+   * to force paging.
+   */
+  private _sizeAqAxes(
+    numCommittees: number,
+    numInstances?: number,
+  ): { instancesPerPage: number; committeesPerCall: number } {
+    const maxCommittees = Math.max(1, Math.min(numCommittees, this.aqMaxCommitteesPerCall))
+
+    if (numInstances && numInstances > 0) {
+      const instancesPerPage = Math.min(numInstances, this.aqPageSize)
+      const perInstanceBudget = this.aqRefBudget / instancesPerPage
+      const committeesPerCall = Math.min(Math.max(Math.floor((perInstanceBudget - 2) / 3), 1), maxCommittees)
+      return { instancesPerPage, committeesPerCall }
+    }
+
+    const committeesPerCall = maxCommittees
+    const instancesPerPage = Math.max(
+      1,
+      Math.min(this.aqPageSize, Math.floor(this.aqRefBudget / (2 + 3 * committeesPerCall))),
+    )
+    return { instancesPerPage, committeesPerCall }
   }
 
   /**
