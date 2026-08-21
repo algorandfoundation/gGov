@@ -279,29 +279,41 @@ export class FracDelegationRegistryReaderSDK {
    * A page may log fewer records than it covers instances (`logInstanceCommittees` skips instances
    * whose app is gone), so paging is driven by `offset`/`total` rather than by how many records came
    * back.
+   *
+   * Only the first page is serial. It reports the total, which fixes every remaining offset up
+   * front, so pages 2..n go out concurrently at `this.concurrency` — pages are independent readonly
+   * simulates and nothing after the first depends on what the others return. Results are
+   * concatenated in offset order, so the aggregate stays in the on-chain enumeration order callers
+   * rely on.
    */
   private async _pageInstanceLogs<T>(
     pageSize: number,
     buildPage: (limit: number, offset: number) => FracDelegationRegistryComposer<any>,
     structName: string,
   ): Promise<T[]> {
-    const out: T[] = []
-    let offset = 0
-    let total = Infinity
-    while (offset < total) {
-      const { confirmations } = await buildPage(pageSize, offset).simulate(SIMULATE_PARAMS)
+    const limit = Math.max(1, pageSize)
+
+    const readPage = async (offset: number): Promise<{ total: number; rows: T[] }> => {
+      const { confirmations } = await buildPage(limit, offset).simulate(SIMULATE_PARAMS)
       const logs = confirmations.flatMap(({ logs }) => logs ?? [])
       // The method always logs the total count first; no logs at all would mean a malformed response.
       if (logs.length === 0) {
         throw new Error(`Malformed simulate response: missing logs for ${structName} page (offset=${offset})`)
       }
-      total = Number(getABIDecodedValue(new Uint8Array(logs[0]!), 'uint16', CROSS_INSTANCE_STRUCTS))
-      for (const log of logs.slice(1)) {
-        out.push(getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
-      }
-      offset += Math.max(1, pageSize)
+      const total = Number(getABIDecodedValue(new Uint8Array(logs[0]!), 'uint16', CROSS_INSTANCE_STRUCTS))
+      const rows = logs
+        .slice(1)
+        .map((log) => getABIDecodedValue(new Uint8Array(log!), structName, CROSS_INSTANCE_STRUCTS) as T)
+      return { total, rows }
     }
-    return out
+
+    const first = await readPage(0)
+    if (first.total <= limit) return first.rows
+
+    const offsets: number[] = []
+    for (let offset = limit; offset < first.total; offset += limit) offsets.push(offset)
+    const rest = await pMap(offsets, (offset) => readPage(offset), { concurrency: this.concurrency })
+    return [...first.rows, ...rest.flatMap(({ rows }) => rows)]
   }
 
   // ── Instances ────────────────────────────────────────────────────
