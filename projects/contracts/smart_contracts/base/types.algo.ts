@@ -577,11 +577,17 @@ export function getEmptyFracVotingRecord(): FracVotingRecord {
 /**
  * Bundled read of one account's AlgoQuarters standing in one committee of a frac instance, returned
  * by `FracDelegationInstance.getAccountCommitteeAq`. Joins the instance's identity, the committee's
- * identity, and the account's own weight against the committee total in a single readonly call so a
- * caller (e.g. a wallet showing "your voting weight here") needs no follow-up lookups.
+ * identity, the account's own weight against the committee total, and the instance's gGov power in
+ * that committee, in a single readonly call so a caller (e.g. a wallet showing "your voting weight
+ * here") needs no follow-up lookups.
  *
- * `committeeNumId` 0 means the committee is not synced on this instance; `userAq`/`totalAq` are then
- * both 0. `committeeId` echoes the caller's input.
+ * `totalVotes` is the last piece needed to turn a weight into votes - a member's share is
+ * `userAq / totalAq * totalVotes` - and it is free here: it lives in the same `committees` box the
+ * getter already reads to resolve `committeeNumId`. Carrying it means a caller no longer pairs this
+ * struct with a per-instance `getCommittees` read to price a position.
+ *
+ * `committeeNumId` 0 means the committee is not synced on this instance; `userAq`/`totalAq`/
+ * `totalVotes` are then all 0. `committeeId` echoes the caller's input.
  */
 export type FracAccountCommitteeAq = {
   /** Registry-assigned numeric ID of the instance */
@@ -598,6 +604,8 @@ export type FracAccountCommitteeAq = {
   userAq: Uint32
   /** The committee's declared total AlgoQuarters, 0 if no ledger is open */
   totalAq: Uint32
+  /** The instance's gGov voting power in the committee (the snapshot's `totalVotes`), 0 if unsynced */
+  totalVotes: Uint32
 }
 
 /**

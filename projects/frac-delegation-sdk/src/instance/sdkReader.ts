@@ -441,6 +441,60 @@ export class FracDelegationReaderSDK {
   }
 
   /**
+   * Batch `getVotingRecord`: index-aligned with `accountIds`, `undefined` for an account that has
+   * not voted on the period. Prefer this over N x `getVotingRecord` when rendering a roster — a
+   * member table wants "did this account vote" for every row at once.
+   *
+   * Batched by `logVotingRecords`, the instance's plural reader, exactly as `getAccountAqs` is by
+   * `logAccountAqs`.
+   */
+  async getVotingRecords(
+    instanceNumId: bigint | number,
+    periodId: bigint | number,
+    accountIds: (bigint | number)[],
+  ): Promise<(FracVotingRecord | undefined)[]> {
+    const periodIdArg = assertUint(periodId, 32, 'periodId')
+    accountIds.forEach((accountId, i) => assertUint(accountId, 32, `accountIds[${i}]`))
+    const client = await this.getInstanceReadClient(instanceNumId)
+    return this._getVotingRecordsChunked(accountIds, client, periodIdArg)
+  }
+
+  /**
+   * Each simulate group packs up to two 63-id `logVotingRecords` calls, the same shape as
+   * `_getAccountAqsChunked` — but what caps a *call* at 63 here is the log budget rather than
+   * references. `allowMoreLogging` lifts a call's total logged bytes to 65,536, and a
+   * `FracVotingRecord` row cannot exceed ~950 bytes (`GGovPeriod.setReady` refuses any period whose
+   * vote event would pass 1024), so 63 rows is ~59.9KB — under the cap with room to spare, and well
+   * inside the 126-per-group reference budget the ids also consume one apiece.
+   *
+   * Superseded the previous shape, one `getVotingRecord` call per account packed into a group,
+   * which the 16-transaction group capacity capped at 16 ids per round-trip.
+   */
+  @chunked(126)
+  private async _getVotingRecordsChunked(
+    accountIds: (bigint | number)[],
+    client: FracDelegationInstanceClient,
+    periodId: bigint | number,
+  ): Promise<(FracVotingRecord | undefined)[]> {
+    if (accountIds.length === 0) return []
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    for (const ids of chunk(accountIds, 63)) {
+      builder = builder.logVotingRecords({ args: { periodId, accountIds: ids.map(BigInt) } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map((log) => {
+      const record = getABIDecodedValue(
+        new Uint8Array(log!),
+        'FracVotingRecord',
+        client.appSpec.structs,
+      ) as FracVotingRecord
+      // Same sentinel as the singular reader: a cast vote has one row per topic.
+      return record.topicVotes.length === 0 ? undefined : record
+    })
+  }
+
+  /**
    * Whether `senderAccount` may cast `voterAccount`'s internal vote on a gGov period, and the
    * AlgoQuarters weight it would carry — the read-only mirror of `vote`'s gates, like
    * `GGovReaderSDK.canVote` is for the period contract. `senderAccount` defaults to `voterAccount`

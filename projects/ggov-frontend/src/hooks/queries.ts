@@ -47,12 +47,17 @@ export const queryKeys = {
   isGGovAccount: (account: string) => ['isGGovAccount', account] as const,
   // Pooled voting (fractional delegation) — see hooks/fracQueries.ts.
   fracAccount: (account: string) => ['fracAccount', account] as const,
-  // `count` is part of the key so adding a committee refetches the batch, same
-  // rationale as topicBodies above.
-  fracInstanceCommittees: (instanceNumId: number, count: number) =>
-    ['fracInstanceCommittees', instanceNumId, count] as const,
-  fracAccountCommitteeAq: (account: string, committeeId: string) =>
-    ['fracAccountCommitteeAq', account, committeeId] as const,
+  // Keyed on the ids themselves, sorted+joined so the key is order-independent
+  // (same shape as `fracAccounts`). Not on their count: callers ask for different
+  // slices — one committee for a ballot, every committee for a pool's history —
+  // and two different single-committee requests would otherwise share an entry.
+  fracInstanceCommittees: (instanceNumId: number, committeeIds: string[]) =>
+    ['fracInstanceCommittees', instanceNumId, [...committeeIds].sort().join(',')] as const,
+  // One account's AQ standing across every instance it's in, over a *set* of committees — the
+  // registry reads both axes in one call. Sorted+joined for the same reason as
+  // `fracInstanceCommittees`: two different slices of the committee list are different reads.
+  fracAccountCommitteeAqs: (account: string, committeeIds: string[]) =>
+    ['fracAccountCommitteeAqs', account, [...committeeIds].sort().join(',')] as const,
   // Several accounts' frac registry records in one read. Sorted+joined so the key
   // is order-independent; overlaps `fracAccount` for a single account by design,
   // since the two callers batch differently (see hooks/fracQueries.ts).
@@ -66,9 +71,32 @@ export const queryKeys = {
   // Committee-scoped rather than account-scoped, so it shares nothing with the
   // account-side keys above.
   fracCommitteePools: (committeeId: string) => ['fracCommitteePools', committeeId] as const,
-  // One pool's aggregate internal tally for one period — how much of its stake voted.
+  // One pool's aggregate internal tally for one period — its own [topic][option]
+  // AlgoQuarters. Read whole: the pools index only wants the AQ that voted, the
+  // pool page wants the per-item split, and both come from the same box.
   fracPeriodVoteCache: (instanceNumId: number, periodId: number) =>
     ['fracPeriodVoteCache', instanceNumId, periodId] as const,
+  // Every account the frac registry knows, with its numeric id and instances.
+  // Registry-wide and account-independent, so one entry serves every pool page.
+  fracRoster: ['fracRoster'] as const,
+  // One pool's members in one committee, with the AlgoQuarters each holds there.
+  // `memberIds` is part of the key because the query joins the registry roster,
+  // which is its own entry: without it a changed roster would never reach this
+  // one. The ids rather than the roster's size, because an account already in the
+  // registry can join another instance without the size moving at all — that
+  // account would then stay missing from this pool until the entry went stale.
+  // Sorted+joined for an order-independent key, same as `fracPoolVotingRecords`.
+  fracPoolMembers: (instanceNumId: number, committeeId: string, memberIds: number[]) =>
+    ['fracPoolMembers', instanceNumId, committeeId, [...memberIds].sort((a, b) => a - b).join(',')] as const,
+  // Several members' internal vote records on one pool + period, in one read.
+  // Sorted+joined so the key is order-independent, same as `fracAccounts`.
+  fracPoolVotingRecords: (instanceNumId: number, periodId: number, accountIds: number[]) =>
+    ['fracPoolVotingRecords', instanceNumId, periodId, [...accountIds].sort((a, b) => a - b).join(',')] as const,
+  // The escrow accounts a pool's voting power is produced from.
+  fracInstanceEscrows: (instanceNumId: number) => ['fracInstanceEscrows', instanceNumId] as const,
+  // The applications behind those escrows — the protocol the pool actually is.
+  // Keyed on the escrows rather than the instance, since that is what it resolves.
+  fracProtocolApps: (escrows: string[]) => ['fracProtocolApps', [...escrows].sort().join(',')] as const,
 }
 
 export function useGlobalState() {
@@ -93,11 +121,18 @@ export function usePeriods() {
   })
 }
 
-export function usePeriod(periodId: number) {
+/**
+ * `enabled` is for callers whose period id is itself derived — the pool page picks
+ * a ballot from the committee's periods, and while that is undefined there is no
+ * period to read. Reading id 0 instead would be a wasted round-trip that surfaces
+ * an error dialog when it fails.
+ */
+export function usePeriod(periodId: number, enabled = true) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.period(periodId),
     queryFn: () => fetchPeriod(readerSDK, periodId),
+    enabled,
     meta: { surfaceError: true },
   })
 }
@@ -136,11 +171,12 @@ export function useAppEscrow(address: string | null | undefined) {
   })
 }
 
-export function usePeriodBody(periodId: number) {
+export function usePeriodBody(periodId: number, enabled = true) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.periodBody(periodId),
     queryFn: () => fetchPeriodBody(readerSDK, periodId),
+    enabled,
     // Body is effectively immutable once uploaded; mutations that change it
     // (useUploadPeriodBodyMutation) invalidate this key, overriding staleTime.
     staleTime: 3_600_000,

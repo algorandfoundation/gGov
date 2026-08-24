@@ -345,28 +345,45 @@ export class FracDelegationRegistryContract extends BaseContract {
   }
 
   /**
-   * Log an account's AlgoQuarters standing in gGov committee `committeeId` across the frac instances
-   * it belongs to - one `FracAccountCommitteeAq` per instance. Readonly, intended for simulate: it
-   * inner-calls each instance's `getAccountCommitteeAq`, joining the instance identity, the
-   * committee's local numeric ID, and the account's weight against the committee total.
+   * Log an account's AlgoQuarters standing in each of gGov committees `committeeIds` across the frac
+   * instances it belongs to - one `FracAccountCommitteeAq` per (instance, committee) pair. Readonly,
+   * intended for simulate: it inner-calls each instance's `getAccountCommitteeAq`, joining the
+   * instance identity, the committee's local numeric ID, the account's weight against the committee
+   * total, and the instance's gGov power there.
+   *
+   * Both axes in one call on purpose. The caller that wants this - an account page showing "your
+   * pooled power" - wants every committee across every pool, and splitting the committee axis into
+   * separate calls costs a round-trip each while re-reading the same `accounts` and `instances`
+   * boxes every time. The instance axis is the one that pages, because it is the axis whose
+   * per-item cost includes an inner call.
    *
    * The account's instance list is paged by `offset`/`limit` (a slice of its `instanceNumIds`), so a
    * user in more instances than one call's resource budget allows can fetch the rest with follow-up
-   * pages. The full instance count is logged first (a `uint16`) so a caller learns how many results
-   * exist before paging; every subsequent log is one `FracAccountCommitteeAq`, in `instanceNumIds`
-   * order starting at `offset`.
+   * pages. The committee list is NOT paged: it is the caller's own list, so a caller too wide for
+   * one call's budget splits it and issues the calls in parallel. The full instance count is logged
+   * first (a `uint16`) so a caller learns how many pages exist; every subsequent log is one
+   * `FracAccountCommitteeAq`, instance-major - `instanceNumIds` order starting at `offset`, and
+   * within each instance, `committeeIds` order.
    *
-   * Non-throwing: an unregistered account logs a count of 0 and nothing else. Per instance, an
-   * unsynced committee comes back with `committeeNumId`/`userAq`/`totalAq` 0 (see the instance's
-   * `getAccountCommitteeAq`).
+   * A page may log fewer records than `limit * committeeIds.length`, so callers must not align
+   * results by index. Each record names its own `instanceNumId` and echoes its own `committeeId`, so
+   * every row self-identifies. Two reasons an instance yields nothing:
+   * - The `instances` box is missing (cannot happen today; defensive against a future removal path).
+   * - The instance's app has been deleted. It cannot be inner-called, and one dead instance must not
+   *   take down the whole page, so it is skipped - same rule as `logInstanceCommittees`.
+   *
+   * Non-throwing otherwise: an unregistered account logs a count of 0 and nothing else, and an
+   * instance that never synced a committee logs a record with `committeeNumId`/`userAq`/`totalAq`/
+   * `totalVotes` 0 rather than being dropped (see the instance's `getAccountCommitteeAq`), so a
+   * caller can tell "not synced" from "not there".
    *
    * @param account Account (user address) to look up
-   * @param committeeId 32-byte gGov committee ID
-   * @param limit Max instances to log on this call
+   * @param committeeIds 32-byte gGov committee IDs to report on, per instance
+   * @param limit Max instances to cover on this call
    * @param offset Index into the account's `instanceNumIds` to start from
    */
   @abimethod({ readonly: true })
-  public logAccountInstanceAQ(account: Account, committeeId: CommitteeId, limit: Uint16, offset: Uint16): void {
+  public logAccountInstanceAQ(account: Account, committeeIds: CommitteeId[], limit: Uint16, offset: Uint16): void {
     const accountRecord = this.getAccountIfExists(account)
     const accountId = accountRecord.accountId
     const instanceNumIds = clone(accountRecord.instanceNumIds)
@@ -379,13 +396,27 @@ export class FracDelegationRegistryContract extends BaseContract {
     for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
       const instanceNumId = instanceNumIds[i]
       // Present by construction: an id only enters an account's list via
-      // getOrCreateAccountWithInstance, which requires the instance to exist.
-      const instanceApp = this.instances(instanceNumId).value.appId
-      const standing = compileArc4(FracDelegationInstanceContract).call.getAccountCommitteeAq({
-        appId: instanceApp,
-        args: [accountId, committeeId],
-      }).returnValue
-      log(encodeArc4(standing))
+      // getOrCreateAccountWithInstance, which requires the instance to exist. Checked anyway, since
+      // skipping the whole instance is cheaper than the alternative of a failed inner call.
+      const box = this.instances(instanceNumId)
+      if (!box.exists) continue
+      const instanceApp = box.value.appId
+
+      // `app_params_get` reports absence rather than failing, which is the only way to tell a
+      // deleted instance app from a live one before committing to an inner call to it. `appCreator`
+      // over `appApprovalProgram` because only the existence flag is wanted - no reason to push a
+      // program's worth of bytes onto the stack to throw away. Costs no extra reference: the app is
+      // referenced by the inner call anyway.
+      const [, appExists] = op.AppParams.appCreator(instanceApp)
+      if (!appExists) continue
+
+      for (const committeeId of committeeIds) {
+        const standing = compileArc4(FracDelegationInstanceContract).call.getAccountCommitteeAq({
+          appId: instanceApp,
+          args: [accountId, committeeId],
+        }).returnValue
+        log(encodeArc4(standing))
+      }
     }
   }
 

@@ -6,7 +6,7 @@ import { fetchCommittee, fetchCommittees, fetchPeriods, fromBase64Url, queryKeys
 // SSR the committee metadata, the committee list (the selector) and the periods
 // that used each window. All wallet-independent; the pool composition itself is
 // read client-side from the frac registry, which is lazily imported.
-export const Route = createFileRoute('/_app/pools/$committeeId')({
+export const Route = createFileRoute('/_app/pools/$committeeId/')({
   loader: async ({ context, params }) => {
     const idB64 = params.committeeId
 
