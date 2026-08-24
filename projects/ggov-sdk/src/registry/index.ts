@@ -1,13 +1,13 @@
-export * from './sdk'
-export * from './sdkReader'
-export * from './types'
-export { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants'
-export { calculateCommitteeId } from '../util/comitteeId'
-export { createTxnExecutor, executeTxns } from '../util/txnExecutor'
-export { getIncreaseBudgetBuilder, SIMULATE_PARAMS } from '../util/increaseBudget'
+export * from './sdk.js'
+export * from './sdkReader.js'
+export * from './types.js'
+export { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants.js'
+export { calculateCommitteeId } from '../util/comitteeId.js'
+export { createTxnExecutor, executeTxns } from '../util/txnExecutor.js'
+export { getIncreaseBudgetBuilder, SIMULATE_PARAMS } from '../util/increaseBudget.js'
 export {
   GGovRegistryFactory,
   GGovRegistryClient,
   type GGovAccount,
   type CommitteeMetadata,
-} from '../generated/GGovRegistryClient'
+} from '../generated/GGovRegistryClient.js'

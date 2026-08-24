@@ -1,29 +1,30 @@
 import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
 import { getApplicationAddress } from 'algosdk'
-import { FracDelegationRegistrySDK, SendResult, executeTxns } from '../registry'
-import { FracCommitteeAq, FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient'
+import { FracDelegationRegistrySDK, SendResult, executeTxns } from '../registry/index.js'
+import { FracCommitteeAq, FracDelegationInstanceClient } from '../generated/FracDelegationInstanceClient.js'
 import {
   AlgoQuartersFile,
   ConstructorArgs,
   SenderWithSigner,
   InstanceMethodBuilderArgs,
   FracDelegationInstanceContractArgs,
-} from './types'
-import { requireWriter } from '../util/requiresSender'
-import { FracDelegationReaderSDK } from './sdkReader'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { parseAqFile } from '../util/aqFile'
-import { getSpendableBalance } from '../util/spendable'
-import { committeeIdToRaw } from '../util/comitteeId'
-import { chunk } from '../util/chunk'
-import { instanceBoxName, periodBoxName } from '../util/boxes'
-import { padForRefSlots } from '../util/padForRefSlots'
+} from './types.js'
+import { requireWriter } from '../util/requiresSender.js'
+import { FracDelegationReaderSDK } from './sdkReader.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { parseAqFile } from '../util/aqFile.js'
+import { getSpendableBalance } from '../util/spendable.js'
+import { committeeIdToRaw } from '../util/comitteeId.js'
+import { chunk } from '../util/chunk.js'
+import { instanceBoxName, periodBoxName } from '../util/boxes.js'
+import { padForRefSlots } from '../util/padForRefSlots.js'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
+  AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS,
   AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS,
   MAX_ACCOUNTS_PER_INGEST_AQ,
   MAX_ACCOUNTS_PER_UNINGEST_AQ,
-} from '../constants'
+} from '../constants.js'
 
 export class FracDelegationSDK extends FracDelegationReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -311,8 +312,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    *
    * One group per call — use {@link ingestAqAll} to push a whole file. Both app accounts must be
    * funded first: the instance pays `AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS` of box MBR per account,
-   * and the registry `AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS` per account it has never seen (see
-   * `constants.ts`). There is no funding path from the instance to the registry.
+   * and the registry `AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS` per account it has never seen plus
+   * `AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS` per known account joining this instance for the
+   * first time (see `constants.ts`). There is no funding path from the instance to the registry.
    */
   @requireWriter()
   @wrapErrors()
@@ -373,7 +375,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
   }
 
   /**
-   * Upload a whole AQ manifest (`AlgoQuartersFile`, the `ggov-algoquarters` pipeline output) into
+   * Upload a whole AQ manifest (`AlgoQuartersFile`, the frac delegation pipeline's AQ output) into
    * committee `committeeId`'s ledger on instance `instanceNumId`. Operator only.
    *
    * End-to-end orchestration of the AQ primitives: validates the manifest client-side (totals,
@@ -434,9 +436,11 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     }
     const committeeNumId = Number(committee.committeeNumId)
 
-    // Address → account ID (frac registry); 0 = never seen (used for both resume and registry MBR).
+    // Address → registry record: account ID (0 = never seen) and the instances it is linked to. Used
+    // for the resume set and for the registry MBR estimate.
     const addresses = rows.map(({ account }) => account)
-    const idMap = await this.registry.getAccountIdMap(addresses)
+    const recordMap = await this.registry.getFracRegAccountsMap(addresses)
+    const idMap = new Map(addresses.map((account) => [account, recordMap.get(account)?.accountId ?? 0]))
 
     const ledger = await this.getCommitteeAq(instanceNumId, committeeNumId)
     const pristine = !ledger || (Number(ledger.ingestedAq) === 0 && Number(ledger.numAccounts) === 0)
@@ -485,9 +489,19 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // MBR pre-check before any ingest lands: an underfunded app otherwise fails resource population
     // with an opaque error, part-way through the batches.
     if (remainder.length > 0) {
-      const newRegistryAccounts = remainder.filter(({ account }) => (idMap.get(account) ?? 0) === 0).length
+      // Registry side: a never-seen account gets a box, a known account joining this instance for the
+      // first time gets one more instance id in its box, an account already linked costs nothing.
+      let newRegistryAccounts = 0
+      let joiningRegistryAccounts = 0
+      for (const { account } of remainder) {
+        const record = recordMap.get(account)
+        if (!record || Number(record.accountId) === 0) newRegistryAccounts++
+        else if (!record.instanceNumIds.some((id) => Number(id) === instanceNumId)) joiningRegistryAccounts++
+      }
       const instanceCost = BigInt(remainder.length) * AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS
-      const registryCost = BigInt(newRegistryAccounts) * AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS
+      const registryCost =
+        BigInt(newRegistryAccounts) * AQ_REGISTRY_MBR_PER_NEW_ACCOUNT_MICROALGOS +
+        BigInt(joiningRegistryAccounts) * AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS
       const instanceAddress = getApplicationAddress(await this.getInstanceAppId(instanceNumId)).toString()
       const registryAddress = this.registryReadClient.appAddress.toString()
       const algod = this.algorand.client.algod

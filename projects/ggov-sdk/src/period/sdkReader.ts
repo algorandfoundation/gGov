@@ -1,8 +1,8 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { ABIType, encodeAddress, makeEmptyTransactionSigner } from 'algosdk'
 import pMap from 'p-map'
-import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from '../registry'
-import { GGovRegistryClient, GGovPeriodSummary } from '../generated/GGovRegistryClient'
+import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from '../registry/index.js'
+import { GGovRegistryClient, GGovPeriodSummary } from '../generated/GGovRegistryClient.js'
 import {
   GGovPeriodClient,
   GGovPeriodComposer,
@@ -10,13 +10,19 @@ import {
   GGovPeriodShort,
   GGovVoteRecord,
   APP_SPEC as PERIOD_APP_SPEC,
-} from '../generated/GGovPeriodClient'
-import { getConstructorConfig } from '../networkConfig'
-import { PeriodBodyJson, TopicBodyJson, parsePeriodBodyJson, parseTopicBodyJson, ReaderConstructorArgs } from './types'
-import { assertUint } from '../util/assertUint'
-import { asciiBoxName, topicBodyBoxName } from '../util/boxNames'
-import { chunked } from '../util/chunked'
-import { errorTransformer, wrapErrors } from '../util/wrapErrors'
+} from '../generated/GGovPeriodClient.js'
+import { getConstructorConfig } from '../networkConfig.js'
+import {
+  PeriodBodyJson,
+  TopicBodyJson,
+  parsePeriodBodyJson,
+  parseTopicBodyJson,
+  ReaderConstructorArgs,
+} from './types.js'
+import { assertUint } from '../util/assertUint.js'
+import { asciiBoxName, topicBodyBoxName } from '../util/boxNames.js'
+import { chunked } from '../util/chunked.js'
+import { errorTransformer, wrapErrors } from '../util/wrapErrors.js'
 
 const EMPTY_PERIOD: GGovPeriod = {
   committeeId: new Uint8Array(32),

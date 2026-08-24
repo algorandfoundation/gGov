@@ -1,6 +1,6 @@
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { modelsv2, TransactionSigner, Algodv2, makeEmptyTransactionSigner } from 'algosdk'
-import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants'
+import { increaseBudgetBaseCost, increaseBudgetIncrementCost } from '../constants.js'
 import { TransactionComposer } from '@algorandfoundation/algokit-utils/types/composer'
 
 export const SIMULATE_PARAMS = {

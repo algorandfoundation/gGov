@@ -1,9 +1,9 @@
 import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address } from 'algosdk'
 import pMap from 'p-map'
-import { GGovRegistrySDK, SendResult, executeTxns } from '../registry'
-import { GGovPeriodClient, GGovPeriodComposer } from '../generated/GGovPeriodClient'
-import { GGovReaderSDK } from './sdkReader'
+import { GGovRegistrySDK, SendResult, executeTxns } from '../registry/index.js'
+import { GGovPeriodClient, GGovPeriodComposer } from '../generated/GGovPeriodClient.js'
+import { GGovReaderSDK } from './sdkReader.js'
 import {
   BodyJson,
   PeriodBodyJson,
@@ -15,14 +15,14 @@ import {
   SenderWithSigner,
   validatePeriodBodyJson,
   validateTopicBodyJson,
-} from './types'
-import { committeeIdToRaw } from '../util/comitteeId'
-import { asciiBoxName, periodBoxName, topicBodyBoxName } from '../util/boxNames'
-import { chunk } from '../util/chunk'
-import { assertUint } from '../util/assertUint'
-import { requireWriter } from '../util/requiresSender'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, MAX_BODY_BYTES } from '../constants'
+} from './types.js'
+import { committeeIdToRaw } from '../util/comitteeId.js'
+import { asciiBoxName, periodBoxName, topicBodyBoxName } from '../util/boxNames.js'
+import { chunk } from '../util/chunk.js'
+import { assertUint } from '../util/assertUint.js'
+import { requireWriter } from '../util/requiresSender.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, MAX_BODY_BYTES } from '../constants.js'
 
 /** Max box references per transaction (AVM limit) — caps how many topic bodies one deleteTopicBodies call may delete. */
 const MAX_BOX_REFS_PER_TXN = 8

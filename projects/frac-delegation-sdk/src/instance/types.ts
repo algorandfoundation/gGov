@@ -1,9 +1,12 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { FracDelegationInstanceArgs, FracDelegationInstanceComposer } from '../generated/FracDelegationInstanceClient'
-import { Network, SenderWithSigner } from '../types'
+import {
+  FracDelegationInstanceArgs,
+  FracDelegationInstanceComposer,
+} from '../generated/FracDelegationInstanceClient.js'
+import { Network, SenderWithSigner } from '../types.js'
 
 // Re-export shared primitives so the public surface is unchanged.
-export type { Network, SenderWithSigner, SendResult } from '../types'
+export type { Network, SenderWithSigner, SendResult } from '../types.js'
 
 export type ConstructorArgsOptions =
   | {
@@ -34,7 +37,7 @@ export type FracDelegationInstanceContractArgs = FracDelegationInstanceArgs['obj
 
 /**
  * Off-chain AlgoQuarters manifest — the `AlgoQuartersData` shape emitted by the
- * `ggov-algoquarters` pipeline (one file per protocol per period window).
+ * frac delegation pipeline (one manifest per protocol per period window).
  */
 export interface AlgoQuartersFile {
   networkGenesisHash: string
