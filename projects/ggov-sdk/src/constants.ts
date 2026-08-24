@@ -24,9 +24,15 @@ export const MAX_BODY_BYTES = MAX_GROUP_SIZE * BODY_CHUNK_BYTES
 
 /**
  * Default MBR (µAlgo) sent from operator to registry per createPeriod call.
- * Covers the spawned period app's account MBR: 100k base + 7*28.5k global ints +
- * 3*50k global bytes + 3*100k extra pages ≈ 750k. 1 ALGO buys a healthy buffer
- * and keeps the math stable if the period schema grows into its reserved slots.
+ *
+ * Covers the spawned period app's account MBR. The registry no longer over-allocates: it sizes each
+ * period app from `compile(GGovPeriodContract)`, so the schema is exactly what the contract
+ * declares — today 7 uints + 1 byte, which with 3 extra pages is
+ * 100k base + 7*28.5k + 1*50k + 3*100k ≈ 550k. 1 ALGO leaves a healthy buffer.
+ *
+ * If a future GGovPeriod build needs more global state, growing the already-deployed apps is a
+ * separate step (`GGovSDK.updatePeriodApp({ size })`) and its MBR lands on the admin as sizeSponsor,
+ * not here.
  */
 export const DEFAULT_PERIOD_MBR_MICROALGOS = 1_000_000n
 

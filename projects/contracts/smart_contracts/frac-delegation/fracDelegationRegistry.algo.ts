@@ -66,7 +66,7 @@ const MAX_INSTANCE_NAME_BYTES: uint64 = 64
  * Holds the frac-system-wide admin and the default operator inherited by instance contracts.
  * Instance contracts resolve their roles by reading this registry's global state directly.
  */
-@contract({ name: 'FracDelegationRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+@contract({ name: 'FracDelegationRegistry' })
 export class FracDelegationRegistryContract extends BaseContract {
   /** Admin address; defaults to creator. Rotatable via `setAdmin`. */
   admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
@@ -215,15 +215,7 @@ export class FracDelegationRegistryContract extends BaseContract {
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
-    // IMPORTANT: Always allocate the MAXIMUM AVM extraProgramPages (3) and reserve 2 extra
-    // slots in each global-schema dimension (uint + bytes). This headroom lets the
-    // instance contract grow up to the AVM hard ceiling without ever requiring a registry
-    // redeploy. Do NOT shrink these constants when adding fields to FracDelegationInstanceContract.
-    // TODO: update final values when instance contract is finished (X, Y)
-    // TODO: decide extra slots number (Z)
-    const INSTANCE_GLOBAL_NUM_UINT: uint64 = 5 // X used today + Z reserved
-    const INSTANCE_GLOBAL_NUM_BYTES: uint64 = 5 // Y used today + Z reserved
-    const INSTANCE_EXTRA_PROGRAM_PAGES: uint64 = 3 // AVM max → 8192-byte approval/clear ceiling
+    const INSTANCE_EXTRA_PROGRAM_PAGES: uint64 = 3 // 8192-byte approval/clear ceiling
 
     // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
     // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
@@ -239,7 +231,15 @@ export class FracDelegationRegistryContract extends BaseContract {
     this.lastInstanceNumId.value++
     const instanceNum = u16(this.lastInstanceNumId.value)
 
-    const compiled = compile(FracDelegationInstanceContract) // clearStateProgram only — approval comes from box
+    // Schema comes straight off the compiled child rather than hand-written constants (which used to
+    // carry two unresolved TODOs and over-allocated 5/5 against an actual 1/3). Under AVM v13 a
+    // global schema can be expanded by a later update — see FracDelegationSDK.updateInstanceApp — so
+    // reserving spare slots only buys dead MBR.
+    //
+    // The one coupling this leaves: `compiled` is the FracDelegationInstance built into *this*
+    // registry, so uploading a newer instance program to the `Iap` box that needs more globals means
+    // rebuilding the registry too, or growing each spawned app afterwards.
+    const compiled = compile(FracDelegationInstanceContract) // clearStateProgram + schema — approval comes from box
     const created = itxn
       .applicationCall({
         approvalProgram: [page1, page2],
@@ -251,8 +251,8 @@ export class FracDelegationRegistryContract extends BaseContract {
         ],
         clearStateProgram: compiled.clearStateProgram,
         extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
-        globalNumUint: INSTANCE_GLOBAL_NUM_UINT,
-        globalNumBytes: INSTANCE_GLOBAL_NUM_BYTES,
+        globalNumUint: compiled.globalUints,
+        globalNumBytes: compiled.globalBytes,
       })
       .submit()
     const newApp = created.createdApp

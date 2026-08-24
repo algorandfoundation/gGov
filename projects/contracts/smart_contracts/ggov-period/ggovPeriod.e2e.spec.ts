@@ -4,6 +4,7 @@ import { ABIType, ABIValue, Address, encodeAddress, getApplicationAddress } from
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistrySDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
 import { periodBoxName } from '../../../ggov-sdk/src/util/boxNames'
+import periodArc56 from '../artifacts/ggov-period/GGovPeriod.arc56.json'
 import { GGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
@@ -195,6 +196,52 @@ describe('GGovPeriod contract', () => {
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const appInfo = await localnet.algorand.app.getById(periodAppId)
       expect(appInfo.extraProgramPages).toBe(3)
+    })
+
+    // The registry sizes each period app from compile(GGovPeriodContract), so its schema is exactly
+    // what the contract declares — no reserved slots. That is only safe because a deployed period
+    // app can be grown afterwards, which AVM v13 allows via an ApplicationUpdate carrying the new
+    // schema/pages. This is also the case where the updater is NOT the creator: period apps are
+    // created by the registry APP ACCOUNT, so growing one from the admin moves sponsorship.
+    test('updatePeriodApp({ size }) grows a spawned period app and moves MBR to the admin', async () => {
+      const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
+      await sdk.registry.setOperator({ account: admin.toString() })
+
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.registry.addPeriod({
+        committeeId,
+        votingStart: now + 100n,
+        votingEnd: now + 3700n,
+      })
+      const periodAppId = await sdk.getPeriodAppId(periodId)
+      const registryAddr = getApplicationAddress(sdk.registry.appId).toString()
+
+      const before = await localnet.algorand.app.getById(periodAppId)
+      // Sized from the compiled child, not padded constants.
+      expect(Number(before.globalInts)).toBe(periodArc56.state.schema.global.ints)
+      expect(Number(before.globalByteSlices)).toBe(periodArc56.state.schema.global.bytes)
+
+      const minBal = async (a: string) =>
+        Number((await localnet.algorand.client.algod.accountInformation(a).do()).minBalance)
+      const adminBefore = await minBal(admin.toString())
+      const registryBefore = await minBal(registryAddr)
+
+      await sdk.updatePeriodApp({
+        periodId,
+        size: { globalUints: Number(before.globalInts) + 3, globalBytes: Number(before.globalByteSlices) + 1 },
+      })
+
+      const after = await localnet.algorand.app.getById(periodAppId)
+      expect(Number(after.globalInts)).toBe(Number(before.globalInts) + 3)
+      expect(Number(after.globalByteSlices)).toBe(Number(before.globalByteSlices) + 1)
+
+      // The admin is not the creator, so it is recorded as sizeSponsor and takes on the app's
+      // ENTIRE schema + extra-page MBR, not the delta. The registry app account — the creator, and
+      // the MBR banker for every period — is relieved of all but the flat per-app base.
+      const params = await localnet.algorand.client.algod.getApplicationByID(periodAppId).do()
+      expect(params.params?.sizeSponsor?.toString()).toBe(admin.toString())
+      expect(await minBal(admin.toString())).toBeGreaterThan(adminBefore)
+      expect(await minBal(registryAddr)).toBeLessThan(registryBefore)
     })
   })
 

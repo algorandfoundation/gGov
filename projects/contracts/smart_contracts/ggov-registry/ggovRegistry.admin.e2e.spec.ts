@@ -5,6 +5,7 @@ import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
 import { createSDK, deployRegistry, generateAccountWithSDK, transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 import { configureTestLogging } from '../test-utils'
+import registryArc56 from '../artifacts/ggov-registry/GGovRegistry.arc56.json'
 
 describe('GGovRegistry admin', () => {
   const localnet = algorandFixture()
@@ -16,10 +17,12 @@ describe('GGovRegistry admin', () => {
   describe('deployment configuration', () => {
     // GGovRegistrySDK.createRegistry() is the production deploy path. It hard-codes
     // extraProgramPages: 3 so the approval program can grow toward the AVM ceiling
-    // without ever needing a redeploy. The registry's global schema is declared by the
-    // contract itself and sits exactly at the AVM hard cap of 64 (44 uints + 20 bytes);
-    // these two assertions guard against either drifting silently on a contract change.
-    test('registry deploys with extraProgramPages=3 and a global schema summing to 64', async () => {
+    // without ever needing a redeploy. The registry's global schema is no longer declared
+    // by hand — the contract dropped its stateTotals override, so puya infers it from the
+    // GlobalState fields (including those inherited from GGovRegistryAccountContract).
+    // Asserting the deployed app against the compiled app spec catches a create path that
+    // stops matching what the contract actually declares.
+    test('registry deploys with extraProgramPages=3 and the schema its app spec declares', async () => {
       const { testAccount: admin } = localnet.context
       // createRegistry pays the registry MBR + box MBR + initial funding out of the
       // deployer's balance; top the test admin up so it can cover the transfers + fees.
@@ -31,7 +34,63 @@ describe('GGovRegistry admin', () => {
 
       const appInfo = await localnet.algorand.app.getById(appClient.appId)
       expect(appInfo.extraProgramPages).toBe(3)
-      expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
+      expect({ ints: appInfo.globalInts, bytes: appInfo.globalByteSlices }).toEqual(registryArc56.state.schema.global)
+    })
+
+    // AVM v13 made the global schema and extra program pages mutable, but only via an
+    // ApplicationUpdate carrying numGlobalInts/numGlobalByteSlices/extraPages. algokit-utils cannot
+    // express that (AppUpdateParams has no schema fields and its composer zeroes them when
+    // appId !== 0), so GGovRegistrySDK.updateApplication({ size }) leaves the composer and builds
+    // the txn with algosdk. This is what makes dropping the contract's padded stateTotals safe:
+    // the registry can be grown later rather than pre-paying for slots it may never use.
+    test('updateApplication({ size }) grows the registry schema and pages, and sets sizeSponsor', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client, sdk } = await deployRegistry(localnet, admin)
+
+      const before = await localnet.algorand.app.getById(client.appId)
+      const beforeParams = await localnet.algorand.client.algod.getApplicationByID(client.appId).do()
+      expect(beforeParams.params?.sizeSponsor).toBeUndefined()
+
+      const adminMinBalBefore = (await localnet.algorand.client.algod.accountInformation(admin).do()).minBalance
+
+      await sdk.updateApplication({
+        size: {
+          globalUints: Number(before.globalInts) + 4,
+          globalBytes: Number(before.globalByteSlices) + 2,
+          extraProgramPages: Number(before.extraProgramPages) + 1,
+        },
+      })
+
+      const after = await localnet.algorand.app.getById(client.appId)
+      expect(Number(after.globalInts)).toBe(Number(before.globalInts) + 4)
+      expect(Number(after.globalByteSlices)).toBe(Number(before.globalByteSlices) + 2)
+      expect(Number(after.extraProgramPages)).toBe(Number(before.extraProgramPages) + 1)
+
+      // A size increase moves the schema + extra-page MBR in full — not just the delta — onto the
+      // sender of the update. Here the admin IS the creator (createRegistry deploys from it), so the
+      // MBR simply stays put and grows, and no separate sizeSponsor is recorded. When a NON-creator
+      // grows an app the AVM records that sender as `sizeSponsor` and moves the whole schema +
+      // page MBR to it, leaving the creator only the flat 100_000 µAlgo per-app base.
+      const afterParams = await localnet.algorand.client.algod.getApplicationByID(client.appId).do()
+      expect(afterParams.params?.sizeSponsor).toBeUndefined()
+
+      const adminMinBalAfter = (await localnet.algorand.client.algod.accountInformation(admin).do()).minBalance
+      // +4 uints, +2 byte slices, +1 page = 4*28_500 + 2*50_000 + 100_000
+      expect(Number(adminMinBalAfter) - Number(adminMinBalBefore)).toBe(4 * 28_500 + 2 * 50_000 + 100_000)
+    })
+
+    // A code-only update must not disturb sizing — it keeps taking the composer path.
+    test('updateApplication() without size leaves schema and pages untouched', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client, sdk } = await deployRegistry(localnet, admin)
+
+      const before = await localnet.algorand.app.getById(client.appId)
+      await sdk.updateApplication({})
+      const after = await localnet.algorand.app.getById(client.appId)
+
+      expect(Number(after.globalInts)).toBe(Number(before.globalInts))
+      expect(Number(after.globalByteSlices)).toBe(Number(before.globalByteSlices))
+      expect(Number(after.extraProgramPages)).toBe(Number(before.extraProgramPages))
     })
 
     test('createRegistry applies optional configuration', async () => {

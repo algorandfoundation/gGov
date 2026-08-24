@@ -14,6 +14,7 @@ import {
   SenderWithSigner,
   CommonMethodBuilderArgs,
   FracDelegationRegistryContractArgs,
+  SendResult,
 } from './types.js'
 import { requireWriterWithClient } from '../util/requiresSender.js'
 import { FracDelegationRegistryReaderSDK } from './sdkReader.js'
@@ -21,6 +22,7 @@ import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
 import { createTxnExecutor } from '../util/txnExecutor.js'
 import { chunk } from '../util/chunk.js'
 import { noteNonce } from '../util/noteNonce.js'
+import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   BODY_CHUNK_BYTES,
   DEFAULT_INSTANCE_MBR_MICROALGOS,
@@ -240,9 +242,42 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     return builder
   }
 
-  updateApplication = this.makeTxnExecutor({
+  private updateApplicationCode = this.makeTxnExecutor({
     maker: this.makeUpdateApplicationTxns,
   })
+
+  /**
+   * Update the `FracDelegationRegistry` app's program, optionally resizing its global schema and
+   * extra program pages in the same transaction.
+   *
+   * The registry no longer declares a padded `stateTotals`, so its schema is whatever
+   * `FracDelegationRegistryContract` infers — which means a build that adds global state needs the
+   * deployed registry grown to match. `factory.deploy` cannot do that: it classifies "existing app
+   * has fewer slots than needed" as a schema break whose only remedies are failing or creating a
+   * *new* app, and its update transaction carries no schema fields at all. So a resize is sent
+   * outside the composer by {@link sendAppSizeUpdate}. Without `size` this is the ordinary code
+   * update.
+   *
+   * Admin-only. On a resize the admin becomes the app's `sizeSponsor` and takes on the registry's
+   * whole schema + extra-page MBR — not just the delta.
+   */
+  updateApplication = async (
+    args: { size?: AppSizeParams; note?: string } = {},
+  ): Promise<SendResult | { txId: string }> => {
+    const { size, note } = args
+    if (!hasAppSizeChange(size)) return this.updateApplicationCode({ note })
+    if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
+    const byteCode = this.writeClient!.appClient.appSpec.byteCode
+    return sendAppSizeUpdate({
+      algorand: this.algorand,
+      appId: this.appId,
+      account: this.writerAccount,
+      size,
+      approvalProgram: byteCode ? Buffer.from(byteCode.approval, 'base64') : undefined,
+      clearStateProgram: byteCode ? Buffer.from(byteCode.clear, 'base64') : undefined,
+      note,
+    })
+  }
 
   /**
    * Delete the `FracDelegationRegistry` app. Admin-only. Refuses if any existing recorded
