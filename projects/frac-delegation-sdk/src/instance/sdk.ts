@@ -18,6 +18,7 @@ import { committeeIdToRaw } from '../util/comitteeId.js'
 import { chunk } from '../util/chunk.js'
 import { instanceBoxName, periodBoxName } from '../util/boxes.js'
 import { padForRefSlots } from '../util/padForRefSlots.js'
+import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
   AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS,
@@ -794,7 +795,50 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     return builder.update.bare({ note })
   }
 
-  updateInstanceApp = this.makeInstanceTxnExecutor({ maker: this.makeUpdateInstanceAppTxns })
+  private updateInstanceAppCode = this.makeInstanceTxnExecutor({ maker: this.makeUpdateInstanceAppTxns })
+
+  /**
+   * Update a deployed instance app's program, optionally resizing its global schema and extra
+   * program pages in the same transaction.
+   *
+   * The instance apps the registry spawns are sized to exactly what `FracDelegationInstanceContract`
+   * declares, so a build that adds global state needs the deployed apps grown to match — that is
+   * what `size` is for. Growing is only expressible on an ApplicationUpdate (AVM v13), and
+   * algokit-utils cannot carry those fields, so a resize leaves the composer and is sent by
+   * {@link sendAppSizeUpdate}. Without `size` this is the ordinary code update as before.
+   *
+   * Admin-only either way. Note the resize path makes the *admin* the app's `sizeSponsor`, taking on
+   * the instance app's whole schema + extra-page MBR (the registry app account, as creator, keeps
+   * only the flat per-app base). Budget for that before growing apps in bulk.
+   */
+  updateInstanceApp = async ({
+    instanceNumId,
+    size,
+    note,
+  }: {
+    instanceNumId: bigint | number
+    size?: AppSizeParams
+    note?: string
+  }): Promise<SendResult | { txId: string }> => {
+    if (!hasAppSizeChange(size)) return this.updateInstanceAppCode({ instanceNumId, note })
+    if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
+    const client = await this.getInstanceWriteClient(instanceNumId)
+    const byteCode = client.appClient.appSpec.byteCode
+    return wrapErrorsInternal(
+      sendAppSizeUpdate({
+        algorand: this.algorand,
+        appId: client.appId,
+        account: this.writerAccount,
+        size,
+        approvalProgram: byteCode ? Buffer.from(byteCode.approval, 'base64') : undefined,
+        clearStateProgram: byteCode ? Buffer.from(byteCode.clear, 'base64') : undefined,
+        // The instance contract resolves the admin from the registry's `admin` global, so the
+        // registry must be referenced; outside the composer nothing populates that for us.
+        appReferences: [this.registry.appId],
+        note,
+      }),
+    )
+  }
 
   /** Delete the `FracDelegationInstance` app. Admin-only. */
   @requireWriter()

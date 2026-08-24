@@ -23,6 +23,7 @@ import { assertUint } from '../util/assertUint.js'
 import { requireWriter } from '../util/requiresSender.js'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
 import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, MAX_BODY_BYTES } from '../constants.js'
+import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 
 /** Max box references per transaction (AVM limit) — caps how many topic bodies one deleteTopicBodies call may delete. */
 const MAX_BOX_REFS_PER_TXN = 8
@@ -740,7 +741,53 @@ export class GGovSDK extends GGovReaderSDK {
     })
   }
 
-  updatePeriodApp = this.makePeriodTxnExecutor({ maker: this.makeUpdatePeriodAppTxns })
+  private updatePeriodAppCode = this.makePeriodTxnExecutor({ maker: this.makeUpdatePeriodAppTxns })
+
+  /**
+   * Update a deployed period app's program, optionally resizing its global schema and extra
+   * program pages in the same transaction.
+   *
+   * The period apps the registry spawns are sized to exactly what `GGovPeriodContract` declares, so
+   * a build that adds global state needs the deployed apps grown to match — that is what `size` is
+   * for. Growing is only expressible on an ApplicationUpdate (AVM v13), and algokit-utils cannot
+   * carry those fields, so a resize leaves the composer and is sent by
+   * {@link sendAppSizeUpdate}. Without `size` this is the ordinary code update as before.
+   *
+   * Admin-only either way. Note the resize path makes the *admin* the app's `sizeSponsor`, taking on
+   * the period app's whole schema + extra-page MBR (the registry app account, as creator, keeps only
+   * the flat per-app base). Budget for that before growing apps in bulk.
+   */
+  updatePeriodApp = async ({
+    periodId,
+    size,
+    note,
+  }: {
+    periodId: bigint | number
+    size?: AppSizeParams
+    note?: string
+  }): Promise<SendResult | { txId: string }> => {
+    if (!hasAppSizeChange(size)) return this.updatePeriodAppCode({ periodId, note })
+    if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
+    const client = await this.getPeriodWriteClient(periodId)
+    return wrapErrorsInternal(
+      sendAppSizeUpdate({
+        algorand: this.algorand,
+        appId: client.appId,
+        account: this.writerAccount,
+        size,
+        approvalProgram: client.appClient.appSpec.byteCode
+          ? Buffer.from(client.appClient.appSpec.byteCode.approval, 'base64')
+          : undefined,
+        clearStateProgram: client.appClient.appSpec.byteCode
+          ? Buffer.from(client.appClient.appSpec.byteCode.clear, 'base64')
+          : undefined,
+        // The period contract resolves the admin from the registry's `admin` global, so the
+        // registry must be referenced; outside the composer nothing populates that for us.
+        appReferences: [this.registry.appId],
+        note,
+      }),
+    )
+  }
 
   // ── Period: deleteApplication (admin-only, !ready) — full box cleanup + ALGO reclaim ──
 

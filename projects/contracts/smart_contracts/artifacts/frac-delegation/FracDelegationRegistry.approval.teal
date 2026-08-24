@@ -41,7 +41,7 @@ main:
 
 main_after_if_else@2:
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
-    // @contract({ name: 'FracDelegationRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     txn NumAppArgs
     bz main_bare_routing@28
@@ -56,13 +56,13 @@ main_after_if_else@2:
 
 main_after_if_else@33:
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
-    // @contract({ name: 'FracDelegationRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     err
 
 main_bare_routing@28:
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
-    // @contract({ name: 'FracDelegationRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     txn OnCompletion
     switch main___algots__.defaultCreate@29 main_after_if_else@33 main_after_if_else@33 main_after_if_else@33 main_updateApplication@30 main_deleteApplication@31
@@ -96,7 +96,7 @@ main_updateApplication@30:
 
 main___algots__.defaultCreate@29:
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
-    // @contract({ name: 'FracDelegationRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     txn ApplicationID
     !
@@ -437,13 +437,13 @@ createInstance_after_assert@5:
     err // ERR:FI_NC
 
 createInstance_after_assert@7:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:232
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:224
     // const [approvalLen] = op.Box.length(approvalKey)
     bytec_2 // "Iap"
     box_len
     pop
     dupn 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:234
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:226
     // const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
     intc 4 // 4096
     <=
@@ -451,14 +451,14 @@ createInstance_after_assert@7:
     dig 2
     uncover 2
     select
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:235
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:227
     // const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
     bytec_2 // "Iap"
     intc_0 // 0
     uncover 2
     box_extract
     swap
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:237
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:229
     // approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
     intc 4 // 4096
     >
@@ -472,13 +472,13 @@ createInstance_after_assert@7:
     box_extract
 
 createInstance_ternary_merge@10:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:239
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:231
     // this.lastInstanceNumId.value++
     intc_0 // 0
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:84
     // lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
     bytec 6 // "lastInstanceNumId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:239
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:231
     // this.lastInstanceNumId.value++
     app_global_get_ex
     assert // check GlobalState exists
@@ -487,11 +487,11 @@ createInstance_ternary_merge@10:
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:84
     // lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
     bytec 6 // "lastInstanceNumId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:239
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:231
     // this.lastInstanceNumId.value++
     dig 1
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:240
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:232
     // const instanceNum = u16(this.lastInstanceNumId.value)
     callsub u16
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:243-257
@@ -506,25 +506,23 @@ createInstance_ternary_merge@10:
     //     ],
     //     clearStateProgram: compiled.clearStateProgram,
     //     extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
-    //     globalNumUint: INSTANCE_GLOBAL_NUM_UINT,
-    //     globalNumBytes: INSTANCE_GLOBAL_NUM_BYTES,
+    //     globalNumUint: compiled.globalUints,
+    //     globalNumBytes: compiled.globalBytes,
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:255
-    // globalNumBytes: INSTANCE_GLOBAL_NUM_BYTES,
-    pushint 5
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:242
+    // const compiled = compile(FracDelegationInstanceContract) // clearStateProgram + schema — approval comes from box
+    pushint 3
     itxn_field GlobalNumByteSlice
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:254
-    // globalNumUint: INSTANCE_GLOBAL_NUM_UINT,
-    pushint 5
+    intc_1 // 1
     itxn_field GlobalNumUint
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:253
     // extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
     pushint 3
     itxn_field ExtraProgramPages
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:242
-    // const compiled = compile(FracDelegationInstanceContract) // clearStateProgram only — approval comes from box
+    // const compiled = compile(FracDelegationInstanceContract) // clearStateProgram + schema — approval comes from box
     bytec 9 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:248
@@ -551,8 +549,8 @@ createInstance_ternary_merge@10:
     //     ],
     //     clearStateProgram: compiled.clearStateProgram,
     //     extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
-    //     globalNumUint: INSTANCE_GLOBAL_NUM_UINT,
-    //     globalNumBytes: INSTANCE_GLOBAL_NUM_BYTES,
+    //     globalNumUint: compiled.globalUints,
+    //     globalNumBytes: compiled.globalBytes,
     //   })
     pushint 6
     itxn_field TypeEnum
@@ -570,8 +568,8 @@ createInstance_ternary_merge@10:
     //     ],
     //     clearStateProgram: compiled.clearStateProgram,
     //     extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
-    //     globalNumUint: INSTANCE_GLOBAL_NUM_UINT,
-    //     globalNumBytes: INSTANCE_GLOBAL_NUM_BYTES,
+    //     globalNumUint: compiled.globalUints,
+    //     globalNumBytes: compiled.globalBytes,
     //   })
     //   .submit()
     itxn_submit
@@ -678,7 +676,7 @@ createInstance_ternary_merge@10:
 
 createInstance_ternary_false@9:
     bury 1
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:237
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:229
     // approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
     pushbytes ""
     b createInstance_ternary_merge@10

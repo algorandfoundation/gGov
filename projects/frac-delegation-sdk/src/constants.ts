@@ -76,9 +76,14 @@ export const AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS = 800n
 
 /**
  * Default MBR (µAlgo) sent from admin to registry per createInstance call.
- * Covers the spawned instance app's account MBR: 100k base + X*28.5k global ints +
- * Y*50k global bytes + Z*100k extra pages ≈ ????. 1 ALGO buys a healthy buffer
- * and keeps the math stable if the instance schema grows into its reserved slots.
+ *
+ * Covers the spawned instance app's account MBR. The registry no longer over-allocates: it sizes
+ * each instance app from `compile(FracDelegationInstanceContract)`, so the schema is exactly what
+ * the contract declares — today 1 uint + 3 bytes, which with 3 extra pages is
+ * 100k base + 1*28.5k + 3*50k + 3*100k ≈ 580k. 1 ALGO leaves a healthy buffer.
+ *
+ * If a future FracDelegationInstance build needs more global state, growing the already-deployed
+ * apps is a separate step (`FracDelegationSDK.updateInstanceApp({ size })`) and its MBR lands on the
+ * admin as sizeSponsor, not here.
  */
-// TODO: complete X, Y, Z and the final MBR estimation when  contract is finished
 export const DEFAULT_INSTANCE_MBR_MICROALGOS = 1_000_000n

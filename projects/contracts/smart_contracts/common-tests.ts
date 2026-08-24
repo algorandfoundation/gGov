@@ -35,8 +35,8 @@ export function transformedError(errCode: string) {
 
 export const deployRegistry = async (localnet: AlgorandFixture, account: Address, firstPeriodId?: bigint | number) => {
   // Deploy through the production path (GGovRegistrySDK.createRegistry) so every test exercises the
-  // real deploy config: extraProgramPages: 3, global schema at the AVM cap, and the GGovPeriod
-  // approval bytecode uploaded. createRegistry pays the registry MBR + initial funding out of
+  // real deploy config: extraProgramPages: 3, the global schema puya infers from the contract's
+  // GlobalState fields, and the GGovPeriod approval bytecode uploaded. createRegistry pays the registry MBR + initial funding out of
   // the deployer's balance, so top `account` up first (the app address is funded internally).
   await localnet.algorand.account.ensureFundedFromEnvironment(account, (25).algos())
   const signer = localnet.algorand.account.getSigner(account)

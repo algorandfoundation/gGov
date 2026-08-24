@@ -11,6 +11,7 @@ import {
   transformedError,
 } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
+import registryArc56 from '../artifacts/frac-delegation/FracDelegationRegistry.arc56.json'
 
 describe('FracDelegationRegistry admin', () => {
   const localnet = algorandFixture()
@@ -22,10 +23,11 @@ describe('FracDelegationRegistry admin', () => {
   describe('deployment configuration', () => {
     // FracDelegationRegistrySDK.createRegistry() is the production deploy path. It hard-codes
     // extraProgramPages: 3 so the approval program can grow toward the AVM ceiling without
-    // ever needing a redeploy. The registry's global schema is declared by the contract itself
-    // and sits exactly at the AVM hard cap of 64 (44 uints + 20 bytes); these two assertions
-    // guard against either drifting silently on a contract change.
-    test('registry deploys with extraProgramPages=3 and a global schema summing to 64', async () => {
+    // ever needing a redeploy. The registry's global schema is no longer declared by hand —
+    // the contract dropped its stateTotals override, so puya infers it from the GlobalState
+    // fields. Asserting the deployed app against the compiled app spec catches a create path
+    // that stops matching what the contract actually declares.
+    test('registry deploys with extraProgramPages=3 and the schema its app spec declares', async () => {
       const { testAccount: admin } = localnet.context
       // createRegistry pays the registry MBR + box MBR + initial funding out of the
       // deployer's balance; top the test admin up so it can cover the transfers + fees.
@@ -37,7 +39,7 @@ describe('FracDelegationRegistry admin', () => {
 
       const appInfo = await localnet.algorand.app.getById(appClient.appId)
       expect(appInfo.extraProgramPages).toBe(3)
-      expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
+      expect({ ints: appInfo.globalInts, bytes: appInfo.globalByteSlices }).toEqual(registryArc56.state.schema.global)
     })
 
     test('createRegistry uploads the instance approval bytecode at bootstrap', async () => {

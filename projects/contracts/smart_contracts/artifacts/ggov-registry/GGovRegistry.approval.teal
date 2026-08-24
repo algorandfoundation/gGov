@@ -46,7 +46,7 @@ main:
 
 main_after_if_else@2:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:83-84
-    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'GGovRegistry' })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     txn NumAppArgs
     bz main_bare_routing@44
@@ -61,13 +61,13 @@ main_after_if_else@2:
 
 main_after_if_else@49:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:83-84
-    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'GGovRegistry' })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     err
 
 main_bare_routing@44:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:83-84
-    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'GGovRegistry' })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     txn OnCompletion
     switch main___algots__.defaultCreate@45 main_after_if_else@49 main_after_if_else@49 main_after_if_else@49 main_updateApplication@46 main_deleteApplication@47
@@ -101,7 +101,7 @@ main_updateApplication@46:
 
 main___algots__.defaultCreate@45:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:83-84
-    // @contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+    // @contract({ name: 'GGovRegistry' })
     // export class GGovRegistryContract extends GGovRegistryAccountContract {
     txn ApplicationID
     !
@@ -639,10 +639,10 @@ registerCommittee_after_assert@13:
     swap
     concat
     box_put
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:962
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:964
     // return this.getMetadataSBPrefix(this.mustGetCommitteeMetadata(committeeId))
     callsub mustGetCommitteeMetadata
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     intc_0 // 0
     extract_uint16
@@ -754,11 +754,11 @@ unregisterCommittee_after_assert@3:
     err // ERR:IV_NZ
 
 unregisterCommittee_after_assert@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:962
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:964
     // return this.getMetadataSBPrefix(this.mustGetCommitteeMetadata(committeeId))
     swap
     callsub mustGetCommitteeMetadata
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     intc_0 // 0
     extract_uint16
@@ -838,7 +838,7 @@ ingestGovs:
     callsub mustGetCommitteeMetadata
     dup
     cover 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     dup
     intc_0 // 0
@@ -1745,7 +1745,7 @@ uningestGovs:
     callsub mustGetCommitteeMetadata
     dup
     cover 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     intc_0 // 0
     extract_uint16
@@ -3294,13 +3294,13 @@ createPeriod_after_assert@13:
     // const periodId = u32(this.lastPeriodId.value)
     callsub u32
     cover 4
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:644
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:638
     // const [approvalLen] = op.Box.length(approvalKey)
     bytec_3 // "Pap"
     box_len
     pop
     dupn 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:646
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:640
     // const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
     intc 4 // 4096
     <=
@@ -3308,14 +3308,14 @@ createPeriod_after_assert@13:
     dig 2
     uncover 2
     select
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:647
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:641
     // const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
     bytec_3 // "Pap"
     intc_0 // 0
     uncover 2
     box_extract
     swap
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:649
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:643
     // approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
     intc 4 // 4096
     >
@@ -3329,62 +3329,60 @@ createPeriod_after_assert@13:
     box_extract
 
 createPeriod_ternary_merge@16:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:652-660
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:654-662
     // const created = itxn
     //   .applicationCall({
     //     approvalProgram: [page1, page2],
     //     clearStateProgram: compiled.clearStateProgram,
     //     extraProgramPages: PERIOD_EXTRA_PROGRAM_PAGES,
-    //     globalNumUint: PERIOD_GLOBAL_NUM_UINT,
-    //     globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
+    //     globalNumUint: compiled.globalUints,
+    //     globalNumBytes: compiled.globalBytes,
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:658
-    // globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
-    pushint 3
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:653
+    // const compiled = compile(GGovPeriodContract) // clearStateProgram + schema — approval comes from box
+    intc_1 // 1
     itxn_field GlobalNumByteSlice
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:657
-    // globalNumUint: PERIOD_GLOBAL_NUM_UINT,
     pushint 7
     itxn_field GlobalNumUint
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:656
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:658
     // extraProgramPages: PERIOD_EXTRA_PROGRAM_PAGES,
     pushint 3
     itxn_field ExtraProgramPages
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:651
-    // const compiled = compile(GGovPeriodContract) // clearStateProgram only — approval comes from box
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:653
+    // const compiled = compile(GGovPeriodContract) // clearStateProgram + schema — approval comes from box
     bytec 23 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
     swap
     itxn_field ApprovalProgramPages
     itxn_field ApprovalProgramPages
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:652-659
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:654-661
     // const created = itxn
     //   .applicationCall({
     //     approvalProgram: [page1, page2],
     //     clearStateProgram: compiled.clearStateProgram,
     //     extraProgramPages: PERIOD_EXTRA_PROGRAM_PAGES,
-    //     globalNumUint: PERIOD_GLOBAL_NUM_UINT,
-    //     globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
+    //     globalNumUint: compiled.globalUints,
+    //     globalNumBytes: compiled.globalBytes,
     //   })
     pushint 6
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:652-660
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:654-662
     // const created = itxn
     //   .applicationCall({
     //     approvalProgram: [page1, page2],
     //     clearStateProgram: compiled.clearStateProgram,
     //     extraProgramPages: PERIOD_EXTRA_PROGRAM_PAGES,
-    //     globalNumUint: PERIOD_GLOBAL_NUM_UINT,
-    //     globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
+    //     globalNumUint: compiled.globalUints,
+    //     globalNumBytes: compiled.globalBytes,
     //   })
     //   .submit()
     itxn_submit
     itxn CreatedApplicationID
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:663-668
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:665-670
     // itxn
     //   .payment({
     //     receiver: newApp.address,
@@ -3392,18 +3390,18 @@ createPeriod_ternary_merge@16:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:665
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:667
     // receiver: newApp.address,
     dup
     app_params_get AppAddress
     assert // application exists
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:666
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:668
     // amount: mbrPayment.amount,
     uncover 2
     gtxns Amount
     itxn_field Amount
     itxn_field Receiver
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:663-667
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:665-669
     // itxn
     //   .payment({
     //     receiver: newApp.address,
@@ -3413,7 +3411,7 @@ createPeriod_ternary_merge@16:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:663-668
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:665-670
     // itxn
     //   .payment({
     //     receiver: newApp.address,
@@ -3421,13 +3419,13 @@ createPeriod_ternary_merge@16:
     //   })
     //   .submit()
     itxn_submit
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:670-673
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:672-675
     // compileArc4(GGovPeriodContract).call.init({
     //   appId: newApp.id,
     //   args: [Global.currentApplicationId, periodId, committeeId, u32(votingStart), u32(votingEnd)],
     // })
     itxn_begin
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:672
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:674
     // args: [Global.currentApplicationId, periodId, committeeId, u32(votingStart), u32(votingEnd)],
     global CurrentApplicationID
     itob
@@ -3439,7 +3437,7 @@ createPeriod_ternary_merge@16:
     dup
     cover 4
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:670-673
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:672-675
     // compileArc4(GGovPeriodContract).call.init({
     //   appId: newApp.id,
     //   args: [Global.currentApplicationId, periodId, committeeId, u32(votingStart), u32(votingEnd)],
@@ -3466,18 +3464,18 @@ createPeriod_ternary_merge@16:
     intc_0 // 0
     itxn_field Fee
     itxn_submit
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:677
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:679
     // votingStart: u32(votingStart),
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:678
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:680
     // votingEnd: u32(votingEnd),
     swap
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:679
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:681
     // numTopics: u32(0),
     intc_0 // 0
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:675-681
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:677-683
     // this.periods(periodId).value = {
     //   appId: newApp.id,
     //   votingStart: u32(votingStart),
@@ -3501,7 +3499,7 @@ createPeriod_ternary_merge@16:
     bytec 6 // "p"
     dig 3
     concat
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:675-681
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:677-683
     // this.periods(periodId).value = {
     //   appId: newApp.id,
     //   votingStart: u32(votingStart),
@@ -3511,7 +3509,7 @@ createPeriod_ternary_merge@16:
     // }
     swap
     box_put
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:683
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:685
     // return [periodId, newApp.id]
     concat
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:613-618
@@ -3530,7 +3528,7 @@ createPeriod_ternary_merge@16:
 
 createPeriod_ternary_false@15:
     bury 1
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:649
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:643
     // approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
     bytec_2 // ""
     b createPeriod_ternary_merge@16
@@ -3538,7 +3536,7 @@ createPeriod_ternary_false@15:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.setLastPeriodId[routing]() -> void:
 setLastPeriodId:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:698
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:700
     // public setLastPeriodId(newLastPeriodId: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -3548,34 +3546,34 @@ setLastPeriodId:
     assert // invalid number of bytes for arc4.uint64
     btoi
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:699
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:701
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:700
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:702
     // const cur = this.lastPeriodId.value
     intc_0 // 0
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:105
     // lastPeriodId = GlobalState<uint64>({ initialValue: 0 })
     bytec 13 // "lastPeriodId"
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:700
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:702
     // const cur = this.lastPeriodId.value
     app_global_get_ex
     swap
     cover 2
     assert // check GlobalState exists
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:701
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:703
     // for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {
     intc_1 // 1
     +
 
 setLastPeriodId_while_top@2:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:701
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:703
     // for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {
     dup
     dig 2
     <=
     bz setLastPeriodId_after_while@6
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:702
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:704
     // loggedAssert(!this.periods(u32(id)).exists, errPeriodInRange)
     dup
     callsub u32
@@ -3584,7 +3582,7 @@ setLastPeriodId_while_top@2:
     bytec 6 // "p"
     swap
     concat
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:702
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:704
     // loggedAssert(!this.periods(u32(id)).exists, errPeriodInRange)
     box_len
     bury 1
@@ -3594,7 +3592,7 @@ setLastPeriodId_while_top@2:
     err // ERR:P_IR
 
 setLastPeriodId_after_assert@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:701
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:703
     // for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {
     intc_1 // 1
     +
@@ -3605,11 +3603,11 @@ setLastPeriodId_after_while@6:
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:105
     // lastPeriodId = GlobalState<uint64>({ initialValue: 0 })
     bytec 13 // "lastPeriodId"
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:704
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:706
     // this.lastPeriodId.value = newLastPeriodId
     swap
     app_global_put
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:698
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:700
     // public setLastPeriodId(newLastPeriodId: uint64): void {
     intc_1 // 1
     return
@@ -3617,7 +3615,7 @@ setLastPeriodId_after_while@6:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.updatePeriodSummary[routing]() -> void:
 updatePeriodSummary:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:712-718
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:714-720
     // public updatePeriodSummary(
     //   periodId: Uint32,
     //   votingStart: Uint32,
@@ -3667,7 +3665,7 @@ updatePeriodSummary:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:720
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:722
     // loggedAssert(box.exists, errGGovPeriodNotExists)
     box_len
     bury 1
@@ -3677,7 +3675,7 @@ updatePeriodSummary:
     err // ERR:GP_NX
 
 updatePeriodSummary_after_assert@3:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:721
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:723
     // const summary = clone(box.value)
     dup
     box_get
@@ -3685,7 +3683,7 @@ updatePeriodSummary_after_assert@3:
     dup
     uncover 2
     assert // Box must have value
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:722
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:724
     // loggedAssert(Global.callerApplicationId === summary.appId, errUnauthorized)
     global CallerApplicationID
     swap
@@ -3698,27 +3696,27 @@ updatePeriodSummary_after_assert@3:
     err // ERR:AUTH
 
 updatePeriodSummary_after_assert@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:723
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:725
     // summary.votingStart = votingStart
     uncover 5
     replace2 8
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:724
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:726
     // summary.votingEnd = votingEnd
     uncover 4
     replace2 12
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:725
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:727
     // summary.numTopics = numTopics
     uncover 3
     replace2 16
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:726
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:728
     // summary.ready = ready
     pushint 160
     uncover 3
     setbit
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:727
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:729
     // box.value = clone(summary)
     box_put
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:712-718
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:714-720
     // public updatePeriodSummary(
     //   periodId: Uint32,
     //   votingStart: Uint32,
@@ -3732,7 +3730,7 @@ updatePeriodSummary_after_assert@5:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.removePeriodSummary[routing]() -> void:
 removePeriodSummary:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:737
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:739
     // public removePeriodSummary(periodId: Uint32): void {
     txna ApplicationArgs 1
     dup
@@ -3746,7 +3744,7 @@ removePeriodSummary:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:739
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:741
     // loggedAssert(box.exists, errGGovPeriodNotExists)
     box_len
     bury 1
@@ -3756,7 +3754,7 @@ removePeriodSummary:
     err // ERR:GP_NX
 
 removePeriodSummary_after_assert@3:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:740
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:742
     // loggedAssert(Global.callerApplicationId === box.value.appId, errUnauthorized)
     global CallerApplicationID
     dig 1
@@ -3771,11 +3769,11 @@ removePeriodSummary_after_assert@3:
     err // ERR:AUTH
 
 removePeriodSummary_after_assert@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:741
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:743
     // box.delete()
     box_del
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:737
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:739
     // public removePeriodSummary(periodId: Uint32): void {
     intc_1 // 1
     return
@@ -3783,7 +3781,7 @@ removePeriodSummary_after_assert@5:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.requestMBR[routing]() -> void:
 requestMBR:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:762
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:764
     // public requestMBR(periodId: Uint32): void {
     txna ApplicationArgs 1
     dup
@@ -3797,7 +3795,7 @@ requestMBR:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:764
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:766
     // loggedAssert(box.exists, errGGovPeriodNotExists)
     box_len
     bury 1
@@ -3807,14 +3805,14 @@ requestMBR:
     err // ERR:GP_NX
 
 requestMBR_after_assert@3:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:765
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:767
     // const periodApp = Application(box.value.appId)
     box_get
     assert // Box must have value
     intc_0 // 0
     extract_uint64
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:766
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:768
     // loggedAssert(Global.callerApplicationId === periodApp.id, errUnauthorized)
     global CallerApplicationID
     ==
@@ -3824,7 +3822,7 @@ requestMBR_after_assert@3:
     err // ERR:AUTH
 
 requestMBR_after_assert@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:767-773
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:769-775
     // itxn
     //   .payment({
     //     receiver: periodApp.address,
@@ -3833,27 +3831,27 @@ requestMBR_after_assert@5:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:771
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:773
     // fee: Global.minTxnFee,
     global MinTxnFee
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:769
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:771
     // receiver: periodApp.address,
     swap
     app_params_get AppAddress
     assert // application exists
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:770
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:772
     // amount: this.mbrTopUp.value,
     intc_0 // 0
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:103
     // mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
     bytec 20 // "mbrTopUp"
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:770
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:772
     // amount: this.mbrTopUp.value,
     app_global_get_ex
     assert // check GlobalState exists
     itxn_field Amount
     itxn_field Receiver
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:767-772
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:769-774
     // itxn
     //   .payment({
     //     receiver: periodApp.address,
@@ -3863,7 +3861,7 @@ requestMBR_after_assert@5:
     intc_1 // 1
     itxn_field TypeEnum
     itxn_field Fee
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:767-773
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:769-775
     // itxn
     //   .payment({
     //     receiver: periodApp.address,
@@ -3872,7 +3870,7 @@ requestMBR_after_assert@5:
     //   })
     //   .submit()
     itxn_submit
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:762
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:764
     // public requestMBR(periodId: Uint32): void {
     intc_1 // 1
     return
@@ -3880,7 +3878,7 @@ requestMBR_after_assert@5:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getPeriodApp[routing]() -> void:
 getPeriodApp:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:777
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:779
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -3889,7 +3887,7 @@ getPeriodApp:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:779
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:781
     // const box = this.periods(u32(periodId))
     callsub u32
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:107
@@ -3898,7 +3896,7 @@ getPeriodApp:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:780
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:782
     // if (box.exists) return box.value.appId
     box_len
     bury 1
@@ -3909,7 +3907,7 @@ getPeriodApp:
     extract_uint64
 
 getPeriodApp_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getPeriodApp@4:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:777
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:779
     // @abimethod({ readonly: true })
     itob
     bytec_0 // 0x151f7c75
@@ -3921,17 +3919,17 @@ getPeriodApp_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::G
 
 getPeriodApp_after_if_else@3:
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:781
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:783
     // return 0
     intc_0 // 0
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:777
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:779
     // @abimethod({ readonly: true })
     b getPeriodApp_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getPeriodApp@4
 
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getPeriodSummary[routing]() -> void:
 getPeriodSummary:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:785
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:787
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -3940,7 +3938,7 @@ getPeriodSummary:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:787
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:789
     // const box = this.periods(u32(periodId))
     callsub u32
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:107
@@ -3949,7 +3947,7 @@ getPeriodSummary:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:788
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:790
     // if (box.exists) return box.value
     box_len
     bury 1
@@ -3958,7 +3956,7 @@ getPeriodSummary:
     assert // Box must have value
 
 getPeriodSummary_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getPeriodSummary@4:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:785
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:787
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -3969,17 +3967,17 @@ getPeriodSummary_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.t
 
 getPeriodSummary_after_if_else@3:
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:789
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:791
     // return getEmptyGGovPeriodSummary()
     callsub getEmptyGGovPeriodSummary
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:785
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:787
     // @abimethod({ readonly: true })
     b getPeriodSummary_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getPeriodSummary@4
 
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.logPeriodSummaries[routing]() -> void:
 logPeriodSummaries:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:793
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:795
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dupn 2
@@ -3998,7 +3996,7 @@ logPeriodSummaries:
     intc_0 // 0
 
 logPeriodSummaries_for_header@2:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:795
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:797
     // for (const periodId of periodIds) {
     dup
     dig 2
@@ -4010,7 +4008,7 @@ logPeriodSummaries_for_header@2:
     pushint 8
     *
     extract_uint64
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:796
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:798
     // const box = this.periods(u32(periodId))
     callsub u32
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:107
@@ -4019,12 +4017,12 @@ logPeriodSummaries_for_header@2:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:797
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:799
     // if (box.exists) {
     box_len
     bury 1
     bz logPeriodSummaries_else_body@5
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:798
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:800
     // log(encodeArc4(box.value))
     box_get
     assert // Box must have value
@@ -4037,14 +4035,14 @@ logPeriodSummaries_after_if_else@6:
 
 logPeriodSummaries_else_body@5:
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:800
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:802
     // log(encodeArc4(getEmptyGGovPeriodSummary()))
     callsub getEmptyGGovPeriodSummary
     log
     b logPeriodSummaries_after_if_else@6
 
 logPeriodSummaries_after_for@8:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:793
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:795
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -4052,7 +4050,7 @@ logPeriodSummaries_after_for@8:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getCommitteeMetadata[routing]() -> void:
 getCommitteeMetadata:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:815
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:817
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -4075,16 +4073,16 @@ getCommitteeMetadata:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:818
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:820
     // if (committeeBox.exists) {
     box_len
     bury 1
     bz getCommitteeMetadata_after_if_else@7
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:819
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:821
     // if (mustBeComplete) {
     swap
     bz getCommitteeMetadata_after_if_else@6
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:820
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:822
     // loggedAssert(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
     dup
     box_get
@@ -4100,13 +4098,13 @@ getCommitteeMetadata:
     err // ERR:C_NC
 
 getCommitteeMetadata_after_if_else@6:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:822
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:824
     // return committeeBox.value
     box_get
     assert // Box must have value
 
 getCommitteeMetadata_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getCommitteeMetadata@8:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:815
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:817
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -4117,17 +4115,17 @@ getCommitteeMetadata_after_inlined_smart_contracts/ggov-registry/ggovRegistry.al
 
 getCommitteeMetadata_after_if_else@7:
     popn 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:824
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:826
     // return getEmptyCommitteeMetadata()
     callsub getEmptyCommitteeMetadata
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:815
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:817
     // @abimethod({ readonly: true })
     b getCommitteeMetadata_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getCommitteeMetadata@8
 
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.logCommitteeMetadata[routing]() -> void:
 logCommitteeMetadata:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:831
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:833
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dupn 2
@@ -4146,7 +4144,7 @@ logCommitteeMetadata:
     intc_0 // 0
 
 logCommitteeMetadata_for_header@2:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:833
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:835
     // for (const committeeId of committeeIds) {
     dup
     dig 2
@@ -4165,12 +4163,12 @@ logCommitteeMetadata_for_header@2:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:835
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:837
     // if (metadata.exists) {
     box_len
     bury 1
     bz logCommitteeMetadata_else_body@5
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:836
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:838
     // log(encodeArc4(metadata.value))
     box_get
     assert // Box must have value
@@ -4183,14 +4181,14 @@ logCommitteeMetadata_after_if_else@6:
 
 logCommitteeMetadata_else_body@5:
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:838
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:840
     // log(encodeArc4(getEmptyCommitteeMetadata()))
     callsub getEmptyCommitteeMetadata
     log
     b logCommitteeMetadata_after_if_else@6
 
 logCommitteeMetadata_after_for@8:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:831
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:833
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -4199,7 +4197,7 @@ logCommitteeMetadata_after_for@8:
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.logCommitteePages[routing]() -> void:
 logCommitteePages:
     intc_0 // 0
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:853
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:855
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -4232,12 +4230,12 @@ logCommitteePages:
     assert // invalid number of bytes for arc4.uint64
     btoi
     cover 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:861
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:863
     // const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
     callsub mustGetCommitteeMetadata
     dup
     cover 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     intc_0 // 0
     extract_uint16
@@ -4252,7 +4250,7 @@ logCommitteePages:
     bytec 7 // "_m"
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:864
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:866
     // loggedAssert(sbMetaBoxRef.exists, errCommitteeNotExists)
     box_len
     bury 1
@@ -4262,63 +4260,63 @@ logCommitteePages:
     err // ERR:C_NX
 
 logCommitteePages_after_assert@3:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:865
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:867
     // const sbMeta = clone(sbMetaBoxRef.value)
     dup
     box_get
     swap
     bury 8
     assert // Box must have value
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:866
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:868
     // if (logMetadata) {
     swap
     bz logCommitteePages_after_if_else@5
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:867
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:869
     // log(encodeArc4(committeeMetadata))
     dig 2
     log
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:868
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:870
     // log(encodeArc4(sbMeta))
     dig 5
     log
 
 logCommitteePages_after_if_else@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:872
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:874
     // const maxDataPages = sbMeta.boxByteLengths.length
     pushint 28
     intc_3 // 2
     box_extract
     btoi
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:873
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:875
     // for (let i: uint64 = 0; i < dataPageLength; i++) {
     intc_0 // 0
 
 logCommitteePages_while_top@6:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:873
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:875
     // for (let i: uint64 = 0; i < dataPageLength; i++) {
     dup
     dig 5
     <
     bz logCommitteePages_after_while@11
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:874
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:876
     // const page: uint64 = startDataPage + i
     dig 5
     dig 1
     +
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:875
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:877
     // if (page >= maxDataPages) {
     dig 3
     >=
     bz logCommitteePages_else_body@9
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:876
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:878
     // log(Bytes``) // no page at index; logging empty
     bytec_2 // ""
     log
 
 logCommitteePages_after_if_else@10:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:873
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:875
     // for (let i: uint64 = 0; i < dataPageLength; i++) {
     intc_1 // 1
     +
@@ -4333,7 +4331,7 @@ logCommitteePages_else_body@9:
     swap
     callsub @d13co/superbox/smart_contracts/superbox/lib/utils.algo.ts::itoa
     concat
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:878
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:880
     // log(sbDataBoxRef(superboxPrefix, page).value)
     box_get
     assert // Box must have value
@@ -4341,7 +4339,7 @@ logCommitteePages_else_body@9:
     b logCommitteePages_after_if_else@10
 
 logCommitteePages_after_while@11:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:853
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:855
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -4349,7 +4347,7 @@ logCommitteePages_after_while@11:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getCommitteeSuperboxMeta[routing]() -> void:
 getCommitteeSuperboxMeta:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:888
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:890
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -4357,10 +4355,10 @@ getCommitteeSuperboxMeta:
     intc_2 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:962
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:964
     // return this.getMetadataSBPrefix(this.mustGetCommitteeMetadata(committeeId))
     callsub mustGetCommitteeMetadata
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     intc_0 // 0
     extract_uint16
@@ -4372,11 +4370,11 @@ getCommitteeSuperboxMeta:
     // return Box<SuperboxMeta>({ key: Bytes(name).concat(Bytes('_m')) })
     bytec 7 // "_m"
     concat
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:891
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:893
     // return sbMetaBox(superboxName).value
     box_get
     assert // Box must have value
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:888
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:890
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -4388,7 +4386,7 @@ getCommitteeSuperboxMeta:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getGovVotingPower[routing]() -> void:
 getGovVotingPower:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:900
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:902
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -4402,16 +4400,16 @@ getGovVotingPower:
     intc_2 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:902
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:904
     // const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
     swap
     callsub mustGetCommitteeMetadata
     swap
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:904
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:906
     // const gGovAccount = this.getAccountIfExists(account)
     callsub getAccountIfExists
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:905
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:907
     // loggedAssert(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
     intc_0 // 0
     extract_uint32
@@ -4421,14 +4419,14 @@ getGovVotingPower:
     err // ERR:A_NX
 
 getGovVotingPower_after_assert@3:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:907
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:909
     // const accountOffset = this.getCommitteeAccountOffsetHint(committeeMetadata.numericId, gGovAccount)
     swap
     dup
     extract 0 2
     uncover 2
     callsub getCommitteeAccountOffsetHint
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     uncover 2
     intc_0 // 0
@@ -4437,13 +4435,13 @@ getGovVotingPower_after_assert@3:
     bytec 4 // "S"
     swap
     concat
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:908
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:910
     // const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
     uncover 2
     callsub getStoredGovAt
     dup
     cover 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:909
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:911
     // if (gov.accountId !== gGovAccount.accountId) {
     extract 0 4
     swap
@@ -4452,10 +4450,10 @@ getGovVotingPower_after_assert@3:
     cover 2
     !=
     bz getGovVotingPower_after_if_else@5
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:910
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:912
     // log(gGovAccount.accountId.bytes)
     log
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:911
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:913
     // loggedErr(errAccountOffsetMismatch)
     pushbytes "ERR:AO_MM"
     log
@@ -4463,10 +4461,10 @@ getGovVotingPower_after_assert@3:
 
 getGovVotingPower_after_if_else@5:
     pop
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:914
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:916
     // return gov.votes
     extract 4 4
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:900
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:902
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -4481,7 +4479,7 @@ tryGetGovVotingPower:
     intc_0 // 0
     bytec_2 // ""
     dupn 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:921
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:923
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -4502,7 +4500,7 @@ tryGetGovVotingPower:
     swap
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:924
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:926
     // if (!committeeBox.exists) return u32(0)
     box_len
     bury 1
@@ -4512,7 +4510,7 @@ tryGetGovVotingPower:
     callsub u32
 
 tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:921
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:923
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -4522,16 +4520,16 @@ tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.al
     return
 
 tryGetGovVotingPower_after_if_else@3:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:925
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:927
     // const committeeMetadata = clone(committeeBox.value)
     box_get
     assert // Box must have value
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:927
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:929
     // const gGovAccount = this.getAccountIfExists(account)
     swap
     callsub getAccountIfExists
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:928
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:930
     // if (gGovAccount.accountId.asUint64() === 0) return u32(0)
     intc_0 // 0
     extract_uint32
@@ -4541,20 +4539,20 @@ tryGetGovVotingPower_after_if_else@3:
     popn 2
     intc_0 // 0
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:921
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:923
     // @abimethod({ readonly: true })
     b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
 tryGetGovVotingPower_after_if_else@5:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:930
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:932
     // let foundOffset: uint64 = 0
     intc_0 // 0
     bury 4
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:931
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:933
     // let found = false
     intc_0 // 0
     bury 5
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:932
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:934
     // for (const [cNumId, off] of clone(gGovAccount.committeeOffsets)) {
     dup
     pushint 4
@@ -4568,7 +4566,7 @@ tryGetGovVotingPower_after_if_else@5:
     intc_0 // 0
 
 tryGetGovVotingPower_for_header@6:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:932
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:934
     // for (const [cNumId, off] of clone(gGovAccount.committeeOffsets)) {
     dup
     dig 2
@@ -4584,7 +4582,7 @@ tryGetGovVotingPower_for_header@6:
     dup
     bury 9
     intc_0 // 0
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:933
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:935
     // if (cNumId.asUint64() === committeeMetadata.numericId.asUint64()) {
     extract_uint16
     dig 4
@@ -4592,17 +4590,17 @@ tryGetGovVotingPower_for_header@6:
     extract_uint16
     ==
     bz tryGetGovVotingPower_after_if_else@9
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:934
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:936
     // foundOffset = off.asUint64()
     dig 7
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:932
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:934
     // for (const [cNumId, off] of clone(gGovAccount.committeeOffsets)) {
     intc_3 // 2
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:934
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:936
     // foundOffset = off.asUint64()
     extract_uint16
     bury 6
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:935
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:937
     // found = true
     intc_1 // 1
     bury 7
@@ -4614,19 +4612,19 @@ tryGetGovVotingPower_after_if_else@9:
 
 tryGetGovVotingPower_after_for@11:
     popn 3
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:938
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:940
     // if (!found) return u32(0)
     dig 3
     bnz tryGetGovVotingPower_after_if_else@13
     pop
     intc_0 // 0
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:921
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:923
     // @abimethod({ readonly: true })
     b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
 tryGetGovVotingPower_after_if_else@13:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:970
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:972
     // return 'S' + metadata.numericId.asUint64().toString()
     intc_0 // 0
     extract_uint16
@@ -4634,12 +4632,12 @@ tryGetGovVotingPower_after_if_else@13:
     bytec 4 // "S"
     swap
     concat
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:940
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:942
     // const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
     dig 2
     callsub getStoredGovAt
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:941
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:943
     // if (gov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
     intc_0 // 0
     extract_uint32
@@ -4649,15 +4647,15 @@ tryGetGovVotingPower_after_if_else@13:
     pop
     intc_0 // 0
     callsub u32
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:921
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:923
     // @abimethod({ readonly: true })
     b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
 tryGetGovVotingPower_after_if_else@15:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:942
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:944
     // return gov.votes
     extract 4 4
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:921
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:923
     // @abimethod({ readonly: true })
     b tryGetGovVotingPower_after_inlined_smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.tryGetGovVotingPower@16
 
@@ -5103,7 +5101,7 @@ removeReverseDelegation_else_body@10:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.mustGetCommitteeMetadata(committeeId: bytes) -> bytes:
 mustGetCommitteeMetadata:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:950
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:952
     // private mustGetCommitteeMetadata(committeeId: CommitteeId): CommitteeMetadata {
     proto 1 1
     // smart_contracts/ggov-registry/ggovRegistry.algo.ts:90
@@ -5112,7 +5110,7 @@ mustGetCommitteeMetadata:
     frame_dig -1
     concat
     dup
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:952
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:954
     // loggedAssert(committeeBox.exists, errCommitteeNotExists)
     box_len
     bury 1
@@ -5122,7 +5120,7 @@ mustGetCommitteeMetadata:
     err // ERR:C_NX
 
 mustGetCommitteeMetadata_after_assert@2:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:953
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:955
     // return committeeBox.value
     box_get
     assert // Box must have value
@@ -5131,7 +5129,7 @@ mustGetCommitteeMetadata_after_assert@2:
 
 // smart_contracts/ggov-registry/ggovRegistry.algo.ts::GGovRegistryContract.getStoredGovAt(superboxName: bytes, index: uint64) -> bytes:
 getStoredGovAt:
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:979
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:981
     // private getStoredGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
     proto 2 1
     // node_modules/@d13co/superbox/smart_contracts/superbox/lib/superbox.algo.ts:247
@@ -5190,7 +5188,7 @@ getStoredGovAt:
     dig 1
     -
     box_extract
-    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:981
+    // smart_contracts/ggov-registry/ggovRegistry.algo.ts:983
     // return decodeArc4<AccountIdWithVotes>(govData)
     retsub
 

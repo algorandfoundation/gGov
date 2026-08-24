@@ -80,7 +80,7 @@ function getCommitteeSBGovs(sbMeta: Box<SuperboxMeta>): uint64 {
 export const gGovRegistryXGovKey = Bytes`xGovRegistryApp`
 export const gGovRegistryFDKey = Bytes`fracRegistryApp`
 
-@contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+@contract({ name: 'GGovRegistry' })
 export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** xGov registry application ID */
   xGovRegistryApp = GlobalState<Application>({ key: gGovRegistryXGovKey, initialValue: Application(0) })
@@ -629,13 +629,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.lastPeriodId.value++
     const periodId = u32(this.lastPeriodId.value)
 
-    // IMPORTANT: Always allocate the MAXIMUM AVM extraProgramPages (3) and reserve 2 extra
-    // slots in each global-schema dimension (uint + bytes). This headroom lets the
-    // period contract grow up to the AVM hard ceiling without ever requiring a registry
-    // redeploy. Do NOT shrink these constants when adding fields to GGovPeriodContract.
-    const PERIOD_GLOBAL_NUM_UINT: uint64 = 7 // 5 used today + 2 reserved
-    const PERIOD_GLOBAL_NUM_BYTES: uint64 = 3 // 1 used today + 2 reserved
-    const PERIOD_EXTRA_PROGRAM_PAGES: uint64 = 3 // AVM max → 8192-byte approval/clear ceiling
+    const PERIOD_EXTRA_PROGRAM_PAGES: uint64 = 3 // 8192-byte approval/clear ceiling
 
     // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
     // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
@@ -648,14 +642,22 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const page2: bytes =
       approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
 
-    const compiled = compile(GGovPeriodContract) // clearStateProgram only — approval comes from box
+    // Schema comes straight off the compiled child rather than hand-written constants: under AVM v13
+    // a global schema can be expanded by a later update (see GGovSDK.updatePeriodApp), so reserving
+    // spare slots only buys dead MBR. The former `5 used today + 2 reserved` comment had already gone
+    // stale — GGovPeriod declares 7 uints today, having silently eaten its own reserve.
+    //
+    // The one coupling this leaves: `compiled` is the GGovPeriod built into *this* registry, so
+    // uploading a newer period program to the `Pap` box that needs more globals means rebuilding the
+    // registry too, or growing each spawned app afterwards.
+    const compiled = compile(GGovPeriodContract) // clearStateProgram + schema — approval comes from box
     const created = itxn
       .applicationCall({
         approvalProgram: [page1, page2],
         clearStateProgram: compiled.clearStateProgram,
         extraProgramPages: PERIOD_EXTRA_PROGRAM_PAGES,
-        globalNumUint: PERIOD_GLOBAL_NUM_UINT,
-        globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
+        globalNumUint: compiled.globalUints,
+        globalNumBytes: compiled.globalBytes,
       })
       .submit()
     const newApp = created.createdApp
