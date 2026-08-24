@@ -69,6 +69,7 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GD_EX": "Delegation already exists for account",
   "ERR:FI_NC": "Instance approval program not yet uploaded to registry",
   "ERR:FI_NX": "Instance does not exist",
+  "ERR:FI_NL": "Instance name exceeds the maximum encodable length",
   "ERR:FE_AS": "Escrow account is already assigned to an instance",
   "ERR:FE_NX": "Instance has no registered escrows",
   "ERR:FE_NA": "Escrow account is not assigned to any instance",

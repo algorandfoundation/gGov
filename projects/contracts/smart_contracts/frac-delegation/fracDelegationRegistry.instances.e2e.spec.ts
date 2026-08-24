@@ -1,7 +1,7 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { FracDelegationInstanceFactory, FracDelegationRegistryFactory } from 'frac-delegation-sdk'
-import { errInstanceAppNotConfigured, errUnauthorized } from '../base/errors.algo'
+import { errInstanceAppNotConfigured, errInstanceNameTooLong, errUnauthorized } from '../base/errors.algo'
 import { Address, getApplicationAddress } from 'algosdk'
 import {
   createFracRegistrySDK,
@@ -83,6 +83,18 @@ describe('FracDelegationRegistry instances', () => {
       const { sdk } = await deployFracRegistry(localnet, testAccount)
       const { sdk: nonAdminSDK } = await generateAccountWithFracRegSDK(localnet, sdk.appId, (3).algos())
       await expect(nonAdminSDK.addInstance({ name: 'unauthorized' })).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    // The name is embedded in every `FracInstanceCommitteeStanding`, and `logInstanceCommittees`
+    // emits one per instance as a single AVM log - capped at 1024 bytes. Without a bound at
+    // creation, one long-named instance would fail every pooled-voting page of this registry.
+    test('rejects a name over the 64-byte cap, accepts one at it', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployFracRegistry(localnet, testAccount)
+      await expect(sdk.addInstance({ name: 'x'.repeat(65) })).rejects.toThrow(transformedError(errInstanceNameTooLong))
+      const atCap = 'x'.repeat(64)
+      const instanceId = await sdk.addInstance({ name: atCap })
+      expect((await sdk.getInstance(instanceId))!.name).toBe(atCap)
     })
 
     test('rejects when instance approval program not uploaded', async () => {

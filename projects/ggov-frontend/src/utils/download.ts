@@ -1,7 +1,11 @@
-/** Quote a CSV cell only when it needs it — a comma, quote or newline in the value. */
+/**
+ * Quote a CSV cell only when it needs it — a comma, quote or newline in the value.
+ * Both newline characters count: a bare CR is a record delimiter of its own, so an
+ * unquoted one would split the document into extra records.
+ */
 export function csvCell(value: string | number): string {
   const s = String(value)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
 /** Build a CSV document from a header row and its body rows. */
