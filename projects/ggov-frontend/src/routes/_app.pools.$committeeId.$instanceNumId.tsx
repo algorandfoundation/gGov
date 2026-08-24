@@ -24,11 +24,14 @@ export const Route = createFileRoute('/_app/pools/$committeeId/$instanceNumId')(
   loader: async ({ context, params }) => {
     const idB64 = params.committeeId
 
-    // A pool is addressed by its frac instance's numeric id — a positive integer,
-    // so anything else can never resolve to one. Same up-front rejection the
-    // committee id gets below: a 404, not a transient reader failure.
+    // A pool is addressed by its frac instance's numeric id — which the registry
+    // types `uint16`, so anything outside 1..65535 can never resolve to one. The
+    // upper bound matters as much as the lower: without it an oversized id reaches
+    // the SDK and throws out of `assertUint(…, 16)` instead of 404ing. Same
+    // up-front rejection the committee id gets below: a 404, not a transient
+    // reader failure.
     const instanceNumId = Number(params.instanceNumId)
-    if (!Number.isInteger(instanceNumId) || instanceNumId <= 0) throw notFound()
+    if (!Number.isInteger(instanceNumId) || instanceNumId <= 0 || instanceNumId > 65535) throw notFound()
 
     // A committee id is 32 bytes of base64url; anything that fails to decode or
     // has the wrong length can never name one.

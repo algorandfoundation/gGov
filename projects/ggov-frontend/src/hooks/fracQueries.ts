@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { fromBase64Url, queryKeys, toBase64Url } from '@/hooks/queries'
@@ -473,15 +474,19 @@ export function useCommitteePoolVotedAq(
 /**
  * One pool's tally for one period, for the pool page. Shares its cache entry with
  * the pools index's turnout column, so arriving from the index costs no read.
+ *
+ * `isError` is exposed because `cache` alone cannot carry the difference: a failed
+ * read leaves it `undefined`, which the caller would otherwise render as an empty
+ * ballot rather than as a read it could not make. `null` is the real "not synced".
  */
 export function usePoolVoteCache(
   instanceNumId: number | undefined,
   periodId: number | undefined,
-): { cache: FracPeriodVoteCache | null | undefined; isLoading: boolean } {
+): { cache: FracPeriodVoteCache | null | undefined; isLoading: boolean; isError: boolean } {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
   const query = poolVoteCacheQuery(getFracReaderSDK, instanceNumId ?? 0, periodId, fracEnabled)
-  const { data, isPending, fetchStatus } = useQuery({ ...query, enabled: query.enabled && !!instanceNumId })
-  return { cache: data, isLoading: isPending && fetchStatus !== 'idle' }
+  const { data, isPending, fetchStatus, isError } = useQuery({ ...query, enabled: query.enabled && !!instanceNumId })
+  return { cache: data, isLoading: isPending && fetchStatus !== 'idle', isError }
 }
 
 // ─── Pooled ballot (the voting page) ──────────────────────────────────────────
@@ -897,15 +902,28 @@ export function usePoolMembers(
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
   const { roster, isLoading: rosterLoading } = useFracRoster()
 
+  // Derived out here rather than inside `queryFn`, because it is also what keys
+  // the query: the roster is its own cache entry, and membership is what this one
+  // actually depends on. Keying on the roster's *size* would miss an account that
+  // was already registered and merely joined this instance.
+  const inPool = useMemo(() => {
+    const members: { address: string; accountId: number }[] = []
+    if (!roster || !instanceNumId) return members
+    for (const [address, record] of roster) {
+      if (record.instanceNumIds.includes(instanceNumId)) members.push({ address, accountId: record.accountId })
+    }
+    return members
+  }, [roster, instanceNumId])
+
   const { data, isPending, fetchStatus, isError } = useQuery({
-    queryKey: queryKeys.fracPoolMembers(instanceNumId ?? 0, committeeIdBase64Url ?? '', roster?.size ?? 0),
+    queryKey: queryKeys.fracPoolMembers(
+      instanceNumId ?? 0,
+      committeeIdBase64Url ?? '',
+      inPool.map((m) => m.accountId),
+    ),
     queryFn: async (): Promise<PoolMember[]> => {
       const sdk = await getFracReaderSDK()
       if (!sdk || !roster) return []
-      const inPool: { address: string; accountId: number }[] = []
-      for (const [address, record] of roster) {
-        if (record.instanceNumIds.includes(instanceNumId!)) inPool.push({ address, accountId: record.accountId })
-      }
       if (inPool.length === 0) return []
       // Index-aligned with the ids we passed; batched 126 per simulate group by the SDK.
       const aqs = await sdk.getAccountAqs(
@@ -947,9 +965,9 @@ export function usePoolMemberRecords(
   instanceNumId: number | undefined,
   periodId: number | undefined,
   accountIds: number[],
-): { byAccountId: Record<number, FracVotingRecord>; isLoading: boolean } {
+): { byAccountId: Record<number, FracVotingRecord>; isLoading: boolean; isError: boolean } {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
-  const { data, isPending, fetchStatus } = useQuery({
+  const { data, isPending, fetchStatus, isError } = useQuery({
     queryKey: queryKeys.fracPoolVotingRecords(instanceNumId ?? 0, periodId ?? 0, accountIds),
     queryFn: async (): Promise<Record<number, FracVotingRecord>> => {
       const sdk = await getFracReaderSDK()
@@ -966,7 +984,10 @@ export function usePoolMemberRecords(
     // Moves while the period is open, like the pool's own tally.
     staleTime: 30_000,
   })
-  return { byAccountId: data ?? {}, isLoading: isPending && fetchStatus !== 'idle' }
+  // An absent record means "has not voted", so a failed read would otherwise be
+  // indistinguishable from a page of members who all abstained: `isError` is what
+  // lets the caller say "unavailable" instead of asserting a vote nobody cast.
+  return { byAccountId: data ?? {}, isLoading: isPending && fetchStatus !== 'idle', isError }
 }
 
 /**

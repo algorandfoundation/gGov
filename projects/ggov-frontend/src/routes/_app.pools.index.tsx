@@ -12,16 +12,29 @@ import { fetchCommittees, fetchPeriods, queryKeys } from '@/hooks/queries'
 export const Route = createFileRoute('/_app/pools/')({
   loader: async ({ context }) => {
     const reader = await createServerReaderSDK()
+
+    // The period labels are chrome for the committee picker on the far side of
+    // the redirect: best-effort, and awaited separately, so a failure there
+    // cannot take the redirect down with it. The committee list is the only
+    // read this route actually needs.
+    const chrome = context.queryClient
+      .ensureQueryData({ queryKey: queryKeys.periods, queryFn: () => fetchPeriods(reader) })
+      .catch((err) => {
+        console.error('pools index period preload failed:', err)
+      })
+
     let committees
     try {
-      ;[committees] = await Promise.all([
-        context.queryClient.ensureQueryData({ queryKey: queryKeys.committees, queryFn: () => fetchCommittees(reader) }),
-        context.queryClient.ensureQueryData({ queryKey: queryKeys.periods, queryFn: () => fetchPeriods(reader) }),
-      ])
+      committees = await context.queryClient.ensureQueryData({
+        queryKey: queryKeys.committees,
+        queryFn: () => fetchCommittees(reader),
+      })
     } catch (err) {
       console.error('pools index loader failed:', err)
       return
     }
+    await chrome
+
     // Committees come back newest-first, so the head is the live window.
     const current = committees[0]
     if (current) throw redirect({ to: '/pools/$committeeId', params: { committeeId: current.idBase64Url } })

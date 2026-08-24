@@ -86,6 +86,7 @@ export const errGGovDelegationExists = 'GD_EX' // Delegation already exists for 
 // Frac delegation
 export const errInstanceAppNotConfigured = 'FI_NC' // Instance approval program not yet uploaded to registry
 export const errInstanceAppNotExists = 'FI_NX' // Instance does not exist
+export const errInstanceNameTooLong = 'FI_NL' // Instance name exceeds the maximum encodable length
 export const errEscrowAssigned = 'FE_AS' // Escrow account is already assigned to an instance
 export const errNoEscrows = 'FE_NX' // Instance has no registered escrows
 export const errEscrowNotAssigned = 'FE_NA' // Escrow account is not assigned to any instance
