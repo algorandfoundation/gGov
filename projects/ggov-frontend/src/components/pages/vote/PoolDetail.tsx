@@ -219,6 +219,7 @@ function MemberRow({
   member,
   items,
   periodLabel,
+  ballotNote,
   expanded,
   onToggle,
   recordsLoading,
@@ -226,7 +227,10 @@ function MemberRow({
 }: {
   member: MemberRowData
   items: RecordItem[]
-  periodLabel: string
+  /** "Period 19", or undefined when no period has opened on this committee. */
+  periodLabel: string | undefined
+  /** What this member's vote figure is about, article and all — see the page body. */
+  ballotNote: string
   expanded: boolean
   onToggle: () => void
   recordsLoading: boolean
@@ -310,11 +314,13 @@ function MemberRow({
               View account
             </Link>
             <span className="text-[12px] tabular-nums text-muted-foreground">
-              ≈ {formatApprox(member.votes)} votes on the {periodLabel} ballot
+              ≈ {formatApprox(member.votes)} {ballotNote}
             </span>
           </div>
 
-          {!member.voted && (
+          {/* Only with a ballot to speak of: before a period opens there is nothing this
+              account could have voted on, and the empty-items panel below says so. */}
+          {!member.voted && periodLabel !== undefined && (
             <p className="pb-2.5 text-[12.5px] leading-[1.5] text-muted-foreground">
               This account has not voted on the {periodLabel} ballot, so its stake is counted as Abstain on every item.
             </p>
@@ -431,7 +437,13 @@ export default function PoolDetail() {
   const started = startedOn(committeeId)
   const periodId =
     search.period !== undefined && started.includes(search.period) ? search.period : started[started.length - 1]
-  const periodLabel = periodId === undefined ? 'this' : `Period ${periodId}`
+  const periodLabel = periodId === undefined ? undefined : `Period ${periodId}`
+  /**
+   * The tail every vote figure on this page carries. A committee can have an ingested
+   * AlgoQuarters ledger before any period opens on it, and then there is no ballot to name —
+   * so the phrase changes rather than dropping a placeholder into "on the … ballot".
+   */
+  const ballotNote = periodLabel === undefined ? 'votes in this committee' : `votes on the ${periodLabel} ballot`
 
   const { data: period } = usePeriod(periodId ?? 0, periodId !== undefined)
   const { data: periodBody } = usePeriodBody(periodId ?? 0, periodId !== undefined)
@@ -630,7 +642,7 @@ export default function PoolDetail() {
     {
       label: 'Voting power',
       value: pool ? pool.votes.toLocaleString() : '—',
-      note: `votes on the ${periodLabel} ballot`,
+      note: ballotNote,
     },
     {
       label: 'Share of committee',
@@ -675,7 +687,7 @@ export default function PoolDetail() {
             <div className="mt-2 font-display text-3xl font-bold leading-none tabular-nums text-teal-strong">
               ≈ {formatApprox(myPosition.votes)}
             </div>
-            <p className="mt-1.5 text-[11.5px] text-muted-foreground">votes on the {periodLabel} ballot</p>
+            <p className="mt-1.5 text-[11.5px] text-muted-foreground">{ballotNote}</p>
           </>
         ) : (
           <p className="mt-2.5 text-[12.5px] leading-[1.5] text-muted-foreground">
@@ -973,7 +985,7 @@ export default function PoolDetail() {
           <span>Account</span>
           <span className="hidden text-right sm:block">Stake</span>
           <span className="hidden text-right sm:block">Share</span>
-          <span className="hidden text-right sm:block">{periodLabel}</span>
+          <span className="hidden text-right sm:block">{periodLabel ?? 'Vote'}</span>
           <span />
         </div>
 
@@ -997,6 +1009,7 @@ export default function PoolDetail() {
                 member={member}
                 items={shownItems}
                 periodLabel={periodLabel}
+                ballotNote={ballotNote}
                 expanded={openMember === member.address}
                 onToggle={() => setOpenMember((open) => (open === member.address ? null : member.address))}
                 recordsLoading={loadingRecords}
