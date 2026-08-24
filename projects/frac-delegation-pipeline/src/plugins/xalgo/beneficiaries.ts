@@ -189,9 +189,11 @@ export function escrowLikeWarnings(holders: Iterable<SelfHolderCustody>): string
 
 /**
  * Resolve every candidate not yet in `cache` (the pool excepted), adding the results to it.
- * Candidates are the addresses holding fxALGO at the window start plus every fxALGO receiver in the
- * window. Returns the addresses added and the escrow-factory warnings among them, for the caller to
- * log and persist.
+ * Candidates are what `collectBeneficiaryCandidates` produces: the addresses holding *either* xALGO
+ * or fxALGO at the window start, plus every receiver of either inside it — direct xALGO folds
+ * through this map exactly like pool share, so an escrow holding only bare xALGO must resolve too.
+ * Returns the addresses added and the escrow-factory warnings among them, for the caller to log and
+ * persist.
  */
 export async function resolveBeneficiaries(
   indexer: Indexer,
