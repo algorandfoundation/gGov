@@ -67,7 +67,13 @@ async function deployRegistryWithoutBytecode(localnet: ReturnType<typeof algoran
   const factory = localnet.algorand.client.getTypedAppFactory(GGovRegistryFactory, {
     defaultSender: admin,
   })
-  const { appClient } = await factory.deploy({ onUpdate: 'append', onSchemaBreak: 'append' })
+  const { appClient } = await factory.deploy({
+    onUpdate: 'append',
+    onSchemaBreak: 'append',
+    // The registry's create is an ABI method now (it opens its boxes to foreign reads), so a bare
+    // create is no longer routed and fails with an `err` on the OnCompletion match.
+    createParams: { method: 'createApplication', args: [] },
+  })
   await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (10).algos())
   const sdk = new GGovSDK({
     algorand: localnet.algorand,

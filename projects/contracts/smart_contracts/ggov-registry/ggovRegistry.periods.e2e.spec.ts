@@ -115,7 +115,7 @@ describe('GGovRegistry periods', () => {
       const { appClient: bareClient } = await factory.deploy({
         onUpdate: 'append',
         onSchemaBreak: 'append',
-        createParams: { extraProgramPages: 3 },
+        createParams: { method: 'createApplication', args: [], extraProgramPages: 3 },
       })
       await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
       const sdk = createSDK(localnet, bareClient.appId, testAccount)
@@ -216,7 +216,7 @@ describe('GGovRegistry periods', () => {
       const { appClient: bareClient } = await factory.deploy({
         onUpdate: 'append',
         onSchemaBreak: 'append',
-        createParams: { extraProgramPages: 3 },
+        createParams: { method: 'createApplication', args: [], extraProgramPages: 3 },
       })
       await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
       const sdk = createSDK(localnet, bareClient.appId, testAccount)

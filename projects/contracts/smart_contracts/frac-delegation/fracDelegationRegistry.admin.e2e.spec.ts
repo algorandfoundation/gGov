@@ -49,6 +49,19 @@ describe('FracDelegationRegistry admin', () => {
       expect({ ints: appInfo.globalInts, bytes: appInfo.globalByteSlices }).toEqual(registryArc56.state.schema.global)
     })
 
+    // AVM v13 relaxes box isolation: an app can open its own boxes to reads by any other app. The
+    // registries do this in createApplication, which is why their create is an ABI call now rather
+    // than a bare one — app_params_set can only be run by an app on itself.
+    test('registry opens its boxes to foreign reads at create', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client } = await deployFracRegistry(localnet, admin)
+
+      const params = (await localnet.algorand.client.algod.getApplicationByID(client.appId).do()).params
+      expect(params?.foreignBoxReads).toBe(true)
+      // Reads only: writes stay exclusive to the owning app.
+      expect(params?.familyBoxAccess ?? false).toBe(false)
+    })
+
     test('createRegistry uploads the instance approval bytecode at bootstrap', async () => {
       const { testAccount: admin } = localnet.context
       await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())

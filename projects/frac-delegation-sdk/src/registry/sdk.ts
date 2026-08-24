@@ -492,6 +492,11 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
       onUpdate: update ? 'update' : 'append',
       onSchemaBreak: update ? 'fail' : 'append',
       createParams: {
+        // The registry's create is an ABI method now, not a bare call: createApplication runs
+        // app_params_set to open this app's boxes to reads by any app. That opcode can only be run
+        // by the app on itself, so it has to happen inside a call.
+        method: 'createApplication',
+        args: [],
         // Sized from the compiled program rather than pinned at the old AVM maximum, plus ONE spare
         // page. Sized exactly, this registry would get a 4096-byte ceiling for a ~2.9KB program,
         // which is tighter than the 3 pages it used to carry — and adding pages later is the one

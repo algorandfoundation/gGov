@@ -100,6 +100,19 @@ describe('GGovRegistry admin', () => {
       expect(Number(after.extraProgramPages)).toBe(Number(before.extraProgramPages))
     })
 
+    // AVM v13 relaxes box isolation: an app can open its own boxes to reads by any other app. The
+    // registries do this in createApplication, which is why their create is an ABI call now rather
+    // than a bare one — app_params_set can only be run by an app on itself.
+    test('registry opens its boxes to foreign reads at create', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client } = await deployRegistry(localnet, admin)
+
+      const params = (await localnet.algorand.client.algod.getApplicationByID(client.appId).do()).params
+      expect(params?.foreignBoxReads).toBe(true)
+      // Reads only: writes stay exclusive to the owning app.
+      expect(params?.familyBoxAccess ?? false).toBe(false)
+    })
+
     test('createRegistry applies optional configuration', async () => {
       // note: normally frac registry will be deployed after ggov registry, but this test exercises the config
       const { testAccount: admin } = localnet.context

@@ -283,6 +283,24 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.fracRegistryApp.value = appId
   }
 
+  // ── Create ────────────────────────────────────────────────────────
+
+  /**
+   * Convention-based create.
+   *
+   * Opts this app's boxes into reads by any application (AVM v13 `ForeignBoxReads`). Box isolation
+   * used to mean only the owning app could touch its boxes, which is why this registry carries a
+   * wall of readonly getters and log-dumping methods that exist solely so other apps and off-chain
+   * readers can see box contents. Opening reads here lets a reader go straight to the box.
+   *
+   * Reads only — writes stay exclusive to this app. `app_params_set` is run by an app on itself, so
+   * it can only be enabled from inside a call like this one; an app that is not updatable can never
+   * opt in later, which is what preserves intentional immutability.
+   */
+  public createApplication(): void {
+    op.AppParamsSet.appForeignBoxReads(true)
+  }
+
   // ── Admin ─────────────────────────────────────────────────────────
 
   /** Caller must match this registry's stored `admin` (`BaseContract` override). */
