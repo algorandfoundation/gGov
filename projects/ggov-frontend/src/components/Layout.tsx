@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useGlobalState } from '@/hooks/queries'
+import { fracEnabled } from '@/lib/fracReaderSdk'
 import { useIsMobile } from '@/hooks/use-mobile'
 import Brand from '@/components/Brand'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Vote, Users, Settings, BookOpen, RefreshCw, type LucideIcon } from 'lucide-react'
+import { Vote, Users, Layers, Settings, BookOpen, RefreshCw, type LucideIcon } from 'lucide-react'
 
 interface NavItem {
   to: string
@@ -43,6 +44,9 @@ function useNavItems(): NavItem[] {
     ...(isOperator ? [{ to: '/manage', label: 'Manage', icon: Settings }] : []),
     { to: '/vote', label: 'Vote', icon: Vote },
     { to: '/committees', label: 'Committees', icon: Users },
+    // Pooled voting only exists on networks with a frac registry; without one the
+    // pools page has nothing to show, so it isn't advertised either.
+    ...(fracEnabled ? [{ to: '/pools', label: 'Pools', icon: Layers }] : []),
     { to: '/docs', label: 'Docs', icon: BookOpen },
   ]
 }

@@ -12,6 +12,7 @@ import {
   APP_SPEC,
 } from '../generated/FracDelegationRegistryClient.js'
 import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient.js'
+import type { FracInstanceCommitteeStanding } from '../generated/FracDelegationRegistryClient.js'
 import { getConstructorConfig } from '../networkConfig.js'
 import { ReaderConstructorArgs } from './types.js'
 import { assertUint } from '../util/assertUint.js'
@@ -40,9 +41,15 @@ import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
  * `logAccountVotingRecords` — 3 references per instance: the registry `instances` box, the instance
  * app (its inner call), and the 1 box `getVotingRecord` reads on that instance (`votingRecords`).
  * => floor((128 - 1) / 3) = 42.
+ *
+ * `logInstanceCommittees` — no fixed cost (it takes no account), and 4 references per instance: the
+ * registry `instances` box, the instance app (its inner call, which doubles as the `app_params_get`
+ * existence probe), and the 2 boxes `getCommitteeStanding` reads on that instance (`committees`,
+ * `committeeAq`). => floor(128 / 4) = 32.
  */
 const AQ_PAGE_SIZE = 25
 const VOTING_RECORDS_PAGE_SIZE = 42
+const INSTANCE_COMMITTEES_PAGE_SIZE = 32
 
 /**
  * Struct layouts for decoding the per-instance log payloads of `logAccountInstanceAQ`
@@ -70,6 +77,7 @@ export class FracDelegationRegistryReaderSDK {
    *  Mutable so a caller can dial them down (or a test can force paging with few instances). */
   public aqPageSize = AQ_PAGE_SIZE
   public votingRecordsPageSize = VOTING_RECORDS_PAGE_SIZE
+  public instanceCommitteesPageSize = INSTANCE_COMMITTEES_PAGE_SIZE
 
   constructor({ algorand, concurrency = 4, debug, ...rest }: ReaderConstructorArgs) {
     const { appId, readerAccount } = getConstructorConfig(rest)
@@ -204,7 +212,7 @@ export class FracDelegationRegistryReaderSDK {
    */
   async getAccountInstanceAQs(account: string, committeeId: Uint8Array | string): Promise<FracAccountCommitteeAq[]> {
     const committeeIdRaw = committeeIdToRaw(committeeId)
-    return this._pageAccountInstanceLogs<FracAccountCommitteeAq>(
+    return this._pageInstanceLogs<FracAccountCommitteeAq>(
       this.aqPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountInstanceAq({
@@ -226,7 +234,7 @@ export class FracDelegationRegistryReaderSDK {
    */
   async getAccountVotingRecords(account: string, periodId: bigint | number): Promise<FracAccountVotingRecord[]> {
     const periodIdArg = assertUint(periodId, 32, 'periodId')
-    return this._pageAccountInstanceLogs<FracAccountVotingRecord>(
+    return this._pageInstanceLogs<FracAccountVotingRecord>(
       this.votingRecordsPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountVotingRecords({
@@ -262,12 +270,17 @@ export class FracDelegationRegistryReaderSDK {
 
   /**
    * Drive one of the registry's paged per-instance log methods to completion. Each call logs the
-   * account's total instance count first (a `uint16`), then one struct per instance covered by the
-   * page; this reads the total, decodes the page, and advances `offset` by `pageSize` until the
-   * whole instance list is covered. The high `staticFee` on each page (set by the caller) covers the
-   * fee pool for the page's inner calls and is free under `allowEmptySignatures`.
+   * total instance count first (a `uint16`) — the account's instance list for the account-scoped
+   * methods, the registry's whole instance range for `logInstanceCommittees` — then one struct per
+   * instance covered by the page; this reads the total, decodes the page, and advances `offset` by
+   * `pageSize` until the whole range is covered. The high `staticFee` on each page (set by the
+   * caller) covers the fee pool for the page's inner calls and is free under `allowEmptySignatures`.
+   *
+   * A page may log fewer records than it covers instances (`logInstanceCommittees` skips instances
+   * whose app is gone), so paging is driven by `offset`/`total` rather than by how many records came
+   * back.
    */
-  private async _pageAccountInstanceLogs<T>(
+  private async _pageInstanceLogs<T>(
     pageSize: number,
     buildPage: (limit: number, offset: number) => FracDelegationRegistryComposer<any>,
     structName: string,
@@ -292,6 +305,61 @@ export class FracDelegationRegistryReaderSDK {
   }
 
   // ── Instances ────────────────────────────────────────────────────
+
+  /**
+   * Every registered instance's standing in gGov committee `committeeId` — one
+   * `FracInstanceCommitteeStanding` per live instance, ascending by numeric ID, joining the
+   * instance's identity with its synced `totalVotes` and the AlgoQuarters ledger behind it.
+   *
+   * The one-call answer to "which pools hold power in this committee, and how much stake is behind
+   * it". The alternative it replaces is `getExistingInstances()` — a box-map read plus one algod
+   * lookup per instance — followed by `getCommittees` and `getCommitteeAq` per instance: roughly
+   * `3N + 1` round-trips against this method's `ceil(N / instanceCommitteesPageSize)`.
+   *
+   * Instances whose app has been deleted are dropped on chain (they cannot be inner-called), which
+   * is what makes the SDK-side existence filter unnecessary. An instance that never synced the
+   * committee is *not* dropped: it comes back with `committeeNumId` 0 and zeroed figures, so callers
+   * can distinguish "synced, holds nothing" from "never synced". Filter on `totalVotes > 0` for
+   * pools that actually carry weight here.
+   *
+   * Paged like the account-scoped log readers: the page size is bounded by the simulate
+   * unnamed-reference budget (`instanceCommitteesPageSize`), and a long instance list spans several
+   * simulate round-trips.
+   */
+  async getInstanceCommitteeStandings(committeeId: Uint8Array | string): Promise<FracInstanceCommitteeStanding[]> {
+    const committeeIdRaw = committeeIdToRaw(committeeId)
+    return this._pageInstanceLogs<FracInstanceCommitteeStanding>(
+      this.instanceCommitteesPageSize,
+      (limit, offset) =>
+        this.readClient.newGroup().logInstanceCommittees({
+          args: { committeeId: committeeIdRaw, limit, offset },
+          staticFee: ((limit + 1) * 1000).microAlgo(),
+        }),
+      'FracInstanceCommitteeStanding',
+    )
+  }
+
+  /**
+   * One instance's standing in gGov committee `committeeId`, tagged with its identity — the
+   * singular counterpart of {@link getInstanceCommitteeStandings}, for a known `instanceNumId` and
+   * with no paging. Throws if the instance is not registered, and (unlike the paged reader, which
+   * skips them) if its app has been deleted.
+   */
+  async getInstanceCommittee(
+    instanceNumId: number | bigint,
+    committeeId: Uint8Array | string,
+  ): Promise<FracInstanceCommitteeStanding> {
+    const instanceNumIdArg = assertUint(instanceNumId, 16, 'instanceNumId')
+    const committeeIdRaw = committeeIdToRaw(committeeId)
+    const { returns } = await this.readClient
+      .newGroup()
+      .getInstanceCommittee({
+        args: { instanceNumId: instanceNumIdArg, committeeId: committeeIdRaw },
+        staticFee: (2 * 1000).microAlgo(), // outer call + one inner call (instance getCommitteeStanding)
+      })
+      .simulate(SIMULATE_PARAMS)
+    return returns[0]!
+  }
 
   /**
    * All recorded instances, keyed by `instanceNumId`. The `instances` box entry is never removed

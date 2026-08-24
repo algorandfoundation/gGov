@@ -32,6 +32,7 @@ import {
   errEscrowAssigned,
   errInstanceAppNotConfigured,
   errInstanceAppNotExists,
+  errInstanceNameTooLong,
   errUnauthorized,
 } from '../base/errors.algo'
 import {
@@ -39,12 +40,25 @@ import {
   FracAccountVotingRecord,
   FracEscrowInstance,
   FracInstance,
+  FracInstanceCommitteeStanding,
   FracRegAccount,
 } from '../base/types.algo'
 import { u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 
 export const fracRegistryGGovKey = Bytes`gGovRegistryApp`
+
+/**
+ * Longest instance name `createInstance` accepts, in UTF-8 bytes.
+ *
+ * The name rides along in every `FracInstanceCommitteeStanding`, and `logInstanceCommittees` emits
+ * one of those per instance as a single AVM log - which the VM caps at 1024 bytes. The record's
+ * fixed head is 42 bytes plus the string's 2-byte length prefix, so an unbounded name could push a
+ * page past that cap and fail the *whole* page, taking every pooled-voting read of this registry
+ * down with it. Bounded here, at the one place a name enters the system, rather than truncated at
+ * every reader. Do not raise this without re-checking the record's encoded size.
+ */
+const MAX_INSTANCE_NAME_BYTES: uint64 = 64
 
 /**
  * Fractional Delegation Registry: global singleton, instance deployer.
@@ -197,6 +211,7 @@ export class FracDelegationRegistryContract extends BaseContract {
    */
   public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
     this.ensureCallerIsAdmin()
+    loggedAssert(Bytes(name).length <= MAX_INSTANCE_NAME_BYTES, errInstanceNameTooLong)
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
@@ -452,6 +467,116 @@ export class FracDelegationRegistryContract extends BaseContract {
       instanceName: instance.name,
       isDelegated: record.isDelegated,
       topicVotes: clone(record.topicVotes),
+    }
+  }
+
+  /**
+   * Log every registered instance's standing in gGov committee `committeeId` - one
+   * `FracInstanceCommitteeStanding` per instance, joining the instance's identity from this
+   * registry's `instances` box with the snapshot and AlgoQuarters ledger read from the instance
+   * itself. Readonly, intended for simulate: it inner-calls each instance's `getCommitteeStanding`.
+   *
+   * The cross-instance transpose of `logAccountInstanceAQ`. That one asks "where does *this account*
+   * stand across its instances"; this asks "where does *every instance* stand in this committee" -
+   * the question behind a pools index, which otherwise costs a caller an instance listing plus two
+   * reads per instance.
+   *
+   * Paged over the instance numeric ID range rather than a caller-supplied list: IDs are dense
+   * (`lastInstanceNumId` only ever increments, and `instances` boxes are never removed), so the
+   * registry can enumerate them itself and the caller needs no prior read at all. The full instance
+   * count is logged first (a `uint16`), then one record per live instance in the page, ascending by
+   * numeric ID starting at `offset + 1`.
+   *
+   * A page may log *fewer* records than it covers instances, so callers must not align results by
+   * index - each record names its own `instanceNumId`. Two reasons a slot yields nothing:
+   * - The `instances` box is missing (cannot happen today; defensive against a future removal path).
+   * - The instance's app has been deleted. It cannot be inner-called, and one dead instance must not
+   *   take down the whole page, so it is skipped. This is the on-chain equivalent of the existence
+   *   filter an SDK-side caller would otherwise do with one algod lookup per instance.
+   *
+   * Non-throwing otherwise: an instance that never synced the committee logs a record with
+   * `committeeNumId` 0 rather than being dropped, so a caller can tell "not synced" from "not there".
+   *
+   * @param committeeId 32-byte gGov committee ID
+   * @param limit Max instances to cover on this call
+   * @param offset Number of instance numeric IDs to skip (IDs are 1-based, so this starts at `offset + 1`)
+   */
+  @abimethod({ readonly: true })
+  public logInstanceCommittees(committeeId: CommitteeId, limit: Uint16, offset: Uint16): void {
+    const total: uint64 = this.lastInstanceNumId.value
+
+    // Total first: lets a caller size the result set and page for the rest without a separate read.
+    log(encodeArc4(u16(total)))
+
+    const end: uint64 = offset.asUint64() + limit.asUint64()
+    for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
+      const instanceNumId = u16(i + 1)
+      const box = this.instances(instanceNumId)
+      if (!box.exists) continue
+      const instance = clone(box.value)
+
+      // `app_params_get` reports absence rather than failing, which is the only way to tell a
+      // deleted instance app from a live one before committing to an inner call to it. `appCreator`
+      // over `appApprovalProgram` because only the existence flag is wanted - no reason to push a
+      // program's worth of bytes onto the stack to throw away.
+      const [, appExists] = op.AppParams.appCreator(instance.appId)
+      if (!appExists) continue
+
+      const standing = compileArc4(FracDelegationInstanceContract).call.getCommitteeStanding({
+        appId: instance.appId,
+        args: [committeeId],
+      }).returnValue
+
+      const tagged: FracInstanceCommitteeStanding = {
+        instanceNumId,
+        instanceAppId: instance.appId.id,
+        instanceName: instance.name,
+        instanceNumAccounts: instance.numAccounts,
+        committeeNumId: standing.committeeNumId,
+        totalVotes: standing.totalVotes,
+        totalAq: standing.totalAq,
+        ingestedAq: standing.ingestedAq,
+        totalAccounts: standing.totalAccounts,
+        numAccounts: standing.numAccounts,
+      }
+      log(encodeArc4(tagged))
+    }
+  }
+
+  /**
+   * One instance's standing in gGov committee `committeeId`, tagged with its identity - the
+   * singular, directly-returning counterpart of `logInstanceCommittees`. Readonly.
+   *
+   * Returning (rather than logging) the struct is also what registers
+   * `FracInstanceCommitteeStanding` in this contract's ARC-56, so SDKs decode the
+   * `logInstanceCommittees` payload from the generated struct instead of a hand-maintained copy -
+   * the same arrangement `getAccountVotingRecord` has with `logAccountVotingRecords`.
+   *
+   * Throws if the instance is not registered. Unlike the paged logger it does not skip a deleted
+   * app: a caller naming one instance wants the failure, not a silent empty record.
+   *
+   * @param instanceNumId Registry-assigned numeric ID of the instance
+   * @param committeeId 32-byte gGov committee ID
+   */
+  @abimethod({ readonly: true })
+  public getInstanceCommittee(instanceNumId: Uint16, committeeId: CommitteeId): FracInstanceCommitteeStanding {
+    loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
+    const instance = clone(this.instances(instanceNumId).value)
+    const standing = compileArc4(FracDelegationInstanceContract).call.getCommitteeStanding({
+      appId: instance.appId,
+      args: [committeeId],
+    }).returnValue
+    return {
+      instanceNumId,
+      instanceAppId: instance.appId.id,
+      instanceName: instance.name,
+      instanceNumAccounts: instance.numAccounts,
+      committeeNumId: standing.committeeNumId,
+      totalVotes: standing.totalVotes,
+      totalAq: standing.totalAq,
+      ingestedAq: standing.ingestedAq,
+      totalAccounts: standing.totalAccounts,
+      numAccounts: standing.numAccounts,
     }
   }
 

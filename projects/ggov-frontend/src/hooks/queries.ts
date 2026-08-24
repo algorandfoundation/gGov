@@ -62,6 +62,13 @@ export const queryKeys = {
     ['fracCanVote', periodId, instanceNumId, voter, sender] as const,
   // One account's pooled vote records for a period, across every instance it's in.
   fracVotingRecords: (account: string, periodId: number) => ['fracVotingRecords', account, periodId] as const,
+  // Every pool's power in ONE committee — the committee page's pooled section.
+  // Committee-scoped rather than account-scoped, so it shares nothing with the
+  // account-side keys above.
+  fracCommitteePools: (committeeId: string) => ['fracCommitteePools', committeeId] as const,
+  // One pool's aggregate internal tally for one period — how much of its stake voted.
+  fracPeriodVoteCache: (instanceNumId: number, periodId: number) =>
+    ['fracPeriodVoteCache', instanceNumId, periodId] as const,
 }
 
 export function useGlobalState() {

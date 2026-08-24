@@ -142,6 +142,19 @@ export interface TopicConfig {
  * `PooledPosition`), so one fixture drives both.
  */
 export type MockPooledPosition = PooledPosition & {
+  /**
+   * Pool-wide member count for the committee. Fixtures are keyed by account, so
+   * without this a pool has as many "members" as the story gave it accounts —
+   * fine for a card, misleading on the pools index. Set it to the figure the
+   * registry would report.
+   */
+  poolMembers?: number
+  /**
+   * AlgoQuarters in the pool that have cast an internal ballot — the pools
+   * index's turnout column. Defaults to summing the fixture's own `voteRecord`s,
+   * which only reaches pool-scale numbers if the story defines pool-scale accounts.
+   */
+  poolVotedAq?: number
   /** Ballot eligibility (the contract's `canVote`); defaults to true. */
   canVote?: boolean
   /** Recorded pooled ballot, [topic][option] AlgoQuarters; present = this position voted. */

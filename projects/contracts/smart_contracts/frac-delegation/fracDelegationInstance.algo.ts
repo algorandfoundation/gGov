@@ -55,6 +55,7 @@ import {
   FracAccountAqKey,
   FracAccountCommitteeAq,
   FracCommitteeAq,
+  FracCommitteeStanding,
   FracEscrowVotes,
   FracInstanceCommittee,
   FracInstancePeriod,
@@ -64,6 +65,7 @@ import {
   FracVoteCast,
   FracVotingRecord,
   getEmptyFracCommitteeAq,
+  getEmptyFracCommitteeStanding,
   getEmptyFracEscrowVotes,
   getEmptyFracInstanceCommittee,
   getEmptyFracInstancePeriod,
@@ -415,6 +417,53 @@ export class FracDelegationInstanceContract extends BaseContract {
       } else {
         log(encodeArc4(getEmptyFracInstanceCommittee()))
       }
+    }
+  }
+
+  /**
+   * This instance's headline position in gGov committee `committeeId`: the snapshot's `totalVotes`
+   * joined with the AlgoQuarters ledger behind it, in one readonly call. Readonly.
+   *
+   * Exists so `FracDelegationRegistry.logInstanceCommittees` can tag one record per instance from a
+   * single inner call. The join has to happen here: `committeeAq` is keyed by the locally-synced
+   * `committeeNumId`, which is only knowable after reading `committees` - so a caller doing this
+   * from outside pays two round-trips and cannot start the second until the first lands.
+   *
+   * Neither half is required to exist. An unsynced committee returns the all-zero record
+   * (`committeeNumId` 0); a synced committee with no ledger open returns real `totalVotes` and
+   * `totalAq` 0. See `FracCommitteeStanding` for the two sentinels.
+   *
+   * Reads the snapshot field-wise rather than whole: `escrowsVotes` sits between the two fields
+   * wanted here and grows with the escrow count, and this is on the hot path of a paged logger.
+   *
+   * @param committeeId 32-byte gGov committee ID
+   */
+  @abimethod({ readonly: true })
+  public getCommitteeStanding(committeeId: CommitteeId): FracCommitteeStanding {
+    const committeeBox = this.committees(committeeId)
+    if (!committeeBox.exists) return getEmptyFracCommitteeStanding()
+    const committeeNumId = committeeBox.value.committeeNumId
+    const totalVotes = committeeBox.value.totalVotes
+
+    const aqBox = this.committeeAq(committeeNumId)
+    if (!aqBox.exists) {
+      return {
+        committeeNumId,
+        totalVotes,
+        totalAq: u32(0),
+        ingestedAq: u32(0),
+        totalAccounts: u32(0),
+        numAccounts: u32(0),
+      }
+    }
+    const aq = clone(aqBox.value)
+    return {
+      committeeNumId,
+      totalVotes,
+      totalAq: aq.totalAq,
+      ingestedAq: aq.ingestedAq,
+      totalAccounts: aq.totalAccounts,
+      numAccounts: aq.numAccounts,
     }
   }
 
