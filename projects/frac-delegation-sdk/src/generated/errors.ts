@@ -50,7 +50,6 @@ export const ErrorMessages: Record<string, string> = {
   "ERR:GP_EX": "Period already exists",
   "ERR:GP_NX": "Period does not exist",
   "ERR:GP_NC": "Period approval program not yet uploaded to registry",
-  "ERR:AP_LN": "Approval page exceeds the 4096-byte AVM bytes cap",
   "ERR:P_IR": "Cannot set period counter: a period exists in the affected id range",
   "ERR:GP_NS": "Voting has not started",
   "ERR:GP_EN": "Voting period ended",

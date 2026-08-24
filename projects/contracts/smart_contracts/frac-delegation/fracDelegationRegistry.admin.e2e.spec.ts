@@ -255,7 +255,11 @@ describe('FracDelegationRegistry admin', () => {
 
     test('non-admin cannot uploadInstanceApproval', async () => {
       await expect(
-        nonAdminSDK.uploadInstanceApproval({ page1: new Uint8Array([0x01]), page2: new Uint8Array() }),
+        nonAdminSDK.uploadInstanceApproval({
+          page1: new Uint8Array([0x01]),
+          page2: new Uint8Array(),
+          page3: new Uint8Array(),
+        }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 

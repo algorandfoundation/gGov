@@ -30,7 +30,6 @@ import {
 import { BaseContract } from '../base/base.algo'
 import {
   errEscrowAssigned,
-  errApprovalPageTooLong,
   errInstanceAppNotConfigured,
   errInstanceAppNotExists,
   errInstanceNameTooLong,
@@ -185,29 +184,30 @@ export class FracDelegationRegistryContract extends BaseContract {
    * Upload (or re-upload) the whole FracDelegationInstance approval bytecode into a registry box in
    * one call. Admin only.
    *
-   * Takes the program as two pages `createInstance` reads back out, because an
-   * AVM bytes value caps at 4096 — so a single argument could never carry a whole program. Pass the
-   * program in `page1` with an empty `page2` when it fits in 4096 bytes.
+   * Takes the program as three pages, because the network rejects any single application argument
+   * over 4096 bytes and an ARC-4 `byte[]` spends 2 of those on its length prefix, so a page
+   * carries at most 4094 bytes of program, and one argument could never hold a whole one. Three
+   * pages (12282 bytes) cover an approval program grown into AVM v13's 7 extra program pages,
+   * alongside the clear-state program sharing them. Pass the program in `page1` and leave the
+   * trailing pages empty when it fits; the pages are simply concatenated here, so the split points
+   * carry no meaning.
    *
    * Replaces a chunked `uploadInstanceApprovalPartial(startOffset, data)` that needed a full
    * 16-transaction group: total application arguments were capped at 2KB before AVM v13 raised the
    * limit to 16KB, so the bytecode had to be dribbled in 2000 bytes at a time.
    */
-  public uploadInstanceApproval(page1: bytes, page2: bytes): void {
+  public uploadInstanceApproval(page1: bytes, page2: bytes, page3: bytes): void {
     this.ensureCallerIsAdmin()
-    // An AVM bytes value caps at 4096, and the network rejects any single application argument over
-    // that too — an ARC-4 byte[] adds a 2-byte length prefix, so the largest page that survives
-    // encoding is 4094. The pages are simply concatenated here, so the split point does not matter.
-    const MAX_PAGE: uint64 = 4096
-    loggedAssert(page1.length <= MAX_PAGE, errApprovalPageTooLong)
-    loggedAssert(page2.length <= MAX_PAGE, errApprovalPageTooLong)
 
     const boxKey = Bytes`Iap`
     op.Box.delete(boxKey)
-    op.Box.create(boxKey, page1.length + page2.length)
+    op.Box.create(boxKey, page1.length + page2.length + page3.length)
     op.Box.replace(boxKey, 0, page1)
     if (page2.length > 0) {
       op.Box.replace(boxKey, page1.length, page2)
+    }
+    if (page3.length > 0) {
+      op.Box.replace(boxKey, page1.length + page2.length, page3)
     }
   }
 

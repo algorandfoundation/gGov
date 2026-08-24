@@ -325,15 +325,16 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
   makeUploadInstanceApprovalTxns({
     page1,
     page2,
+    page3,
     staticFee,
     note,
     builder,
-  }: { staticFee?: number } & FracDelegationRegistryContractArgs['uploadInstanceApproval(byte[],byte[])void'] &
+  }: { staticFee?: number } & FracDelegationRegistryContractArgs['uploadInstanceApproval(byte[],byte[],byte[])void'] &
     CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    const totalBytes = page1.length + page2.length
+    const totalBytes = page1.length + page2.length + page3.length
     return builder.uploadInstanceApproval({
-      args: { page1, page2 },
+      args: { page1, page2, page3 },
       // Creating and filling a box of N bytes costs N of box-write budget, and each box reference
       // buys BOX_IO_BYTES_PER_REF of it. Resource population only adds one reference per distinct
       // box, which covers a 1024-byte write and no more, so the budget is bought explicitly here.
@@ -373,16 +374,21 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     // rejects as already-in-ledger while the earlier one is inside its validity window.
     note = note ?? `iap-upload-${noteNonce()}`
     const { page1, page2 } = splitApprovalPages(bytecode)
+    // The contract takes a third page (a program can outgrow the 2 * APPROVAL_PAGE_BYTES two
+    // arguments carry), but a single app call can only buy 8 box references — 8192 bytes of box
+    // write budget — so what this one-call upload can store still ends at two pages. Filling page3
+    // means splitting the write across more app calls first.
+    const page3 = new Uint8Array()
 
     // Two round trips on purpose. Simulate must run with a fee that already passes the v13 usage
     // check, so the probe goes out at UPLOAD_APPROVAL_MAX_FEE_MICROALGOS; the real send then pays
     // exactly what the network asked for.
     // eslint-disable-next-line @typescript-eslint/await-thenable
-    const probe = await this.makeUploadInstanceApprovalTxns({ page1, page2, note })
+    const probe = await this.makeUploadInstanceApprovalTxns({ page1, page2, page3, note })
     const simulated = await probe.simulate({ skipSignatures: true })
     const fee = feeFromGroupUsage(simulated.simulateResponse, await minFeeMicroAlgos(this.algorand.client.algod))
 
-    await this.uploadInstanceApproval({ page1, page2, staticFee: Number(fee), note })
+    await this.uploadInstanceApproval({ page1, page2, page3, staticFee: Number(fee), note })
   }
 
   // ── Admin: addInstance (paired payment + createInstance) ─────────
