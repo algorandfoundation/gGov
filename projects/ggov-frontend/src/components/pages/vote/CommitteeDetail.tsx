@@ -215,10 +215,18 @@ function StartEndPanel({ committee }: { committee: CommitteeOption }) {
 const LEADERBOARD_GRID =
   'grid grid-cols-[28px_1fr_auto] items-center gap-3 sm:grid-cols-[36px_1fr_minmax(120px,200px)_90px] sm:gap-3.5'
 
-/** Share-of-total meter. Same track/fill at both breakpoints, different height. */
+/**
+ * Share-of-total meter. Same track/fill at both breakpoints, different height.
+ *
+ * Decorative: the bar is scaled against the *largest* member rather than the
+ * total, so it is a ranking cue and not the figure itself. The share is always
+ * carried in text beside it — visibly above `sm`, screen-reader-only below,
+ * where the share column is dropped — so the bar is hidden from assistive tech
+ * rather than given a value it does not actually encode.
+ */
 function ShareBar({ barPct, className }: { barPct: number; className?: string }) {
   return (
-    <div className={cn('overflow-hidden rounded-full bg-muted', className)}>
+    <div aria-hidden="true" className={cn('overflow-hidden rounded-full bg-muted', className)}>
       <div className="h-full rounded-full bg-algo-blue dark:bg-algo-teal" style={{ width: `${barPct}%` }} />
     </div>
   )
@@ -263,8 +271,11 @@ function MemberRow({
             {name ?? ellipsed}
           </div>
           {name && <div className="truncate font-mono text-[11.5px] text-muted-foreground">{ellipsed}</div>}
-          {/* Below `sm` the share column is gone, so the bar rides under the name. */}
+          {/* Below `sm` the share column is gone, so the bar rides under the name —
+              with the percentage it stands for kept for screen readers, which
+              would otherwise lose the figure entirely at this breakpoint. */}
           <ShareBar barPct={barPct} className="mt-1.5 h-[5px] sm:hidden" />
+          <span className="sr-only sm:hidden">{share.toFixed(2)}% of committee votes</span>
         </div>
       </div>
       <div className="hidden items-center gap-2.5 sm:flex">

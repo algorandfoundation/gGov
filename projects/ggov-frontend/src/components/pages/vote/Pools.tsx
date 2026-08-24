@@ -282,6 +282,7 @@ function PoolRow({ pool, showKind }: { pool: PoolRowData; showKind: boolean }) {
  */
 export default function Pools() {
   const { committeeId } = useParams({ strict: false })
+  const navigate = useNavigate()
   const { activeAddress } = useWallet()
   const isMobile = useIsMobile()
   const [kind, setKind] = useState<KindFilter>('all')
@@ -384,6 +385,16 @@ export default function Pools() {
     setPage(0)
   }, [committeeId, activeKind])
 
+  // `/pools` only renders when its loader found no committee to hand over to —
+  // which is either "none exists" or "the loader's read failed". The client-side
+  // committee list tells the two apart, so when it arrives with a committee after
+  // all, finish the redirect the loader could not. `replace` so the failed
+  // shortcut does not sit in the history.
+  useEffect(() => {
+    if (committeeId || committees.length === 0) return
+    void navigate({ to: '/pools/$committeeId', params: { committeeId: committees[0].idBase64Url }, replace: true })
+  }, [committeeId, committees, navigate])
+
   // Clamp if the list shrinks under us (a background refetch), so we never render
   // an out-of-range, empty page.
   useEffect(() => {
@@ -452,7 +463,16 @@ export default function Pools() {
         />
       </div>
 
-      {isError ? (
+      {!committeeId ? (
+        // No committee in the route at all: the shortcut had nothing to redirect
+        // to. That is about the committee register, not about pooling, so say so
+        // rather than blaming the pools.
+        <EmptyPanel className="mt-6">
+          {loadingCommittees
+            ? 'Loading committees…'
+            : 'No committee window has been published yet, so there are no pools to rank.'}
+        </EmptyPanel>
+      ) : isError ? (
         <EmptyPanel className="mt-6">Pooled voting data is unavailable right now.</EmptyPanel>
       ) : !loadingPools && pools.length === 0 ? (
         <EmptyPanel className="mt-6">
