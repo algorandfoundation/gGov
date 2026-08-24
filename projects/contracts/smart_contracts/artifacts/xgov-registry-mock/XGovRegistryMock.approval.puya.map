@@ -5,7 +5,7 @@
     "../../base/base.algo.ts",
     "../../xgov-registry-mock/xGovRegistryMock.algo.ts"
   ],
-  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;AAUE;;;;;;;;;;;;;;;AAAoD;AAApD;AEYF;;AAAA;;;AAAA;;AAAA;AAAA;AAAA;;AAAA;AAAA;;;;;;;;;;;;;;;;;;;;;;AAAA;;;AAAA;;;;;;;;;;AAAA;AAAA;;AAAA;AAAA;;AAAA;AAAA;AAAA;AAGG;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAFS;AAAA;AAAA;AAAA;AAKW;AAAA;AAAA;;AAAA;AACS;;;AAAS;AAAA;AAAA;AAC9B;;;AAAA;AAAA;;AAAA;AAAA;AALR;AAAA;AAAA;AAAA;AAAA;AAAA;;;AASQ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAaS;AAKG;;;;AADC;;;;AANK;;;AAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAET;;;AAAA;;;AAAA;;;AAWhB;AAA0C;;AAA1C;;;;;;;AAAA;;;;;;;;;;AAAA;;;AAAA;;;AAAA;AAdF;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAmBA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;;AAAA;AAAA;AD1Ce;;AAAe;;AAAf;AAAb;;;AAAA;;;;;;;;;;AAAA;AAAA;ACEQ;AAAA;;AAAA;AA0CR;AAAA;AAFF;AAAA;ADnCC;;;AAAA;AAGsB;AAAG;AAAA;;AAAA;AAAxB;;;AACE;AAIkB;;;;AANN;;;AAAA;;;AAEZ;;;AAAA;;;AAAA;AADiC;AAAA;;;;AAHpC;AAAA",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;AAUE;;;;;;;;;;;;;;;AAAoD;AAApD;AEYF;;AAAA;;AAAA;;AAAA;AAAA;AAAA;;AAAA;AAAA;;;;;;;;;;;;;;;;;;;;;;AAAA;;;AAAA;;;;;;;;;;AAAA;AAAA;;AAAA;AAAA;;AAAA;AAAA;AAAA;AAGG;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAFS;AAAA;AAAA;AAAA;AAKW;AAAA;AAAA;;AAAA;AACS;;AAAS;AAAA;AAAA;AAC9B;;;AAAA;AAAA;;AAAA;AAAA;AALR;AAAA;AAAA;AAAA;AAAA;AAAA;;;AASQ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAaS;AAKG;;;;AADC;;;;AANK;;;AAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAET;;;AAAA;;;AAAA;;;AAWhB;AAA0C;;AAA1C;;;;;;;AAAA;;;;;;;;;;AAAA;;;AAAA;;;AAAA;AAdF;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAmBA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;;AAAA;AAAA;AD1Ce;;AAAe;;AAAf;AAAb;;AAAA;;;;;;;;;;AAAA;AAAA;ACEQ;AAAA;;AAAA;AA0CR;AAAA;AAFF;AAAA;ADnCC;;;AAAA;AAGsB;AAAG;AAAA;;AAAA;AAAxB;;AACE;AAIkB;;;;AANN;;;AAAA;;;AAEZ;;;AAAA;;;AAAA;AADiC;AAAA;;;AAHpC;AAAA",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -16,7 +16,7 @@
       "op": "intcblock 0 1 6 32"
     },
     "7": {
-      "op": "bytecblock base64(C4EBQw==) \"x\" 0x151f7c75"
+      "op": "bytecblock base64(DYEBQw==) \"x\" 0x151f7c75"
     },
     "21": {
       "op": "txn ApplicationID",
@@ -31,7 +31,7 @@
       "op": "bnz main_after_if_else@2",
       "stack_out": []
     },
-    "26": {
+    "25": {
       "op": "pushbytes \"lastAccountId\"",
       "defined_out": [
         "\"lastAccountId\""
@@ -40,7 +40,7 @@
         "\"lastAccountId\""
       ]
     },
-    "41": {
+    "40": {
       "op": "intc_0 // 0",
       "defined_out": [
         "\"lastAccountId\"",
@@ -51,11 +51,11 @@
         "0"
       ]
     },
-    "42": {
+    "41": {
       "op": "app_global_put",
       "stack_out": []
     },
-    "43": {
+    "42": {
       "block": "main_after_if_else@2",
       "stack_in": [],
       "op": "txn NumAppArgs",
@@ -66,11 +66,11 @@
         "tmp%0#0"
       ]
     },
-    "45": {
+    "44": {
       "op": "bz main___algots__.defaultCreate@13",
       "stack_out": []
     },
-    "48": {
+    "46": {
       "op": "txn OnCompletion",
       "defined_out": [
         "tmp%2#0"
@@ -79,7 +79,7 @@
         "tmp%2#0"
       ]
     },
-    "50": {
+    "48": {
       "op": "!",
       "defined_out": [
         "tmp%3#0"
@@ -88,11 +88,11 @@
         "tmp%3#0"
       ]
     },
-    "51": {
+    "49": {
       "op": "assert",
       "stack_out": []
     },
-    "52": {
+    "50": {
       "op": "txn ApplicationID",
       "defined_out": [
         "tmp%4#0"
@@ -101,11 +101,11 @@
         "tmp%4#0"
       ]
     },
-    "54": {
+    "52": {
       "op": "assert",
       "stack_out": []
     },
-    "55": {
+    "53": {
       "op": "pushbytess 0x27630d65 0xd69c3b18 0xdf3a667e 0x4118ecbf // method \"get_xgov_box(address)((address,uint64,uint64,uint64),bool)\", method \"createProposal()uint64\", method \"setXGovBox(address,(address,uint64,uint64,uint64))void\", method \"increaseBudget(uint64)void\"",
       "defined_out": [
         "Method(createProposal()uint64)",
@@ -120,7 +120,7 @@
         "Method(increaseBudget(uint64)void)"
       ]
     },
-    "77": {
+    "75": {
       "op": "txna ApplicationArgs 0",
       "defined_out": [
         "Method(createProposal()uint64)",
@@ -137,14 +137,14 @@
         "tmp%6#0"
       ]
     },
-    "80": {
+    "78": {
       "op": "match getXGovBox createProposal setXGovBox increaseBudget",
       "stack_out": []
     },
-    "90": {
+    "88": {
       "op": "err"
     },
-    "91": {
+    "89": {
       "block": "main___algots__.defaultCreate@13",
       "stack_in": [],
       "op": "txn OnCompletion",
@@ -155,7 +155,7 @@
         "tmp%7#0"
       ]
     },
-    "93": {
+    "91": {
       "op": "!",
       "defined_out": [
         "tmp%8#0"
@@ -164,7 +164,7 @@
         "tmp%8#0"
       ]
     },
-    "94": {
+    "92": {
       "op": "txn ApplicationID",
       "defined_out": [
         "tmp%8#0",
@@ -175,7 +175,7 @@
         "tmp%9#0"
       ]
     },
-    "96": {
+    "94": {
       "op": "!",
       "defined_out": [
         "tmp%10#0",
@@ -186,7 +186,7 @@
         "tmp%10#0"
       ]
     },
-    "97": {
+    "95": {
       "op": "&&",
       "defined_out": [
         "tmp%11#0"
@@ -195,12 +195,12 @@
         "tmp%11#0"
       ]
     },
-    "98": {
+    "96": {
       "op": "return",
       "defined_out": [],
       "stack_out": []
     },
-    "99": {
+    "97": {
       "subroutine": "smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts::XGovRegistryMock.getXGovBox[routing]",
       "params": {},
       "block": "getXGovBox",
@@ -213,7 +213,7 @@
         "voterAddress#0"
       ]
     },
-    "102": {
+    "100": {
       "op": "dup",
       "defined_out": [
         "voterAddress#0",
@@ -224,7 +224,7 @@
         "voterAddress#0 (copy)"
       ]
     },
-    "103": {
+    "101": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -235,7 +235,7 @@
         "len%0#0"
       ]
     },
-    "104": {
+    "102": {
       "op": "intc_3 // 32",
       "defined_out": [
         "32",
@@ -248,7 +248,7 @@
         "32"
       ]
     },
-    "105": {
+    "103": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -259,14 +259,14 @@
         "eq%0#0"
       ]
     },
-    "106": {
+    "104": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "voterAddress#0"
       ]
     },
-    "107": {
+    "105": {
       "op": "bytec_1 // \"x\"",
       "defined_out": [
         "\"x\"",
@@ -277,14 +277,14 @@
         "\"x\""
       ]
     },
-    "108": {
+    "106": {
       "op": "swap",
       "stack_out": [
         "\"x\"",
         "voterAddress#0"
       ]
     },
-    "109": {
+    "107": {
       "op": "concat",
       "defined_out": [
         "box#0"
@@ -293,7 +293,7 @@
         "box#0"
       ]
     },
-    "110": {
+    "108": {
       "op": "dup",
       "defined_out": [
         "box#0"
@@ -303,7 +303,7 @@
         "box#0"
       ]
     },
-    "111": {
+    "109": {
       "op": "box_len",
       "defined_out": [
         "_%0#0",
@@ -316,7 +316,7 @@
         "exists#0"
       ]
     },
-    "112": {
+    "110": {
       "op": "dup",
       "stack_out": [
         "box#0",
@@ -325,7 +325,7 @@
         "exists#0 (copy)"
       ]
     },
-    "113": {
+    "111": {
       "op": "uncover 2",
       "defined_out": [
         "_%0#0",
@@ -339,7 +339,7 @@
         "_%0#0"
       ]
     },
-    "115": {
+    "113": {
       "op": "pop",
       "stack_out": [
         "box#0",
@@ -347,21 +347,21 @@
         "exists#0"
       ]
     },
-    "116": {
+    "114": {
       "op": "bz getXGovBox_ternary_false@3",
       "stack_out": [
         "box#0",
         "exists#0"
       ]
     },
-    "119": {
+    "116": {
       "op": "swap",
       "stack_out": [
         "exists#0",
         "box#0"
       ]
     },
-    "120": {
+    "117": {
       "op": "box_get",
       "defined_out": [
         "aggregate%box_get%0#0",
@@ -374,7 +374,7 @@
         "aggregate%box_get%1#0"
       ]
     },
-    "121": {
+    "118": {
       "error": "Box must have value",
       "op": "assert // Box must have value",
       "defined_out": [
@@ -386,7 +386,7 @@
         "value#0"
       ]
     },
-    "122": {
+    "119": {
       "block": "getXGovBox_ternary_merge@4",
       "stack_in": [
         "exists#0",
@@ -402,7 +402,7 @@
         "0x00"
       ]
     },
-    "125": {
+    "122": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -415,7 +415,7 @@
         "0"
       ]
     },
-    "126": {
+    "123": {
       "op": "uncover 3",
       "defined_out": [
         "0",
@@ -429,7 +429,7 @@
         "exists#0"
       ]
     },
-    "128": {
+    "125": {
       "op": "setbit",
       "defined_out": [
         "aggregate%encoded_bool%0#0",
@@ -440,7 +440,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "129": {
+    "126": {
       "op": "concat",
       "defined_out": [
         "aggregate%head%5#0"
@@ -449,7 +449,7 @@
         "aggregate%head%5#0"
       ]
     },
-    "130": {
+    "127": {
       "op": "bytec_2 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -460,14 +460,14 @@
         "0x151f7c75"
       ]
     },
-    "131": {
+    "128": {
       "op": "swap",
       "stack_out": [
         "0x151f7c75",
         "aggregate%head%5#0"
       ]
     },
-    "132": {
+    "129": {
       "op": "concat",
       "defined_out": [
         "tmp%3#0"
@@ -476,11 +476,11 @@
         "tmp%3#0"
       ]
     },
-    "133": {
+    "130": {
       "op": "log",
       "stack_out": []
     },
-    "134": {
+    "131": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1"
@@ -489,11 +489,11 @@
         "1"
       ]
     },
-    "135": {
+    "132": {
       "op": "return",
       "stack_out": []
     },
-    "136": {
+    "133": {
       "block": "getXGovBox_ternary_false@3",
       "stack_in": [
         "box#0",
@@ -505,7 +505,7 @@
         "exists#0"
       ]
     },
-    "138": {
+    "135": {
       "op": "pushbytes base32(AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)",
       "defined_out": [
         "value#0"
@@ -515,17 +515,17 @@
         "value#0"
       ]
     },
-    "196": {
+    "193": {
       "op": "b getXGovBox_ternary_merge@4"
     },
-    "199": {
+    "196": {
       "subroutine": "smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts::XGovRegistryMock.createProposal[routing]",
       "params": {},
       "block": "createProposal",
       "stack_in": [],
       "op": "itxn_begin"
     },
-    "200": {
+    "197": {
       "op": "pushint 4",
       "defined_out": [
         "4"
@@ -534,11 +534,11 @@
         "4"
       ]
     },
-    "202": {
+    "199": {
       "op": "itxn_field GlobalNumUint",
       "stack_out": []
     },
-    "204": {
+    "201": {
       "op": "pushint 2",
       "defined_out": [
         "2"
@@ -547,37 +547,37 @@
         "2"
       ]
     },
-    "206": {
+    "203": {
       "op": "itxn_field GlobalNumByteSlice",
       "stack_out": []
     },
-    "208": {
-      "op": "bytec_0 // base64(C4EBQw==)",
+    "205": {
+      "op": "bytec_0 // base64(DYEBQw==)",
       "defined_out": [
-        "C4EBQw=="
+        "DYEBQw=="
       ],
       "stack_out": [
-        "C4EBQw=="
+        "DYEBQw=="
       ]
     },
-    "209": {
+    "206": {
       "op": "itxn_field ClearStateProgramPages",
       "stack_out": []
     },
-    "211": {
-      "op": "pushbytes base64(CyAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQAAyKDEAZykjZyqAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZysjZycEI2cxG0EARzEZFEQxGESCCAQkYV+QBBhBoNIEht09YQQugVUUBNB6NJ4ERczFuQSWn1rPBKOi1Xo2GgCOCAAJAD0AXQBtAH4AjgCfALEAMRkUMRgUEEM2GgFJFSUSRIABVkxQSb1JTwJIQQAYTL5EFxaAAQAjTwNUUIAEFR98dUxQsCJDRQEjQv/mNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIgAaChMZyJDNhoBSRUkEkQXiABXKUxnIkM2GgFJFSUSRIgARypMZyJDNhoBSRUkEkQXiAA2K0xnIkM2GgFJFSQSRBeIACUnBExnIkM2GgFJFSUSRDYaAkkVJBJEF4gAC4ABVk8CUEwWvyJDMQAjKGVEEkAADIAIRVJSOkFVVEiwAIk=)",
+    "208": {
+      "op": "pushbytes base64(DSAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQGQoMQBnKSNnKoAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABnKyNnJwQjZzEbQY4BMRkURDEYRIIIBCRhX5AEGEGg0gSG3T1hBC6BVRQE0Ho0ngRFzMW5BJafWs8Eo6LVejYaAI4IAAkAOwBbAGsAfACMAJwArQAxGRQxGBQQQzYaAUkVJRJEgAFWTFBJvUlPAkhBMEy+RBcWgAEAI08DVFCABBUffHVMULAiQ0UBI0ItNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIjKAShMZyJDNhoBSRUkEkQXiKgBKUxnIkM2GgFJFSUSRIiIASpMZyJDNhoBSRUkEkQXiGgrTGciQzYaAUkVJBJEF4hIJwRMZyJDNhoBSRUlEkQ2GgJJFSQSRBeIFoABVk8CUEwWvyJDMQAjKGVEEkAYgAhFUlI6QVVUSLAAiQ==)",
       "defined_out": [
-        "CyAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQAAyKDEAZykjZyqAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZysjZycEI2cxG0EARzEZFEQxGESCCAQkYV+QBBhBoNIEht09YQQugVUUBNB6NJ4ERczFuQSWn1rPBKOi1Xo2GgCOCAAJAD0AXQBtAH4AjgCfALEAMRkUMRgUEEM2GgFJFSUSRIABVkxQSb1JTwJIQQAYTL5EFxaAAQAjTwNUUIAEFR98dUxQsCJDRQEjQv/mNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIgAaChMZyJDNhoBSRUkEkQXiABXKUxnIkM2GgFJFSUSRIgARypMZyJDNhoBSRUkEkQXiAA2K0xnIkM2GgFJFSQSRBeIACUnBExnIkM2GgFJFSUSRDYaAkkVJBJEF4gAC4ABVk8CUEwWvyJDMQAjKGVEEkAADIAIRVJSOkFVVEiwAIk="
+        "DSAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQGQoMQBnKSNnKoAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABnKyNnJwQjZzEbQY4BMRkURDEYRIIIBCRhX5AEGEGg0gSG3T1hBC6BVRQE0Ho0ngRFzMW5BJafWs8Eo6LVejYaAI4IAAkAOwBbAGsAfACMAJwArQAxGRQxGBQQQzYaAUkVJRJEgAFWTFBJvUlPAkhBMEy+RBcWgAEAI08DVFCABBUffHVMULAiQ0UBI0ItNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIjKAShMZyJDNhoBSRUkEkQXiKgBKUxnIkM2GgFJFSUSRIiIASpMZyJDNhoBSRUkEkQXiGgrTGciQzYaAUkVJBJEF4hIJwRMZyJDNhoBSRUlEkQ2GgJJFSQSRBeIFoABVk8CUEwWvyJDMQAjKGVEEkAYgAhFUlI6QVVUSLAAiQ=="
       ],
       "stack_out": [
-        "CyAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQAAyKDEAZykjZyqAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZysjZycEI2cxG0EARzEZFEQxGESCCAQkYV+QBBhBoNIEht09YQQugVUUBNB6NJ4ERczFuQSWn1rPBKOi1Xo2GgCOCAAJAD0AXQBtAH4AjgCfALEAMRkUMRgUEEM2GgFJFSUSRIABVkxQSb1JTwJIQQAYTL5EFxaAAQAjTwNUUIAEFR98dUxQsCJDRQEjQv/mNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIgAaChMZyJDNhoBSRUkEkQXiABXKUxnIkM2GgFJFSUSRIgARypMZyJDNhoBSRUkEkQXiAA2K0xnIkM2GgFJFSQSRBeIACUnBExnIkM2GgFJFSUSRDYaAkkVJBJEF4gAC4ABVk8CUEwWvyJDMQAjKGVEEkAADIAIRVJSOkFVVEiwAIk="
+        "DSAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQGQoMQBnKSNnKoAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABnKyNnJwQjZzEbQY4BMRkURDEYRIIIBCRhX5AEGEGg0gSG3T1hBC6BVRQE0Ho0ngRFzMW5BJafWs8Eo6LVejYaAI4IAAkAOwBbAGsAfACMAJwArQAxGRQxGBQQQzYaAUkVJRJEgAFWTFBJvUlPAkhBMEy+RBcWgAEAI08DVFCABBUffHVMULAiQ0UBI0ItNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIjKAShMZyJDNhoBSRUkEkQXiKgBKUxnIkM2GgFJFSUSRIiIASpMZyJDNhoBSRUkEkQXiGgrTGciQzYaAUkVJBJEF4hIJwRMZyJDNhoBSRUlEkQ2GgJJFSQSRBeIFoABVk8CUEwWvyJDMQAjKGVEEkAYgAhFUlI6QVVUSLAAiQ=="
       ]
     },
-    "642": {
+    "632": {
       "op": "itxn_field ApprovalProgramPages",
       "stack_out": []
     },
-    "644": {
+    "634": {
       "op": "intc_2 // 6",
       "defined_out": [
         "6"
@@ -586,11 +586,11 @@
         "6"
       ]
     },
-    "645": {
+    "635": {
       "op": "itxn_field TypeEnum",
       "stack_out": []
     },
-    "647": {
+    "637": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -599,14 +599,14 @@
         "0"
       ]
     },
-    "648": {
+    "638": {
       "op": "itxn_field Fee",
       "stack_out": []
     },
-    "650": {
+    "640": {
       "op": "itxn_submit"
     },
-    "651": {
+    "641": {
       "op": "itxn CreatedApplicationID",
       "defined_out": [
         "created.CreatedApplicationID#0"
@@ -615,10 +615,10 @@
         "created.CreatedApplicationID#0"
       ]
     },
-    "653": {
+    "643": {
       "op": "itxn_begin"
     },
-    "654": {
+    "644": {
       "op": "txn Sender",
       "defined_out": [
         "created.CreatedApplicationID#0",
@@ -629,7 +629,7 @@
         "tmp%0#1"
       ]
     },
-    "656": {
+    "646": {
       "op": "intc_0 // 0",
       "stack_out": [
         "created.CreatedApplicationID#0",
@@ -637,14 +637,14 @@
         "0"
       ]
     },
-    "657": {
+    "647": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "created.CreatedApplicationID#0",
         "tmp%0#1"
       ]
     },
-    "659": {
+    "649": {
       "op": "dig 1",
       "defined_out": [
         "created.CreatedApplicationID#0",
@@ -657,14 +657,14 @@
         "created.CreatedApplicationID#0 (copy)"
       ]
     },
-    "661": {
+    "651": {
       "op": "itxn_field ApplicationID",
       "stack_out": [
         "created.CreatedApplicationID#0",
         "tmp%0#1"
       ]
     },
-    "663": {
+    "653": {
       "op": "pushbytes 0x86dd3d61 // method \"setProposer(address)void\"",
       "defined_out": [
         "Method(setProposer(address)void)",
@@ -677,20 +677,20 @@
         "Method(setProposer(address)void)"
       ]
     },
-    "669": {
+    "659": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "created.CreatedApplicationID#0",
         "tmp%0#1"
       ]
     },
-    "671": {
+    "661": {
       "op": "itxn_field ApplicationArgs",
       "stack_out": [
         "created.CreatedApplicationID#0"
       ]
     },
-    "673": {
+    "663": {
       "op": "intc_2 // appl",
       "defined_out": [
         "appl",
@@ -701,29 +701,29 @@
         "appl"
       ]
     },
-    "674": {
+    "664": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "created.CreatedApplicationID#0"
       ]
     },
-    "676": {
+    "666": {
       "op": "intc_0 // 0",
       "stack_out": [
         "created.CreatedApplicationID#0",
         "0"
       ]
     },
-    "677": {
+    "667": {
       "op": "itxn_field Fee",
       "stack_out": [
         "created.CreatedApplicationID#0"
       ]
     },
-    "679": {
+    "669": {
       "op": "itxn_submit"
     },
-    "680": {
+    "670": {
       "op": "itob",
       "defined_out": [
         "aggregate%val_as_bytes%0#0"
@@ -732,7 +732,7 @@
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "681": {
+    "671": {
       "op": "bytec_2 // 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -743,14 +743,14 @@
         "0x151f7c75"
       ]
     },
-    "682": {
+    "672": {
       "op": "swap",
       "stack_out": [
         "0x151f7c75",
         "aggregate%val_as_bytes%0#0"
       ]
     },
-    "683": {
+    "673": {
       "op": "concat",
       "defined_out": [
         "tmp%2#0"
@@ -759,11 +759,11 @@
         "tmp%2#0"
       ]
     },
-    "684": {
+    "674": {
       "op": "log",
       "stack_out": []
     },
-    "685": {
+    "675": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1"
@@ -772,18 +772,18 @@
         "1"
       ]
     },
-    "686": {
+    "676": {
       "op": "return",
       "stack_out": []
     },
-    "687": {
+    "677": {
       "subroutine": "smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts::XGovRegistryMock.setXGovBox[routing]",
       "params": {},
       "block": "setXGovBox",
       "stack_in": [],
       "op": "txna ApplicationArgs 1"
     },
-    "690": {
+    "680": {
       "op": "dup",
       "defined_out": [
         "voterAddress#0"
@@ -793,7 +793,7 @@
         "voterAddress#0"
       ]
     },
-    "691": {
+    "681": {
       "op": "len",
       "defined_out": [
         "len%0#0",
@@ -804,7 +804,7 @@
         "len%0#0"
       ]
     },
-    "692": {
+    "682": {
       "op": "intc_3 // 32",
       "defined_out": [
         "32",
@@ -817,7 +817,7 @@
         "32"
       ]
     },
-    "693": {
+    "683": {
       "op": "==",
       "defined_out": [
         "eq%0#0",
@@ -828,17 +828,17 @@
         "eq%0#0"
       ]
     },
-    "694": {
+    "684": {
       "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
       "stack_out": [
         "voterAddress#0"
       ]
     },
-    "695": {
+    "685": {
       "op": "txna ApplicationArgs 2"
     },
-    "698": {
+    "688": {
       "op": "dup",
       "defined_out": [
         "value#0",
@@ -850,7 +850,7 @@
         "value#0"
       ]
     },
-    "699": {
+    "689": {
       "op": "len",
       "defined_out": [
         "len%1#0",
@@ -863,7 +863,7 @@
         "len%1#0"
       ]
     },
-    "700": {
+    "690": {
       "op": "pushint 56",
       "defined_out": [
         "56",
@@ -878,7 +878,7 @@
         "56"
       ]
     },
-    "702": {
+    "692": {
       "op": "==",
       "defined_out": [
         "eq%1#0",
@@ -891,7 +891,7 @@
         "eq%1#0"
       ]
     },
-    "703": {
+    "693": {
       "error": "invalid number of bytes for smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts::XGovBoxValue",
       "op": "assert // invalid number of bytes for smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts::XGovBoxValue",
       "stack_out": [
@@ -899,7 +899,7 @@
         "value#0"
       ]
     },
-    "704": {
+    "694": {
       "op": "txn Sender",
       "defined_out": [
         "tmp%0#1",
@@ -912,7 +912,7 @@
         "tmp%0#1"
       ]
     },
-    "706": {
+    "696": {
       "op": "global CreatorAddress",
       "defined_out": [
         "tmp%0#1",
@@ -927,7 +927,7 @@
         "tmp%1#0"
       ]
     },
-    "708": {
+    "698": {
       "op": "==",
       "defined_out": [
         "tmp%2#0",
@@ -940,14 +940,14 @@
         "tmp%2#0"
       ]
     },
-    "709": {
+    "699": {
       "op": "bnz setXGovBox_after_assert@3",
       "stack_out": [
         "voterAddress#0",
         "value#0"
       ]
     },
-    "712": {
+    "701": {
       "op": "pushbytes \"ERR:AUTH\"",
       "defined_out": [
         "\"ERR:AUTH\"",
@@ -960,18 +960,18 @@
         "\"ERR:AUTH\""
       ]
     },
-    "722": {
+    "711": {
       "op": "log",
       "stack_out": [
         "voterAddress#0",
         "value#0"
       ]
     },
-    "723": {
+    "712": {
       "error": "ERR:AUTH",
       "op": "err // ERR:AUTH"
     },
-    "724": {
+    "713": {
       "block": "setXGovBox_after_assert@3",
       "stack_in": [
         "voterAddress#0",
@@ -987,7 +987,7 @@
         "\"x\""
       ]
     },
-    "725": {
+    "714": {
       "op": "uncover 2",
       "defined_out": [
         "\"x\"",
@@ -999,7 +999,7 @@
         "voterAddress#0"
       ]
     },
-    "727": {
+    "716": {
       "op": "concat",
       "defined_out": [
         "map_prefixed_key%0#0"
@@ -1009,7 +1009,7 @@
         "map_prefixed_key%0#0"
       ]
     },
-    "728": {
+    "717": {
       "op": "swap",
       "defined_out": [
         "map_prefixed_key%0#0",
@@ -1020,11 +1020,11 @@
         "value#0"
       ]
     },
-    "729": {
+    "718": {
       "op": "box_put",
       "stack_out": []
     },
-    "730": {
+    "719": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1"
@@ -1033,11 +1033,11 @@
         "1"
       ]
     },
-    "731": {
+    "720": {
       "op": "return",
       "stack_out": []
     },
-    "732": {
+    "721": {
       "subroutine": "smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]",
       "params": {},
       "block": "increaseBudget",
@@ -1050,7 +1050,7 @@
         "tmp%0#0"
       ]
     },
-    "735": {
+    "724": {
       "op": "btoi",
       "defined_out": [
         "itxns#0"
@@ -1059,7 +1059,7 @@
         "itxns#0"
       ]
     },
-    "736": {
+    "725": {
       "op": "intc_0 // 0",
       "defined_out": [
         "i#0",
@@ -1070,7 +1070,7 @@
         "i#0"
       ]
     },
-    "737": {
+    "726": {
       "block": "increaseBudget_while_top@2",
       "stack_in": [
         "itxns#0",
@@ -1086,7 +1086,7 @@
         "i#0 (copy)"
       ]
     },
-    "738": {
+    "727": {
       "op": "dig 2",
       "defined_out": [
         "i#0 (copy)",
@@ -1099,7 +1099,7 @@
         "itxns#0 (copy)"
       ]
     },
-    "740": {
+    "729": {
       "op": "<",
       "defined_out": [
         "tmp%0#1"
@@ -1110,17 +1110,17 @@
         "tmp%0#1"
       ]
     },
-    "741": {
+    "730": {
       "op": "bz increaseBudget_after_while@5",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "744": {
+    "732": {
       "op": "itxn_begin"
     },
-    "745": {
+    "733": {
       "op": "pushint 5",
       "defined_out": [
         "5"
@@ -1131,47 +1131,47 @@
         "5"
       ]
     },
-    "747": {
+    "735": {
       "op": "itxn_field OnCompletion",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "749": {
-      "op": "bytec_0 // base64(C4EBQw==)",
+    "737": {
+      "op": "bytec_0 // base64(DYEBQw==)",
       "defined_out": [
-        "C4EBQw=="
+        "DYEBQw=="
       ],
       "stack_out": [
         "itxns#0",
         "i#0",
-        "C4EBQw=="
+        "DYEBQw=="
       ]
     },
-    "750": {
+    "738": {
       "op": "itxn_field ClearStateProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "752": {
-      "op": "bytec_0 // base64(C4EBQw==)",
+    "740": {
+      "op": "bytec_0 // base64(DYEBQw==)",
       "stack_out": [
         "itxns#0",
         "i#0",
-        "C4EBQw=="
+        "DYEBQw=="
       ]
     },
-    "753": {
+    "741": {
       "op": "itxn_field ApprovalProgramPages",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "755": {
+    "743": {
       "op": "intc_2 // 6",
       "defined_out": [
         "6"
@@ -1182,14 +1182,14 @@
         "6"
       ]
     },
-    "756": {
+    "744": {
       "op": "itxn_field TypeEnum",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "758": {
+    "746": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0"
@@ -1200,20 +1200,20 @@
         "0"
       ]
     },
-    "759": {
+    "747": {
       "op": "itxn_field Fee",
       "stack_out": [
         "itxns#0",
         "i#0"
       ]
     },
-    "761": {
+    "749": {
       "op": "itxn_submit",
       "defined_out": [
         "i#0"
       ]
     },
-    "762": {
+    "750": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1",
@@ -1225,7 +1225,7 @@
         "1"
       ]
     },
-    "763": {
+    "751": {
       "op": "+",
       "defined_out": [
         "i#0"
@@ -1235,10 +1235,10 @@
         "i#0"
       ]
     },
-    "764": {
+    "752": {
       "op": "b increaseBudget_while_top@2"
     },
-    "767": {
+    "754": {
       "block": "increaseBudget_after_while@5",
       "stack_in": [
         "itxns#0",
@@ -1254,7 +1254,7 @@
         "1"
       ]
     },
-    "768": {
+    "755": {
       "op": "return",
       "stack_out": [
         "itxns#0",

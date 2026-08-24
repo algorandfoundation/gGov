@@ -15,6 +15,12 @@ overrides:
   sharp: ^0.35.3 # ggov-frontend>@cloudflare/vite-plugin/wrangler>miniflare>sharp (GHSA-f88m-g3jw-g9cj)
   undici: ^7.29.0 # ggov-frontend>@cloudflare/vite-plugin/wrangler>miniflare>undici (GHSA-4cwx-7wf7-3272)
   tar: ^7.5.21 # contracts>@algorandfoundation/puya-ts>tar (GHSA-r292-9mhp-454m)
+  # algorand-typescript-testing has no 1.3.0 yet and pins algorand-typescript/puya-ts to exactly
+  # 1.2.0 as direct deps. Without these overrides pnpm installs a second algo-ts instance: the
+  # contract under test would import the hoisted 1.3.0 while ATST's runtime stubs its own 1.2.0
+  # copy, and the ATST unit specs break. Drop once ATST ships a 1.3.0.
+  '@algorandfoundation/algorand-typescript': ^1.3.0
+  '@algorandfoundation/puya-ts': ^1.3.0
   postcss: ^8.5.23 # frac-delegation-pipeline>vitest>@vitest/mocker>vite>postcss (GHSA-fxqj-rqcc-2cmp)
   nanoid: ^3.3.18 # frac-delegation-pipeline>vitest>@vitest/mocker>vite>postcss>nanoid (GHSA-2v37-7h3g-55p8)
   'js-yaml@4': ^4.3.1 # ggov-frontend>@tanstack/react-start>...>xmlbuilder2>js-yaml (GHSA-5p4m-2wfm-xmqj)
@@ -27,4 +33,8 @@ overrides:
 
 minimumReleaseAgeExclude:
   - nanoid # 3.3.18 published 2026-08-07T16:41Z; drop this once it clears the 1-week age
+  # AVM v13 toolchain, all published 2026-08-19; drop these once they clear the 1-week age
+  - '@algorandfoundation/algorand-typescript'
+  - '@algorandfoundation/puya-ts'
+  - algosdk
   - reti-ghost-sdk # first-party (d13co); 0.2.0 published 2026-08-20T15:45Z for the dual ESM/CJS entry
