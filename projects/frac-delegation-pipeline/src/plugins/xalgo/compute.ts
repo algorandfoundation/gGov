@@ -6,7 +6,7 @@
  * fxALGO holders pro rata, with Folks escrows resolved to their owners. See README.md.
  */
 
-import { MICROALGO_ROUNDS_PER_AQ, type AssetTransfer } from '../../aq/index.ts'
+import { MICROALGO_ROUNDS_PER_AQ, NO_BOUNDARIES, type AssetTransfer, type BoundaryRecorder } from '../../aq/index.ts'
 import { beneficiaryOf } from './beneficiaries.ts'
 import { INDEX_SCALE, RATE_SCALER, XALGO_POOL_ADDRESS } from './constants.ts'
 import { isExcluded } from './exclusions.ts'
@@ -58,6 +58,7 @@ export function computeAttribution(
   startRound: number,
   endRound: number,
   beneficiaries: BeneficiaryMap,
+  boundaries: BoundaryRecorder = NO_BOUNDARIES,
 ): Attribution {
   if (endRound < startRound) throw new Error('Non-monotonic round')
 
@@ -135,6 +136,11 @@ export function computeAttribution(
   }
 
   for (const t of transfers) {
+    // Before the transfer lands, so a snapshot at round R holds every transfer with round < R.
+    // The snapshot is raw custody only — the index and the accrual cursors are window-local and do
+    // not belong to it — so capturing here is capturing exactly the balances a replay would hold.
+    boundaries.crossing(t.round)
+
     advanceIndex(t.round)
     const settle = t.asset === 'xalgo' ? (address: string) => accrueDirect(address, t.round) : settleFx
     settle(t.sender)
@@ -142,6 +148,8 @@ export function computeAttribution(
     if (t.closeTo) settle(t.closeTo)
     applyTransfer(balances, t, t.asset)
   }
+  // Boundaries past the last transfer see the final balances
+  boundaries.finish()
 
   // Settle everything up to the end of the window
   advanceIndex(endRound)

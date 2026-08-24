@@ -1,4 +1,5 @@
 import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { SCAN_CONCURRENCY } from '../aq/config.ts'
 import type { CommitteeMetadata } from 'ggov-sdk'
 import type { FinalInstance } from '../types.ts'
 
@@ -40,17 +41,25 @@ export abstract class FracPipelinePlugin {
 
   protected readonly algorand: AlgorandClient
   protected readonly overrides?: Record<string, unknown>
+  /**
+   * How many independent indexer reads this plugin runs at once — window scans, box reads, and any
+   * other fan-out it owns. Passed down from the pipeline so its knob really does bound every
+   * request the run makes; `SCAN_CONCURRENCY` is only the default for a plugin built standalone.
+   */
+  protected readonly concurrency: number
 
   /**
    * plugin constructor, receives the algorand client and optional overrides for configuration
    * @param algorand
    * @param overrides
+   * @param concurrency independent reads to run at once, defaulting to `SCAN_CONCURRENCY`
    */
   // NOTE: written out as explicit fields, not constructor parameter properties: scripts run on
   // node's strip-only TS mode, which rejects parameter properties at parse time.
-  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>) {
+  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>, concurrency: number = SCAN_CONCURRENCY) {
     this.algorand = algorand
     this.overrides = overrides
+    this.concurrency = concurrency
   }
 
   /**
@@ -96,4 +105,5 @@ export abstract class FracPipelinePlugin {
 export type FracPipelinePluginConstructor = (new (
   algorand: AlgorandClient,
   overrides?: Record<string, unknown>,
+  concurrency?: number,
 ) => FracPipelinePlugin) & { readonly source: string }

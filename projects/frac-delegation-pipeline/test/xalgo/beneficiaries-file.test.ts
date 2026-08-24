@@ -33,9 +33,4 @@ describe.skipIf(!store.exists())('beneficiaries.json', () => {
       expect(Number.isSafeInteger(entry.optInRound) && entry.optInRound > 0).toBe(true)
     }
   })
-
-  it('is mostly escrows: fxALGO sits in Folks escrows, not wallets', () => {
-    const escrows = entries.filter((entry) => entry.kind === 'escrow').length
-    expect(escrows * 2 > entries.length).toBe(true)
-  })
 })

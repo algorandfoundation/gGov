@@ -1,6 +1,6 @@
 /** Round-weighted algoquarter accrual for reti staked balances. */
 
-import { MICROALGO_ROUNDS_PER_AQ } from '../../aq/index.ts'
+import { MICROALGO_ROUNDS_PER_AQ, NO_BOUNDARIES, type BoundaryRecorder } from '../../aq/index.ts'
 import { applyRetiEvent } from './ledger.ts'
 import type { PoolLedger, RetiEvent } from './types.ts'
 
@@ -29,6 +29,7 @@ export function computeRetiMicroAlgoRounds(
   epochRoundLengths: Map<bigint, bigint>,
   startRound: number,
   endRound: number,
+  boundaries: BoundaryRecorder = NO_BOUNDARIES,
 ): MicroAlgoRoundsByPool {
   const microAlgoRounds: MicroAlgoRoundsByPool = new Map()
   const lastAccruedRound = new Map<bigint, Map<string, number>>()
@@ -72,6 +73,9 @@ export function computeRetiMicroAlgoRounds(
   }
 
   for (const event of events) {
+    // Before the event lands, so a snapshot at round R holds every event with round < R
+    boundaries.crossing(event.round)
+
     // Accrue everyone the event touches before mutating balances. An epoch payout credits the
     // whole pool, so every staker in it has to be settled up to the payout round first.
     if (event.type === 'epochRewardUpdate') {
@@ -82,6 +86,8 @@ export function computeRetiMicroAlgoRounds(
 
     applyRetiEvent(pools, event, epochRoundLengths)
   }
+  // Boundaries past the last event see the final ledger
+  boundaries.finish()
 
   // Settle every tracked position up to the end of the window
   for (const [poolAppId, poolRounds] of lastAccruedRound) {

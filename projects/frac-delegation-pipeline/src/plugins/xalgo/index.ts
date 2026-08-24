@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs'
 import {
   MAX_WINDOW,
   assertAlgoQuartersFitUint32,
-  checkOrCreateSnapshots,
+  createSnapshotChain,
   scanAssetTransfers,
   type AssetTransfer,
 } from '../../aq/index.ts'
@@ -32,11 +32,10 @@ import {
 } from './constants.ts'
 import { isExcluded } from './exclusions.ts'
 import { fetchXAlgoRateInRange } from './indexer.ts'
-import { applyTransfer } from './ledger.ts'
 import { buildSnapshot, createXalgoSnapshotStore, getAllSnapshotBalances, type XalgoSnapshotStore } from './snapshot.ts'
 import { checkLargeHolders, logSnapshotStats } from './stats.ts'
 import type { FinalInstance } from '../../types.ts'
-import type { BalanceMap, SnapshotData } from './types.ts'
+import type { SnapshotData } from './types.ts'
 import { verifyAgainstChain } from './verify.ts'
 
 // Selective on purpose: `export *` would collide with tALGO's `PROTOCOL`/`RATE_SCALER` in the plugin
@@ -78,8 +77,8 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
   /** Downgrade the >40%-of-supply holder check from a throw to a warning. */
   protected readonly allowLargeHolders: boolean
 
-  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>) {
-    super(algorand, overrides)
+  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>, concurrency?: number) {
+    super(algorand, overrides, concurrency)
     let appId = XALGO_APP_ID_MAINNET
     if (overrides && 'appId' in overrides) {
       const override = overrides.appId
@@ -181,8 +180,11 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
 
     const xAlgoTransfers: AssetTransfer[] = []
     const fxAlgoTransfers: AssetTransfer[] = []
-    await this.scanWindow(XALGO_ASA_ID, periodStart, periodEnd, xAlgoTransfers, 'xALGO')
-    await this.scanWindow(FXALGO_ASA_ID, periodStart, periodEnd, fxAlgoTransfers, 'fxALGO')
+    // Two independent scans collecting into their own arrays, merged below — so they overlap
+    await Promise.all([
+      this.scanWindow(XALGO_ASA_ID, periodStart, periodEnd, xAlgoTransfers, 'xALGO'),
+      this.scanWindow(FXALGO_ASA_ID, periodStart, periodEnd, fxAlgoTransfers, 'fxALGO'),
+    ])
     const transfers = mergeAssetTransfers(xAlgoTransfers, fxAlgoTransfers)
 
     // Whoever holds xALGO or fxALGO at any point of the window held it at the start or received it
@@ -191,7 +193,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
     // before the window) must credit its owner, not itself. Resolved once, cached for every later window.
     const beneficiaries = this.beneficiaries.readMap()
     const candidates = collectBeneficiaryCandidates(balances, transfers)
-    const { added, warnings } = await resolveBeneficiaries(this.indexer, candidates, beneficiaries)
+    const { added, warnings } = await resolveBeneficiaries(this.indexer, candidates, beneficiaries, this.concurrency)
     console.log(`  [xalgo] ${candidates.size} xALGO/fxALGO holders in the window, ${added.length} newly resolved`)
     for (const warning of warnings) console.warn(`  [xalgo] ⚠ ${warning}`)
 
@@ -202,10 +204,17 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
     console.log(`  [xalgo] rate ${formatRate(observed.rate)} from ${observed.event.kind} at round ${observed.round}`)
     if (observed.event.kind === 'ImmediateMint') await this.warnIfPremium()
 
-    // computeAttribution mutates the balances as it replays, so the snapshot chaining below needs
-    // its own copy of where the window started
-    const snapshotBalances = cloneBalances(balances)
-    const attribution = computeAttribution(balances, transfers, Number(periodStart), Number(periodEnd), beneficiaries)
+    // The replay below passes through the state of every 1M-round boundary in the window, so the
+    // snapshots are captured off it rather than replaying the transfers a second time over a copy
+    const snapshots = createSnapshotChain(this.snapshots, balances, periodStart, periodEnd)
+    const attribution = computeAttribution(
+      balances,
+      transfers,
+      Number(periodStart),
+      Number(periodEnd),
+      beneficiaries,
+      snapshots.recorder,
+    )
     if (attribution.unattributed > 0n) {
       console.warn(
         `  [xalgo] ⚠ pool xALGO accrued with no fxALGO in circulation (unattributed): ${attribution.unattributed}`,
@@ -222,14 +231,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
     }
 
     // Verify-first: a stored snapshot that disagrees with this replay throws, and nothing is written
-    const pendingSnapshots = checkOrCreateSnapshots(
-      this.snapshots,
-      snapshotBalances,
-      transfers,
-      (balances, transfer) => applyTransfer(balances, transfer, transfer.asset),
-      periodStart,
-      periodEnd,
-    )
+    const pendingSnapshots = snapshots.verify()
     for (const pending of pendingSnapshots) {
       console.log(`  [xalgo] snapshot saved: ${this.snapshots.writeSnapshot(pending)}`)
     }
@@ -249,7 +251,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
    */
   public async buildSnapshot(round: bigint): Promise<SnapshotData> {
     console.log(`[xalgo] no snapshot at round ${round}, rebuilding from asset creation — this takes a while`)
-    const snapshot = await buildSnapshot(this.indexer, round)
+    const snapshot = await buildSnapshot(this.indexer, round, this.concurrency)
     logSnapshotStats(snapshot, this.beneficiaries.readMap())
     console.log(`  [xalgo] snapshot saved: ${this.snapshots.writeSnapshot(snapshot)}`)
     // After writing, so a flagged snapshot is still on disk to inspect
@@ -290,6 +292,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
         for (const transfer of batch) into.push(transfer)
       },
       label,
+      this.concurrency,
     )
   }
 
@@ -314,10 +317,6 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
       console.warn(`[xalgo] ${err instanceof Error ? err.message : err}`)
     }
   }
-}
-
-function cloneBalances(balances: BalanceMap): BalanceMap {
-  return new Map([...balances].map(([address, balance]) => [address, { xalgo: balance.xalgo, fxalgo: balance.fxalgo }]))
 }
 
 const isProposerBox = (nameRaw: Uint8Array): boolean =>
