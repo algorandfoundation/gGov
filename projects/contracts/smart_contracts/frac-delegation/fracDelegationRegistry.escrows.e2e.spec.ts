@@ -1,5 +1,5 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
-import { generateAccount } from 'algosdk'
+import { generateAccount, getApplicationAddress } from 'algosdk'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { errEscrowAssigned, errInstanceAppNotExists, errUnauthorized } from '../base/errors.algo'
 import {
@@ -9,6 +9,7 @@ import {
   transformedError,
 } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
+import { MAX_ESCROWS_PER_REGISTER_GROUP } from 'frac-delegation-sdk'
 
 /** A fresh, unfunded address — escrows are stored as data, so they never need funding. */
 const newEscrow = () => generateAccount().addr.toString()
@@ -104,6 +105,77 @@ describe('FracDelegationRegistry escrows', () => {
       await expect(nonAdminSdk.registerEscrow({ instanceNumId: instanceId, account: newEscrow() })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
+    })
+  })
+
+  describe('registry registerEscrows (batched)', () => {
+    test('one group registers the whole batch, in order, with the counter tracking it', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+      const escrows = Array.from({ length: MAX_ESCROWS_PER_REGISTER_GROUP }, newEscrow)
+
+      await sdk.registry.registerEscrows({ instanceNumId: instanceId, accounts: escrows })
+
+      // Same end state as registering them one at a time, which is the point of the batch.
+      expect(await sdk.getEscrows(instanceId)).toEqual(escrows)
+      expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(BigInt(escrows.length))
+      for (const account of escrows) {
+        expect(await sdk.getEscrowInstance(account)).toBe(Number(instanceId))
+      }
+    })
+
+    test('the group is atomic: one already-assigned escrow registers none of the batch', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+      const taken = newEscrow()
+      await sdk.registry.registerEscrow({ instanceNumId: instanceId, account: taken })
+      const batch = [newEscrow(), taken, newEscrow()]
+
+      await expect(sdk.registry.registerEscrows({ instanceNumId: instanceId, accounts: batch })).rejects.toThrow(
+        transformedError(errEscrowAssigned),
+      )
+
+      // Only the escrow registered before the batch survives — the two fresh ones rolled back with it.
+      expect(await sdk.getEscrows(instanceId)).toEqual([taken])
+      expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(1n)
+      expect(await sdk.getEscrowInstance(batch[0])).toBeUndefined()
+      expect(await sdk.getEscrowInstance(batch[2])).toBeUndefined()
+    })
+
+    test('rejects an oversized batch client-side, before anything is sent', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+      const escrows = Array.from({ length: MAX_ESCROWS_PER_REGISTER_GROUP + 1 }, newEscrow)
+
+      await expect(sdk.registry.registerEscrows({ instanceNumId: instanceId, accounts: escrows })).rejects.toThrow(
+        /exceeds the .* per group/,
+      )
+      expect(await sdk.getEscrows(instanceId)).toEqual([])
+    })
+
+    test('rejects an empty batch', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId } = await deployFracInstance(localnet, testAccount)
+
+      await expect(sdk.registry.registerEscrows({ instanceNumId: instanceId, accounts: [] })).rejects.toThrow(
+        /no accounts to register/,
+      )
+    })
+
+    test('registerEscrowsAll spans several groups against a growing escrows box', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, instanceId, appId } = await deployFracInstance(localnet, testAccount)
+      // Enough for several groups, so the later ones run against an escrows box that earlier groups
+      // grew — the case a single group can never reach.
+      const escrows = Array.from({ length: MAX_ESCROWS_PER_REGISTER_GROUP * 5 }, newEscrow)
+      // The instance is spawned with DEFAULT_INSTANCE_MBR_MICROALGOS, which covers its 100k account
+      // MBR and box growth up to 69 escrows. Fund it so MBR cannot mask an unrelated failure.
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(appId), (5).algos())
+
+      await sdk.registry.registerEscrowsAll({ instanceNumId: instanceId, accounts: escrows })
+
+      expect(await sdk.getEscrows(instanceId)).toEqual(escrows)
+      expect((await sdk.registry.getInstance(instanceId))!.numEscrows).toBe(BigInt(escrows.length))
     })
   })
 

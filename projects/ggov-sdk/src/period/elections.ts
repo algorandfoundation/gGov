@@ -1,4 +1,4 @@
-import type { Election, TopicBodyJson } from './types'
+import type { Election, TopicBodyJson } from './types.js'
 
 /**
  * Grouping a period's topics into its elections, and checking that grouping before

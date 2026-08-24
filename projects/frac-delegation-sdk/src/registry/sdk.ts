@@ -4,16 +4,29 @@ import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
   FracDelegationRegistryFactory,
-} from '../generated/FracDelegationRegistryClient'
-import { FracDelegationInstanceClient, APP_SPEC as INSTANCE_APP_SPEC } from '../generated/FracDelegationInstanceClient'
-import { ConstructorArgs, SenderWithSigner, CommonMethodBuilderArgs, FracDelegationRegistryContractArgs } from './types'
-import { requireWriterWithClient } from '../util/requiresSender'
-import { FracDelegationRegistryReaderSDK } from './sdkReader'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { createTxnExecutor } from '../util/txnExecutor'
-import { chunk } from '../util/chunk'
-import { noteNonce } from '../util/noteNonce'
-import { BODY_CHUNK_BYTES, DEFAULT_INSTANCE_MBR_MICROALGOS, MAX_GROUP_SIZE } from '../constants'
+} from '../generated/FracDelegationRegistryClient.js'
+import {
+  FracDelegationInstanceClient,
+  APP_SPEC as INSTANCE_APP_SPEC,
+} from '../generated/FracDelegationInstanceClient.js'
+import {
+  ConstructorArgs,
+  SenderWithSigner,
+  CommonMethodBuilderArgs,
+  FracDelegationRegistryContractArgs,
+} from './types.js'
+import { requireWriterWithClient } from '../util/requiresSender.js'
+import { FracDelegationRegistryReaderSDK } from './sdkReader.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { createTxnExecutor } from '../util/txnExecutor.js'
+import { chunk } from '../util/chunk.js'
+import { noteNonce } from '../util/noteNonce.js'
+import {
+  BODY_CHUNK_BYTES,
+  DEFAULT_INSTANCE_MBR_MICROALGOS,
+  MAX_ESCROWS_PER_REGISTER_GROUP,
+  MAX_GROUP_SIZE,
+} from '../constants.js'
 
 export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -146,6 +159,70 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
   registerEscrow = this.makeTxnExecutor({
     maker: this.makeRegisterEscrowTxns,
   })
+
+  /**
+   * Register several escrows to the same instance `instanceNumId` in one atomic group. Admin only.
+   *
+   * Per account this is exactly {@link registerEscrow}; what the group buys is atomicity. The
+   * instance's own `escrows` box is read and rewritten one entry longer by every call, so separate
+   * concurrent calls would each size their box budget against the same pre-state and the later ones
+   * could execute against a box that has since grown. Inside one group the calls are ordered, and
+   * resource population sees the whole sequence.
+   *
+   * Capped at {@link MAX_ESCROWS_PER_REGISTER_GROUP} accounts — see the constant for the box-I/O
+   * reasoning behind the number. Use {@link registerEscrowsAll} for a longer list.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeRegisterEscrowsTxns({
+    instanceNumId,
+    accounts,
+    note,
+    builder,
+  }: {
+    instanceNumId: bigint | number
+    accounts: string[]
+  } & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    if (accounts.length === 0) throw new Error('registerEscrows: no accounts to register')
+    if (accounts.length > MAX_ESCROWS_PER_REGISTER_GROUP) {
+      throw new Error(
+        `registerEscrows: ${accounts.length} accounts exceeds the ${MAX_ESCROWS_PER_REGISTER_GROUP} per group — ` +
+          `chunk them, or use registerEscrowsAll.`,
+      )
+    }
+    for (const account of accounts) {
+      // extraFee covers this call's single inner app call to the instance's registerEscrow.
+      builder = builder.registerEscrow({ args: { instanceNumId, account }, note, extraFee: (1000).microAlgo() })
+    }
+    return builder
+  }
+
+  registerEscrows = this.makeTxnExecutor({
+    maker: this.makeRegisterEscrowsTxns,
+  })
+
+  /**
+   * Register every account in `accounts` as an escrow of instance `instanceNumId`, one group per
+   * {@link MAX_ESCROWS_PER_REGISTER_GROUP}. Sequential: each group is atomic on its own, so a
+   * failure part-way leaves the earlier groups registered — re-run with the remainder, which is safe
+   * because an already-assigned escrow is rejected with `ERR:FE_AS` rather than registered twice.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async registerEscrowsAll({
+    instanceNumId,
+    accounts,
+    note,
+  }: {
+    instanceNumId: bigint | number
+    accounts: string[]
+    note?: string | Uint8Array
+  }) {
+    for (const batch of chunk(accounts, MAX_ESCROWS_PER_REGISTER_GROUP)) {
+      await this.registerEscrows({ instanceNumId, accounts: batch, note })
+    }
+  }
 
   // ── Admin: lifecycle ────────────────────────────────────────────
 

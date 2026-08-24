@@ -1,266 +1,752 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { getApplicationAddress, encodeAddress, mnemonicToSecretKey } from 'algosdk'
-import { FracDelegationSDK } from 'frac-delegation-sdk'
-import { GGovRegistrySDK } from 'ggov-sdk'
-import { RetiGhostSDK } from 'reti-ghost-sdk'
+import {
+  ALGORAND_ZERO_ADDRESS_STRING,
+  getApplicationAddress,
+  mnemonicToSecretKey,
+  type TransactionSigner,
+} from 'algosdk'
+import { FracDelegationSDK, type AlgoQuartersFile, type FracCommitteeAq } from 'frac-delegation-sdk'
+import { GGovRegistrySDK, type GGovCommitteeFile } from 'ggov-sdk'
+import pMap from 'p-map'
+import {
+  AVAILABLE_SOURCES,
+  getPlugin,
+  RETI_REGISTRY_APP_ID_MAINNET,
+  TALGO_APP_ID_MAINNET,
+  type AQCalculation,
+  type AQCommittee,
+} from './plugins/index.ts'
+import type { FinalInstance, FutureInstance, RegisteredInstance } from './types.ts'
 
-export const RETI_REGISTRY_APP_ID = 2714516089
-export const TALGO_APP_ID = 2537013674n
+// owned by the plugins now, re-exported for the seeding scripts
+export const RETI_REGISTRY_APP_ID = RETI_REGISTRY_APP_ID_MAINNET
+export const TALGO_APP_ID = TALGO_APP_ID_MAINNET
 export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID).toString()
 
-// each staking sources is identified by an easy string
-// pipeline-integrated sources are defined in this constant for now
-// TODO: add xalgo once implemented
-const STAKING_SOURCES = ['reti', 'talgo']
+// each staking source is identified by an easy string and implemented by a plugin under ./plugins,
+// which the pipeline loads from the registry - adding a source touches nothing in here
+
+/** Admin of the two registries, or the operator that ingests AQ. */
+type PipelineAccount = { sender: string; signer: TransactionSigner }
 
 interface FracPipelineArgs {
   /** Client for ggov-sdk and frac-delegation-sdk. */
   algorand: AlgorandClient
   /**
-   * Client for staking source discovery. Defaults to `algorand`. Two clients initially because
-   * reti-ghost-sdk is ESM, and the other SDKs are CJS, so sharing one client fails the composer's
-   * `instanceof` check (TODO: change in reti-ghost-sdk? leave like this?). Then, realized it is
-   * very useful for testing: discovery can always read mainnet, while the contracts may live
+   * Client the staking source plugins discover with. Defaults to `algorand`. Kept separate because
+   * it is very useful for testing: discovery can always read mainnet, while the contracts may live
    * elsewhere (localnet, testnet). Innocent as not providing collapses to a single client.
    */
-  algorand2?: AlgorandClient
+  discoveryClient?: AlgorandClient
   fracRegistryAppId: number
   ggovRegistryAppId: number
+  /** Staking sources to run, defaulting to every plugin in the registry. */
   stakingSources?: string[]
-  debugSdk?: boolean
+  /**
+   * How many independent reads, and how many instances' escrow registrations, run at once. Defaults
+   * to 4, matching the SDK readers. Turn it down for a rate-limited node.
+   */
+  concurrency?: number
+  /** Admin of both registries. Falls back to ADMIN/ADMIN_MNEMONIC in the environment. */
+  adminAccount?: PipelineAccount
+  /** Operator that ingests AQ. Falls back to the admin account. */
+  operatorAccount?: PipelineAccount
+  /** Log step stats and every write to the console, and put the SDKs in debug mode. */
+  debug?: boolean
 }
 
-interface Instance {
-  source: string
-  name: string
-  appId?: bigint
-  numId?: number
+/**
+ * Everything the instance upsert works from and produces, for the caller to log or assert on.
+ * Empty until `run` has been called, and cleared at the top of every run.
+ */
+interface UpsertInstancesContext {
+  /** Committee the run was scoped to. */
+  committeeId?: string
+  /** That committee as the gGov registry held it when the run started. */
+  committee?: GGovCommitteeFile
+  /** What the committee implies must exist, per staking source. The root everything else derives from. */
+  futureInstances: FutureInstance[]
+  /** Of those, the ones the frac registry already held when the run started, by instance name. */
+  existingInstances: Map<string, RegisteredInstance>
+  /** Of future instances, the ones with no app behind them yet: what this run creates. */
+  instancesToCreate: FutureInstance[]
+  /** Escrows of already-existing instances that this run registers to them. */
+  existingInstanceEscrowsToRegister: PendingEscrowRegistration[]
+  /** Instances this run created, by instance name. Empty until the create step runs. */
+  instancesCreated: Map<string, RegisteredInstance>
+  /** Escrows this run registered to instances that already existed on the frac registry. */
+  existingInstanceNewEscrows: { instance: string; escrow: string }[]
+  /** Instances this run created, with the escrows registered to them. */
+  createdInstances: { instance: string; escrows: string[] }[]
+}
+
+/** An escrow of an already-registered instance that still has to be registered to it. */
+interface PendingEscrowRegistration {
+  instanceNumId: number
+  instanceName: string
+  escrowAddress: string
+}
+
+/** One instance's outstanding escrow registrations: the unit the register phase fans out over. */
+interface EscrowRegistrationJob {
+  instanceNumId: number
+  instanceName: string
   escrowAddresses: string[]
+  /** Whether this run created the instance, which is what decides where the job is reported. */
+  isNew: boolean
+  /** Set once every group of the job has landed. */
+  registered: boolean
 }
 
-interface RetiValidatorWithPools {
-  validatorId: number
-  pools: {
-    poolAppId: bigint
-    totalStakers: number
-    totalAlgoStaked: bigint
-    poolAppEscrow: string
-  }[]
+/** A committee escrow and the frac instance its gGov delegation has to point at. */
+interface EscrowDelegation {
+  escrowAddress: string
+  instanceName: string
+  /** Account of the instance's app: the delegatee `importFracDelegations` writes for this escrow. */
+  instanceAppAddress: string
+}
+
+/**
+ * Everything the gGov delegation upsert works from and produces, for the caller to log or assert on.
+ * Empty until `run` has been called, and cleared at the top of every run.
+ */
+interface UpsertDelegationsContext {
+  /** Every escrow of every instance, with the delegatee it must end up on. The root of this stage. */
+  expectedDelegations: Map<string, EscrowDelegation>
+  /** Escrows the gGov registry already delegates to their own instance: nothing to write. */
+  alreadyDelegated: EscrowDelegation[]
+  /** Escrows with no gGov delegation at all yet. */
+  undelegated: EscrowDelegation[]
+  /** Escrows delegated somewhere other than their own instance, which the import overwrites. */
+  misdelegated: (EscrowDelegation & { currentDelegatee: string })[]
+  /** The undelegated plus the misdelegated: what this run imports. */
+  delegationsToImport: EscrowDelegation[]
+  /** Delegations this run imported. Empty unless every group landed, as the import is all-or-nothing here. */
+  delegationsImported: EscrowDelegation[]
+}
+
+/** One instance's AlgoQuarters outcome for the committee: what stage 3 did about it, and why. */
+interface InstanceAqResult {
+  instanceName: string
+  instanceNumId: number
+  source: string
+  /** The committee's numeric id on the instance, once its snapshot exists. */
+  committeeNumId?: number
+  /** The instance's ledger as stage 3 left it. Absent when nothing was uploaded. */
+  committeeAq?: FracCommitteeAq
+  /** Accounts and total AQ the plugin computed. Absent when the ledger was already complete. */
+  calculated?: { totalAccounts: number; totalAlgoQuarters: string }
+}
+
+/**
+ * Everything the AlgoQuarters upsert works from and produces, for the caller to log or assert on.
+ * Empty until `run` has been called, and cleared at the top of every run.
+ */
+interface UpsertAqContext {
+  /** The committee's on-chain metadata: the numeric id and the round window AQ is computed over. */
+  committee?: AQCommittee
+  /** Instances whose ledger was already complete when the run started: nothing computed, nothing written. */
+  alreadyComplete: InstanceAqResult[]
+  /** Instances whose source has no AQ implementation yet, so there was nothing to upload. */
+  skippedNoAqSupport: InstanceAqResult[]
+  /**
+   * Instances whose source computed AQ for them and found no eligible account. Routine for a
+   * multi-instance source — a reti validator whose committee pools held no stake over the window
+   * earns nobody anything — and nothing to upload, since a manifest with no accounts is invalid.
+   *
+   * Such an instance never opens a ledger, so it stays pending and its source is re-computed on
+   * every run. Unavoidable without a way to record "computed, nobody qualified" on chain: whether
+   * an instance has eligible accounts is only knowable by scanning the window.
+   */
+  noEligibleAccounts: InstanceAqResult[]
+  /** Instances this run computed AQ for and ingested. */
+  uploaded: InstanceAqResult[]
 }
 
 export class FracDelegationPipeline {
   /** Main Algorand client, used for writes. */
   private readonly algorand: AlgorandClient
-  /** Secondary Algorand client, used for Reti SDK and discovery. If not provided in constructor, defaults to the main client. */
-  private readonly algorand2: AlgorandClient
+  /** Secondary Algorand client, used by the source plugins. If not provided in constructor, defaults to the main client. */
+  private readonly discoveryClient: AlgorandClient
   private readonly fracSdk: FracDelegationSDK
+  /**
+   * The same frac registry, signed for by the operator. `syncCommittee`, `startAqIngest` and
+   * `ingestAq` are all operator-only, while every registry write stage 1 makes is admin-only, so
+   * the two roles get a client each rather than one client that swaps its writer mid-run.
+   */
+  private readonly fracOperatorSdk: FracDelegationSDK
   private readonly ggovSdk: GGovRegistrySDK
-  private readonly retiSdk: RetiGhostSDK
   private readonly sources: string[]
-  // cache data
-  private instancesCache: Instance[] = []
-  private retiCache: RetiValidatorWithPools[] = []
-  ctx: { [key: string]: any } = {}
+  private readonly concurrency: number
+
+  /** AQ ingestion is the operator's job, not the admin's: this is what `fracOperatorSdk` signs with. */
+  private readonly operatorAccount?: PipelineAccount
+  private readonly debug: boolean
+  // Per-run state, cleared at the top of `run` and filled by the step that owns each part.
+  /** Everything the instance upsert reads and writes. Public: it is the run's report. */
+  upsertInstancesCtx: UpsertInstancesContext = emptyUpsertInstancesContext()
+  /** Everything the gGov delegation upsert reads and writes. Public: it is the run's report. */
+  upsertDelegationsCtx: UpsertDelegationsContext = emptyUpsertDelegationsContext()
+  /** Everything the AlgoQuarters upsert reads and writes. Public: it is the run's report. */
+  upsertAqCtx: UpsertAqContext = emptyUpsertAqContext()
+  /**
+   * Every instance this committee needs and its on-chain identity, by instance name: the ones that
+   * were already registered plus the ones this run created. Complete once stage 1 is done, and what
+   * stage 2 works from - it is the only cache that pairs escrows with the app that holds them.
+   */
+  private instances: Map<string, FinalInstance> = new Map()
 
   constructor({
     algorand,
-    algorand2,
+    discoveryClient,
     fracRegistryAppId,
     ggovRegistryAppId,
     stakingSources,
-    debugSdk = false,
+    concurrency = 4,
+    adminAccount,
+    operatorAccount,
+    debug = false,
   }: FracPipelineArgs) {
     this.algorand = algorand
-    this.algorand2 = algorand2 ?? algorand
-    // TODO: how to handle the different privileges for the frac and gov SDKs? for now, admin for both registries
-    // and operator are the same. how will this be for separate credentials? the pipeline needs admin rights on both
-    // registries and operator rights for AQ ingestion.
-    let adminAccount: { sender: string; signer: ReturnType<AlgorandClient['account']['getSigner']> } | undefined
-    if (process.env.ADMIN_MNEMONIC && process.env.ADMIN) {
-      algorand.account.setSignerFromAccount(mnemonicToSecretKey(process.env.ADMIN_MNEMONIC))
-      adminAccount = { sender: process.env.ADMIN, signer: algorand.account.getSigner(process.env.ADMIN) }
-    }
+    this.discoveryClient = discoveryClient ?? algorand
+    this.concurrency = concurrency
+    this.debug = debug
+    adminAccount = adminAccount ?? envAccount(algorand)
+    this.operatorAccount = operatorAccount ?? adminAccount
     this.fracSdk = new FracDelegationSDK({
       algorand,
       registryAppId: fracRegistryAppId,
       writerAccount: adminAccount,
-      debug: debugSdk,
+      debug,
+    })
+    this.fracOperatorSdk = new FracDelegationSDK({
+      algorand,
+      registryAppId: fracRegistryAppId,
+      writerAccount: this.operatorAccount,
+      debug,
     })
     this.ggovSdk = new GGovRegistrySDK({
       algorand,
       registryAppId: ggovRegistryAppId,
       writerAccount: adminAccount,
-      debug: debugSdk,
+      debug,
     })
-    this.retiSdk = new RetiGhostSDK({ algorand: this.algorand2, registryAppId: RETI_REGISTRY_APP_ID })
-
     if (stakingSources && stakingSources.length !== new Set(stakingSources).size) {
       throw new Error('Duplicate staking sources are not allowed')
     }
-    this.sources = stakingSources ?? STAKING_SOURCES
+    this.sources = stakingSources ?? AVAILABLE_SOURCES
   }
 
-  getInstancesCache() {
-    return this.instancesCache
+  /** Step stats and one line per write, on the console. Silent unless the pipeline is in debug mode. */
+  private log(message: string) {
+    if (this.debug) console.log(`[pipeline] ${message}`)
   }
 
-  getRetiCache() {
-    return this.retiCache
-  }
-
+  /**
+   * Run the pipeline for one committee:
+   * 1. upsert the instances the committee's escrows imply, with their escrows, on the frac registry
+   * 2. point every escrow's gGov delegation at the instance that holds it
+   * 3. for every instance whose AQ ledger for this committee is not already complete, calculate its
+   *    source's AlgoQuarters and ingest them
+   * @param committeeId committee to run, which has to be on the gGov registry already
+   */
   async run(committeeId: string) {
     const committee = await this.ggovSdk.getCommittee(committeeId)
     if (!committee) throw new Error(`Wrong committee ID: ${committeeId} is not on the gGov registry`)
 
-    // discovery appends to the caches, so a re-run must start from empty
-    this.instancesCache = []
-    this.retiCache = []
-    this.ctx = {
-      committeeId: committee,
-      instancesWithNoEscrows: [],
-      instancesWithExcludedEscrows: [],
-      registeredEscrows: [],
-      createdInstances: [],
-    }
+    // a re-run must not see the previous run's state, and neither must a caller inspecting the
+    // pipeline after the upsert throws part-way
+    this.upsertInstancesCtx = { ...emptyUpsertInstancesContext(), committeeId, committee }
+    this.upsertDelegationsCtx = emptyUpsertDelegationsContext()
+    this.upsertAqCtx = emptyUpsertAqContext()
+
+    this.instances = await this.upsertInstances(committeeId, committee)
+    await this.upsertGGovDelegations()
+    await this.upsertCommitteeAq(committeeId)
+  }
+
+  /**
+   * Recognize the committee's escrows, reconcile the instances behind them against the frac registry
+   * and write the difference: escrows missing from instances that are already registered, and the
+   * instances that do not exist yet, with all of their escrows.
+   * @returns every instance the committee needs, in its final state, by instance name
+   */
+  private async upsertInstances(committeeId: string, committee: GGovCommitteeFile) {
+    const ctx = this.upsertInstancesCtx
+    const allInstances = new Map<string, FinalInstance>()
 
     // Stage 1: escrow/instance recognition + on-chain reconciliation
 
-    // each of them makes a discovery of the instances and its escrows, and writes cache
-    for (const s of this.sources) {
-      if ('reti' === s) {
-        // get all validators and their pools
-        const numValidators = await this.retiSdk.getNumValidators()
-        const validatorIds = new Array(numValidators).fill(0).map((_, i) => i + 1)
-        const poolsWithValidatorId = (await this.retiSdk.getPools(validatorIds)).map((pools, i) => ({
-          validatorId: validatorIds[i],
-          pools: pools.map((p) => ({
-            poolAppEscrow: getApplicationAddress(p.poolAppId).toString(),
-            ...p,
-          })),
-        }))
-        // cache fetched data for later use
-        poolsWithValidatorId.forEach(({ validatorId, pools }) => {
-          this.retiCache.push({ validatorId, pools })
-          this.instancesCache.push({
-            source: 'reti',
-            name: `Reti #${validatorId}`,
-            escrowAddresses: pools.map((p) => p.poolAppEscrow),
-          })
-        })
-      } else if ('talgo' === s) {
-        // get accounts stored in the tALGO app global state
-        const state = await this.algorand2.app.getGlobalState(TALGO_APP_ID)
-        const escrows = Object.entries(state)
-          .filter(([key]) => key.startsWith('account_'))
-          // stable escrow order across runs - sort in slot order, so escrow indices track account_N
-          .sort(([a], [b]) => Number(a.slice('account_'.length)) - Number(b.slice('account_'.length)))
-          // narrow to byte-typed entries and filter out empty slots which would otherwise decode to the zero address
-          .flatMap(([, v]) =>
-            'valueRaw' in v && v.valueRaw.some((byte) => byte !== 0) ? [encodeAddress(v.valueRaw)] : [],
-          )
-        // account_0 is the app itself and is always set, so an empty result means the wrong app id
-        if (!escrows.length) throw new Error(`talgo: app ${TALGO_APP_ID} exposes no account_* globals`)
-        if (escrows[0] !== TALGO_APP_ADDRESS) throw new Error(`talgo: account_0 must be the app address`)
-        this.instancesCache.push({
-          source: 'talgo',
-          name: 'Tinyman tALGO',
-          escrowAddresses: escrows,
-        })
-      } else if ('xalgo' === s) {
-        // TODO: implement
-        throw new Error(`xalgo staking source not implemented yet`)
-      } else {
-        throw new Error(`Unknown staking source: ${s}`)
+    // escrow recognition: every gov in the committee goes past every source, and the ones a source
+    // claims are its escrows. Sources only ever see committee members, so an escrow outside the
+    // committee cannot enter the analysis in the first place
+    const committeeGovAddresses = committee.govs.map((gov) => gov.address)
+    this.log(`committee ${committeeId}: ${committeeGovAddresses.length} govs, sources: ${this.sources.join(', ')}`)
+    // discovery is read-only, so the sources fan out. The merge below stays serial, in `this.sources` order: it is what raises the claim conflicts, and
+    // those have to name the same two sources on every run.
+    const discovered = await pMap(
+      this.sources,
+      async (source) => ({
+        source,
+        // an unknown source throws out of the registry
+        instanceNameByEscrow: await (
+          await getPlugin(source, this.discoveryClient)
+        ).getInstanceNameFromEscrowAddrs(committeeGovAddresses),
+      }),
+      { concurrency: this.concurrency },
+    )
+    const sourceByEscrow = new Map<string, string>()
+    for (const { source, instanceNameByEscrow } of discovered) {
+      const recognized = Object.entries(instanceNameByEscrow)
+      this.log(
+        `${source}: ${recognized.length} of the committee's govs are escrows, in ${new Set(Object.values(instanceNameByEscrow)).size} instances`,
+      )
+      for (const [escrowAddress, instanceName] of recognized) {
+        // escrows cannot be repeated across sources
+        const claimedBy = sourceByEscrow.get(escrowAddress)
+        if (claimedBy) throw new Error(`Escrow ${escrowAddress} claimed by both ${claimedBy} and ${source}`)
+        sourceByEscrow.set(escrowAddress, source)
+        const known = this.upsertInstancesCtx.futureInstances.find((i) => i.name === instanceName)
+        // the instance name is its on-chain identity, so two sources cannot answer with the same one
+        if (known && known.source !== source) {
+          throw new Error(`Instance ${instanceName} claimed by both ${known.source} and ${source}`)
+        }
+        if (known) known.escrowAddresses.push(escrowAddress)
+        else
+          this.upsertInstancesCtx.futureInstances.push({ source, name: instanceName, escrowAddresses: [escrowAddress] })
       }
     }
-
-    // escrow recognition: intersection of committee escrows and fetched escrows
-    const escrowsFetched = this.instancesCache.flatMap((i) => i.escrowAddresses)
-    const escrowsFetchedSet = new Set(escrowsFetched)
-    // escrows cannot be repeated across sources
-    if (escrowsFetchedSet.size !== escrowsFetched.length) throw new Error('Repeated escrows found across sources')
-    const escrowsInCommittee = new Set(
-      committee.govs.map((gov) => gov.address).filter((addr) => escrowsFetchedSet.has(addr)),
-    )
+    this.log(`recognized ${sourceByEscrow.size} escrows in ${this.upsertInstancesCtx.futureInstances.length} instances`)
+    if (this.debug) {
+      const escrowsBySource = new Map<string, number>()
+      for (const [_, source] of sourceByEscrow.entries()) {
+        escrowsBySource.set(source, (escrowsBySource.get(source) || 0) + 1)
+      }
+      for (const [source, count] of escrowsBySource.entries()) {
+        this.log(`${source}: ${count} escrow(s) recognized`)
+      }
+    }
 
     // get the current data from the contracts
     const onChainInstances = await this.fracSdk.registry.getExistingInstances()
     for (const [numId, instance] of onChainInstances.entries()) {
-      const matching = this.instancesCache.find((i) => i.name === instance.name)
-      if (matching) {
-        matching.appId = instance.appId
-        matching.numId = numId
-      } else {
+      if (!ctx.futureInstances.some((i) => i.name === instance.name)) {
         // if the instance is on-chain but not in the fetched data, it may be a stale instance
         // what should we do here? for now, log and continue
-        console.warn(`instance ${instance.name} (appId ${instance.appId}) is on-chain but not has not fetched data`)
+        console.warn(
+          `instance ${instance.name} (appId ${instance.appId}) is on-chain but not in committee ${committeeId} data, ignoring`,
+        )
+        continue
+      }
+      ctx.existingInstances.set(instance.name, { numId, appId: instance.appId })
+    }
+
+    // instances not on chain, need to be created
+    ctx.instancesToCreate = ctx.futureInstances.filter((i) => !ctx.existingInstances.has(i.name))
+    this.log(
+      `${ctx.existingInstances.size} of them already on the frac registry, ${ctx.instancesToCreate.length} to create`,
+    )
+
+    // for the instances that do exist, are all their escrows registered?
+    // the escrows of new instances are skipped as they will be registered when the instance is created
+    const existingPairs = ctx.futureInstances.flatMap((future) => {
+      const onChain = ctx.existingInstances.get(future.name)
+      return onChain ? [{ future, onChain }] : []
+    })
+    // one readonly simulate per instance, each against its own app: independent, so they fan out
+    const escrowsOnChain = await pMap(
+      existingPairs,
+      async ({ onChain }) => new Set(await this.fracSdk.getEscrows(onChain.numId)),
+      { concurrency: this.concurrency },
+    )
+    for (const [i, { future, onChain }] of existingPairs.entries()) {
+      // already registered, so this one is final as it stands - the rest join as this run creates them
+      allInstances.set(future.name, { ...future, ...onChain })
+      for (const escrowAddress of future.escrowAddresses) {
+        if (escrowsOnChain[i].has(escrowAddress)) continue
+        ctx.existingInstanceEscrowsToRegister.push({
+          instanceNumId: onChain.numId,
+          instanceName: future.name,
+          escrowAddress,
+        })
       }
     }
 
-    // mutate the instance cache:
-    // 1. only keep escrow addresses that are in the committee and report the rest as excluded from the pipeline analysis
-    // 2. remove instances that have no escrows in the committee
-    for (const instance of this.instancesCache) {
-      const excluded: string[] = []
-      instance.escrowAddresses = instance.escrowAddresses.filter((e) => {
-        const isGov = escrowsInCommittee.has(e)
-        if (!isGov) excluded.push(e)
-        return isGov
-      })
-      if (instance.escrowAddresses.length === 0) {
-        // from the ones fetched, the ones which have no escrows at all in the committee
-        this.ctx.instancesWithNoEscrows.push(instance.name)
-      }
-      if (excluded.length > 0) {
-        // instances with some fetched escrows not in the committee (partially excluded)
-        this.ctx.instancesWithExcludedEscrows.push({ [instance.name]: excluded })
-      }
-    }
-    this.instancesCache = this.instancesCache.filter((i) => i.escrowAddresses.length > 0)
-
-    // for the created instances, are all their escrows registered? do not include the escrows that are
-    // from a non-yet-created instance, as they will be registered when the instance is created
-    const escrowsToRegister: string[] = []
-    for (const i of this.instancesCache.filter((i) => i.numId !== undefined)) {
-      const onChainEscrows = new Set(await this.fracSdk.getEscrows(i.numId!))
-      const unregistered = i.escrowAddresses.filter((e) => !onChainEscrows.has(e))
-      if (unregistered.length) escrowsToRegister.push(...unregistered)
-    }
-
-    // WRITE: register escrows for existing instances
-    for (const e of escrowsToRegister) {
-      const instance = this.instancesCache.find((i) => i.escrowAddresses.includes(e))
-      // safety check: if the escrow is in the list to register, it must belong to an existing instance
-      if (instance?.numId === undefined) throw new Error(`cannot find instance for escrow ${e}`)
-      await this.fracSdk.registry.registerEscrow({ instanceNumId: instance.numId, account: e })
-      this.ctx.registeredEscrows.push({ instance: instance.name, escrow: e })
-    }
-
-    // cached instances with no app ID need to be created by admin
-    const instancesToCreate = this.instancesCache.filter((i) => i.appId === undefined)
-
-    // WRITE: create new instances and register escrows
-    for (const i of instancesToCreate) {
+    // WRITE: create the new instances, one at a time. Sequential on purpose - do NOT pMap these.
+    // createInstance names the box it writes after the incremented `lastInstanceNumId`, and
+    // resource population predicts that name from the pre-state, so concurrent creates would all
+    // reference the same box and every one but the first to commit would fail with an invalid box
+    // reference. Their escrows are registered in the phase below, once every instance exists.
+    this.log(
+      `creating ${ctx.instancesToCreate.length} instances with ${ctx.instancesToCreate.reduce((n, i) => n + i.escrowAddresses.length, 0)} escrows`,
+    )
+    for (const newInstance of ctx.instancesToCreate) {
       // 1 ALG0 for MBR
-      const instanceNumId = await this.fracSdk.registry.addInstance({ name: i.name, mbrAmount: 1e6 })
-      // update instance cache with on-chain data
-      i.numId = Number(instanceNumId)
-      i.appId = await this.fracSdk.getInstanceAppId(instanceNumId)
-      // register all escrows for the new instance
-      for (const e of i.escrowAddresses) {
-        await this.fracSdk.registry.registerEscrow({ instanceNumId, account: e })
-      }
-      this.ctx.createdInstances.push({ instance: i.name, escrows: i.escrowAddresses })
+      const instanceNumId = await this.fracSdk.registry.addInstance({ name: newInstance.name, mbrAmount: 1e6 })
+      const appId = await this.fracSdk.getInstanceAppId(instanceNumId)
+      ctx.instancesCreated.set(newInstance.name, { numId: Number(instanceNumId), appId })
+      allInstances.set(newInstance.name, { ...newInstance, numId: Number(instanceNumId), appId })
+      this.log(`WRITE addInstance: ${newInstance.name} (#${instanceNumId}, appId ${appId})`)
     }
 
-    // WRITE: import frac delegations from just-registered escrows
-    const escrowsToImportDelegations = escrowsToRegister.concat(instancesToCreate.flatMap((i) => i.escrowAddresses))
-    await this.ggovSdk.importFracDelegationsAll({ escrowAccounts: escrowsToImportDelegations })
+    // WRITE: register every escrow this run owes - to the instances that already existed and to the
+    // ones just created - as one job per instance.
+    const jobs = this.escrowRegistrationJobs()
+    this.log(
+      `registering ${jobs.reduce((n, j) => n + j.escrowAddresses.length, 0)} escrows across ${jobs.length} instances`,
+    )
+    try {
+      // Two instances share no mutable state: the escrow -> instance box is keyed by the escrow, and
+      // the registry's instances box and the instance app's own escrows list are per instance. So
+      // the jobs fan out, while the calls within one job stay in ordered, atomic groups -
+      // registerEscrowsAll - because they all read and rewrite that one growing escrows box.
+      await pMap(
+        jobs,
+        async (job) => {
+          if (job.escrowAddresses.length === 0) return
+          await this.fracSdk.registry.registerEscrowsAll({
+            instanceNumId: job.instanceNumId,
+            accounts: job.escrowAddresses,
+          })
+          job.registered = true
+          this.log(
+            `WRITE registerEscrows(${job.isNew ? 'new' : 'existing'}): ${job.escrowAddresses.length} escrows -> ${job.instanceName} (#${job.instanceNumId})`,
+          )
+        },
+        { concurrency: this.concurrency },
+      )
+    } finally {
+      // Report in job order whatever landed, so the context still shows the run's progress when a
+      // job throws. A job is all-or-nothing here even though it may span several groups: an
+      // instance whose registration failed part-way reports nothing, and re-running picks up the
+      // remainder (an already-assigned escrow is rejected, not registered twice).
+      for (const job of jobs) {
+        if (!job.registered) continue
+        if (job.isNew) ctx.createdInstances.push({ instance: job.instanceName, escrows: job.escrowAddresses })
+        else
+          for (const escrow of job.escrowAddresses)
+            ctx.existingInstanceNewEscrows.push({ instance: job.instanceName, escrow })
+      }
+    }
+    this.log(
+      `[STAGE 1] instance upsert done: ${allInstances.size} instances hold ${[...allInstances.values()].reduce((n, i) => n + i.escrowAddresses.length, 0)} committee escrows`,
+    )
+    return allInstances
+  }
 
-    // Stage 2: calculate staking share per user and create AQ files per instance
-    // TODO: implement
+  /**
+   * The escrow registrations stage 1 still owes, one job per instance: the escrows missing from the
+   * instances that were already on the registry, plus every escrow of the instances this run has
+   * just created. Grouping by instance is what makes the writes safe to fan out.
+   */
+  private escrowRegistrationJobs(): EscrowRegistrationJob[] {
+    const ctx = this.upsertInstancesCtx
+    const byInstance = new Map<number, EscrowRegistrationJob>()
+    for (const { instanceNumId, instanceName, escrowAddress } of ctx.existingInstanceEscrowsToRegister) {
+      let job = byInstance.get(instanceNumId)
+      if (!job) {
+        job = { instanceNumId, instanceName, escrowAddresses: [], isNew: false, registered: false }
+        byInstance.set(instanceNumId, job)
+      }
+      job.escrowAddresses.push(escrowAddress)
+    }
+    for (const newInstance of ctx.instancesToCreate) {
+      // invariant: the create phase awaits every addInstance and throws out of the run on failure,
+      // so getting here means every instance to create was created. Assert rather than skip - a
+      // skipped instance would silently never have its escrows registered, and the run would still
+      // report success.
+      const created = ctx.instancesCreated.get(newInstance.name)
+      if (!created) throw new Error(`Instance ${newInstance.name} was not created, cannot register its escrows`)
+      byInstance.set(created.numId, {
+        instanceNumId: created.numId,
+        instanceName: newInstance.name,
+        escrowAddresses: newInstance.escrowAddresses,
+        isNew: true,
+        registered: false,
+      })
+    }
+    return [...byInstance.values()]
+  }
 
-    // Stage 3: upload AQ files (ingestion) - operator
-    // TODO: implement
+  /**
+   * Stage 2: make the gGov registry delegate every committee escrow to the frac instance that holds
+   * it, so the instance can cast that escrow's pooled votes.
+   *
+   * Works off `this.instances`, so stage 1 has to have finished: an escrow can only be delegated to
+   * an instance app that exists on chain and already has the escrow registered to it.
+   */
+  private async upsertGGovDelegations() {
+    const ctx = this.upsertDelegationsCtx
+
+    // a correct delegation points at the account of the escrow's instance app, which is what the
+    // registry's `importFracDelegations` resolves (through the frac registry) and writes
+    for (const instance of this.instances.values()) {
+      const instanceAppAddress = getApplicationAddress(instance.appId).toString()
+      for (const escrowAddress of instance.escrowAddresses) {
+        ctx.expectedDelegations.set(escrowAddress, { escrowAddress, instanceName: instance.name, instanceAppAddress })
+      }
+    }
+    const escrowAddresses = [...ctx.expectedDelegations.keys()]
+    this.log(`checking gGov delegations of ${escrowAddresses.length} escrows across ${this.instances.size} instances`)
+    if (escrowAddresses.length === 0) return
+
+    // one batched read for the lot: the SDK chunks it and answers in the order asked, with the zero
+    // address standing in for an escrow that has never delegated
+    const currentDelegatees = await this.ggovSdk.getDelegations(escrowAddresses)
+    for (const [i, escrowAddress] of escrowAddresses.entries()) {
+      const expected = ctx.expectedDelegations.get(escrowAddress)!
+      const currentDelegatee = currentDelegatees[i]
+      if (currentDelegatee === expected.instanceAppAddress) {
+        ctx.alreadyDelegated.push(expected)
+      } else if (currentDelegatee === ALGORAND_ZERO_ADDRESS_STRING) {
+        ctx.undelegated.push(expected)
+      } else {
+        // a gov may have delegated wherever they liked before entering the pool; the import
+        // overwrites that, which is the point of pooled staking, but it is worth seeing
+        ctx.misdelegated.push({ ...expected, currentDelegatee })
+        console.warn(
+          `escrow ${escrowAddress} of ${expected.instanceName} is delegated to ${currentDelegatee}, redirecting it to the instance`,
+        )
+      }
+    }
+    ctx.delegationsToImport = [...ctx.undelegated, ...ctx.misdelegated]
+    this.log(
+      `${ctx.alreadyDelegated.length} already delegated to their instance, ${ctx.undelegated.length} undelegated, ` +
+        `${ctx.misdelegated.length} delegated elsewhere: importing ${ctx.delegationsToImport.length}`,
+    )
+    if (ctx.delegationsToImport.length === 0) return
+
+    // WRITE: import the delegations, which the SDK sends one transaction group per
+    // MAX_ESCROWS_PER_FD_IMPORT escrows.
+    this.log(`WRITE importFracDelegations: ${ctx.delegationsToImport.length} escrows`)
+    await this.ggovSdk.importFracDelegationsAll({
+      escrowAccounts: ctx.delegationsToImport.map(({ escrowAddress }) => escrowAddress),
+    })
+    ctx.delegationsImported = ctx.delegationsToImport
+    this.log(
+      `[STAGE 2] gGov registry delegation upsert done: ${ctx.alreadyDelegated.length + ctx.delegationsImported.length} of ${escrowAddresses.length} escrows delegated to their instance`,
+    )
+  }
+
+  /**
+   * Stage 3: give every instance the AlgoQuarters its source's depositors earned over the
+   * committee's window, so their pooled votes can be split by weight.
+   *
+   * Works off `this.instances`, so stage 1 has to have finished. Grouped by source, not by
+   * instance: each source's ledgers are read first and only the instances still needing AQ are
+   * carried forward, so a source whose instances are all complete is skipped before its plugin is
+   * even constructed — which is what makes a re-run free. The pending instances then go to the
+   * source's plugin in one call, and it decides how to split the window it scans among them.
+   *
+   * Ingestion stays serial across instances on purpose: each `uploadAqFile` is a long run of
+   * sequential groups whose box references depend on account ids the frac registry allocates as it
+   * goes, so two instances ingesting at once would contend for those.
+   */
+  private async upsertCommitteeAq(committeeId: string) {
+    const ctx = this.upsertAqCtx
+
+    // the AQ window is the committee's own, and `numericId` is the `committeeNumId` every instance
+    // keys its ledger by. One read for the whole stage.
+    const metadata = await this.ggovSdk.getCommitteeMetadata(committeeId)
+    if (!metadata) throw new Error(`Committee ${committeeId} has no metadata on the gGov registry`)
+    ctx.committee = {
+      numericId: metadata.numericId,
+      periodStart: metadata.periodStart,
+      periodEnd: metadata.periodEnd,
+    }
+    this.log(
+      `AQ for committee ${committeeId} (#${metadata.numericId}), rounds ` +
+        `[${metadata.periodStart}, ${metadata.periodEnd}) across ${this.instances.size} instances`,
+    )
+
+    // instances by source, in the order stage 1 produced them, so logs and claim conflicts read
+    // the same way on every run
+    const instancesBySource = new Map<string, FinalInstance[]>()
+    for (const instance of this.instances.values()) {
+      const forSource = instancesBySource.get(instance.source)
+      if (forSource) forSource.push(instance)
+      else instancesBySource.set(instance.source, [instance])
+    }
+
+    for (const [source, instances] of instancesBySource) {
+      // Ledgers first: an instance whose ledger is already complete needs no computation, and a
+      // source with no incomplete instance left needs no plugin and no Indexer scan at all
+      const pending: FinalInstance[] = []
+      const resultByInstance = new Map<string, InstanceAqResult>()
+      for (const instance of instances) {
+        const result: InstanceAqResult = {
+          instanceName: instance.name,
+          instanceNumId: instance.numId,
+          source: instance.source,
+        }
+        resultByInstance.set(instance.name, result)
+
+        const ledger = await this.getCommitteeAqLedger(instance.numId, committeeId)
+        if (ledger) {
+          result.committeeNumId = ledger.committeeNumId
+          result.committeeAq = ledger.committeeAq
+          // The contract's own rule, from getCommitteeAq(mustBeComplete): both counters have to land.
+          if (
+            Number(ledger.committeeAq.ingestedAq) === Number(ledger.committeeAq.totalAq) &&
+            Number(ledger.committeeAq.numAccounts) === Number(ledger.committeeAq.totalAccounts)
+          ) {
+            this.log(
+              `${instance.name}: ledger already complete (${ledger.committeeAq.ingestedAq} AQ, ` +
+                `${ledger.committeeAq.numAccounts} accounts), skipping`,
+            )
+            ctx.alreadyComplete.push(result)
+            continue
+          }
+        }
+        pending.push(instance)
+      }
+
+      if (pending.length === 0) {
+        this.log(`${source}: every instance's ledger is already complete, nothing to compute`)
+        continue
+      }
+
+      // One call, one window scan, however many instances the source has in this committee
+      this.log(`${source}: computing AQ for ${pending.length} instance(s): ${pending.map((i) => i.name).join(', ')}`)
+      const plugin = await getPlugin(source, this.discoveryClient)
+      const calculations = await plugin.calculateCommitteeAQ(ctx.committee, pending)
+
+      for (const instance of pending) {
+        const result = resultByInstance.get(instance.name)!
+        // A source whose plugin has no AQ implementation yet leaves the instance out of the map.
+        // Uploading nothing would fail manifest validation, so it is reported and left for when the
+        // plugin lands.
+        const calculation = calculations.get(instance.name)
+        if (!calculation) {
+          console.warn(
+            `no AlgoQuarters computed for ${instance.name}: source ${source} has no AQ implementation yet, skipping`,
+          )
+          ctx.skippedNoAqSupport.push(result)
+          continue
+        }
+        // Computed, and nobody qualified. Not an error: an instance whose committee pools held no
+        // stake over the window has nothing to distribute, and a manifest with no accounts is
+        // invalid, so there is nothing to write either.
+        if (Object.keys(calculation.accounts).length === 0) {
+          this.log(`${instance.name}: no account earned a whole AlgoQuarter over the window, nothing to ingest`)
+          ctx.noEligibleAccounts.push(result)
+          continue
+        }
+
+        const aqFile = await this.buildAqFile(calculation, ctx.committee)
+        result.calculated = { totalAccounts: aqFile.totalAccounts, totalAlgoQuarters: aqFile.totalAlgoQuarters }
+        this.log(
+          `${instance.name}: computed ${aqFile.totalAccounts} accounts, ${aqFile.totalAlgoQuarters} AQ` +
+            `${aqFile.rate ? ` at rate ${aqFile.rate}` : ''}`,
+        )
+
+        const { committeeNumId, committeeAq } = await this.uploadAQ(instance.numId, committeeId, aqFile)
+        result.committeeNumId = committeeNumId
+        result.committeeAq = committeeAq
+        ctx.uploaded.push(result)
+      }
+    }
+
+    this.log(
+      `[STAGE 3] AQ upsert done: ${ctx.uploaded.length} instances ingested, ` +
+        `${ctx.alreadyComplete.length} already complete, ${ctx.noEligibleAccounts.length} with no eligible ` +
+        `accounts, ${ctx.skippedNoAqSupport.length} without AQ support`,
+    )
+  }
+
+  /**
+   * An instance's AQ ledger for a committee, or undefined when there is nothing to read yet — the
+   * instance has never synced the committee, or has synced it but never opened a ledger.
+   */
+  private async getCommitteeAqLedger(instanceNumId: number, committeeId: string) {
+    const committee = await this.fracOperatorSdk.getCommittee(instanceNumId, committeeId)
+    if (!committee) return undefined
+    const committeeNumId = Number(committee.committeeNumId)
+    const committeeAq = await this.fracOperatorSdk.getCommitteeAq(instanceNumId, committeeNumId)
+    return committeeAq ? { committeeNumId, committeeAq } : undefined
+  }
+
+  /**
+   * Assemble the AQ manifest `uploadAqFile` takes from what the plugin computed. The plugin owns
+   * the source-specific fields (`protocol`, `rate`); the rest is the same for every source.
+   */
+  private async buildAqFile(calculation: AQCalculation, committee: AQCommittee): Promise<AlgoQuartersFile> {
+    // Codepoint order (not locale-dependent), matching the committee-file convention
+    const accounts = Object.entries(calculation.accounts)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([account, aq]) => ({ account, algoQuarters: aq.toString() }))
+    const totalAlgoQuarters = accounts.reduce((sum, { algoQuarters }) => sum + BigInt(algoQuarters), 0n)
+
+    // The genesis hash comes from the WRITE client, not the discovery client: `uploadAqFile` checks
+    // the manifest against the network the contracts live on. Those differ by design - a localnet
+    // run computes its AQ from mainnet history and ingests it onto localnet.
+    const suggestedParams = await this.algorand.getSuggestedParams()
+
+    return {
+      networkGenesisHash: Buffer.from(suggestedParams.genesisHash!).toString('base64'),
+      protocol: calculation.protocol,
+      periodStart: committee.periodStart,
+      periodEnd: committee.periodEnd,
+      ...(calculation.rate === undefined ? {} : { rate: calculation.rate }),
+      totalAccounts: accounts.length,
+      totalAlgoQuarters: totalAlgoQuarters.toString(),
+      accounts,
+    }
+  }
+
+  /**
+   * WRITE: ingest one instance's AQ manifest, as the operator.
+   *
+   * The SDK owns the whole sequence: it validates the manifest, syncs the committee onto the
+   * instance if it has no snapshot yet, opens the ledger with `startAqIngest`, ingests in batches
+   * and asserts the ledger is complete at the end. It is resumable, so a run interrupted part-way
+   * finishes on the next one rather than double-counting.
+   *
+   * `autoFund` because both app accounts pay box MBR per ingested account and there is no funding
+   * path between them: the operator tops up the shortfall rather than the run stopping on it.
+   */
+  private async uploadAQ(instanceNumId: number, committeeId: string, aqFile: AlgoQuartersFile) {
+    this.log(`WRITE uploadAqFile: instance #${instanceNumId}, ${aqFile.totalAccounts} accounts`)
+    return this.fracOperatorSdk.uploadAqFile({ instanceNumId, committeeId, aqFile, autoFund: true })
+  }
+}
+
+/**
+ * The environment's admin account, registered on `algorand` so the SDKs can sign with it.
+ * @returns undefined when ADMIN/ADMIN_MNEMONIC are not both set
+ */
+function envAccount(algorand: AlgorandClient): PipelineAccount | undefined {
+  if (!process.env.ADMIN_MNEMONIC || !process.env.ADMIN) return undefined
+  algorand.account.setSignerFromAccount(mnemonicToSecretKey(process.env.ADMIN_MNEMONIC))
+  return { sender: process.env.ADMIN, signer: algorand.account.getSigner(process.env.ADMIN) }
+}
+
+/** A blank delegation context, so `upsertDelegationsCtx` is readable (and empty) before the first run. */
+function emptyUpsertDelegationsContext(): UpsertDelegationsContext {
+  return {
+    expectedDelegations: new Map(),
+    alreadyDelegated: [],
+    undelegated: [],
+    misdelegated: [],
+    delegationsToImport: [],
+    delegationsImported: [],
+  }
+}
+
+/** A blank AQ context, so `upsertAqCtx` is readable (and empty) before the first run. */
+function emptyUpsertAqContext(): UpsertAqContext {
+  return { alreadyComplete: [], skippedNoAqSupport: [], noEligibleAccounts: [], uploaded: [] }
+}
+
+/** A blank upsert context, so `upsertInstancesCtx` is readable (and empty) before the first run. */
+function emptyUpsertInstancesContext(): UpsertInstancesContext {
+  return {
+    futureInstances: [],
+    existingInstances: new Map(),
+    instancesToCreate: [],
+    existingInstanceEscrowsToRegister: [],
+    instancesCreated: new Map(),
+    existingInstanceNewEscrows: [],
+    createdInstances: [],
   }
 }

@@ -1,7 +1,7 @@
 import { SendParams } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Algodv2 } from 'algosdk'
-import { getIncreaseBudgetBuilder } from './increaseBudget'
-import { SendResult, SenderWithSigner } from '../types'
+import { getIncreaseBudgetBuilder } from './increaseBudget.js'
+import { SendResult, SenderWithSigner } from '../types.js'
 
 /**
  * Execute a transaction group with automatic budget increase.

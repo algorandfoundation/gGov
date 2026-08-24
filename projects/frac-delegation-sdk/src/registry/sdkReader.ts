@@ -10,17 +10,17 @@ import {
   FracInstance,
   FracRegAccount,
   APP_SPEC,
-} from '../generated/FracDelegationRegistryClient'
-import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient'
-import { getConstructorConfig } from '../networkConfig'
-import { ReaderConstructorArgs } from './types'
-import { assertUint } from '../util/assertUint'
-import { chunk } from '../util/chunk'
-import { chunked } from '../util/chunked'
-import { committeeIdToRaw } from '../util/comitteeId'
-import { errorTransformer } from '../util/wrapErrors'
-import { undefinedIfBoxMissing } from '../util/boxes'
-import { SIMULATE_PARAMS } from '../util/increaseBudget'
+} from '../generated/FracDelegationRegistryClient.js'
+import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient.js'
+import { getConstructorConfig } from '../networkConfig.js'
+import { ReaderConstructorArgs } from './types.js'
+import { assertUint } from '../util/assertUint.js'
+import { chunk } from '../util/chunk.js'
+import { chunked } from '../util/chunked.js'
+import { committeeIdToRaw } from '../util/comitteeId.js'
+import { errorTransformer } from '../util/wrapErrors.js'
+import { undefinedIfBoxMissing } from '../util/boxes.js'
+import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
 
 /**
  * Max instances per page for the registry's paged cross-instance log methods. Each page is a single
@@ -299,6 +299,7 @@ export class FracDelegationRegistryReaderSDK {
    * entries for instance apps that have been deleted.
    */
   async getInstances(): Promise<Map<number, FracInstance>> {
+    // TODO simulate plural logger to get instances in pages
     return this.readClient.state.box.instances.getMap()
   }
 

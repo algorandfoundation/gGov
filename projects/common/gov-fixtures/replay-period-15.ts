@@ -77,9 +77,12 @@ const sdkDir = path.resolve(__dirname, '../../ggov-sdk')
 const sdkRequire = createRequire(path.join(sdkDir, 'package.json'))
 const require = createRequire(import.meta.url)
 
-// CJS dist to dodge ESM-source resolution issues (matches deploy-sample-data.ts).
+// Everything comes off the SDK's CJS build so algokit-utils, algosdk and the SDK share
+// one module realm — the SDK returns `algosdk.Address` objects that the composer checks
+// with `instanceof`. Static bare imports are not an option here: gov-fixtures has no
+// node_modules, so `ggov-sdk` does not resolve as a bare specifier from this directory.
 const { AlgorandClient, microAlgos } = sdkRequire('@algorandfoundation/algokit-utils')
-const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, 'dist/index.js'))
+const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, 'dist/cjs/index.js'))
 const algosdk = sdkRequire('algosdk')
 
 const votingSession = require('./voting-session-period-15-voting-session-1.json')
