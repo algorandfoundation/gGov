@@ -1010,7 +1010,11 @@ describe('FracDelegationInstance algoquarters', () => {
         instanceName: (await registrySdk.getInstance(instanceId))!.name,
         userAq: 100,
         totalAq: 1000,
+        // Folded in from the same `committees` box the getter reads to resolve committeeNumId, so it
+        // must agree with the snapshot read on its own.
+        totalVotes: (await sdk.getCommittee(instanceId, committeeId))!.totalVotes,
       })
+      expect(bundle.totalVotes).toBeGreaterThan(0)
     })
 
     test('getAccountCommitteeAq zeroes the weights for an unsynced committee', async () => {
@@ -1024,6 +1028,8 @@ describe('FracDelegationInstance algoquarters', () => {
       expect(bundle.committeeNumId).toBe(0)
       expect(bundle.userAq).toBe(0)
       expect(bundle.totalAq).toBe(0)
+      expect(bundle.totalVotes).toBe(0) // no snapshot to read a pool power off
+
       expect(bundle.committeeId).toEqual(unknownCommitteeId)
       expect(bundle.instanceNumId).toBe(Number(instanceId))
     })
@@ -1054,9 +1060,11 @@ describe('FracDelegationInstance algoquarters', () => {
         accountAqs: rows([account], 300),
       })
 
-      const results = await registrySdk.getAccountInstanceAQs(account, committeeId)
+      const results = await registrySdk.getAccountInstanceAQs(account, [committeeId])
 
       // One entry per instance, in the account's instanceNumIds order (instance 1 associated first).
+      // Each carries its own pool's gGov power for the committee, so a caller can price the position
+      // without a second, per-instance read.
       expect(results).toEqual([
         {
           instanceNumId: Number(instanceId),
@@ -1066,6 +1074,7 @@ describe('FracDelegationInstance algoquarters', () => {
           instanceName: (await registrySdk.getInstance(instanceId))!.name,
           userAq: 100,
           totalAq: 1000,
+          totalVotes: (await sdk.getCommittee(instanceId, committeeId))!.totalVotes,
         },
         {
           instanceNumId: Number(instanceId2),
@@ -1075,6 +1084,7 @@ describe('FracDelegationInstance algoquarters', () => {
           instanceName: (await registrySdk.getInstance(instanceId2))!.name,
           userAq: 300,
           totalAq: 2000,
+          totalVotes: (await sdk.getCommittee(instanceId2, committeeId))!.totalVotes,
         },
       ])
     }, 120_000)

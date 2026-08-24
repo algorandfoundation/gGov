@@ -188,7 +188,7 @@ describe('FracDelegationRegistry readers', () => {
       const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)
       const committeeId = new Uint8Array(32).fill(3)
 
-      const results = await registrySdk.getAccountInstanceAQs(account, committeeId)
+      const results = await registrySdk.getAccountInstanceAQs(account, [committeeId])
 
       expect(results).toHaveLength(instanceIds.length)
       for (const [i, instanceId] of instanceIds.entries()) {
@@ -200,29 +200,78 @@ describe('FracDelegationRegistry readers', () => {
           instanceName: (await registrySdk.getInstance(instanceId))!.name,
           userAq: 0,
           totalAq: 0,
+          totalVotes: 0, // no snapshot, so no pool power either
         })
       }
     })
 
-    test('getAccountInstanceAQs is empty for an unregistered account', async () => {
+    test('getAccountInstanceAQs logs a row per (instance, committee) pair, instance-major', async () => {
+      const { registrySdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)
+      const committeeIds = [new Uint8Array(32).fill(3), new Uint8Array(32).fill(4)]
+
+      const results = await registrySdk.getAccountInstanceAQs(account, committeeIds)
+
+      // Both axes in one read: 2 instances x 2 committees. Instance-major - each instance's
+      // committees are adjacent, in the order they were asked for.
+      expect(results).toHaveLength(4)
+      expect(results.map((r) => [r.instanceNumId, r.committeeId[0]])).toEqual([
+        [Number(instanceIds[0]), 3],
+        [Number(instanceIds[0]), 4],
+        [Number(instanceIds[1]), 3],
+        [Number(instanceIds[1]), 4],
+      ])
+    })
+
+    test('getAccountInstanceAQs is empty for an unregistered account, and for no committees', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracInstance(localnet, testAccount)
       const [unknown] = await freshAddresses(1)
 
-      expect(await sdk.registry.getAccountInstanceAQs(unknown, new Uint8Array(32))).toEqual([])
+      expect(await sdk.registry.getAccountInstanceAQs(unknown, [new Uint8Array(32)])).toEqual([])
+      // No committees is no read at all - the committee axis is half the query, not a filter.
+      expect(await sdk.registry.getAccountInstanceAQs(unknown, [])).toEqual([])
     })
 
-    test('getAccountInstanceAQs pages across the per-call instance limit', async () => {
-      // Force a tiny page size (production fits ~25 AQ instances per simulate page) so 8 instances
-      // span three pages: the aggregated result must stay in the account's instanceNumIds order
-      // across the page boundaries.
+    test('getAccountInstanceAQs pages instances and chunks committees, order preserved on both axes', async () => {
+      // Force BOTH axes with a handful of instances: production fits ~25 instances x 1 committee per
+      // simulate page, so dial the instance page to 3 (8 instances -> 3 pages) and the committee
+      // chunk to 2 (3 committees -> 2 chunks). The aggregate must stay in instanceNumIds order
+      // within each chunk, and every row must still name its own committee.
       const { registrySdk, account, instanceIds } = await deployInstancesForAccount(localnet, 8)
       registrySdk.aqPageSize = 3
+      registrySdk.aqMaxCommitteesPerCall = 2
+      const committeeIds = [new Uint8Array(32).fill(1), new Uint8Array(32).fill(2), new Uint8Array(32).fill(3)]
 
-      const results = await registrySdk.getAccountInstanceAQs(account, new Uint8Array(32))
+      // `numInstances` is what makes the instance axis bind; without it the committee axis is sized
+      // first and 3 committees would fit one page of instances.
+      const results = await registrySdk.getAccountInstanceAQs(account, committeeIds, { numInstances: 8 })
 
-      expect(results.map((r) => r.instanceNumId)).toEqual(instanceIds.map((id) => Number(id)))
-    }, 120_000)
+      expect(results).toHaveLength(instanceIds.length * committeeIds.length)
+      // Committee chunks come back in chunk order ([1,2] then [3]); within a chunk, instance-major.
+      const expectedOrder = [
+        ...instanceIds.flatMap((id) => [
+          [Number(id), 1],
+          [Number(id), 2],
+        ]),
+        ...instanceIds.map((id) => [Number(id), 3]),
+      ]
+      expect(results.map((r) => [r.instanceNumId, r.committeeId[0]])).toEqual(expectedOrder)
+    }, 180_000)
+
+    test('getAccountInstanceAQs skips an instance whose app has been deleted instead of failing the page', async () => {
+      const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 3)
+      const doomed = instanceIds[1]!
+      const doomedAppId = await sdk.getInstanceAppId(doomed)
+
+      await sdk.deleteInstanceApp({ instanceNumId: doomed })
+      await expect(localnet.algorand.app.getById(doomedAppId)).rejects.toThrow()
+
+      const results = await registrySdk.getAccountInstanceAQs(account, [new Uint8Array(32)])
+
+      // The account's `instanceNumIds` still lists it - the record is dropped because the app it
+      // would be inner-called on is gone, not because the association went away.
+      expect(results.map((r) => r.instanceNumId)).toEqual([Number(instanceIds[0]), Number(instanceIds[2])])
+    })
 
     test('getAccountVotingRecords returns empty topicVotes per instance when the account has not voted', async () => {
       const { registrySdk, sdk, account, instanceIds } = await deployInstancesForAccount(localnet, 2)

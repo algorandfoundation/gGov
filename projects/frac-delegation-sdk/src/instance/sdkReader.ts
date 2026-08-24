@@ -445,9 +445,8 @@ export class FracDelegationReaderSDK {
    * not voted on the period. Prefer this over N x `getVotingRecord` when rendering a roster — a
    * member table wants "did this account vote" for every row at once.
    *
-   * There is no `logVotingRecords` on the instance (unlike `logAccountAqs` for the AlgoQuarters
-   * ledger), so this packs several plain `getVotingRecord` calls into one simulate group instead of
-   * one call over many ids. That still collapses a page of members into a single round-trip.
+   * Batched by `logVotingRecords`, the instance's plural reader, exactly as `getAccountAqs` is by
+   * `logAccountAqs`.
    */
   async getVotingRecords(
     instanceNumId: bigint | number,
@@ -461,12 +460,17 @@ export class FracDelegationReaderSDK {
   }
 
   /**
-   * One call per account rather than one call over many, so the group's 16-transaction capacity is
-   * the binding limit here — not the 128 unnamed-reference budget the `log*` readers chunk against
-   * (each call references a single `votingRecords` box). The decorator fans out larger requests
-   * concurrently.
+   * Each simulate group packs up to two 63-id `logVotingRecords` calls, the same shape as
+   * `_getAccountAqsChunked` — but what caps a *call* at 63 here is the log budget rather than
+   * references. `allowMoreLogging` lifts a call's total logged bytes to 65,536, and a
+   * `FracVotingRecord` row cannot exceed ~950 bytes (`GGovPeriod.setReady` refuses any period whose
+   * vote event would pass 1024), so 63 rows is ~59.9KB — under the cap with room to spare, and well
+   * inside the 126-per-group reference budget the ids also consume one apiece.
+   *
+   * Superseded the previous shape, one `getVotingRecord` call per account packed into a group,
+   * which the 16-transaction group capacity capped at 16 ids per round-trip.
    */
-  @chunked(16)
+  @chunked(126)
   private async _getVotingRecordsChunked(
     accountIds: (bigint | number)[],
     client: FracDelegationInstanceClient,
@@ -474,14 +478,20 @@ export class FracDelegationReaderSDK {
   ): Promise<(FracVotingRecord | undefined)[]> {
     if (accountIds.length === 0) return []
     let builder: FracDelegationInstanceComposer<any> = client.newGroup()
-    for (const accountId of accountIds) {
-      builder = builder.getVotingRecord({ args: { periodId, accountId } })
+    for (const ids of chunk(accountIds, 63)) {
+      builder = builder.logVotingRecords({ args: { periodId, accountIds: ids.map(BigInt) } })
     }
-    const { returns } = await builder.simulate(SIMULATE_PARAMS)
-    // The builder is accumulated in a loop, so its per-call return types are erased.
-    const records = returns as (FracVotingRecord | undefined)[]
-    // Same sentinel as the singular reader: a cast vote has one row per topic.
-    return records.map((record) => (record && record.topicVotes.length > 0 ? record : undefined))
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    return logs.map((log) => {
+      const record = getABIDecodedValue(
+        new Uint8Array(log!),
+        'FracVotingRecord',
+        client.appSpec.structs,
+      ) as FracVotingRecord
+      // Same sentinel as the singular reader: a cast vote has one row per topic.
+      return record.topicVotes.length === 0 ? undefined : record
+    })
   }
 
   /**

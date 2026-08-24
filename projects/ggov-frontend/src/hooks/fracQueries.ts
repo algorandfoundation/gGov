@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import { fromBase64Url, queryKeys } from '@/hooks/queries'
+import { fromBase64Url, queryKeys, toBase64Url } from '@/hooks/queries'
 import type {
   FracAccountCommitteeAq,
   FracAccountVotingRecord,
@@ -88,102 +88,116 @@ export function useFracAccount(account: string | null | undefined) {
 }
 
 /**
- * Per instance, its synced snapshot of each committee — keyed by committee id.
+ * One pool's synced snapshot of each committee — keyed by committee id.
  * `FracInstanceCommittee.totalVotes` is the pool's gGov power for that
  * committee, and a committee absent from the map is one the pool has never
  * `syncCommittee`'d (so it cannot carry a pooled share at all).
  *
- * TODO(perf): this fans out one read per instance, because `logCommittees` batches
- * committee ids but is instance-scoped — there is no cross-instance equivalent.
- * The registry already has the right shape for one (`logAccountInstanceAq` pages
- * across an account's instances); `logInstanceCommittees` is the same idea for
- * the committee-scoped transpose, but it takes one committee, so it does not
- * cover this hook's many-committees case.
- * Better still, fold `totalVotes` into `FracAccountCommitteeAq` and extend
- * `logAccountInstanceAq` to take several committees (see the TODO on
- * `usePooledCommitteeAqs`) — that collapses this whole module to a single read
- * and removes this hook entirely. Both need contract work, so they are follow-ups.
+ * Pool-scoped and account-independent: one instance against every committee.
+ * That is the transpose no account-scoped reader can serve — {@link usePooledCommitteeAqs}
+ * answers "one account, every pool it is in, these committees" and already
+ * carries each pool's `totalVotes`, so anything account-shaped reads it there
+ * instead. What is left here is the pool page's own history, which has no
+ * account in it at all.
+ *
+ * One read: `getCommittees` batches the committee ids (63 per call) on the
+ * instance itself.
  */
-export function useFracInstanceCommittees(
-  instanceNumIds: number[],
+export function usePoolSyncedCommittees(
+  instanceNumId: number | undefined,
   committeeIdsBase64Url: string[],
-): { byInstance: Record<number, Record<string, FracInstanceCommittee>>; isLoading: boolean } {
+): { byCommittee: Record<string, FracInstanceCommittee>; isLoading: boolean } {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
-  const enabled = fracEnabled && committeeIdsBase64Url.length > 0
 
-  const results = useQueries({
-    queries: instanceNumIds.map((instanceNumId) => ({
-      queryKey: queryKeys.fracInstanceCommittees(instanceNumId, committeeIdsBase64Url),
-      queryFn: async (): Promise<Record<string, FracInstanceCommittee>> => {
-        const sdk = await getFracReaderSDK()
-        if (!sdk) return {}
-        // Index-aligned with the ids we passed; batched 63/call by the SDK.
-        const snapshots = await sdk.getCommittees(instanceNumId, committeeIdsBase64Url.map(fromBase64Url))
-        const out: Record<string, FracInstanceCommittee> = {}
-        committeeIdsBase64Url.forEach((id, i) => {
-          const snapshot = snapshots[i]
-          // Unsynced, or synced but the pool holds no power there — either way
-          // there is no share to show.
-          if (snapshot && snapshot.totalVotes > 0) out[id] = snapshot
-        })
-        return out
-      },
-      enabled,
-      staleTime: 300_000,
-    })),
+  const { data, isPending, fetchStatus } = useQuery({
+    queryKey: queryKeys.fracInstanceCommittees(instanceNumId ?? 0, committeeIdsBase64Url),
+    queryFn: async (): Promise<Record<string, FracInstanceCommittee>> => {
+      const sdk = await getFracReaderSDK()
+      if (!sdk) return {}
+      // Index-aligned with the ids we passed; batched 63/call by the SDK.
+      const snapshots = await sdk.getCommittees(instanceNumId!, committeeIdsBase64Url.map(fromBase64Url))
+      const out: Record<string, FracInstanceCommittee> = {}
+      committeeIdsBase64Url.forEach((id, i) => {
+        const snapshot = snapshots[i]
+        // Unsynced, or synced but the pool holds no power there — either way
+        // there is no share to show.
+        if (snapshot && snapshot.totalVotes > 0) out[id] = snapshot
+      })
+      return out
+    },
+    enabled: fracEnabled && !!instanceNumId && committeeIdsBase64Url.length > 0,
+    staleTime: 300_000,
   })
 
-  const byInstance: Record<number, Record<string, FracInstanceCommittee>> = {}
-  instanceNumIds.forEach((instanceNumId, i) => {
-    const data = results[i]?.data
-    if (data) byInstance[instanceNumId] = data
-  })
-  return { byInstance, isLoading: results.some((r) => r.isPending && r.fetchStatus !== 'idle') }
+  return { byCommittee: data ?? {}, isLoading: isPending && fetchStatus !== 'idle' }
+}
+
+/**
+ * One account's AlgoQuarters standing across every instance it belongs to, over a
+ * whole set of committees — one read, both axes. Grouped by committee id, each
+ * entry carrying the pool's name, the account's `userAq` against the committee's
+ * `totalAq`, and the pool's own `totalVotes` there.
+ *
+ * Shared by {@link usePooledCommitteeAqs} (many committees, one account) and
+ * {@link usePooledCommitteeAqForAccounts} (one committee, many accounts), so the
+ * two surfaces run the same filter and decode.
+ *
+ * `numInstances` only sizes the read: the registry pages its instance axis and
+ * chunks its committee axis against a shared reference budget, and knowing the
+ * account's instance count up front lets it spend the budget on the axis that
+ * actually needs it. A wrong (or absent) value costs round-trips, not results.
+ */
+function accountCommitteeAqsQuery(
+  getFracReaderSDK: FracSDKContext['getFracReaderSDK'],
+  account: string | null | undefined,
+  committeeIdsBase64Url: string[],
+  fracEnabled: boolean,
+  numInstances?: number,
+) {
+  return {
+    queryKey: queryKeys.fracAccountCommitteeAqs(account ?? '', committeeIdsBase64Url),
+    queryFn: async (): Promise<Record<string, FracAccountCommitteeAq[]>> => {
+      const sdk = await getFracReaderSDK()
+      if (!sdk) return {}
+      const entries = await sdk.registry.getAccountInstanceAQs(account!, committeeIdsBase64Url.map(fromBase64Url), {
+        numInstances,
+      })
+      const byCommittee: Record<string, FracAccountCommitteeAq[]> = {}
+      for (const entry of entries) {
+        // An instance that has not synced this committee reports zeros; a member
+        // with no stake in the window reports userAq 0; a synced pool with no gGov
+        // power there reports totalVotes 0. None is a position.
+        if (!(entry.userAq > 0 && entry.totalAq > 0 && entry.totalVotes > 0)) continue
+        // Each row echoes its own committee id, so grouping needs no index alignment.
+        const idBase64Url = toBase64Url(entry.committeeId)
+        ;(byCommittee[idBase64Url] ??= []).push(entry)
+      }
+      return byCommittee
+    },
+    // Committees are the read's other axis, so an empty list is not a read at all.
+    enabled: fracEnabled && !!account && committeeIdsBase64Url.length > 0,
+    staleTime: 60_000,
+  }
 }
 
 /**
  * Per committee, this account's AlgoQuarters standing across every instance it
- * belongs to — one entry per pool, carrying the pool's name and the account's
- * `userAq` against the committee's `totalAq`.
+ * belongs to — one entry per pool, carrying the pool's name, the account's
+ * `userAq` against the committee's `totalAq`, and the pool's `totalVotes`.
  *
- * TODO(perf): this fans out one read per committee, because
- * `getAccountInstanceAQs` / `logAccountInstanceAq`
- * (`contracts/smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts`)
- * is cross-instance but takes a *single* `committeeId`. Wanted:
- * `logAccountCommitteeAqs(account, committeeIds[], limit, offset)`. Sizing note
- * for whoever writes it — these are loggers rather than plain getters because of
- * the 1024-byte ABI-return limit, and a simulate group carries at most 128
- * unnamed refs, so existing batch readers chunk 63/call and 126/group; each AQ
- * page also inner-calls its instances, which is what bounds `aqPageSize` today.
+ * One read for the whole grid. The registry logs a row per (instance, committee)
+ * pair, so neither axis fans out into its own query.
  */
 export function usePooledCommitteeAqs(
   account: string | null | undefined,
   committeeIdsBase64Url: string[],
+  numInstances?: number,
 ): { byCommittee: Record<string, FracAccountCommitteeAq[]>; isLoading: boolean } {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
-
-  const results = useQueries({
-    queries: committeeIdsBase64Url.map((idBase64Url) => ({
-      queryKey: queryKeys.fracAccountCommitteeAq(account ?? '', idBase64Url),
-      queryFn: async (): Promise<FracAccountCommitteeAq[]> => {
-        const sdk = await getFracReaderSDK()
-        if (!sdk) return []
-        const entries = await sdk.registry.getAccountInstanceAQs(account!, fromBase64Url(idBase64Url))
-        // An instance that has not synced this committee reports zeros; a member
-        // with no stake in the window reports userAq 0. Neither is a position.
-        return entries.filter((e) => e.userAq > 0 && e.totalAq > 0)
-      },
-      enabled: fracEnabled && !!account,
-      staleTime: 60_000,
-    })),
-  })
-
-  const byCommittee: Record<string, FracAccountCommitteeAq[]> = {}
-  committeeIdsBase64Url.forEach((idBase64Url, i) => {
-    const data = results[i]?.data
-    if (data?.length) byCommittee[idBase64Url] = data
-  })
-  return { byCommittee, isLoading: results.some((r) => r.isPending && r.fetchStatus !== 'idle') }
+  const { data, isPending, fetchStatus } = useQuery(
+    accountCommitteeAqsQuery(getFracReaderSDK, account, committeeIdsBase64Url, fracEnabled, numInstances),
+  )
+  return { byCommittee: data ?? {}, isLoading: isPending && fetchStatus !== 'idle' }
 }
 
 /**
@@ -192,9 +206,10 @@ export function usePooledCommitteeAqs(
  * so wiring pooled power in cannot regress the direct figures.
  *
  * Pass the committees you intend to display: the whole list for the account page,
- * just the featured period's committee for the landing hero. AQ reads are then
- * restricted to those committees a pool has actually synced, which is exact
- * rather than a guess — an unsynced committee provably has no share to report.
+ * just the featured period's committee for the landing hero. Every one of them is
+ * asked about in a single read, and the ones no pool has synced come back zeroed
+ * and are filtered out — which is exact rather than a guess, and costs nothing
+ * extra now that the committee axis is free.
  *
  * Note `sharePct` moves while a pool's AQ ledger is still being ingested, since
  * `totalAq` grows until the ingest completes.
@@ -209,32 +224,36 @@ export function usePooledPositions(
   const instanceNumIds = fracAccount?.instanceNumIds ?? []
   const isPoolMember = instanceNumIds.length > 0
 
-  const { byInstance, isLoading: committeesLoading } = useFracInstanceCommittees(instanceNumIds, committeeIdsBase64Url)
-
-  // Only committees some pool has synced can carry a share, so this is the exact
-  // set worth an AQ read — not a heuristic cap.
-  const syncedIds = committeeIdsBase64Url.filter((id) =>
-    instanceNumIds.some((instanceNumId) => byInstance[instanceNumId]?.[id] !== undefined),
+  // Deliberately NOT gated on `isPoolMember`: this read runs alongside the account
+  // record rather than behind it, so a member's numbers land in one round-trip
+  // instead of two. The cost is one cheap read for a non-member — the registry
+  // logs a count of 0 and makes no inner call — against re-introducing the exact
+  // waterfall this hook was rewritten to remove.
+  //
+  // `instanceNumIds.length` is only a sizing hint for the read's two axes, and is
+  // 0 until the account record lands; the reader then sizes from the committee
+  // count instead, so an early start costs round-trips at worst, never results.
+  const { byCommittee: aqByCommittee, isLoading: aqLoading } = usePooledCommitteeAqs(
+    account,
+    committeeIdsBase64Url,
+    instanceNumIds.length,
   )
-  const { byCommittee: aqByCommittee, isLoading: aqLoading } = usePooledCommitteeAqs(account, syncedIds)
 
   const byCommittee: Record<string, PooledPosition[]> = {}
   for (const [idBase64Url, entries] of Object.entries(aqByCommittee)) {
-    const positions: PooledPosition[] = []
-    for (const entry of entries) {
-      const poolVotes = byInstance[entry.instanceNumId]?.[idBase64Url]?.totalVotes
-      if (!poolVotes) continue
+    const positions: PooledPosition[] = entries.map((entry) => {
       const sharePct = (entry.userAq / entry.totalAq) * 100
-      positions.push({
+      return {
         instanceNumId: entry.instanceNumId,
         instanceName: entry.instanceName,
         userAq: entry.userAq,
         totalAq: entry.totalAq,
         sharePct,
-        poolVotes,
-        votes: (sharePct / 100) * poolVotes,
-      })
-    }
+        // The pool's own gGov power here, carried by the same row as the weight.
+        poolVotes: entry.totalVotes,
+        votes: (sharePct / 100) * entry.totalVotes,
+      }
+    })
     if (positions.length) {
       positions.sort((a, b) => b.votes - a.votes)
       byCommittee[idBase64Url] = positions
@@ -244,7 +263,7 @@ export function usePooledPositions(
   return {
     byCommittee: Object.keys(byCommittee).length ? byCommittee : EMPTY_POSITIONS,
     isPoolMember,
-    isLoading: (accountPending && fetchStatus !== 'idle') || (isPoolMember && (committeesLoading || aqLoading)),
+    isLoading: (accountPending && fetchStatus !== 'idle') || (isPoolMember && aqLoading),
     fracEnabled,
   }
 }
@@ -514,34 +533,34 @@ export function useFracAccountsMap(accounts: string[]): {
 
 /**
  * Per account, its AlgoQuarters standing in *one* committee across every instance
- * it belongs to. The transpose of {@link usePooledCommitteeAqs} — and it reuses
- * that hook's query key, so an account already read by the account page is free
- * here (and vice versa).
+ * it belongs to. The transpose of {@link usePooledCommitteeAqs}, sharing its query
+ * factory — each account is one call over a 1-element committee list.
+ *
+ * Still a fan-out over accounts, and inherently so: the registry pages its
+ * instance axis off the *per-account* `accounts` box, so one call answers for one
+ * account. Only the committee axis collapsed.
+ *
+ * Note it no longer shares cache with {@link usePooledCommitteeAqs}: the key is
+ * keyed on the committee *set*, and the two hooks ask for different sets (the
+ * account page for every committee, this one for the period's single committee).
+ * Deliberate — that is one extra read on a page whose pooled reads went from one
+ * per committee to one in total.
  */
 export function usePooledCommitteeAqForAccounts(
   accounts: string[],
   committeeIdBase64Url: string | undefined,
 ): { byAccount: Record<string, FracAccountCommitteeAq[]>; isLoading: boolean } {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
+  const committeeIds = committeeIdBase64Url ? [committeeIdBase64Url] : []
 
   const results = useQueries({
-    queries: accounts.map((account) => ({
-      queryKey: queryKeys.fracAccountCommitteeAq(account, committeeIdBase64Url ?? ''),
-      queryFn: async (): Promise<FracAccountCommitteeAq[]> => {
-        const sdk = await getFracReaderSDK()
-        if (!sdk) return []
-        const entries = await sdk.registry.getAccountInstanceAQs(account, fromBase64Url(committeeIdBase64Url!))
-        return entries.filter((e) => e.userAq > 0 && e.totalAq > 0)
-      },
-      enabled: fracEnabled && !!committeeIdBase64Url,
-      staleTime: 60_000,
-    })),
+    queries: accounts.map((account) => accountCommitteeAqsQuery(getFracReaderSDK, account, committeeIds, fracEnabled)),
   })
 
   const byAccount: Record<string, FracAccountCommitteeAq[]> = {}
   accounts.forEach((account, i) => {
-    const data = results[i]?.data
-    if (data?.length) byAccount[account] = data
+    const entries = committeeIdBase64Url ? results[i]?.data?.[committeeIdBase64Url] : undefined
+    if (entries?.length) byAccount[account] = entries
   })
   return { byAccount, isLoading: results.some((r) => r.isPending && r.fetchStatus !== 'idle') }
 }
@@ -711,9 +730,9 @@ const EMPTY_BALLOT_POSITIONS: PooledBallotPosition[] = []
  * a delegator. That mapping is what makes a delegated pooled vote possible, and
  * what `canVote` is checked against.
  *
- * Positions are held back until both the AlgoQuarters and the pool's committee
- * snapshot have resolved: a pool that never synced the committee has no share to
- * cast, so emitting rows early would mean rendering some only to remove them.
+ * A pool that never synced the committee has no share to cast; its rows report
+ * `totalVotes` 0 on the same read as the AlgoQuarters and are filtered there, so
+ * no row is ever rendered only to be removed.
  */
 export function usePooledBallot({
   periodId,
@@ -734,10 +753,7 @@ export function usePooledBallot({
   const { byAccount: fracAccounts, isLoading: accountsLoading } = useFracAccountsMap(voters)
   // Only accounts the frac registry knows can hold a pooled position.
   const registered = voters.filter((v) => fracAccounts[v] !== undefined)
-  const instanceNumIds = Array.from(new Set(registered.flatMap((v) => fracAccounts[v]!.instanceNumIds)))
 
-  const committeeIds = committeeIdBase64Url ? [committeeIdBase64Url] : []
-  const { byInstance, isLoading: committeesLoading } = useFracInstanceCommittees(instanceNumIds, committeeIds)
   const { byAccount: aqByAccount, isLoading: aqLoading } = usePooledCommitteeAqForAccounts(
     registered,
     committeeIdBase64Url,
@@ -745,27 +761,22 @@ export function usePooledBallot({
 
   // Positions, before eligibility and vote records are folded in. Order follows
   // `voters`, so a row sits under the account it belongs to in the selector.
-  const base = committeeIdBase64Url
-    ? voters.flatMap((owner) =>
-        (aqByAccount[owner] ?? []).flatMap((entry) => {
-          const poolVotes = byInstance[entry.instanceNumId]?.[committeeIdBase64Url]?.totalVotes
-          if (!poolVotes) return []
-          const sharePct = (entry.userAq / entry.totalAq) * 100
-          return [
-            {
-              instanceNumId: entry.instanceNumId,
-              instanceName: entry.instanceName,
-              owner,
-              sharePct,
-              poolVotes,
-              userAq: entry.userAq,
-              totalAq: entry.totalAq,
-              votes: (sharePct / 100) * poolVotes,
-            },
-          ]
-        }),
-      )
-    : []
+  const base = voters.flatMap((owner) =>
+    (aqByAccount[owner] ?? []).map((entry) => {
+      const sharePct = (entry.userAq / entry.totalAq) * 100
+      return {
+        instanceNumId: entry.instanceNumId,
+        instanceName: entry.instanceName,
+        owner,
+        sharePct,
+        // The pool's gGov power in this committee, carried by the same row.
+        poolVotes: entry.totalVotes,
+        userAq: entry.userAq,
+        totalAq: entry.totalAq,
+        votes: (sharePct / 100) * entry.totalVotes,
+      }
+    }),
+  )
 
   const { byKey: canVoteByKey, isLoading: canVoteLoading } = useFracCanVoteMany(
     base.map((p) => ({ instanceNumId: p.instanceNumId, voter: p.owner, sender: senderOf[p.owner] ?? p.owner })),
@@ -806,7 +817,7 @@ export function usePooledBallot({
     isLoading:
       fracEnabled &&
       (accountsLoading ||
-        (registered.length > 0 && (committeesLoading || aqLoading)) ||
+        (registered.length > 0 && aqLoading) ||
         (base.length > 0 && (canVoteLoading || recordsLoading))),
     fracEnabled,
   }
@@ -943,15 +954,12 @@ export function usePoolMembers(
  * `topicVotes` is [topic][option] in AlgoQuarters, exactly as submitted, and an
  * account that has not voted is absent.
  *
- * The SDK packs one `getVotingRecord` call per account into a single simulate
- * group (16 per group, the group's transaction capacity), so a page of members
- * costs one round-trip rather than one each. Pass the rendered page, not the
- * whole roster: the group count still scales with the list.
- *
- * TODO(perf): 16 per group is the ceiling because the instance has no
- * `logVotingRecords(periodId, accountIds[])` — the direct sibling of the
- * `logAccountAqs` this page's stake column already uses, which would put a whole
- * page of members in one call rather than one group. Contract work, so a follow-up.
+ * The SDK batches these through the instance's `logVotingRecords` at 63 ids per
+ * call and 126 per simulate group — the same shape as the `logAccountAqs` read
+ * behind this page's stake column — so a page of members costs one round-trip.
+ * Pass the rendered page rather than the whole roster anyway: the group count
+ * still scales with the list, just two orders of magnitude more slowly than when
+ * this packed one `getVotingRecord` call per account into a 16-txn group.
  */
 export function usePoolMemberRecords(
   instanceNumId: number | undefined,

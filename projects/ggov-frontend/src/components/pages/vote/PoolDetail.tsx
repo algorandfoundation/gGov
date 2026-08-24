@@ -5,7 +5,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { useCommittee, useCommittees, usePeriod, usePeriodBody, useTopicBodies } from '@/hooks/queries'
 import {
   useCommitteePools,
-  useFracInstanceCommittees,
+  usePoolSyncedCommittees,
   usePoolMemberRecords,
   usePoolMembers,
   usePooledPositions,
@@ -36,12 +36,12 @@ import { tallyBallot } from '@/utils/vote'
 import { cn } from '@/lib/utils'
 
 /**
- * Members per page. Well under the committee leaderboard's 25, because every row
- * here costs a vote-record read: the page is one simulate group of 16 calls (see
- * `usePoolMemberRecords`), and 10 keeps a page inside one round-trip with room
- * for the group's other work.
+ * Members per page, matching the committee leaderboard. Every row costs a vote-record
+ * read, but `usePoolMemberRecords` now batches them through the instance's
+ * `logVotingRecords` at 63 ids per call, so a page is one round-trip with two orders of
+ * magnitude of headroom — it was 10 while that read was capped at a 16-call group.
  */
-const PAGE_SIZE = 10
+const PAGE_SIZE = 25
 
 /** Ballot items shown before "Show all N items". */
 const RECORD_PREVIEW = 5
@@ -472,13 +472,11 @@ export default function PoolDetail() {
   // "Voting since": the oldest committee this pool ever synced with power in it.
   // One read over every committee, batched 63 ids per call by the SDK.
   const allCommitteeIds = useMemo(() => committees.map((c) => c.idBase64Url), [committees])
-  const { byInstance: syncedCommittees } = useFracInstanceCommittees(
-    Number.isInteger(instanceNumId) && instanceNumId > 0 ? [instanceNumId] : [],
+  const { byCommittee: synced } = usePoolSyncedCommittees(
+    Number.isInteger(instanceNumId) && instanceNumId > 0 ? instanceNumId : undefined,
     allCommitteeIds,
   )
   const votingSince = useMemo(() => {
-    const synced = syncedCommittees[instanceNumId]
-    if (!synced) return undefined
     // `committees` is newest-first, so the last one the pool synced is its first.
     const oldest = [...committees].reverse().find((c) => synced[c.idBase64Url] !== undefined)
     if (!oldest) return undefined
@@ -487,7 +485,7 @@ export default function PoolDetail() {
     // nonsense after "Voting since". A window no period used has only its rounds.
     const first = byCommittee.get(oldest.idBase64Url)?.[0]
     return first === undefined ? formatBlockRange(oldest.periodStart, oldest.periodEnd) : `Period ${first}`
-  }, [syncedCommittees, instanceNumId, committees, byCommittee])
+  }, [synced, committees, byCommittee])
 
   const selected = useMemo(
     () => committees.find((c) => c.idBase64Url === committeeId) ?? committee ?? undefined,
