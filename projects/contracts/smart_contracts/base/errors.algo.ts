@@ -61,6 +61,7 @@ export const errAlreadyInit = 'AI' // Contract already initialised
 export const errGGovPeriodExists = 'GP_EX' // Period already exists
 export const errGGovPeriodNotExists = 'GP_NX' // Period does not exist
 export const errPeriodAppNotConfigured = 'GP_NC' // Period approval program not yet uploaded to registry
+export const errApprovalPageTooLong = 'AP_LN' // Approval page exceeds the 4096-byte AVM bytes cap
 export const errPeriodInRange = 'P_IR' // Cannot set period counter: a period exists in the affected id range
 export const errGGovVotingNotStarted = 'GP_NS' // Voting has not started
 export const errGGovVotingEnded = 'GP_EN' // Voting period ended

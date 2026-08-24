@@ -87,3 +87,15 @@ export const AQ_REGISTRY_MBR_PER_JOINING_ACCOUNT_MICROALGOS = 800n
  * admin as sizeSponsor, not here.
  */
 export const DEFAULT_INSTANCE_MBR_MICROALGOS = 1_000_000n
+
+/**
+ * Fee ceiling (µAlgo) for the one-shot approval upload.
+ *
+ * AVM v13 prices fees on a usage metric tallied across the group, and a call carrying ~8KB of
+ * application arguments lands well past the free allowance that covers everything constructible
+ * before v13 — a 4KB program already measured at 1203 µAlgo against a 1000 µAlgo minimum. The exact
+ * figure is not worth reimplementing (the guidance is explicit about that), so the upload runs with
+ * `coverAppCallInnerTransactionFees`, which reads the real requirement off simulate and tops the fee
+ * up to at most this ceiling. Generous on purpose: it is an upper bound, not the fee paid.
+ */
+export const UPLOAD_APPROVAL_MAX_FEE_MICROALGOS = 20_000

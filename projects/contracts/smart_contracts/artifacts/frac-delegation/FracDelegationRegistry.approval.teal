@@ -5,42 +5,42 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 2 32 4096
-    bytecblock 0x151f7c75 "i" "Iap" "ERR:FI_NX" "ERR:AUTH" "admin" "lastInstanceNumId" "mbrTopUp" "lastAccountId" base64(DYEBQw==) "defaultOperator" "gGovRegistryApp" 0x92d03753 0x000f 0xcb08ea72 0x002a 0x00060000
+    bytecblock 0x151f7c75 "i" "Iap" "ERR:FI_NX" "ERR:AUTH" "admin" "lastInstanceNumId" "mbrTopUp" "lastAccountId" base64(DYEBQw==) "defaultOperator" "gGovRegistryApp" "ERR:AP_LN" 0x92d03753 0x000f 0xcb08ea72 0x002a 0x00060000
     txn ApplicationID
     bnz main_after_if_else@2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:72
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:73
     // admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
     bytec 5 // "admin"
     global CreatorAddress
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:74
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:75
     // defaultOperator = GlobalState<Account>({ initialValue: Global.creatorAddress })
     bytec 10 // "defaultOperator"
     global CreatorAddress
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:76
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:77
     // gGovRegistryApp = GlobalState<Application>({ key: fracRegistryGGovKey, initialValue: Application(0) })
     bytec 11 // "gGovRegistryApp"
     intc_0 // 0
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:78
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:79
     // mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
     bytec 7 // "mbrTopUp"
     pushint 2000000
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:80
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:81
     // lastAccountId = GlobalState<uint64>({ initialValue: 0 })
     bytec 8 // "lastAccountId"
     intc_0 // 0
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:84
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:85
     // lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
     bytec 6 // "lastInstanceNumId"
     intc_0 // 0
     app_global_put
 
 main_after_if_else@2:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:70-71
     // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     txn NumAppArgs
@@ -50,18 +50,18 @@ main_after_if_else@2:
     assert
     txn ApplicationID
     assert
-    pushbytess 0x17866912 0xe3bdb11f 0x4bf519cf 0x7fb65a37 0x928ddc5e 0x09be401a 0x27f85b85 0x13036fc1 0xec402f3c 0xa220b9f9 0xdc24b9e9 0x53f72a3e 0xddcf943a 0x6edb15d1 0x9bc93916 0x73e6ec7a 0xe8d8cc9f 0xa22b6a9e 0x4118ecbf // method "setAdmin(address)void", method "setDefaultOperator(address)void", method "setGGovRegistryApp(uint64)void", method "setMBRTopUp(uint64)void", method "withdrawALGO(address,uint64)void", method "uploadInstanceApprovalPartial(uint64,byte[])void", method "createInstance(string,pay)(uint16,uint64)", method "requestMBR(uint16)void", method "getAccount(address)(uint32,uint16[])", method "logAccounts(address[])void", method "logAccountInstanceAQ(address,byte[32][],uint16,uint16)void", method "logAccountVotingRecords(address,uint32,uint16,uint16)void", method "getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][])", method "logInstanceCommittees(byte[32],uint16,uint16)void", method "getInstanceCommittee(uint16,byte[32])(uint16,uint64,string,uint64,uint16,uint32,uint32,uint32,uint32,uint32)", method "getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[])", method "registerEscrow(uint16,address)void", method "getEscrow(address)(uint16,uint64)", method "increaseBudget(uint64)void"
+    pushbytess 0x17866912 0xe3bdb11f 0x4bf519cf 0x7fb65a37 0x928ddc5e 0x9b364809 0x27f85b85 0x13036fc1 0xec402f3c 0xa220b9f9 0xdc24b9e9 0x53f72a3e 0xddcf943a 0x6edb15d1 0x9bc93916 0x73e6ec7a 0xe8d8cc9f 0xa22b6a9e 0x4118ecbf // method "setAdmin(address)void", method "setDefaultOperator(address)void", method "setGGovRegistryApp(uint64)void", method "setMBRTopUp(uint64)void", method "withdrawALGO(address,uint64)void", method "uploadInstanceApproval(byte[],byte[])void", method "createInstance(string,pay)(uint16,uint64)", method "requestMBR(uint16)void", method "getAccount(address)(uint32,uint16[])", method "logAccounts(address[])void", method "logAccountInstanceAQ(address,byte[32][],uint16,uint16)void", method "logAccountVotingRecords(address,uint32,uint16,uint16)void", method "getAccountVotingRecord(address,uint16,uint32)(uint16,uint64,string,bool,uint32[][])", method "logInstanceCommittees(byte[32],uint16,uint16)void", method "getInstanceCommittee(uint16,byte[32])(uint16,uint64,string,uint64,uint16,uint32,uint32,uint32,uint32,uint32)", method "getOrCreateAccountWithInstance(address,uint16)(uint32,uint16[])", method "registerEscrow(uint16,address)void", method "getEscrow(address)(uint16,uint64)", method "increaseBudget(uint64)void"
     txna ApplicationArgs 0
-    match setAdmin setDefaultOperator setGGovRegistryApp setMBRTopUp withdrawALGO uploadInstanceApprovalPartial createInstance requestMBR getAccount logAccounts logAccountInstanceAQ logAccountVotingRecords getAccountVotingRecord logInstanceCommittees getInstanceCommittee getOrCreateAccountWithInstance registerEscrow getEscrow increaseBudget
+    match setAdmin setDefaultOperator setGGovRegistryApp setMBRTopUp withdrawALGO uploadInstanceApproval createInstance requestMBR getAccount logAccounts logAccountInstanceAQ logAccountVotingRecords getAccountVotingRecord logInstanceCommittees getInstanceCommittee getOrCreateAccountWithInstance registerEscrow getEscrow increaseBudget
 
 main_after_if_else@33:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:70-71
     // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     err
 
 main_bare_routing@28:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:70-71
     // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     txn OnCompletion
@@ -69,33 +69,33 @@ main_bare_routing@28:
     err
 
 main_deleteApplication@31:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:176
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:177
     // @baremethod({ allowActions: ['DeleteApplication'] })
     txn ApplicationID
     assert
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:178
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:179
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:176
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:177
     // @baremethod({ allowActions: ['DeleteApplication'] })
     intc_1 // 1
     return
 
 main_updateApplication@30:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:157
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:158
     // @baremethod({ allowActions: ['UpdateApplication'] })
     txn ApplicationID
     assert
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:159
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:160
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:157
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:158
     // @baremethod({ allowActions: ['UpdateApplication'] })
     intc_1 // 1
     return
 
 main___algots__.defaultCreate@29:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:69-70
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:70-71
     // @contract({ name: 'FracDelegationRegistry' })
     // export class FracDelegationRegistryContract extends BaseContract {
     txn ApplicationID
@@ -141,7 +141,7 @@ u32:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.setAdmin[routing]() -> void:
 setAdmin:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:109
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:110
     // public setAdmin(newAdmin: Account): void {
     txna ApplicationArgs 1
     dupn 2
@@ -149,10 +149,10 @@ setAdmin:
     intc_3 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:110
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:111
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:111
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:112
     // loggedAssert(newAdmin !== Global.zeroAddress, errUnauthorized)
     global ZeroAddress
     !=
@@ -162,14 +162,14 @@ setAdmin:
     err // ERR:AUTH
 
 setAdmin_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:72
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:73
     // admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
     bytec 5 // "admin"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:112
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:113
     // this.admin.value = newAdmin
     swap
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:109
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:110
     // public setAdmin(newAdmin: Account): void {
     intc_1 // 1
     return
@@ -177,7 +177,7 @@ setAdmin_after_assert@3:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.setDefaultOperator[routing]() -> void:
 setDefaultOperator:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:116
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:117
     // public setDefaultOperator(newDefaultOperator: Account): void {
     txna ApplicationArgs 1
     dup
@@ -185,17 +185,17 @@ setDefaultOperator:
     intc_3 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:117
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:118
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:74
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:75
     // defaultOperator = GlobalState<Account>({ initialValue: Global.creatorAddress })
     bytec 10 // "defaultOperator"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:118
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:119
     // this.defaultOperator.value = newDefaultOperator
     swap
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:116
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:117
     // public setDefaultOperator(newDefaultOperator: Account): void {
     intc_1 // 1
     return
@@ -203,7 +203,7 @@ setDefaultOperator:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.setGGovRegistryApp[routing]() -> void:
 setGGovRegistryApp:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:122
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:123
     // public setGGovRegistryApp(appId: Application): void {
     txna ApplicationArgs 1
     dup
@@ -212,17 +212,17 @@ setGGovRegistryApp:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:123
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:124
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:76
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:77
     // gGovRegistryApp = GlobalState<Application>({ key: fracRegistryGGovKey, initialValue: Application(0) })
     bytec 11 // "gGovRegistryApp"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:124
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:125
     // this.gGovRegistryApp.value = appId
     swap
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:122
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:123
     // public setGGovRegistryApp(appId: Application): void {
     intc_1 // 1
     return
@@ -230,7 +230,7 @@ setGGovRegistryApp:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.setMBRTopUp[routing]() -> void:
 setMBRTopUp:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:137
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:138
     // public setMBRTopUp(amount: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -239,17 +239,17 @@ setMBRTopUp:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:138
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:139
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:78
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:79
     // mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
     bytec 7 // "mbrTopUp"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:139
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:140
     // this.mbrTopUp.value = amount
     swap
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:137
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:138
     // public setMBRTopUp(amount: uint64): void {
     intc_1 // 1
     return
@@ -257,7 +257,7 @@ setMBRTopUp:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.withdrawALGO[routing]() -> void:
 withdrawALGO:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:149
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:150
     // public withdrawALGO(receiver: Account, amount: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -272,10 +272,10 @@ withdrawALGO:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:150
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:151
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:151
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:152
     // itxn.payment({ receiver, amount }).submit()
     itxn_begin
     itxn_field Amount
@@ -285,23 +285,27 @@ withdrawALGO:
     intc_0 // 0
     itxn_field Fee
     itxn_submit
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:149
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:150
     // public withdrawALGO(receiver: Account, amount: uint64): void {
     intc_1 // 1
     return
 
 
-// smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.uploadInstanceApprovalPartial[routing]() -> void:
-uploadInstanceApprovalPartial:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:188
-    // public uploadInstanceApprovalPartial(startOffset: uint64, data: bytes): void {
+// smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.uploadInstanceApproval[routing]() -> void:
+uploadInstanceApproval:
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:196
+    // public uploadInstanceApproval(page1: bytes, page2: bytes): void {
     txna ApplicationArgs 1
     dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
     len
-    pushint 8
     ==
-    assert // invalid number of bytes for arc4.uint64
-    btoi
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
     dup
     txna ApplicationArgs 2
     dup
@@ -314,65 +318,76 @@ uploadInstanceApprovalPartial:
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
     extract 2 0
-    dup
     cover 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:189
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:197
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:191
-    // const writeEnd: uint64 = startOffset + data.length
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:202
+    // loggedAssert(page1.length <= MAX_PAGE, errApprovalPageTooLong)
     len
-    dig 1
-    +
-    cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:192
-    // if (startOffset === 0) {
-    bnz uploadInstanceApprovalPartial_else_body@3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:193
+    dup
+    cover 2
+    intc 4 // 4096
+    <=
+    bnz uploadInstanceApproval_after_assert@3
+    bytec 12 // "ERR:AP_LN"
+    log
+    err // ERR:AP_LN
+
+uploadInstanceApproval_after_assert@3:
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:203
+    // loggedAssert(page2.length <= MAX_PAGE, errApprovalPageTooLong)
+    dig 2
+    len
+    dup
+    intc 4 // 4096
+    <=
+    bnz uploadInstanceApproval_after_assert@5
+    bytec 12 // "ERR:AP_LN"
+    log
+    err // ERR:AP_LN
+
+uploadInstanceApproval_after_assert@5:
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:206
     // op.Box.delete(boxKey)
     bytec_2 // "Iap"
     box_del
     pop
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:194
-    // op.Box.create(boxKey, writeEnd)
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:207
+    // op.Box.create(boxKey, page1.length + page2.length)
+    dig 2
+    dig 1
+    +
     bytec_2 // "Iap"
-    dig 3
+    swap
     box_create
     pop
-
-uploadInstanceApprovalPartial_after_if_else@6:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:201
-    // op.Box.replace(boxKey, startOffset, data)
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:208
+    // op.Box.replace(boxKey, 0, page1)
     bytec_2 // "Iap"
-    cover 2
+    intc_0 // 0
+    uncover 3
     box_replace
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:188
-    // public uploadInstanceApprovalPartial(startOffset: uint64, data: bytes): void {
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:209
+    // if (page2.length > 0) {
+    bz uploadInstanceApproval_after_if_else@7
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:210
+    // op.Box.replace(boxKey, page1.length, page2)
+    bytec_2 // "Iap"
+    dig 1
+    dig 3
+    box_replace
+
+uploadInstanceApproval_after_if_else@7:
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:196
+    // public uploadInstanceApproval(page1: bytes, page2: bytes): void {
     intc_1 // 1
     return
-
-uploadInstanceApprovalPartial_else_body@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:196
-    // const [boxLen] = op.Box.length(boxKey)
-    bytec_2 // "Iap"
-    box_len
-    pop
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:197
-    // if (writeEnd > boxLen) {
-    dig 3
-    <
-    bz uploadInstanceApprovalPartial_after_if_else@6
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:198
-    // op.Box.resize(boxKey, writeEnd)
-    bytec_2 // "Iap"
-    dig 3
-    box_resize
-    b uploadInstanceApprovalPartial_after_if_else@6
 
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.createInstance[routing]() -> void:
 createInstance:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:212
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:222
     // public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
     txna ApplicationArgs 1
     dupn 2
@@ -396,10 +411,10 @@ createInstance:
     intc_1 // pay
     ==
     assert // transaction type is pay
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:213
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:223
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:214
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:224
     // loggedAssert(Bytes(name).length <= MAX_INSTANCE_NAME_BYTES, errInstanceNameTooLong)
     len
     dup
@@ -412,7 +427,7 @@ createInstance:
     err // ERR:FI_NL
 
 createInstance_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:215
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:225
     // loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     dup
     gtxns Receiver
@@ -424,10 +439,10 @@ createInstance_after_assert@3:
     err // ERR:AUTH
 
 createInstance_after_assert@5:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:99
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:100
     // instanceApprovalBox = Box<bytes>({ key: 'Iap' })
     bytec_2 // "Iap"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:216
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:226
     // loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
     box_len
     bury 1
@@ -437,13 +452,13 @@ createInstance_after_assert@5:
     err // ERR:FI_NC
 
 createInstance_after_assert@7:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:222
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:232
     // const [approvalLen] = op.Box.length(approvalKey)
     bytec_2 // "Iap"
     box_len
     pop
     dupn 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:224
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:234
     // const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
     intc 4 // 4096
     <=
@@ -451,14 +466,14 @@ createInstance_after_assert@7:
     dig 2
     uncover 2
     select
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:225
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:235
     // const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
     bytec_2 // "Iap"
     intc_0 // 0
     uncover 2
     box_extract
     cover 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:227
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:237
     // approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
     intc 4 // 4096
     >
@@ -472,40 +487,40 @@ createInstance_after_assert@7:
     box_extract
 
 createInstance_ternary_merge@10:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:229
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:239
     // this.lastInstanceNumId.value++
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:84
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:85
     // lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
     bytec 6 // "lastInstanceNumId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:229
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:239
     // this.lastInstanceNumId.value++
     app_global_get_ex
     assert // check GlobalState exists
     intc_1 // 1
     +
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:84
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:85
     // lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
     bytec 6 // "lastInstanceNumId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:229
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:239
     // this.lastInstanceNumId.value++
     dig 1
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:230
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:240
     // const instanceNum = u16(this.lastInstanceNumId.value)
     callsub u16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:251
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:261
     // const programBytes: uint64 = approvalLen + compiled.clearStateProgram.length
     uncover 2
     pushint 4
     +
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:252
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:262
     // const extraPages: uint64 = (programBytes - 1) / PROGRAM_PAGE_BYTES
     intc_1 // 1
     -
     pushint 2048
     /
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:254-268
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:264-278
     // const created = itxn
     //   .applicationCall({
     //     approvalProgram: [page1, page2],
@@ -522,7 +537,7 @@ createInstance_ternary_merge@10:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:240
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:250
     // const compiled = compile(FracDelegationInstanceContract) // clearStateProgram + schema — approval comes from box
     pushint 3
     itxn_field GlobalNumByteSlice
@@ -531,7 +546,7 @@ createInstance_ternary_merge@10:
     itxn_field ExtraProgramPages
     bytec 9 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:259
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:269
     // methodSelector(FracDelegationInstanceContract.prototype.createApplication),
     pushbytes 0x5cf468c1 // method "createApplication(uint16,string)void"
     itxn_field ApplicationArgs
@@ -543,7 +558,7 @@ createInstance_ternary_merge@10:
     itxn_field ApprovalProgramPages
     swap
     itxn_field ApprovalProgramPages
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:254-267
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:264-277
     // const created = itxn
     //   .applicationCall({
     //     approvalProgram: [page1, page2],
@@ -562,7 +577,7 @@ createInstance_ternary_merge@10:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:254-268
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:264-278
     // const created = itxn
     //   .applicationCall({
     //     approvalProgram: [page1, page2],
@@ -580,7 +595,7 @@ createInstance_ternary_merge@10:
     //   .submit()
     itxn_submit
     itxn CreatedApplicationID
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:271-276
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:281-286
     // itxn
     //   .payment({
     //     receiver: newApp.address,
@@ -588,18 +603,18 @@ createInstance_ternary_merge@10:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:273
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:283
     // receiver: newApp.address,
     dup
     app_params_get AppAddress
     assert // application exists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:274
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:284
     // amount: mbrPayment.amount,
     uncover 3
     gtxns Amount
     itxn_field Amount
     itxn_field Receiver
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:271-275
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:281-285
     // itxn
     //   .payment({
     //     receiver: newApp.address,
@@ -609,7 +624,7 @@ createInstance_ternary_merge@10:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:271-276
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:281-286
     // itxn
     //   .payment({
     //     receiver: newApp.address,
@@ -617,7 +632,7 @@ createInstance_ternary_merge@10:
     //   })
     //   .submit()
     itxn_submit
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:278-283
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:288-293
     // this.instances(instanceNum).value = {
     //   appId: Application(newApp.id),
     //   name,
@@ -633,10 +648,10 @@ createInstance_ternary_merge@10:
     dig 1
     pushbytes 0x001a
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:281
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:291
     // numAccounts: 0,
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:278-283
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:288-293
     // this.instances(instanceNum).value = {
     //   appId: Application(newApp.id),
     //   name,
@@ -651,12 +666,12 @@ createInstance_ternary_merge@10:
     concat
     swap
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     dig 3
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:278-283
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:288-293
     // this.instances(instanceNum).value = {
     //   appId: Application(newApp.id),
     //   name,
@@ -668,10 +683,10 @@ createInstance_ternary_merge@10:
     pop
     swap
     box_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:285
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:295
     // return [instanceNum, newApp.id]
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:212
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:222
     // public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
     bytec_0 // 0x151f7c75
     swap
@@ -681,7 +696,7 @@ createInstance_ternary_merge@10:
     return
 
 createInstance_ternary_false@9:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:227
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:237
     // approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
     pushbytes ""
     b createInstance_ternary_merge@10
@@ -689,7 +704,7 @@ createInstance_ternary_false@9:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.requestMBR[routing]() -> void:
 requestMBR:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:304
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:314
     // public requestMBR(instanceNumId: Uint16): void {
     txna ApplicationArgs 1
     dup
@@ -697,13 +712,13 @@ requestMBR:
     intc_2 // 2
     ==
     assert // invalid number of bytes for arc4.uint16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:306
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:316
     // loggedAssert(box.exists, errInstanceAppNotExists)
     box_len
     bury 1
@@ -713,14 +728,14 @@ requestMBR:
     err // ERR:FI_NX
 
 requestMBR_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:307
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:317
     // const instanceApp = box.value.appId
     intc_0 // 0
     pushint 8
     box_extract // on error: index out of bounds
     btoi
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:308
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:318
     // loggedAssert(Global.callerApplicationId === instanceApp.id, errUnauthorized)
     global CallerApplicationID
     ==
@@ -730,7 +745,7 @@ requestMBR_after_assert@3:
     err // ERR:AUTH
 
 requestMBR_after_assert@5:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:309-315
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:319-325
     // itxn
     //   .payment({
     //     receiver: instanceApp.address,
@@ -739,27 +754,27 @@ requestMBR_after_assert@5:
     //   })
     //   .submit()
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:313
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:323
     // fee: Global.minTxnFee,
     global MinTxnFee
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:311
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:321
     // receiver: instanceApp.address,
     swap
     app_params_get AppAddress
     assert // application exists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:312
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:322
     // amount: this.mbrTopUp.value,
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:78
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:79
     // mbrTopUp = GlobalState<uint64>({ initialValue: 2_000_000 })
     bytec 7 // "mbrTopUp"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:312
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:322
     // amount: this.mbrTopUp.value,
     app_global_get_ex
     assert // check GlobalState exists
     itxn_field Amount
     itxn_field Receiver
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:309-314
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:319-324
     // itxn
     //   .payment({
     //     receiver: instanceApp.address,
@@ -769,7 +784,7 @@ requestMBR_after_assert@5:
     intc_1 // 1
     itxn_field TypeEnum
     itxn_field Fee
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:309-315
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:319-325
     // itxn
     //   .payment({
     //     receiver: instanceApp.address,
@@ -778,7 +793,7 @@ requestMBR_after_assert@5:
     //   })
     //   .submit()
     itxn_submit
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:304
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:314
     // public requestMBR(instanceNumId: Uint16): void {
     intc_1 // 1
     return
@@ -786,7 +801,7 @@ requestMBR_after_assert@5:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getAccount[routing]() -> void:
 getAccount:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:341
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:351
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -794,10 +809,10 @@ getAccount:
     intc_3 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:343
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:353
     // return this.getAccountIfExists(account)
     callsub getAccountIfExists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:341
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:351
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -809,7 +824,7 @@ getAccount:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.logAccounts[routing]() -> void:
 logAccounts:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:351
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:361
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dupn 2
@@ -828,7 +843,7 @@ logAccounts:
     intc_0 // 0
 
 logAccounts_for_header@2:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:353
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:363
     // for (const account of accounts) {
     dup
     dig 2
@@ -841,7 +856,7 @@ logAccounts_for_header@2:
     *
     intc_3 // 32
     extract3 // on error: index access is out of bounds
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:354
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:364
     // log(encodeArc4(this.getAccountIfExists(account)))
     callsub getAccountIfExists
     log
@@ -850,7 +865,7 @@ logAccounts_for_header@2:
     b logAccounts_for_header@2
 
 logAccounts_after_for@5:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:351
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:361
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -861,7 +876,7 @@ logAccountInstanceAQ:
     intc_0 // 0
     pushbytes ""
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:396
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:406
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -897,16 +912,16 @@ logAccountInstanceAQ:
     intc_2 // 2
     ==
     assert // invalid number of bytes for arc4.uint16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:398
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:408
     // const accountRecord = this.getAccountIfExists(account)
     uncover 2
     callsub getAccountIfExists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:399
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:409
     // const accountId = accountRecord.accountId
     dup
     extract 0 4
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:400
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:410
     // const instanceNumIds = clone(accountRecord.instanceNumIds)
     dup
     pushint 4
@@ -916,17 +931,17 @@ logAccountInstanceAQ:
     substring3
     dup
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:401
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:411
     // const total: uint64 = instanceNumIds.length
     intc_0 // 0
     extract_uint16 // on error: invalid array length header
     dup
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:404
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:414
     // log(encodeArc4(u16(total)))
     callsub u16
     log
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:406
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:416
     // const end: uint64 = offset.asUint64() + limit.asUint64()
     btoi
     dup
@@ -936,7 +951,7 @@ logAccountInstanceAQ:
     swap
 
 logAccountInstanceAQ_while_top@2:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:407
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:417
     // for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
     dup
     dig 2
@@ -946,7 +961,7 @@ logAccountInstanceAQ_while_top@2:
     dig 3
     <
     bz logAccountInstanceAQ_after_while@15
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:408
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:418
     // const instanceNumId = instanceNumIds[i]
     dig 3
     extract 2 0
@@ -955,19 +970,19 @@ logAccountInstanceAQ_while_top@2:
     *
     intc_2 // 2
     extract3 // on error: index access is out of bounds
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
     bury 11
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:413
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:423
     // if (!box.exists) continue
     box_len
     bury 1
     bz logAccountInstanceAQ_block@14
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:414
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:424
     // const instanceApp = box.value.appId
     dig 9
     intc_0 // 0
@@ -976,18 +991,18 @@ logAccountInstanceAQ_while_top@2:
     btoi
     dup
     bury 10
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:421
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:431
     // const [, appExists] = op.AppParams.appCreator(instanceApp)
     app_params_get AppCreator
     bury 1
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:422
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:432
     // if (!appExists) continue
     bz logAccountInstanceAQ_block@14
     intc_0 // 0
     bury 8
 
 logAccountInstanceAQ_for_header@9:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:424
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:434
     // for (const committeeId of committeeIds) {
     dig 7
     dig 6
@@ -1002,7 +1017,7 @@ logAccountInstanceAQ_for_header@9:
     *
     intc_3 // 32
     extract3 // on error: index access is out of bounds
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:425-428
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:435-438
     // const standing = compileArc4(FracDelegationInstanceContract).call.getAccountCommitteeAq({
     //   appId: instanceApp,
     //   args: [accountId, committeeId],
@@ -1049,7 +1064,7 @@ logAccountInstanceAQ_for_header@9:
     +
     ==
     assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracAccountCommitteeAq
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:429
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:439
     // log(encodeArc4(standing))
     log
     intc_1 // 1
@@ -1058,14 +1073,14 @@ logAccountInstanceAQ_for_header@9:
     b logAccountInstanceAQ_for_header@9
 
 logAccountInstanceAQ_block@14:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:407
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:417
     // for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
     intc_1 // 1
     +
     b logAccountInstanceAQ_while_top@2
 
 logAccountInstanceAQ_after_while@15:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:396
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:406
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -1074,7 +1089,7 @@ logAccountInstanceAQ_after_while@15:
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.logAccountVotingRecords[routing]() -> void:
 logAccountVotingRecords:
     pushbytes ""
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:453
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:463
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -1101,16 +1116,16 @@ logAccountVotingRecords:
     intc_2 // 2
     ==
     assert // invalid number of bytes for arc4.uint16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:455
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:465
     // const accountRecord = this.getAccountIfExists(account)
     uncover 2
     callsub getAccountIfExists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:456
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:466
     // const accountId = accountRecord.accountId
     dup
     extract 0 4
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:457
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:467
     // const instanceNumIds = clone(accountRecord.instanceNumIds)
     dup
     pushint 4
@@ -1120,17 +1135,17 @@ logAccountVotingRecords:
     substring3
     dup
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:458
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:468
     // const total: uint64 = instanceNumIds.length
     intc_0 // 0
     extract_uint16 // on error: invalid array length header
     dup
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:460
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:470
     // log(encodeArc4(u16(total)))
     callsub u16
     log
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:462
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:472
     // const end: uint64 = offset.asUint64() + limit.asUint64()
     btoi
     dup
@@ -1140,7 +1155,7 @@ logAccountVotingRecords:
     swap
 
 logAccountVotingRecords_while_top@2:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:463
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:473
     // for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
     dup
     dig 2
@@ -1150,7 +1165,7 @@ logAccountVotingRecords_while_top@2:
     dig 3
     <
     bz logAccountVotingRecords_after_while@10
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:464
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:474
     // const instanceNumId = instanceNumIds[i]
     dig 3
     extract 2 0
@@ -1161,20 +1176,20 @@ logAccountVotingRecords_while_top@2:
     extract3 // on error: index access is out of bounds
     dup
     cover 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
     cover 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:466-469
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:476-479
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
     // }).returnValue
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:467
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:477
     // appId: instance.appId,
     intc_0 // 0
     pushint 8
@@ -1182,7 +1197,7 @@ logAccountVotingRecords_while_top@2:
     btoi
     dup
     cover 3
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:466-469
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:476-479
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
@@ -1190,7 +1205,7 @@ logAccountVotingRecords_while_top@2:
     intc_0 // 0
     itxn_field OnCompletion
     itxn_field ApplicationID
-    bytec 12 // method "getVotingRecord(uint32,uint32)(bool,uint32[][])"
+    bytec 13 // method "getVotingRecord(uint32,uint32)(bool,uint32[][])"
     itxn_field ApplicationArgs
     dig 8
     itxn_field ApplicationArgs
@@ -1239,7 +1254,7 @@ logAccountVotingRecords_while_top@2:
     intc_0 // 0
 
 logAccountVotingRecords_for_header@6:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:466-469
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:476-479
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
@@ -1278,7 +1293,7 @@ logAccountVotingRecords_for_header@6:
 
 logAccountVotingRecords_after_for@9:
     popn 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:466-469
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:476-479
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
@@ -1288,7 +1303,7 @@ logAccountVotingRecords_after_for@9:
     uncover 2
     ==
     assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracVotingRecord
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:473
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:483
     // instanceName: instance.name,
     uncover 3
     dup
@@ -1302,12 +1317,12 @@ logAccountVotingRecords_after_for@9:
     swap
     box_extract
     extract 2 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:474
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:484
     // isDelegated: record.isDelegated,
     uncover 2
     intc_0 // 0
     getbit
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:470-476
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:480-486
     // const tagged: FracAccountVotingRecord = {
     //   instanceNumId,
     //   instanceAppId: instance.appId.id,
@@ -1327,7 +1342,7 @@ logAccountVotingRecords_after_for@9:
     uncover 3
     concat
     swap
-    bytec 13 // 0x000f
+    bytec 14 // 0x000f
     concat
     dig 1
     len
@@ -1348,17 +1363,17 @@ logAccountVotingRecords_after_for@9:
     concat
     uncover 2
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:477
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:487
     // log(encodeArc4(tagged))
     log
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:463
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:473
     // for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
     intc_1 // 1
     +
     b logAccountVotingRecords_while_top@2
 
 logAccountVotingRecords_after_while@10:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:453
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:463
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -1366,7 +1381,7 @@ logAccountVotingRecords_after_while@10:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getAccountVotingRecord[routing]() -> void:
 getAccountVotingRecord:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:496
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:506
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -1389,21 +1404,21 @@ getAccountVotingRecord:
     pushint 4
     ==
     assert // invalid number of bytes for arc4.uint32
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:498
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:508
     // const accountRecord = this.getAccountIfExists(account)
     swap
     callsub getAccountIfExists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:499
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:509
     // const accountId = accountRecord.accountId
     extract 0 4
     swap
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:500
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:510
     // loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     box_len
     bury 1
@@ -1413,13 +1428,13 @@ getAccountVotingRecord:
     err // ERR:FI_NX
 
 getAccountVotingRecord_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:502-505
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:512-515
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
     // }).returnValue
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:503
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:513
     // appId: instance.appId,
     dup
     intc_0 // 0
@@ -1428,7 +1443,7 @@ getAccountVotingRecord_after_assert@3:
     btoi
     dup
     cover 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:502-505
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:512-515
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
@@ -1436,7 +1451,7 @@ getAccountVotingRecord_after_assert@3:
     intc_0 // 0
     itxn_field OnCompletion
     itxn_field ApplicationID
-    bytec 12 // method "getVotingRecord(uint32,uint32)(bool,uint32[][])"
+    bytec 13 // method "getVotingRecord(uint32,uint32)(bool,uint32[][])"
     itxn_field ApplicationArgs
     uncover 3
     itxn_field ApplicationArgs
@@ -1486,7 +1501,7 @@ getAccountVotingRecord_after_assert@3:
     intc_0 // 0
 
 getAccountVotingRecord_for_header@5:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:502-505
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:512-515
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
@@ -1528,7 +1543,7 @@ getAccountVotingRecord_after_for@8:
     bury 1
     uncover 2
     pop
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:502-505
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:512-515
     // const record = compileArc4(FracDelegationInstanceContract).call.getVotingRecord({
     //   appId: instance.appId,
     //   args: [periodId, accountId],
@@ -1539,7 +1554,7 @@ getAccountVotingRecord_after_for@8:
     uncover 2
     ==
     assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracVotingRecord
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:509
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:519
     // instanceName: instance.name,
     dup
     pushint 26
@@ -1552,12 +1567,12 @@ getAccountVotingRecord_after_for@8:
     swap
     box_extract
     extract 2 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:510
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:520
     // isDelegated: record.isDelegated,
     swap
     intc_0 // 0
     getbit
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:506-512
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:516-522
     // return {
     //   instanceNumId,
     //   instanceAppId: instance.appId.id,
@@ -1577,7 +1592,7 @@ getAccountVotingRecord_after_for@8:
     uncover 3
     concat
     swap
-    bytec 13 // 0x000f
+    bytec 14 // 0x000f
     concat
     dig 1
     len
@@ -1598,7 +1613,7 @@ getAccountVotingRecord_after_for@8:
     concat
     swap
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:496
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:506
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -1613,7 +1628,7 @@ logInstanceCommittees:
     intc_0 // 0
     dup
     pushbytes ""
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:546
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:556
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -1633,13 +1648,13 @@ logInstanceCommittees:
     intc_2 // 2
     ==
     assert // invalid number of bytes for arc4.uint16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:548
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:558
     // const total: uint64 = this.lastInstanceNumId.value
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:84
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:85
     // lastInstanceNumId = GlobalState<uint64>({ initialValue: 0 })
     bytec 6 // "lastInstanceNumId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:548
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:558
     // const total: uint64 = this.lastInstanceNumId.value
     app_global_get_ex
     swap
@@ -1647,11 +1662,11 @@ logInstanceCommittees:
     cover 2
     cover 4
     assert // check GlobalState exists
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:551
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:561
     // log(encodeArc4(u16(total)))
     callsub u16
     log
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:553
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:563
     // const end: uint64 = offset.asUint64() + limit.asUint64()
     btoi
     dup
@@ -1660,7 +1675,7 @@ logInstanceCommittees:
     +
 
 logInstanceCommittees_while_top@2:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:554
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:564
     // for (let i: uint64 = offset.asUint64(); i < end && i < total; i++) {
     dup2
     <
@@ -1669,7 +1684,7 @@ logInstanceCommittees_while_top@2:
     dig 3
     <
     bz logInstanceCommittees_after_while@11
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:555
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:565
     // const instanceNumId = u16(i + 1)
     swap
     intc_1 // 1
@@ -1679,19 +1694,19 @@ logInstanceCommittees_while_top@2:
     callsub u16
     dup
     bury 7
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
     bury 8
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:557
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:567
     // if (!box.exists) continue
     box_len
     bury 1
     bz logInstanceCommittees_while_top@2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:564
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:574
     // const [, appExists] = op.AppParams.appCreator(instance.appId)
     dig 6
     intc_0 // 0
@@ -1702,10 +1717,10 @@ logInstanceCommittees_while_top@2:
     bury 6
     app_params_get AppCreator
     bury 1
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:565
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:575
     // if (!appExists) continue
     bz logInstanceCommittees_while_top@2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:567-570
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:577-580
     // const standing = compileArc4(FracDelegationInstanceContract).call.getCommitteeStanding({
     //   appId: instance.appId,
     //   args: [committeeId],
@@ -1716,7 +1731,7 @@ logInstanceCommittees_while_top@2:
     dig 4
     dup
     itxn_field ApplicationID
-    bytec 14 // method "getCommitteeStanding(byte[32])(uint16,uint32,uint32,uint32,uint32,uint32)"
+    bytec 15 // method "getCommitteeStanding(byte[32])(uint16,uint32,uint32,uint32,uint32,uint32)"
     itxn_field ApplicationArgs
     dig 4
     itxn_field ApplicationArgs
@@ -1737,7 +1752,7 @@ logInstanceCommittees_while_top@2:
     pushint 22
     ==
     assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracCommitteeStanding
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:575
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:585
     // instanceName: instance.name,
     dig 8
     dup
@@ -1752,37 +1767,37 @@ logInstanceCommittees_while_top@2:
     uncover 2
     box_extract
     extract 2 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:576
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:586
     // instanceNumAccounts: instance.numAccounts,
     swap
     pushints 10 8
     box_extract // on error: index out of bounds
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:577
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:587
     // committeeNumId: standing.committeeNumId,
     dig 2
     extract 4 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:578
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:588
     // totalVotes: standing.totalVotes,
     dig 3
     extract 6 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:579
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:589
     // totalAq: standing.totalAq,
     dig 4
     extract 10 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:580
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:590
     // ingestedAq: standing.ingestedAq,
     dig 5
     extract 14 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:581
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:591
     // totalAccounts: standing.totalAccounts,
     dig 6
     extract 18 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:582
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:592
     // numAccounts: standing.numAccounts,
     uncover 7
     extract 22 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:572-583
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:582-593
     // const tagged: FracInstanceCommitteeStanding = {
     //   instanceNumId,
     //   instanceAppId: instance.appId.id,
@@ -1807,7 +1822,7 @@ logInstanceCommittees_while_top@2:
     uncover 9
     concat
     swap
-    bytec 15 // 0x002a
+    bytec 16 // 0x002a
     concat
     uncover 8
     itob
@@ -1826,13 +1841,13 @@ logInstanceCommittees_while_top@2:
     concat
     swap
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:584
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:594
     // log(encodeArc4(tagged))
     log
     b logInstanceCommittees_while_top@2
 
 logInstanceCommittees_after_while@11:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:546
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:556
     // @abimethod({ readonly: true })
     intc_1 // 1
     return
@@ -1840,7 +1855,7 @@ logInstanceCommittees_after_while@11:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getInstanceCommittee[routing]() -> void:
 getInstanceCommittee:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:603
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:613
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dupn 2
@@ -1855,13 +1870,13 @@ getInstanceCommittee:
     intc_3 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:605
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:615
     // loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     box_len
     bury 1
@@ -1871,20 +1886,20 @@ getInstanceCommittee:
     err // ERR:FI_NX
 
 getInstanceCommittee_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:607-610
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:617-620
     // const standing = compileArc4(FracDelegationInstanceContract).call.getCommitteeStanding({
     //   appId: instance.appId,
     //   args: [committeeId],
     // }).returnValue
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:608
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:618
     // appId: instance.appId,
     dup
     intc_0 // 0
     pushint 8
     box_extract // on error: index out of bounds
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:607-610
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:617-620
     // const standing = compileArc4(FracDelegationInstanceContract).call.getCommitteeStanding({
     //   appId: instance.appId,
     //   args: [committeeId],
@@ -1893,7 +1908,7 @@ getInstanceCommittee_after_assert@3:
     itxn_field OnCompletion
     dup
     itxn_field ApplicationID
-    bytec 14 // method "getCommitteeStanding(byte[32])(uint16,uint32,uint32,uint32,uint32,uint32)"
+    bytec 15 // method "getCommitteeStanding(byte[32])(uint16,uint32,uint32,uint32,uint32,uint32)"
     itxn_field ApplicationArgs
     uncover 2
     itxn_field ApplicationArgs
@@ -1914,7 +1929,7 @@ getInstanceCommittee_after_assert@3:
     pushint 22
     ==
     assert // invalid number of bytes for smart_contracts/base/types.algo.ts::FracCommitteeStanding
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:614
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:624
     // instanceName: instance.name,
     dig 2
     pushint 26
@@ -1928,37 +1943,37 @@ getInstanceCommittee_after_assert@3:
     uncover 2
     box_extract
     extract 2 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:615
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:625
     // instanceNumAccounts: instance.numAccounts,
     uncover 3
     pushints 10 8
     box_extract // on error: index out of bounds
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:616
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:626
     // committeeNumId: standing.committeeNumId,
     dig 2
     extract 4 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:617
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:627
     // totalVotes: standing.totalVotes,
     dig 3
     extract 6 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:618
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:628
     // totalAq: standing.totalAq,
     dig 4
     extract 10 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:619
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:629
     // ingestedAq: standing.ingestedAq,
     dig 5
     extract 14 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:620
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:630
     // totalAccounts: standing.totalAccounts,
     dig 6
     extract 18 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:621
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:631
     // numAccounts: standing.numAccounts,
     uncover 7
     extract 22 4
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:611-622
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:621-632
     // return {
     //   instanceNumId,
     //   instanceAppId: instance.appId.id,
@@ -1983,7 +1998,7 @@ getInstanceCommittee_after_assert@3:
     uncover 9
     concat
     swap
-    bytec 15 // 0x002a
+    bytec 16 // 0x002a
     concat
     uncover 8
     itob
@@ -2002,7 +2017,7 @@ getInstanceCommittee_after_assert@3:
     concat
     swap
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:603
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:613
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -2018,7 +2033,7 @@ getOrCreateAccountWithInstance:
     dup
     pushbytes ""
     dupn 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:633
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:643
     // public getOrCreateAccountWithInstance(account: Account, instanceNumId: Uint16): FracRegAccount {
     txna ApplicationArgs 1
     dup
@@ -2034,14 +2049,14 @@ getOrCreateAccountWithInstance:
     intc_2 // 2
     ==
     assert // invalid number of bytes for arc4.uint16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
     cover 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:634
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:644
     // loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     box_len
     bury 1
@@ -2051,7 +2066,7 @@ getOrCreateAccountWithInstance:
     err // ERR:FI_NX
 
 getOrCreateAccountWithInstance_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:638
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:648
     // loggedAssert(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
     txn Sender
     dig 2
@@ -2065,10 +2080,10 @@ getOrCreateAccountWithInstance_after_assert@3:
     bnz getOrCreateAccountWithInstance_bool_true@5
     txn Sender
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:72
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:73
     // admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
     bytec 5 // "admin"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:638
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:648
     // loggedAssert(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
     app_global_get_ex
     assert // check GlobalState exists
@@ -2079,7 +2094,7 @@ getOrCreateAccountWithInstance_bool_true@5:
     intc_1 // 1
 
 getOrCreateAccountWithInstance_bool_merge@7:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:638
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:648
     // loggedAssert(Txn.sender === instance.appId.address || Txn.sender === this.admin.value, errUnauthorized)
     bnz getOrCreateAccountWithInstance_after_assert@9
     bytec 4 // "ERR:AUTH"
@@ -2087,45 +2102,45 @@ getOrCreateAccountWithInstance_bool_merge@7:
     err // ERR:AUTH
 
 getOrCreateAccountWithInstance_after_assert@9:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:82
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:83
     // accounts = BoxMap<Account, FracRegAccount>({ keyPrefix: 'a' })
     pushbytes "a"
     swap
     concat
     dup
     bury 7
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:640
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:650
     // if (!this.accounts(account).exists) {
     box_len
     bury 1
     bnz getOrCreateAccountWithInstance_after_if_else@11
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:641
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:651
     // this.lastAccountId.value++
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:80
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:81
     // lastAccountId = GlobalState<uint64>({ initialValue: 0 })
     bytec 8 // "lastAccountId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:641
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:651
     // this.lastAccountId.value++
     app_global_get_ex
     assert // check GlobalState exists
     intc_1 // 1
     +
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:80
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:81
     // lastAccountId = GlobalState<uint64>({ initialValue: 0 })
     bytec 8 // "lastAccountId"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:641
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:651
     // this.lastAccountId.value++
     dig 1
     app_global_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:642
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:652
     // const accountId = u32(this.lastAccountId.value)
     callsub u32
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:322
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:332
     // return { accountId: accountId, instanceNumIds: [] }
-    bytec 16 // 0x00060000
+    bytec 17 // 0x00060000
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:643
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:653
     // this.accounts(account).value = this.getEmptyFracRegAccount(accountId)
     dig 6
     dup
@@ -2135,7 +2150,7 @@ getOrCreateAccountWithInstance_after_assert@9:
     box_put
 
 getOrCreateAccountWithInstance_after_if_else@11:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:646
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:656
     // const accountRecord = clone(this.accounts(account).value)
     dig 5
     dup
@@ -2143,11 +2158,11 @@ getOrCreateAccountWithInstance_after_if_else@11:
     swap
     cover 2
     assert // Box must have value
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:647
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:657
     // let found = false
     intc_0 // 0
     bury 6
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:648
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:658
     // for (const i of clone(accountRecord.instanceNumIds)) {
     dup
     pushint 6
@@ -2168,7 +2183,7 @@ getOrCreateAccountWithInstance_after_if_else@11:
     bury 4
 
 getOrCreateAccountWithInstance_for_header@12:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:648
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:658
     // for (const i of clone(accountRecord.instanceNumIds)) {
     dig 3
     dig 6
@@ -2183,20 +2198,20 @@ getOrCreateAccountWithInstance_for_header@12:
     swap
     intc_2 // 2
     box_extract // on error: index out of bounds
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:649
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:659
     // if (i.asUint64() === instanceNumId.asUint64()) {
     btoi
     dig 3
     btoi
     ==
     bz getOrCreateAccountWithInstance_after_if_else@15
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:650
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:660
     // found = true
     intc_1 // 1
     bury 5
 
 getOrCreateAccountWithInstance_block@18:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:654
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:664
     // if (!found) {
     dig 4
     bnz getOrCreateAccountWithInstance_after_if_else@20
@@ -2204,7 +2219,7 @@ getOrCreateAccountWithInstance_block@18:
     dup
     intc_0 // 0
     extract_uint16
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     intc_1 // 1
     +
@@ -2215,7 +2230,7 @@ getOrCreateAccountWithInstance_block@18:
     dup
     cover 2
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     uncover 2
     dup
@@ -2229,7 +2244,7 @@ getOrCreateAccountWithInstance_block@18:
     swap
     dig 7
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     pushint 6
     intc_2 // 2
@@ -2238,7 +2253,7 @@ getOrCreateAccountWithInstance_block@18:
     dig 1
     box_len
     pop
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     intc_2 // 2
     +
@@ -2246,19 +2261,19 @@ getOrCreateAccountWithInstance_block@18:
     swap
     box_resize
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     intc_1 // 1
     +
     itob
     extract 6 2
     dig 2
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     pushint 6
     uncover 2
     box_replace
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:655
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:665
     // accountRecord.instanceNumIds.push(instanceNumId)
     intc_2 // 2
     *
@@ -2267,7 +2282,7 @@ getOrCreateAccountWithInstance_block@18:
     intc_0 // 0
     uncover 3
     box_splice
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:658
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:668
     // instance.numAccounts++
     dig 1
     dup
@@ -2277,7 +2292,7 @@ getOrCreateAccountWithInstance_block@18:
     intc_1 // 1
     +
     itob
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:658-659
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:668-669
     // instance.numAccounts++
     // this.instances(instanceNumId).value = clone(instance)
     pushint 10
@@ -2285,7 +2300,7 @@ getOrCreateAccountWithInstance_block@18:
     box_replace // on error: index out of bounds
 
 getOrCreateAccountWithInstance_after_if_else@20:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:633
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:643
     // public getOrCreateAccountWithInstance(account: Account, instanceNumId: Uint16): FracRegAccount {
     bytec_0 // 0x151f7c75
     swap
@@ -2308,7 +2323,7 @@ getOrCreateAccountWithInstance_bool_false@6:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.registerEscrow[routing]() -> void:
 registerEscrow:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:677
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:687
     // public registerEscrow(instanceNumId: Uint16, account: Account): void {
     txna ApplicationArgs 1
     dupn 2
@@ -2323,16 +2338,16 @@ registerEscrow:
     intc_3 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:678
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:688
     // this.ensureCallerIsAdmin()
     callsub ensureCallerIsAdmin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:679
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:689
     // loggedAssert(this.instances(instanceNumId).exists, errInstanceAppNotExists)
     box_len
     bury 1
@@ -2342,13 +2357,13 @@ registerEscrow:
     err // ERR:FI_NX
 
 registerEscrow_after_assert@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:92
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:93
     // escrows = BoxMap<Account, Uint16>({ keyPrefix: 'e' })
     pushbytes "e"
     dig 2
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:680
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:690
     // loggedAssert(!this.escrows(account).exists, errEscrowAssigned)
     box_len
     bury 1
@@ -2358,24 +2373,24 @@ registerEscrow_after_assert@3:
     err // ERR:FE_AS
 
 registerEscrow_after_assert@5:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:684
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:694
     // this.escrows(account).value = instanceNumId
     uncover 3
     box_put
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:689-692
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:699-702
     // compileArc4(FracDelegationInstanceContract).call.registerEscrow({
     //   appId: instance.appId,
     //   args: [account],
     // })
     itxn_begin
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:690
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:700
     // appId: instance.appId,
     dup
     intc_0 // 0
     pushint 8
     box_extract // on error: index out of bounds
     btoi
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:689-692
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:699-702
     // compileArc4(FracDelegationInstanceContract).call.registerEscrow({
     //   appId: instance.appId,
     //   args: [account],
@@ -2392,7 +2407,7 @@ registerEscrow_after_assert@5:
     intc_0 // 0
     itxn_field Fee
     itxn_submit
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:694
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:704
     // instance.numEscrows++
     dup
     pushints 18 8
@@ -2401,13 +2416,13 @@ registerEscrow_after_assert@5:
     intc_1 // 1
     +
     itob
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:694-695
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:704-705
     // instance.numEscrows++
     // this.instances(instanceNumId).value = clone(instance)
     pushint 18
     swap
     box_replace // on error: index out of bounds
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:677
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:687
     // public registerEscrow(instanceNumId: Uint16, account: Account): void {
     intc_1 // 1
     return
@@ -2415,7 +2430,7 @@ registerEscrow_after_assert@5:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getEscrow[routing]() -> void:
 getEscrow:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:710
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:720
     // @abimethod({ readonly: true })
     txna ApplicationArgs 1
     dup
@@ -2423,19 +2438,19 @@ getEscrow:
     intc_3 // 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:92
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:93
     // escrows = BoxMap<Account, Uint16>({ keyPrefix: 'e' })
     pushbytes "e"
     swap
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:713
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:723
     // if (!escrowBox.exists) {
     box_len
     bury 1
     bnz getEscrow_after_if_else@3
     pop
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:714
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:724
     // return { instanceNumId: u16(0), instanceAppId: 0 }
     intc_0 // 0
     callsub u16
@@ -2444,7 +2459,7 @@ getEscrow:
     concat
 
 getEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getEscrow@6:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:710
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:720
     // @abimethod({ readonly: true })
     bytec_0 // 0x151f7c75
     swap
@@ -2454,20 +2469,20 @@ getEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationRegistry.a
     return
 
 getEscrow_after_if_else@3:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:716
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:726
     // const instanceNumId = escrowBox.value
     box_get
     swap
     dup
     uncover 2
     assert // Box must have value
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:86
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:87
     // instances = BoxMap<Uint16, FracInstance>({ keyPrefix: 'i' })
     bytec_1 // "i"
     swap
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:718
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:728
     // loggedAssert(instanceBox.exists, errInstanceAppNotExists) // invariant: registerEscrow only writes against live instances
     box_len
     bury 1
@@ -2477,7 +2492,7 @@ getEscrow_after_if_else@3:
     err // ERR:FI_NX
 
 getEscrow_after_assert@5:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:719
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:729
     // return { instanceNumId, instanceAppId: instanceBox.value.appId.id }
     intc_0 // 0
     pushint 8
@@ -2485,7 +2500,7 @@ getEscrow_after_assert@5:
     btoi
     itob
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:710
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:720
     // @abimethod({ readonly: true })
     b getEscrow_after_inlined_smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getEscrow@6
 
@@ -2561,14 +2576,14 @@ increaseBudget_after_while@5:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.ensureCallerIsAdmin() -> void:
 ensureCallerIsAdmin:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:105
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:106
     // loggedAssert(Txn.sender === this.admin.value, errUnauthorized)
     txn Sender
     intc_0 // 0
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:72
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:73
     // admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
     bytec 5 // "admin"
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:105
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:106
     // loggedAssert(Txn.sender === this.admin.value, errUnauthorized)
     app_global_get_ex
     assert // check GlobalState exists
@@ -2584,16 +2599,16 @@ ensureCallerIsAdmin_after_assert@2:
 
 // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts::FracDelegationRegistryContract.getAccountIfExists(account: bytes) -> bytes:
 getAccountIfExists:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:330
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:340
     // protected getAccountIfExists(account: Account): FracRegAccount {
     proto 1 1
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:82
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:83
     // accounts = BoxMap<Account, FracRegAccount>({ keyPrefix: 'a' })
     pushbytes "a"
     frame_dig -1
     concat
     dup
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:332
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:342
     // if (box.exists) return box.value
     box_len
     bury 1
@@ -2603,15 +2618,15 @@ getAccountIfExists:
     retsub
 
 getAccountIfExists_else_body@2:
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:333
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:343
     // else return this.getEmptyFracRegAccount(u32(0))
     intc_0 // 0
     callsub u32
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:322
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:332
     // return { accountId: accountId, instanceNumIds: [] }
-    bytec 16 // 0x00060000
+    bytec 17 // 0x00060000
     concat
-    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:333
+    // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:343
     // else return this.getEmptyFracRegAccount(u32(0))
     swap
     retsub

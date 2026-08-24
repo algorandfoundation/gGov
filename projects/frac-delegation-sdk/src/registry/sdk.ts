@@ -2,7 +2,6 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address } from 'algosdk'
 import {
   FracDelegationRegistryClient,
-  FracDelegationRegistryComposer,
   FracDelegationRegistryFactory,
   APP_SPEC as REGISTRY_APP_SPEC,
 } from '../generated/FracDelegationRegistryClient.js'
@@ -24,12 +23,14 @@ import { createTxnExecutor } from '../util/txnExecutor.js'
 import { chunk } from '../util/chunk.js'
 import { noteNonce } from '../util/noteNonce.js'
 import { extraProgramPages } from '../util/extraProgramPages.js'
+import { boxIoRefsFor, splitApprovalPages } from '../util/approvalPages.js'
+import { feeFromGroupUsage, minFeeMicroAlgos } from '../util/groupUsageFee.js'
+import { INSTANCE_APPROVAL_BOX_NAME } from '../util/boxes.js'
 import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
-  BODY_CHUNK_BYTES,
   DEFAULT_INSTANCE_MBR_MICROALGOS,
   MAX_ESCROWS_PER_REGISTER_GROUP,
-  MAX_GROUP_SIZE,
+  UPLOAD_APPROVAL_MAX_FEE_MICROALGOS,
 } from '../constants.js'
 
 export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
@@ -321,21 +322,43 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
 
   @requireWriterWithClient()
   @wrapErrors()
-  makeUploadInstanceApprovalPartialTxns({
-    startOffset,
-    data,
+  makeUploadInstanceApprovalTxns({
+    page1,
+    page2,
+    staticFee,
     note,
     builder,
-  }: FracDelegationRegistryContractArgs['uploadInstanceApprovalPartial(uint64,byte[])void'] & CommonMethodBuilderArgs) {
+  }: { staticFee?: number } & FracDelegationRegistryContractArgs['uploadInstanceApproval(byte[],byte[])void'] &
+    CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    return builder.uploadInstanceApprovalPartial({ args: { startOffset, data }, note })
+    const totalBytes = page1.length + page2.length
+    return builder.uploadInstanceApproval({
+      args: { page1, page2 },
+      // Creating and filling a box of N bytes costs N of box-write budget, and each box reference
+      // buys BOX_IO_BYTES_PER_REF of it. Resource population only adds one reference per distinct
+      // box, which covers a 1024-byte write and no more, so the budget is bought explicitly here.
+      // 8192 bytes needs 8 references — exactly MAX_APP_CALL_FOREIGN_REFERENCES, with none to spare,
+      // which is why this call carries no other references.
+      boxReferences: Array.from({ length: boxIoRefsFor(totalBytes) }, () => INSTANCE_APPROVAL_BOX_NAME),
+      // Under AVM v13 the fee is usage-based across the group, and ~8KB of app args pushes usage past
+      // the free allowance, so the flat minimum is rejected. See feeFromGroupUsage: the caller
+      // simulates once to learn the real requirement and passes it back in as staticFee.
+      staticFee: (staticFee ?? UPLOAD_APPROVAL_MAX_FEE_MICROALGOS).microAlgo(),
+      note,
+    })
   }
 
-  uploadInstanceApprovalPartial = this.makeTxnExecutor({
-    maker: this.makeUploadInstanceApprovalPartialTxns,
+  uploadInstanceApproval = this.makeTxnExecutor({
+    maker: this.makeUploadInstanceApprovalTxns,
   })
 
-  /** Upload the full FracDelegationInstance approval bytecode, chunked into groups of up to 16 txns. */
+  /**
+   * Upload the full FracDelegationInstance approval bytecode in a single transaction.
+   *
+   * Was a loop of 2000-byte chunks across groups of up to 16 transactions, because total application
+   * arguments were capped at 2KB. AVM v13 raised that to 16KB, and an AVM bytes value still caps at
+   * 4096, so the program goes up as the same two pages the contract stores and reads back.
+   */
   @requireWriterWithClient()
   @wrapErrors()
   async uploadInstanceApprovalProgram({
@@ -345,29 +368,21 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     bytecode: Uint8Array
     note?: string | Uint8Array
   }): Promise<void> {
-    // Distinct default note per call: re-uploading bytecode already uploaded (a redeploy, or a
-    // test restoring the real program) otherwise reproduces byte-identical chunk txns, which the
-    // node rejects as already-in-ledger while the earlier ones are inside their validity window.
+    // Distinct default note per call: re-uploading identical bytecode (a redeploy, or a test
+    // restoring the real program) would otherwise reproduce a byte-identical txn, which the node
+    // rejects as already-in-ledger while the earlier one is inside its validity window.
     note = note ?? `iap-upload-${noteNonce()}`
-    const chunks = chunk(Array.from(bytecode), BODY_CHUNK_BYTES)
-    const groups = chunk(
-      chunks.map((c, i) => ({ index: i, data: c })),
-      MAX_GROUP_SIZE,
-    )
-    for (const group of groups) {
-      let builder: FracDelegationRegistryComposer<any> = this.writeClient!.newGroup()
-      for (const { index, data: chunkData } of group) {
-        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        builder = await this.makeUploadInstanceApprovalPartialTxns({
-          startOffset: index * BODY_CHUNK_BYTES,
-          data: new Uint8Array(chunkData),
-          note,
-          builder,
-        })
-      }
-      await builder.send()
-    }
+    const { page1, page2 } = splitApprovalPages(bytecode)
+
+    // Two round trips on purpose. Simulate must run with a fee that already passes the v13 usage
+    // check, so the probe goes out at UPLOAD_APPROVAL_MAX_FEE_MICROALGOS; the real send then pays
+    // exactly what the network asked for.
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const probe = await this.makeUploadInstanceApprovalTxns({ page1, page2, note })
+    const simulated = await probe.simulate({ skipSignatures: true })
+    const fee = feeFromGroupUsage(simulated.simulateResponse, await minFeeMicroAlgos(this.algorand.client.algod))
+
+    await this.uploadInstanceApproval({ page1, page2, staticFee: Number(fee), note })
   }
 
   // ── Admin: addInstance (paired payment + createInstance) ─────────

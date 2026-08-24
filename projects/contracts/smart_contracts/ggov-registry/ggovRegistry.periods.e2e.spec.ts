@@ -188,8 +188,8 @@ describe('GGovRegistry periods', () => {
   })
 
   describe('uploadPeriodApprovalProgram (SDK wrapper)', () => {
-    // chunked upload - uploadPeriodApprovalPartial wrapper
-    test('period box assembled via chunks enables createPeriod', async () => {
+    // One-shot upload: the whole program rides in a single call as two 4096-byte pages.
+    test('period box uploaded in one call enables createPeriod', async () => {
       const { testAccount } = localnet.context
       // Deploy bare registry (no period bytecode) by bypassing the deployRegistry helper
       await localnet.algorand.account.ensureFundedFromEnvironment(testAccount, (25).algos())

@@ -30,6 +30,7 @@ import {
 import { BaseContract } from '../base/base.algo'
 import {
   errEscrowAssigned,
+  errApprovalPageTooLong,
   errInstanceAppNotConfigured,
   errInstanceAppNotExists,
   errInstanceNameTooLong,
@@ -181,24 +182,33 @@ export class FracDelegationRegistryContract extends BaseContract {
   // ── Admin: instance app bytecode ─────────────────────────---------
 
   /**
-   * Upload (or re-upload) a chunk of the FracDelegationInstance approval bytecode into
-   * a registry box. Admin only. `startOffset === 0` deletes the existing box and creates
-   * a fresh one at the chunk length; subsequent chunks resize/replace.
+   * Upload (or re-upload) the whole FracDelegationInstance approval bytecode into a registry box in
+   * one call. Admin only.
+   *
+   * Takes the program as two pages `createInstance` reads back out, because an
+   * AVM bytes value caps at 4096 — so a single argument could never carry a whole program. Pass the
+   * program in `page1` with an empty `page2` when it fits in 4096 bytes.
+   *
+   * Replaces a chunked `uploadInstanceApprovalPartial(startOffset, data)` that needed a full
+   * 16-transaction group: total application arguments were capped at 2KB before AVM v13 raised the
+   * limit to 16KB, so the bytecode had to be dribbled in 2000 bytes at a time.
    */
-  public uploadInstanceApprovalPartial(startOffset: uint64, data: bytes): void {
+  public uploadInstanceApproval(page1: bytes, page2: bytes): void {
     this.ensureCallerIsAdmin()
+    // An AVM bytes value caps at 4096, and the network rejects any single application argument over
+    // that too — an ARC-4 byte[] adds a 2-byte length prefix, so the largest page that survives
+    // encoding is 4094. The pages are simply concatenated here, so the split point does not matter.
+    const MAX_PAGE: uint64 = 4096
+    loggedAssert(page1.length <= MAX_PAGE, errApprovalPageTooLong)
+    loggedAssert(page2.length <= MAX_PAGE, errApprovalPageTooLong)
+
     const boxKey = Bytes`Iap`
-    const writeEnd: uint64 = startOffset + data.length
-    if (startOffset === 0) {
-      op.Box.delete(boxKey)
-      op.Box.create(boxKey, writeEnd)
-    } else {
-      const [boxLen] = op.Box.length(boxKey)
-      if (writeEnd > boxLen) {
-        op.Box.resize(boxKey, writeEnd)
-      }
+    op.Box.delete(boxKey)
+    op.Box.create(boxKey, page1.length + page2.length)
+    op.Box.replace(boxKey, 0, page1)
+    if (page2.length > 0) {
+      op.Box.replace(boxKey, page1.length, page2)
     }
-    op.Box.replace(boxKey, startOffset, data)
   }
 
   // ── Admin: instance management ─────────────────────────---------
