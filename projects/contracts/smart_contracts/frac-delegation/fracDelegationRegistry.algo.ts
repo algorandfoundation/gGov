@@ -32,6 +32,7 @@ import {
   errEscrowAssigned,
   errInstanceAppNotConfigured,
   errInstanceAppNotExists,
+  errInstanceNameTooLong,
   errUnauthorized,
 } from '../base/errors.algo'
 import {
@@ -46,6 +47,18 @@ import { u16, u32 } from '../base/utils.algo'
 import { FracDelegationInstanceContract } from './fracDelegationInstance.algo'
 
 export const fracRegistryGGovKey = Bytes`gGovRegistryApp`
+
+/**
+ * Longest instance name `createInstance` accepts, in UTF-8 bytes.
+ *
+ * The name rides along in every `FracInstanceCommitteeStanding`, and `logInstanceCommittees` emits
+ * one of those per instance as a single AVM log - which the VM caps at 1024 bytes. The record's
+ * fixed head is 42 bytes plus the string's 2-byte length prefix, so an unbounded name could push a
+ * page past that cap and fail the *whole* page, taking every pooled-voting read of this registry
+ * down with it. Bounded here, at the one place a name enters the system, rather than truncated at
+ * every reader. Do not raise this without re-checking the record's encoded size.
+ */
+const MAX_INSTANCE_NAME_BYTES: uint64 = 64
 
 /**
  * Fractional Delegation Registry: global singleton, instance deployer.
@@ -198,6 +211,7 @@ export class FracDelegationRegistryContract extends BaseContract {
    */
   public createInstance(name: string, mbrPayment: gtxn.PaymentTxn): [Uint16, uint64] {
     this.ensureCallerIsAdmin()
+    loggedAssert(Bytes(name).length <= MAX_INSTANCE_NAME_BYTES, errInstanceNameTooLong)
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
