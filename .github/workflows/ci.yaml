@@ -105,23 +105,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Validate committee uploader
-        if: needs.changes.outputs.committee_uploader == 'true'
-        run: |
-          pnpm --filter ggov-committees format:check
-          pnpm --filter ggov-committees lint
-          pnpm --filter ggov-committees typecheck
-
-      # Holds every AlgoQuarters engine and the unit suites that used to run under the retired
-      # ggov-algoquarters package.
-      - name: Validate frac delegation pipeline
-        if: needs.changes.outputs.pipeline == 'true'
-        run: |
-          pnpm --filter frac-delegation-pipeline format:check
-          pnpm --filter frac-delegation-pipeline lint
-          pnpm --filter frac-delegation-pipeline typecheck
-          pnpm --filter frac-delegation-pipeline test
-
       - name: Install algokit
         run: pipx install algokit
 
@@ -144,6 +127,23 @@ jobs:
 
       - name: Build SDKs
         run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
+
+      - name: Validate committee uploader
+        if: needs.changes.outputs.committee_uploader == 'true'
+        run: |
+          pnpm --filter ggov-committees format:check
+          pnpm --filter ggov-committees lint
+          pnpm --filter ggov-committees typecheck
+
+      # Holds every AlgoQuarters engine and the unit suites that used to run under the retired
+      # ggov-algoquarters package.
+      - name: Validate frac delegation pipeline
+        if: needs.changes.outputs.pipeline == 'true'
+        run: |
+          pnpm --filter frac-delegation-pipeline format:check
+          pnpm --filter frac-delegation-pipeline lint
+          pnpm --filter frac-delegation-pipeline typecheck
+          pnpm --filter frac-delegation-pipeline test
 
       - name: Typecheck
         run: algokit project run typecheck
