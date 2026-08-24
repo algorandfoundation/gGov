@@ -149,9 +149,9 @@ export function getAppEventsFromTransaction<T>(
 export const INDEXER_PAGE_SIZE = 1_000
 
 /**
- * Scan indexer transactions in `[startRound, endRound)` using fixed-size windows,
- * decoding each page into records and passing them to `onBatch` to avoid storing
- * everything in memory.
+ * Scan indexer transactions in `[startRound, endRound)` using fixed-size windows, decoding each
+ * page into records and handing them to `onBatch` a window at a time — rather than accumulating
+ * the whole scan, which over a multi-million-round range is what would not fit in memory.
  *
  * Windows cover disjoint round ranges, so `concurrency` of them are fetched at once; pagination
  * *within* a window stays serial, `nextToken` being opaque. Records are still delivered to

@@ -90,7 +90,11 @@ export function diffSnapshot(computed: BalanceMap, stored: SnapshotData): string
  * Seeds from the ASA creation allocations — each asset was created by its own app, which initially
  * holds the entire supply — so it depends on no present-day chain state.
  */
-export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Promise<SnapshotData> {
+export async function buildSnapshot(
+  indexer: Indexer,
+  targetRound: bigint,
+  concurrency?: number,
+): Promise<SnapshotData> {
   const [tAlgoInfo, stAlgoInfo] = await Promise.all([
     fetchAssetMetadata(indexer, TALGO_ASA_ID),
     fetchAssetMetadata(indexer, STALGO_ASA_ID),
@@ -119,6 +123,7 @@ export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Prom
         for (const transfer of transfers) applyTransfer(balances, transfer, 'talgo')
       },
       'tALGO',
+      concurrency,
     ),
     scanAssetTransfers(
       indexer,
@@ -129,6 +134,7 @@ export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Prom
         for (const transfer of transfers) applyTransfer(balances, transfer, 'stalgo')
       },
       'stALGO',
+      concurrency,
     ),
   ])
 

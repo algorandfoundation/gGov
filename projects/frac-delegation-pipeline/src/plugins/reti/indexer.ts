@@ -14,6 +14,7 @@ async function scanRetiEvents(
   startRound: bigint,
   endRound: bigint,
   onBatch: (events: RetiEvent[]) => void,
+  concurrency?: number,
 ): Promise<void> {
   await scanTransactionRecords(
     indexer,
@@ -23,24 +24,39 @@ async function scanRetiEvents(
     endRound,
     onBatch,
     'reti',
+    concurrency,
   )
 }
 
-/** Get all events in `[startRound, endRound)` plus the epoch lengths their reward splits need. */
+/**
+ * Get all events in `[startRound, endRound)` plus the epoch lengths their reward splits need.
+ *
+ * `concurrency` bounds both fan-outs — the window scan and the per-validator box reads — so a
+ * caller on a rate-limited indexer can hold the whole call to one request at a time.
+ */
 export async function fetchRetiEvents(
   indexer: Indexer,
   registryAppId: bigint,
   startRound: bigint,
   endRound: bigint,
+  concurrency?: number,
 ): Promise<{ events: RetiEvent[]; epochRoundLengths: Map<bigint, bigint> }> {
   const events: RetiEvent[] = []
-  await scanRetiEvents(indexer, registryAppId, startRound, endRound, (batch) => {
-    for (const event of batch) events.push(event)
-  })
+  await scanRetiEvents(
+    indexer,
+    registryAppId,
+    startRound,
+    endRound,
+    (batch) => {
+      for (const event of batch) events.push(event)
+    },
+    concurrency,
+  )
   const epochRoundLengths = await fetchEpochRoundLengths(
     indexer,
     registryAppId,
     events.map((event) => event.validatorId),
+    concurrency,
   )
   return { events, epochRoundLengths }
 }

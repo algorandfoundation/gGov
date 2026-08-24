@@ -114,6 +114,7 @@ export async function buildSnapshot(
   indexer: Indexer,
   registryAppId: bigint,
   targetRound: bigint,
+  concurrency?: number,
 ): Promise<RetiSnapshotData> {
   if (targetRound < RETI_APP_CREATION_ROUND) {
     throw new Error(
@@ -127,6 +128,7 @@ export async function buildSnapshot(
     registryAppId,
     RETI_APP_CREATION_ROUND,
     targetRound,
+    concurrency,
   )
   const poolCount = new Set(events.map((event) => event.poolAppId)).size
   console.log(`  ${events.length} events from ${epochRoundLengths.size} validators and ${poolCount} pools`)

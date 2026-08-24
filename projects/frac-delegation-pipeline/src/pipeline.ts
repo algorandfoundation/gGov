@@ -44,9 +44,13 @@ interface FracPipelineArgs {
   /** Staking sources to run, defaulting to every plugin in the registry. */
   stakingSources?: string[]
   /**
-   * How many independent reads, and how many instances' escrow registrations, run at once — also
-   * passed through to the SDKs' own chunked readers, and to the AlgoQuarters window scans. Defaults
-   * to 4, matching the SDK readers. Turn it down for a rate-limited node.
+   * How many independent reads, and how many instances' escrow registrations, run at once — passed
+   * through to the SDKs' own chunked readers and to the staking-source plugins, so it also bounds
+   * the AlgoQuarters window scans and reti's per-validator box reads. Defaults to 4, matching the
+   * SDK readers and `SCAN_CONCURRENCY`. Turn it down for a rate-limited node.
+   *
+   * It is a per-caller bound, not a global one: independent readers still overlap, so a full stage-3
+   * run has several of these in flight at once (see `aq/config.ts`).
    */
   concurrency?: number
   /** Admin of both registries. Falls back to ADMIN/ADMIN_MNEMONIC in the environment. */
@@ -304,7 +308,10 @@ export class FracDelegationPipeline {
       // The promise is cached, not the resolved plugin, so two concurrent callers share one build.
       // A rejected build is cached too, which is harmless: a source that cannot be built throws the
       // run either way.
-      plugin = getPlugin(source, this.discoveryClient)
+      // `concurrency` goes to the plugin too: the window scans and box reads it owns are the
+      // pipeline's widest fan-out, so a caller turning this down for a rate-limited indexer has to
+      // reach them as well as the SDK readers.
+      plugin = getPlugin(source, this.discoveryClient, undefined, this.concurrency)
       this.pluginsBySource.set(source, plugin)
     }
     return plugin

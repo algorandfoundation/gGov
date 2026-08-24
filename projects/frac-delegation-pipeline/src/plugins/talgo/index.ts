@@ -54,8 +54,8 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
   /** Downgrade the >40%-of-supply holder check from a throw to a warning. */
   protected readonly allowLargeHolders: boolean
 
-  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>) {
-    super(algorand, overrides)
+  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>, concurrency?: number) {
+    super(algorand, overrides, concurrency)
     let appId = TALGO_APP_ID_MAINNET
     // TODO export a util in algokit-utils to validate positive integers, so we don't have to repeat this logic in every plugin
     // support both number and bigint, since the app id is a 32-bit integer but the plugin may be given a bigint override
@@ -204,7 +204,7 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
    */
   public async buildSnapshot(round: bigint): Promise<SnapshotData> {
     console.log(`[talgo] no snapshot at round ${round}, rebuilding from asset creation — this takes a while`)
-    const snapshot = await buildSnapshot(this.indexer, round)
+    const snapshot = await buildSnapshot(this.indexer, round, this.concurrency)
     logSnapshotStats(snapshot)
     console.log(`  [talgo] snapshot saved: ${this.snapshots.writeSnapshot(snapshot)}`)
     // After writing, so a flagged snapshot is still on disk to inspect
@@ -245,6 +245,7 @@ export class TalgoPipelinePlugin extends FracPipelinePlugin {
         for (const transfer of batch) into.push(transfer)
       },
       label,
+      this.concurrency,
     )
   }
 

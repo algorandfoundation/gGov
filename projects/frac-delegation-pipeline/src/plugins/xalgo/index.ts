@@ -77,8 +77,8 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
   /** Downgrade the >40%-of-supply holder check from a throw to a warning. */
   protected readonly allowLargeHolders: boolean
 
-  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>) {
-    super(algorand, overrides)
+  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>, concurrency?: number) {
+    super(algorand, overrides, concurrency)
     let appId = XALGO_APP_ID_MAINNET
     if (overrides && 'appId' in overrides) {
       const override = overrides.appId
@@ -193,7 +193,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
     // before the window) must credit its owner, not itself. Resolved once, cached for every later window.
     const beneficiaries = this.beneficiaries.readMap()
     const candidates = collectBeneficiaryCandidates(balances, transfers)
-    const { added, warnings } = await resolveBeneficiaries(this.indexer, candidates, beneficiaries)
+    const { added, warnings } = await resolveBeneficiaries(this.indexer, candidates, beneficiaries, this.concurrency)
     console.log(`  [xalgo] ${candidates.size} xALGO/fxALGO holders in the window, ${added.length} newly resolved`)
     for (const warning of warnings) console.warn(`  [xalgo] ⚠ ${warning}`)
 
@@ -251,7 +251,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
    */
   public async buildSnapshot(round: bigint): Promise<SnapshotData> {
     console.log(`[xalgo] no snapshot at round ${round}, rebuilding from asset creation — this takes a while`)
-    const snapshot = await buildSnapshot(this.indexer, round)
+    const snapshot = await buildSnapshot(this.indexer, round, this.concurrency)
     logSnapshotStats(snapshot, this.beneficiaries.readMap())
     console.log(`  [xalgo] snapshot saved: ${this.snapshots.writeSnapshot(snapshot)}`)
     // After writing, so a flagged snapshot is still on disk to inspect
@@ -292,6 +292,7 @@ export class XalgoPipelinePlugin extends FracPipelinePlugin {
         for (const transfer of batch) into.push(transfer)
       },
       label,
+      this.concurrency,
     )
   }
 

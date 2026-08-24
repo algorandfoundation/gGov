@@ -58,8 +58,8 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
   /** Snapshot persistence, bound to `overrides.snapshotsDir` or the packaged default. */
   protected readonly snapshots: RetiSnapshotStore
 
-  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>) {
-    super(algorand, overrides)
+  constructor(algorand: AlgorandClient, overrides?: Record<string, unknown>, concurrency?: number) {
+    super(algorand, overrides, concurrency)
     let registryAppId = RETI_REGISTRY_APP_ID_MAINNET
     if (overrides && 'registryAppId' in overrides) {
       const override = overrides.registryAppId
@@ -209,7 +209,7 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
    */
   public async buildSnapshot(round: bigint): Promise<RetiSnapshotData> {
     console.log(`[reti] no snapshot at round ${round}, rebuilding from registry creation — this takes a while`)
-    const snapshot = await buildSnapshot(this.indexer, this.registryAppId, round)
+    const snapshot = await buildSnapshot(this.indexer, this.registryAppId, round, this.concurrency)
     console.log(`  [reti] snapshot saved: ${this.snapshots.writeSnapshot(snapshot)}`)
     return snapshot
   }
@@ -252,6 +252,7 @@ export class RetiPipelinePlugin extends FracPipelinePlugin {
       this.registryAppId,
       periodStart,
       periodEnd,
+      this.concurrency,
     )
     const poolCount = new Set(events.map((event) => event.poolAppId)).size
     console.log(

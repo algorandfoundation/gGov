@@ -33,15 +33,17 @@ export const AVAILABLE_SOURCES = Object.keys(PLUGIN_CLASSES)
  * @param source staking source name, e.g. `reti`
  * @param algorand client the plugin reads staking data with
  * @param overrides plugin-specific configuration, validated by the plugin itself
+ * @param concurrency independent reads the plugin runs at once; defaults to `SCAN_CONCURRENCY`
  */
 export function createUninitializedPlugin(
   source: string,
   algorand: AlgorandClient,
   overrides?: Record<string, unknown>,
+  concurrency?: number,
 ): FracPipelinePlugin {
   const Plugin = PLUGIN_CLASSES[source]
   if (!Plugin) throw new Error(`Unknown staking source: ${source}`)
-  return new Plugin(algorand, overrides)
+  return new Plugin(algorand, overrides, concurrency)
 }
 
 /**
@@ -49,14 +51,16 @@ export function createUninitializedPlugin(
  * @param source staking source name, e.g. `reti`
  * @param algorand client the plugin reads staking data with
  * @param overrides plugin-specific configuration, validated by the plugin itself
+ * @param concurrency independent reads the plugin runs at once; defaults to `SCAN_CONCURRENCY`
  * @returns initialized plugin instance
  */
 export async function getPlugin(
   source: string,
   algorand: AlgorandClient,
   overrides?: Record<string, unknown>,
+  concurrency?: number,
 ): Promise<FracPipelinePlugin> {
-  const plugin = createUninitializedPlugin(source, algorand, overrides)
+  const plugin = createUninitializedPlugin(source, algorand, overrides, concurrency)
   await plugin.init()
   return plugin
 }
@@ -65,10 +69,11 @@ export async function getPlugin(
 export async function getAllPlugins(
   algorand: AlgorandClient,
   overrides?: Record<string, unknown>,
+  concurrency?: number,
 ): Promise<Record<string, FracPipelinePlugin>> {
   const plugins: Record<string, FracPipelinePlugin> = {}
   for (const source of AVAILABLE_SOURCES) {
-    plugins[source] = await getPlugin(source, algorand, overrides)
+    plugins[source] = await getPlugin(source, algorand, overrides, concurrency)
   }
   return plugins
 }

@@ -105,7 +105,11 @@ export function diffSnapshot(computed: BalanceMap, stored: SnapshotData): string
  * holds the entire supply (xALGO by the consensus app, fxALGO by the pool) — so it depends on no
  * present-day chain state.
  */
-export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Promise<SnapshotData> {
+export async function buildSnapshot(
+  indexer: Indexer,
+  targetRound: bigint,
+  concurrency?: number,
+): Promise<SnapshotData> {
   const [xAlgoInfo, fxAlgoInfo] = await Promise.all([
     fetchAssetMetadata(indexer, XALGO_ASA_ID),
     fetchAssetMetadata(indexer, FXALGO_ASA_ID),
@@ -134,6 +138,7 @@ export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Prom
         for (const transfer of transfers) applyTransfer(balances, transfer, 'xalgo')
       },
       'xALGO',
+      concurrency,
     ),
     scanAssetTransfers(
       indexer,
@@ -144,6 +149,7 @@ export async function buildSnapshot(indexer: Indexer, targetRound: bigint): Prom
         for (const transfer of transfers) applyTransfer(balances, transfer, 'fxalgo')
       },
       'fxALGO',
+      concurrency,
     ),
   ])
 
