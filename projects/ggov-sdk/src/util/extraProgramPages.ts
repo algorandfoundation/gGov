@@ -14,6 +14,6 @@ const PROGRAM_PAGE_BYTES = 2048
 export function extraProgramPages(approval: Uint8Array, clear: Uint8Array = new Uint8Array()): number {
   const total = approval.length + clear.length
   const pages = total <= PROGRAM_PAGE_BYTES ? 0 : Math.ceil(total / PROGRAM_PAGE_BYTES) - 1
-  if (pages > 7) throw new Error(`Program too large: needs ${pages} extra program pages (max 7)`) 
+  if (pages > 7) throw new Error(`Program too large: needs ${pages} extra program pages (max 7)`)
   return pages
 }
