@@ -77,10 +77,14 @@ export const queryKeys = {
   // Registry-wide and account-independent, so one entry serves every pool page.
   fracRoster: ['fracRoster'] as const,
   // One pool's members in one committee, with the AlgoQuarters each holds there.
-  // `rosterSize` is part of the key because the query joins the registry roster,
-  // which is its own entry: without it a grown roster would never reach this one.
-  fracPoolMembers: (instanceNumId: number, committeeId: string, rosterSize: number) =>
-    ['fracPoolMembers', instanceNumId, committeeId, rosterSize] as const,
+  // `memberIds` is part of the key because the query joins the registry roster,
+  // which is its own entry: without it a changed roster would never reach this
+  // one. The ids rather than the roster's size, because an account already in the
+  // registry can join another instance without the size moving at all — that
+  // account would then stay missing from this pool until the entry went stale.
+  // Sorted+joined for an order-independent key, same as `fracPoolVotingRecords`.
+  fracPoolMembers: (instanceNumId: number, committeeId: string, memberIds: number[]) =>
+    ['fracPoolMembers', instanceNumId, committeeId, [...memberIds].sort((a, b) => a - b).join(',')] as const,
   // Several members' internal vote records on one pool + period, in one read.
   // Sorted+joined so the key is order-independent, same as `fracAccounts`.
   fracPoolVotingRecords: (instanceNumId: number, periodId: number, accountIds: number[]) =>

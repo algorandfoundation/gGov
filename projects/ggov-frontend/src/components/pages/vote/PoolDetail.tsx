@@ -181,8 +181,25 @@ const MEMBER_GRID = 'grid grid-cols-[22px_1fr_16px] items-center gap-2.5 sm:grid
 /** How a member scored one item: the option its stake landed on, or no vote at all. */
 type MemberChoice = 'support' | 'veto' | 'abstain'
 
-function ChoiceDot({ on, tone }: { on: boolean; tone: string }) {
-  return <span className={cn('inline-block size-[9px] rounded-full', on ? tone : 'border border-input bg-muted')} />
+/**
+ * One cell of the member's per-item vote: a filled dot under the option its stake
+ * landed on, hollow ones elsewhere.
+ *
+ * The colour and the column are the whole signal visually, and neither survives
+ * into assistive tech, so the selected dot carries the option's name as text and
+ * the unselected ones are hidden outright — three "not selected" announcements
+ * per row would bury the one that matters.
+ */
+function ChoiceDot({ on, tone, label }: { on: boolean; tone: string; label: string }) {
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className={cn('inline-block size-[9px] rounded-full', on ? tone : 'border border-input bg-muted')}
+      />
+      {on && <span className="sr-only">{label}</span>}
+    </>
+  )
 }
 
 interface MemberRowData extends PoolMember {
@@ -205,6 +222,7 @@ function MemberRow({
   expanded,
   onToggle,
   recordsLoading,
+  recordsError,
 }: {
   member: MemberRowData
   items: RecordItem[]
@@ -212,6 +230,8 @@ function MemberRow({
   expanded: boolean
   onToggle: () => void
   recordsLoading: boolean
+  /** The vote records could not be read — absence means "unknown", not "did not vote". */
+  recordsError: boolean
 }) {
   const { data: name } = useAddressName(member.address)
   const label = name ?? ellipseAddress(member.address, 5)
@@ -249,8 +269,8 @@ function MemberRow({
               <span aria-hidden>·</span>
               <span>{member.share.toFixed(2)}%</span>
               <span aria-hidden>·</span>
-              <span className={member.voted ? 'text-success-strong' : undefined}>
-                {recordsLoading ? '…' : member.voted ? 'Voted' : 'Not voted'}
+              <span className={member.voted && !recordsError ? 'text-success-strong' : undefined}>
+                {recordsLoading ? '…' : recordsError ? 'Unavailable' : member.voted ? 'Voted' : 'Not voted'}
               </span>
             </span>
           </span>
@@ -268,10 +288,10 @@ function MemberRow({
         <span
           className={cn(
             'hidden text-right text-[12.5px] sm:block',
-            member.voted ? 'text-success-strong' : 'text-muted-foreground',
+            member.voted && !recordsError ? 'text-success-strong' : 'text-muted-foreground',
           )}
         >
-          {recordsLoading ? '…' : member.voted ? 'Voted' : 'Not voted'}
+          {recordsLoading ? '…' : recordsError ? 'Unavailable' : member.voted ? 'Voted' : 'Not voted'}
         </span>
         <ChevronDown
           className={cn('size-3.5 text-muted-foreground transition-transform duration-150', expanded && 'rotate-180')}
@@ -330,13 +350,13 @@ function MemberRow({
                       <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.kind}</span>
                     </span>
                     <span className="text-center">
-                      <ChoiceDot on={choice === 'support'} tone={SUPPORT_TONE} />
+                      <ChoiceDot on={choice === 'support'} tone={SUPPORT_TONE} label="Support" />
                     </span>
                     <span className="text-center">
-                      <ChoiceDot on={choice === 'veto'} tone={VETO_TONE} />
+                      <ChoiceDot on={choice === 'veto'} tone={VETO_TONE} label="Veto" />
                     </span>
                     <span className="text-center">
-                      <ChoiceDot on={choice === 'abstain'} tone={ABSTAIN_TONE} />
+                      <ChoiceDot on={choice === 'abstain'} tone={ABSTAIN_TONE} label="Abstain" />
                     </span>
                   </div>
                 )
@@ -420,7 +440,7 @@ export default function PoolDetail() {
   // builds a fresh object for an election period.
   const terms = useMemo(() => periodTerms(periodBody?.elect), [periodBody?.elect])
 
-  const { cache, isLoading: loadingCache } = usePoolVoteCache(instanceNumId, periodId)
+  const { cache, isLoading: loadingCache, isError: cacheError } = usePoolVoteCache(instanceNumId, periodId)
   const {
     members,
     isLoading: loadingMembers,
@@ -500,7 +520,11 @@ export default function PoolDetail() {
   const start = page * PAGE_SIZE
   const paged = useMemo(() => members.slice(start, start + PAGE_SIZE), [members, start])
   const pagedIds = useMemo(() => paged.map((m) => m.accountId), [paged])
-  const { byAccountId: records, isLoading: loadingRecords } = usePoolMemberRecords(instanceNumId, periodId, pagedIds)
+  const {
+    byAccountId: records,
+    isLoading: loadingRecords,
+    isError: recordsError,
+  } = usePoolMemberRecords(instanceNumId, periodId, pagedIds)
 
   const myAddresses = useMemo(() => new Set(activeAddress ? [activeAddress] : []), [activeAddress])
 
@@ -882,6 +906,13 @@ export default function PoolDetail() {
               <Skeleton key={i} className="h-11 w-full" />
             ))}
           </div>
+        ) : cacheError ? (
+          // Ahead of the empty-ballot branch on purpose: a failed read also leaves
+          // `cache` undefined and `items` empty, and "no items on this ballot" is a
+          // claim about the ballot rather than about the read.
+          <p className="px-3.5 py-4 text-[13px] text-muted-foreground">
+            This pool&rsquo;s voting record is unavailable right now.
+          </p>
         ) : cache === null ? (
           <p className="px-3.5 py-4 text-[13px] text-muted-foreground">
             This pool has not synced {periodLabel}, so it could not have voted on it.
@@ -969,6 +1000,7 @@ export default function PoolDetail() {
                 expanded={openMember === member.address}
                 onToggle={() => setOpenMember((open) => (open === member.address ? null : member.address))}
                 recordsLoading={loadingRecords}
+                recordsError={recordsError}
               />
             ))}
             {totalPages > 1 && (
