@@ -10,6 +10,8 @@ overrides:
   sharp: ^0.35.3
   undici: ^7.29.0
   tar: ^7.5.21
+  '@algorandfoundation/algorand-typescript': ^1.3.0
+  '@algorandfoundation/puya-ts': ^1.3.0
   postcss: ^8.5.23
   nanoid: ^3.3.18
   js-yaml@4: ^4.3.1
@@ -56,10 +58,10 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.0
-        version: 9.2.0(algosdk@3.5.2)
+        version: 9.2.0(algosdk@3.7.0)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       ggov-sdk:
         specifier: file:../../ggov-sdk
         version: link:../../ggov-sdk
@@ -77,8 +79,8 @@ importers:
   projects/contracts:
     dependencies:
       '@algorandfoundation/algorand-typescript':
-        specifier: ^1.2.0
-        version: 1.2.0(tslib@2.8.1)
+        specifier: ^1.3.0
+        version: 1.3.0(tslib@2.8.1)
       '@d13co/superbox':
         specifier: ^2.0.0
         version: 2.0.0(tslib@2.8.1)
@@ -91,19 +93,19 @@ importers:
     devDependencies:
       '@algorandfoundation/algokit-client-generator':
         specifier: ^6.0.0
-        version: 6.0.1(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)
+        version: 6.0.1(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)
       '@algorandfoundation/algokit-utils':
-        specifier: ^9.0.0
-        version: 9.2.0(algosdk@3.5.2)
+        specifier: ^9.2.0
+        version: 9.2.0(algosdk@3.7.0)
       '@algorandfoundation/algokit-utils-debug':
         specifier: ^1.0.4
-        version: 1.0.4(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)
+        version: 1.0.4(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)
       '@algorandfoundation/algorand-typescript-testing':
         specifier: ^1.2.0
         version: 1.2.0(tslib@2.8.1)
       '@algorandfoundation/puya-ts':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.3.0
+        version: 1.3.0
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.62.0)(tslib@2.8.1)(typescript@5.9.3)
@@ -117,8 +119,8 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
       algosdk:
-        specifier: ^3.0.0
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       better-npm-audit:
         specifier: ^3.11.0
         version: 3.11.0
@@ -139,10 +141,10 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.0
-        version: 9.2.0(algosdk@3.5.2)
+        version: 9.2.0(algosdk@3.7.0)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       frac-delegation-sdk:
         specifier: link:../frac-delegation-sdk
         version: link:../frac-delegation-sdk
@@ -154,7 +156,7 @@ importers:
         version: 7.0.4
       reti-ghost-sdk:
         specifier: ^0.2.0
-        version: 0.2.0(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)
+        version: 0.2.0(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
@@ -170,10 +172,10 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.0
-        version: 9.2.0(algosdk@3.5.2)
+        version: 9.2.0(algosdk@3.7.0)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       p-map:
         specifier: ^7.0.4
         version: 7.0.4
@@ -189,19 +191,19 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.0
-        version: 9.2.0(algosdk@3.5.2)
+        version: 9.2.0(algosdk@3.7.0)
       '@blockshake/defly-connect':
         specifier: ^1.2.1
-        version: 1.2.1(algosdk@3.5.2)
+        version: 1.2.1(algosdk@3.7.0)
       '@d13co/escreg-sdk':
         specifier: ^0.0.3
-        version: 0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)
+        version: 0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)
       '@d13co/open-in':
         specifier: ^0.1.2
         version: 0.1.2
       '@perawallet/connect':
         specifier: ^1.4.1
-        version: 1.4.2(algosdk@3.5.2)
+        version: 1.4.2(algosdk@3.7.0)
       '@radix-ui/react-slot':
         specifier: ^1.1.0
         version: 1.2.4(@types/react@18.3.27)(react@18.3.1)
@@ -231,16 +233,16 @@ importers:
         version: 3.26.0
       '@txnlab/use-wallet':
         specifier: ^4.0.0
-        version: 4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.5.2))(@perawallet/connect@1.4.2(algosdk@3.5.2))(algosdk@3.5.2)(lute-connect@1.7.0)
+        version: 4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.7.0))(@perawallet/connect@1.4.2(algosdk@3.7.0))(algosdk@3.7.0)(lute-connect@1.7.0)
       '@txnlab/use-wallet-react':
         specifier: ^4.0.0
-        version: 4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.5.2))(@perawallet/connect@1.4.2(algosdk@3.5.2))(algosdk@3.5.2)(lute-connect@1.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.7.0))(@perawallet/connect@1.4.2(algosdk@3.7.0))(algosdk@3.7.0)(lute-connect@1.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@yornaath/batshit':
         specifier: ^0.14.0
         version: 0.14.0
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -343,10 +345,10 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.0
-        version: 9.2.0(algosdk@3.5.2)
+        version: 9.2.0(algosdk@3.7.0)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       js-sha512:
         specifier: ^0.9.0
         version: 0.9.0
@@ -394,14 +396,14 @@ packages:
   '@algorandfoundation/algorand-typescript-testing@1.2.0':
     resolution: {integrity: sha512-U3zJPU1WvxleEu4OPmAhnetNm0joL2HdjU7GXuQjFAzsdxEzgnpHmhDTdSSQNIgwn/GlrcBBY6r07PPeNqAaZQ==}
 
-  '@algorandfoundation/algorand-typescript@1.2.0':
-    resolution: {integrity: sha512-OfwmIOszhG7ym673s0yRZL0WpWU/GJ77knwi90qkzTRPHAyshp2UwSsBwdDrJWBn/QiJT4OyB7a2Nodpn5xW2A==}
+  '@algorandfoundation/algorand-typescript@1.3.0':
+    resolution: {integrity: sha512-fzYiZD0SU9umaAbZpUT7XD5JxzBaY/h58FsQOfPJe9+3el30Ql7bAI7vy8QQfLSxxRqVPB8Ur4jQnLLcPY5y1A==}
     engines: {node: '>=22.11.0'}
     peerDependencies:
       tslib: ^2.6.2
 
-  '@algorandfoundation/puya-ts@1.2.0':
-    resolution: {integrity: sha512-O4TRku7J2+gxQVeKsWDAxKrS/7Zw5I6ldtHO6vFtcqeP5MamDY+MUiuRdPhyxGNhgduoSVfJMJItOAIIncGMAg==}
+  '@algorandfoundation/puya-ts@1.3.0':
+    resolution: {integrity: sha512-/pQKtJtNhVIHUN/DX7SyS2DvdpxBuozojtnFpLij4R4Z58MmujY2RwbXGeo9wtA6B/g4r2omJU18KUJhZoMGHw==}
     engines: {node: '>=22.11.0'}
     hasBin: true
     bundledDependencies:
@@ -3157,8 +3159,8 @@ packages:
     resolution: {integrity: sha512-08k7pBQnkaUB5p+jL7f1TRaUIlTSDE0cesFu1mD7llLao+1cAhtvvZmGE3OnisTd0xOn118QMw74SRqddqaYvw==}
     engines: {node: '>= 14'}
 
-  algosdk@3.5.2:
-    resolution: {integrity: sha512-frhGtZl1JvfrLRKmMvUm880wj4OiWsWo2FhbreNWh7pdFsKuWPj60fV682wt/CYefLI70iwHavPOwGBkTVt0VA==}
+  algosdk@3.7.0:
+    resolution: {integrity: sha512-6mr5w+A+A87/rAd4Y5hSmKSfvLkOKeik81w8Tte9ZxSqnwqUuWUioQsJail3ZyCbJtEctJXJTxe7Sx50/lQi3g==}
     engines: {node: '>=18.0.0'}
 
   ansi-escapes@7.3.0:
@@ -4532,10 +4534,6 @@ packages:
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
-  minipass@7.1.2:
-    resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
-    engines: {node: '>=16 || 14 >=14.17'}
-
   minipass@7.1.3:
     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
@@ -5620,19 +5618,19 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@algorandfoundation/algokit-client-generator@6.0.1(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)':
+  '@algorandfoundation/algokit-client-generator@6.0.1(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)':
     dependencies:
-      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.5.2)
-      algosdk: 3.5.2
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
+      algosdk: 3.7.0
       chalk: 5.6.2
       change-case: 5.4.4
       commander: 14.0.2
       jsonschema: 1.5.0
 
-  '@algorandfoundation/algokit-utils-debug@1.0.4(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)':
+  '@algorandfoundation/algokit-utils-debug@1.0.4(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)':
     dependencies:
-      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.5.2)
-      algosdk: 3.5.2
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
+      algosdk: 3.7.0
       buffer: 6.0.3
 
   '@algorandfoundation/algokit-utils@10.0.0-beta.4':
@@ -5650,15 +5648,15 @@ snapshots:
       tweetnacl: 1.0.3
       vlq: 2.0.4
 
-  '@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2)':
+  '@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0)':
     dependencies:
-      algosdk: 3.5.2
+      algosdk: 3.7.0
       buffer: 6.0.3
 
   '@algorandfoundation/algorand-typescript-testing@1.2.0(tslib@2.8.1)':
     dependencies:
-      '@algorandfoundation/algorand-typescript': 1.2.0(tslib@2.8.1)
-      '@algorandfoundation/puya-ts': 1.2.0
+      '@algorandfoundation/algorand-typescript': 1.3.0(tslib@2.8.1)
+      '@algorandfoundation/puya-ts': 1.3.0
       elliptic: 6.6.1
       js-sha256: 0.11.1
       js-sha3: 0.9.3
@@ -5668,14 +5666,14 @@ snapshots:
     transitivePeerDependencies:
       - tslib
 
-  '@algorandfoundation/algorand-typescript@1.2.0(tslib@2.8.1)':
+  '@algorandfoundation/algorand-typescript@1.3.0(tslib@2.8.1)':
     dependencies:
       tslib: 2.8.1
 
-  '@algorandfoundation/puya-ts@1.2.0':
+  '@algorandfoundation/puya-ts@1.3.0':
     dependencies:
       '@algorandfoundation/algokit-utils': 10.0.0-beta.4
-      '@algorandfoundation/algorand-typescript': 1.2.0(tslib@2.8.1)
+      '@algorandfoundation/algorand-typescript': 1.3.0(tslib@2.8.1)
       arcsecond: 5.0.0
       argparse: 2.0.1
       chalk: 5.6.2
@@ -5922,12 +5920,12 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@blockshake/defly-connect@1.2.1(algosdk@3.5.2)':
+  '@blockshake/defly-connect@1.2.1(algosdk@3.7.0)':
     dependencies:
       '@likecoin/qr-code-styling': 1.6.6
       '@walletconnect/client': 1.8.0
       '@walletconnect/types': 1.8.0
-      algosdk: 3.5.2
+      algosdk: 3.7.0
       bowser: 2.11.0
       buffer: 6.0.3
       lottie-web: 5.13.0
@@ -5976,17 +5974,17 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@d13co/escreg-sdk@0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2)':
+  '@d13co/escreg-sdk@0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)':
     dependencies:
-      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.5.2)
-      algosdk: 3.5.2
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
+      algosdk: 3.7.0
       p-map: 7.0.4
 
   '@d13co/open-in@0.1.2': {}
 
   '@d13co/superbox@2.0.0(tslib@2.8.1)':
     dependencies:
-      '@algorandfoundation/algorand-typescript': 1.2.0(tslib@2.8.1)
+      '@algorandfoundation/algorand-typescript': 1.3.0(tslib@2.8.1)
     transitivePeerDependencies:
       - tslib
 
@@ -6461,12 +6459,12 @@ snapshots:
 
   '@oozcitak/util@10.0.0': {}
 
-  '@perawallet/connect@1.4.2(algosdk@3.5.2)':
+  '@perawallet/connect@1.4.2(algosdk@3.7.0)':
     dependencies:
       '@evanhahn/lottie-web-light': 5.8.1
       '@walletconnect/client': 1.8.0
       '@walletconnect/types': 1.8.0
-      algosdk: 3.5.2
+      algosdk: 3.7.0
       bowser: 2.11.0
       buffer: 6.0.3
       qr-code-styling: 1.6.0-rc.1
@@ -7906,16 +7904,16 @@ snapshots:
 
   '@tsconfig/node22@22.0.5': {}
 
-  '@txnlab/use-wallet-react@4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.5.2))(@perawallet/connect@1.4.2(algosdk@3.5.2))(algosdk@3.5.2)(lute-connect@1.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@txnlab/use-wallet-react@4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.7.0))(@perawallet/connect@1.4.2(algosdk@3.7.0))(algosdk@3.7.0)(lute-connect@1.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tanstack/react-store': 0.8.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@txnlab/use-wallet': 4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.5.2))(@perawallet/connect@1.4.2(algosdk@3.5.2))(algosdk@3.5.2)(lute-connect@1.7.0)
-      algosdk: 3.5.2
+      '@txnlab/use-wallet': 4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.7.0))(@perawallet/connect@1.4.2(algosdk@3.7.0))(algosdk@3.7.0)(lute-connect@1.7.0)
+      algosdk: 3.7.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
-      '@blockshake/defly-connect': 1.2.1(algosdk@3.5.2)
-      '@perawallet/connect': 1.4.2(algosdk@3.5.2)
+      '@blockshake/defly-connect': 1.2.1(algosdk@3.7.0)
+      '@perawallet/connect': 1.4.2(algosdk@3.7.0)
       lute-connect: 1.7.0
     transitivePeerDependencies:
       - '@agoralabs-sh/avm-web-provider'
@@ -7924,13 +7922,13 @@ snapshots:
       - '@web3auth/modal'
       - '@web3auth/single-factor-auth'
 
-  '@txnlab/use-wallet@4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.5.2))(@perawallet/connect@1.4.2(algosdk@3.5.2))(algosdk@3.5.2)(lute-connect@1.7.0)':
+  '@txnlab/use-wallet@4.4.0(@blockshake/defly-connect@1.2.1(algosdk@3.7.0))(@perawallet/connect@1.4.2(algosdk@3.7.0))(algosdk@3.7.0)(lute-connect@1.7.0)':
     dependencies:
       '@tanstack/store': 0.8.0
-      algosdk: 3.5.2
+      algosdk: 3.7.0
     optionalDependencies:
-      '@blockshake/defly-connect': 1.2.1(algosdk@3.5.2)
-      '@perawallet/connect': 1.4.2(algosdk@3.5.2)
+      '@blockshake/defly-connect': 1.2.1(algosdk@3.7.0)
+      '@perawallet/connect': 1.4.2(algosdk@3.7.0)
       lute-connect: 1.7.0
 
   '@types/aria-query@5.0.4': {}
@@ -8351,7 +8349,7 @@ snapshots:
 
   algorand-msgpack@1.1.0: {}
 
-  algosdk@3.5.2:
+  algosdk@3.7.0:
     dependencies:
       algorand-msgpack: 1.1.0
       hi-base32: 0.5.1
@@ -9946,8 +9944,6 @@ snapshots:
 
   minimist@1.2.8: {}
 
-  minipass@7.1.2: {}
-
   minipass@7.1.3: {}
 
   minizlib@3.1.0:
@@ -10086,7 +10082,7 @@ snapshots:
   path-scurry@2.0.2:
     dependencies:
       lru-cache: 11.2.4
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   path-to-regexp@6.3.0: {}
 
@@ -10487,10 +10483,10 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  reti-ghost-sdk@0.2.0(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.5.2))(algosdk@3.5.2):
+  reti-ghost-sdk@0.2.0(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0):
     dependencies:
-      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.5.2)
-      algosdk: 3.5.2
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
+      algosdk: 3.7.0
 
   rfdc@1.4.1: {}
 

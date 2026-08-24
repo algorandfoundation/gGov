@@ -1,10 +1,11 @@
-#pragma version 11
+#pragma version 13
 #pragma typetrack false
+#pragma autosalt false
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 2 1 4
-    bytecblock "t" "o" "registryApp" 0x0000 0x151f7c75 "votingStart" "votingEnd" 0x0002 "P" "committeeId" 0x000000000000000000 "ready" "periodId" "ERR:AUTH" "v" 0x00 "firstVotingRound" "lastVotingRound" 0x00020002 "ERR:GT_OB" 0xc8d461ab "ERR:GV_MM" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(C4EBQw==) "Abstain" "ERR:GT_OA"
+    bytecblock "t" "o" "registryApp" 0x0000 0x151f7c75 "votingStart" "votingEnd" 0x0002 "P" "committeeId" 0x000000000000000000 "ready" "periodId" "ERR:AUTH" "v" 0x00 "firstVotingRound" "lastVotingRound" 0x00020002 "ERR:GT_OB" 0xc8d461ab "ERR:GV_MM" 0x0000000000000000000000000000000000000000000000000000000000000000 0x002a0000 0x0004 0x002a base64(DYEBQw==) "Abstain" "ERR:GT_OA"
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/ggov-period/ggovPeriod.algo.ts:67
@@ -3611,9 +3612,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
-    bytec 26 // base64(C4EBQw==)
+    bytec 26 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    bytec 26 // base64(C4EBQw==)
+    bytec 26 // base64(DYEBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:33-38
     // itxn

@@ -1,10 +1,11 @@
-#pragma version 11
+#pragma version 13
 #pragma typetrack false
+#pragma autosalt false
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 2 32 4096
-    bytecblock 0x151f7c75 "i" "Iap" "ERR:FI_NX" "ERR:AUTH" "admin" "lastInstanceNumId" "mbrTopUp" "lastAccountId" base64(C4EBQw==) "defaultOperator" "gGovRegistryApp" 0x92d03753 0x000f 0xcb08ea72 0x002a 0x00060000
+    bytecblock 0x151f7c75 "i" "Iap" "ERR:FI_NX" "ERR:AUTH" "admin" "lastInstanceNumId" "mbrTopUp" "lastAccountId" base64(DYEBQw==) "defaultOperator" "gGovRegistryApp" 0x92d03753 0x000f 0xcb08ea72 0x002a 0x00060000
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:72
@@ -524,7 +525,7 @@ createInstance_ternary_merge@10:
     itxn_field ExtraProgramPages
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:242
     // const compiled = compile(FracDelegationInstanceContract) // clearStateProgram only — approval comes from box
-    bytec 9 // base64(C4EBQw==)
+    bytec 9 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
     // smart_contracts/frac-delegation/fracDelegationRegistry.algo.ts:248
     // methodSelector(FracDelegationInstanceContract.prototype.createApplication),
@@ -2518,9 +2519,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
-    bytec 9 // base64(C4EBQw==)
+    bytec 9 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    bytec 9 // base64(C4EBQw==)
+    bytec 9 // base64(DYEBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:33-38
     // itxn

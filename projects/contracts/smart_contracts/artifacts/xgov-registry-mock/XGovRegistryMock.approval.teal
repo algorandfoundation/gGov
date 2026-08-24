@@ -1,10 +1,11 @@
-#pragma version 11
+#pragma version 13
 #pragma typetrack false
+#pragma autosalt false
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 6 32
-    bytecblock base64(C4EBQw==) "x" 0x151f7c75
+    bytecblock base64(DYEBQw==) "x" 0x151f7c75
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/base/account-id.algo.ts:11
@@ -120,9 +121,9 @@ createProposal:
     itxn_field GlobalNumByteSlice
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:46
     // const proposalContract = compile(XGovProposalMock)
-    bytec_0 // base64(C4EBQw==)
+    bytec_0 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    pushbytes base64(CyAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQAAyKDEAZykjZyqAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZysjZycEI2cxG0EARzEZFEQxGESCCAQkYV+QBBhBoNIEht09YQQugVUUBNB6NJ4ERczFuQSWn1rPBKOi1Xo2GgCOCAAJAD0AXQBtAH4AjgCfALEAMRkUMRgUEEM2GgFJFSUSRIABVkxQSb1JTwJIQQAYTL5EFxaAAQAjTwNUUIAEFR98dUxQsCJDRQEjQv/mNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIgAaChMZyJDNhoBSRUkEkQXiABXKUxnIkM2GgFJFSUSRIgARypMZyJDNhoBSRUkEkQXiAA2K0xnIkM2GgFJFSQSRBeIACUnBExnIkM2GgFJFSUSRDYaAkkVJBJEF4gAC4ABVk8CUEwWvyJDMQAjKGVEEkAADIAIRVJSOkFVVEiwAIk=)
+    pushbytes base64(DSAEAQAIICYFCHByb3Bvc2VyBnN0YXR1cwxjb21taXR0ZWVfaWQMdm90ZV9vcGVuX3RzD3ZvdGluZ19kdXJhdGlvbjEYQGQoMQBnKSNnKoAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABnKyNnJwQjZzEbQY4BMRkURDEYRIIIBCRhX5AEGEGg0gSG3T1hBC6BVRQE0Ho0ngRFzMW5BJafWs8Eo6LVejYaAI4IAAkAOwBbAGsAfACMAJwArQAxGRQxGBQQQzYaAUkVJRJEgAFWTFBJvUlPAkhBMEy+RBcWgAEAI08DVFCABBUffHVMULAiQ0UBI0ItNhoBFSUSRDYaAhUkEkQ2GgMVJBJEgAYVH3x1AACwIkM2GgFJFSUSRIjKAShMZyJDNhoBSRUkEkQXiKgBKUxnIkM2GgFJFSUSRIiIASpMZyJDNhoBSRUkEkQXiGgrTGciQzYaAUkVJBJEF4hIJwRMZyJDNhoBSRUlEkQ2GgJJFSQSRBeIFoABVk8CUEwWvyJDMQAjKGVEEkAYgAhFUlI6QVVUSLAAiQ==)
     itxn_field ApprovalProgramPages
     // smart_contracts/xgov-registry-mock/xGovRegistryMock.algo.ts:48-54
     // const created = itxn
@@ -248,9 +249,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
-    bytec_0 // base64(C4EBQw==)
+    bytec_0 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    bytec_0 // base64(C4EBQw==)
+    bytec_0 // base64(DYEBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:33-38
     // itxn

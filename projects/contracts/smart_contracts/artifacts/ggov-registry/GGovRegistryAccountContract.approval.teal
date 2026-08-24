@@ -1,10 +1,11 @@
-#pragma version 11
+#pragma version 13
 #pragma typetrack false
+#pragma autosalt false
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 32
-    bytecblock base64(C4EBQw==)
+    bytecblock base64(DYEBQw==)
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/ggov-registry/ggovRegistryAccount.algo.ts:24
@@ -143,9 +144,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
-    bytec_0 // base64(C4EBQw==)
+    bytec_0 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    bytec_0 // base64(C4EBQw==)
+    bytec_0 // base64(DYEBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:33-38
     // itxn

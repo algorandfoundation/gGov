@@ -1,10 +1,11 @@
-#pragma version 11
+#pragma version 13
 #pragma typetrack false
+#pragma autosalt false
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 2 1 4
-    bytecblock 0x151f7c75 0x0000 0x000000000000000000 "registryApp" "escrows" "c" "A" "q" "p" "ERR:RM" 0x0002 "operator" "instanceNumId" "ERR:FA_NS" "V" "E" "r" "ERR:C_NX" "ERR:FA_NC" 0xec402f3c "ready" 0x0008 0x0035 "name" "admin" "ERR:FA_NX" "ERR:GP_NX" "ERR:GP_NR" "ERR:FP_MM" "votingStart" "votingEnd" "committeeId" 0xc8d461ab "ERR:GV_MM" 0x0000030000 base64(C4EBQw==) "ERR:AUTH"
+    bytecblock 0x151f7c75 0x0000 0x000000000000000000 "registryApp" "escrows" "c" "A" "q" "p" "ERR:RM" 0x0002 "operator" "instanceNumId" "ERR:FA_NS" "V" "E" "r" "ERR:C_NX" "ERR:FA_NC" 0xec402f3c "ready" 0x0008 0x0035 "name" "admin" "ERR:FA_NX" "ERR:GP_NX" "ERR:GP_NR" "ERR:FP_MM" "votingStart" "votingEnd" "committeeId" 0xc8d461ab "ERR:GV_MM" 0x0000030000 base64(DYEBQw==) "ERR:AUTH"
     txn ApplicationID
     bnz main_after_if_else@2
     // smart_contracts/frac-delegation/fracDelegationInstance.algo.ts:88
@@ -5549,9 +5550,9 @@ increaseBudget_while_top@2:
     itxn_field OnCompletion
     // smart_contracts/base/base.algo.ts:31
     // const empty = compile(EmptyContract)
-    bytec 35 // base64(C4EBQw==)
+    bytec 35 // base64(DYEBQw==)
     itxn_field ClearStateProgramPages
-    bytec 35 // base64(C4EBQw==)
+    bytec 35 // base64(DYEBQw==)
     itxn_field ApprovalProgramPages
     // smart_contracts/base/base.algo.ts:33-38
     // itxn
