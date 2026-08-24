@@ -215,8 +215,6 @@ export class FracDelegationRegistryContract extends BaseContract {
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
-    const INSTANCE_EXTRA_PROGRAM_PAGES: uint64 = 3 // 8192-byte approval/clear ceiling
-
     // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
     // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
     // together at appcreate time; an empty trailing page is a no-op.
@@ -240,6 +238,19 @@ export class FracDelegationRegistryContract extends BaseContract {
     // registry, so uploading a newer instance program to the `Iap` box that needs more globals means
     // rebuilding the registry too, or growing each spawned app afterwards.
     const compiled = compile(FracDelegationInstanceContract) // clearStateProgram + schema — approval comes from box
+
+    // Pages are sized from the bytecode actually being deployed, not from a constant: an app gets
+    // (1 + extraProgramPages) pages of 2048 bytes to hold approval + clear. Deliberately measured
+    // against the BOX, not `compiled.extraProgramPages` — the box is the source of truth for what is
+    // being created, and it exists precisely so instance code can be upgraded without redeploying
+    // the registry. Sizing off the build-time compile would under-allocate the moment a newer,
+    // larger instance program is uploaded. AVM v13 raised the ceiling to 7 extra pages (16KB).
+    // ceil(n / 2048) - 1, written as (n - 1) / 2048 so the uint64 maths cannot underflow: the box is
+    // asserted to exist above, so programBytes >= 1.
+    const PROGRAM_PAGE_BYTES: uint64 = 2048
+    const programBytes: uint64 = approvalLen + compiled.clearStateProgram.length
+    const extraPages: uint64 = (programBytes - 1) / PROGRAM_PAGE_BYTES
+
     const created = itxn
       .applicationCall({
         approvalProgram: [page1, page2],
@@ -250,7 +261,7 @@ export class FracDelegationRegistryContract extends BaseContract {
           encodeArc4(name),
         ],
         clearStateProgram: compiled.clearStateProgram,
-        extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
+        extraProgramPages: extraPages,
         globalNumUint: compiled.globalUints,
         globalNumBytes: compiled.globalBytes,
       })

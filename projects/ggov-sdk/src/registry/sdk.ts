@@ -1,6 +1,11 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address } from 'algosdk'
-import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from '../generated/GGovRegistryClient.js'
+import {
+  GGovRegistryClient,
+  GGovRegistryComposer,
+  GGovRegistryFactory,
+  APP_SPEC as REGISTRY_APP_SPEC,
+} from '../generated/GGovRegistryClient.js'
 import { APP_SPEC as PERIOD_APP_SPEC } from '../generated/GGovPeriodClient.js'
 import {
   ConstructorArgs,
@@ -20,6 +25,7 @@ import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
 import { createTxnExecutor } from '../util/txnExecutor.js'
 import { chunk } from '../util/chunk.js'
 import { padForRefSlots } from '../util/padForRefSlots.js'
+import { extraProgramPages } from '../util/extraProgramPages.js'
 import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   MAX_GROUP_SIZE,
@@ -695,7 +701,20 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       onUpdate: update ? 'update' : 'append',
       onSchemaBreak: update ? 'fail' : 'append',
       createParams: {
-        extraProgramPages: 3,
+        // Sized from the compiled program rather than pinned at the old AVM maximum, plus ONE spare
+        // page. Sized exactly, GGovRegistry would get a 6144-byte ceiling for a ~5.6KB program, which
+        // is tighter than the 3 pages it used to carry — and adding pages later is the one thing
+        // `factory.deploy` cannot do: it treats "existing pages < needed" as a schema break whose
+        // only remedies are failing or creating a NEW app. So without the spare page, the next time
+        // the program crossed that ceiling a routine `createRegistry({ update: true })` would start
+        // failing with "Schema break detected". 100k µAlgo once per registry removes that trap.
+        // (Spawned period/instance apps need no such margin: the registry sizes each one from the
+        // bytecode in its approval box at every create.)
+        extraProgramPages:
+          extraProgramPages(
+            Buffer.from(REGISTRY_APP_SPEC.byteCode!.approval, 'base64'),
+            Buffer.from(REGISTRY_APP_SPEC.byteCode!.clear, 'base64'),
+          ) + 1,
       },
     })
 

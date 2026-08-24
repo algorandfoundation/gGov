@@ -5,6 +5,7 @@ import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { GGovSDK, GGovRegistrySDK, GGovRegistryFactory, GGovPeriodFactory, GGovPeriodClient } from 'ggov-sdk'
 import { periodBoxName } from '../../../ggov-sdk/src/util/boxNames'
 import periodArc56 from '../artifacts/ggov-period/GGovPeriod.arc56.json'
+import { extraProgramPages } from '../../../ggov-sdk/src/util/extraProgramPages'
 import { GGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
@@ -178,11 +179,11 @@ describe('GGovPeriod contract', () => {
   // ── deployment configuration ─────────────────────────────────────
 
   describe('deployment configuration', () => {
-    // The registry creates each period app via an inner appcreate that hard-codes
-    // extraProgramPages: 3 (PERIOD_EXTRA_PROGRAM_PAGES) so the period approval program
-    // can grow to the AVM 8192-byte ceiling without ever requiring a registry redeploy.
-    // Guard against that constant drifting on a contract change.
-    test('period app is created with extraProgramPages=3', async () => {
+    // The registry creates each period app via an inner appcreate that sizes extraProgramPages from
+    // the length of the bytecode actually in its approval box — so a period app rents exactly the
+    // pages its program needs, and tracks a larger program uploaded later without a registry
+    // redeploy. Asserting against the compiled child catches the create path drifting from it.
+    test('period app is created with extraProgramPages computed from the program', async () => {
       const { sdk, committeeId, admin } = await deployWithCommittee(localnet)
       await sdk.registry.setOperator({ account: admin.toString() })
 
@@ -195,7 +196,12 @@ describe('GGovPeriod contract', () => {
 
       const periodAppId = await sdk.getPeriodAppId(periodId)
       const appInfo = await localnet.algorand.app.getById(periodAppId)
-      expect(appInfo.extraProgramPages).toBe(3)
+      expect(Number(appInfo.extraProgramPages)).toBe(
+        extraProgramPages(
+          Buffer.from(periodArc56.byteCode!.approval, 'base64'),
+          Buffer.from(periodArc56.byteCode!.clear, 'base64'),
+        ),
+      )
     })
 
     // The registry sizes each period app from compile(GGovPeriodContract), so its schema is exactly

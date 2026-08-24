@@ -12,6 +12,12 @@ import {
 } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 import registryArc56 from '../artifacts/frac-delegation/FracDelegationRegistry.arc56.json'
+import { extraProgramPages } from '../../../ggov-sdk/src/util/extraProgramPages'
+
+const expectedRegistryPages = extraProgramPages(
+  Buffer.from(registryArc56.byteCode!.approval, 'base64'),
+  Buffer.from(registryArc56.byteCode!.clear, 'base64'),
+)
 
 describe('FracDelegationRegistry admin', () => {
   const localnet = algorandFixture()
@@ -21,13 +27,13 @@ describe('FracDelegationRegistry admin', () => {
 
   // Infrastructure
   describe('deployment configuration', () => {
-    // FracDelegationRegistrySDK.createRegistry() is the production deploy path. It hard-codes
-    // extraProgramPages: 3 so the approval program can grow toward the AVM ceiling without
-    // ever needing a redeploy. The registry's global schema is no longer declared by hand —
+    // FracDelegationRegistrySDK.createRegistry() is the production deploy path. It sizes extraProgramPages
+    // from the compiled program plus one spare page (see createRegistry for why the margin is
+    // there rather than an exact fit). The registry's global schema is no longer declared by hand —
     // the contract dropped its stateTotals override, so puya infers it from the GlobalState
     // fields. Asserting the deployed app against the compiled app spec catches a create path
     // that stops matching what the contract actually declares.
-    test('registry deploys with extraProgramPages=3 and the schema its app spec declares', async () => {
+    test('registry deploys with computed extraProgramPages and the schema its app spec declares', async () => {
       const { testAccount: admin } = localnet.context
       // createRegistry pays the registry MBR + box MBR + initial funding out of the
       // deployer's balance; top the test admin up so it can cover the transfers + fees.
@@ -38,7 +44,8 @@ describe('FracDelegationRegistry admin', () => {
       })
 
       const appInfo = await localnet.algorand.app.getById(appClient.appId)
-      expect(appInfo.extraProgramPages).toBe(3)
+      // Computed from the app spec, not pinned: the assertion tracks the contract's real size.
+      expect(Number(appInfo.extraProgramPages)).toBe(expectedRegistryPages + 1)
       expect({ ints: appInfo.globalInts, bytes: appInfo.globalByteSlices }).toEqual(registryArc56.state.schema.global)
     })
 

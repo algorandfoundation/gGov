@@ -12,6 +12,8 @@ import {
 } from '../common-tests'
 import { configureTestLogging } from '../test-utils'
 import { AlgorandFixture } from '@algorandfoundation/algokit-utils/types/testing'
+import instanceArc56 from '../artifacts/frac-delegation/FracDelegationInstance.arc56.json'
+import { extraProgramPages } from '../../../frac-delegation-sdk/src/util/extraProgramPages'
 
 const deployRegistryWithoutBytecode = async (localnet: AlgorandFixture, admin: Address) => {
   // Deploy bare registry (no period bytecode) by bypassing the deployRegistry helper
@@ -50,7 +52,12 @@ describe('FracDelegationRegistry instances', () => {
       expect(instanceId).toBeGreaterThan(0n)
 
       const appInfo = await localnet.algorand.app.getById(appId)
-      expect(appInfo.extraProgramPages).toBe(3)
+      expect(Number(appInfo.extraProgramPages)).toBe(
+        extraProgramPages(
+          Buffer.from(instanceArc56.byteCode!.approval, 'base64'),
+          Buffer.from(instanceArc56.byteCode!.clear, 'base64'),
+        ),
+      )
 
       expect(await sdk.getInstanceRegistryApp(instanceId)).toBe(sdk.appId)
       expect(await sdk.getInstanceAdmin(instanceId)).toBe(testAccount.toString())
