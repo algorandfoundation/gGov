@@ -70,8 +70,10 @@ export const MAX_ESCROWS_PER_FD_IMPORT = 10
  * AVM v13 prices fees on a usage metric tallied across the group, and a call carrying ~8KB of
  * application arguments lands well past the free allowance that covers everything constructible
  * before v13 — a 4KB program already measured at 1203 µAlgo against a 1000 µAlgo minimum. The exact
- * figure is not worth reimplementing (the guidance is explicit about that), so the upload runs with
- * `coverAppCallInnerTransactionFees`, which reads the real requirement off simulate and tops the fee
- * up to at most this ceiling. Generous on purpose: it is an upper bound, not the fee paid.
+ * figure is not worth reimplementing (the guidance is explicit about that), so the upload probes
+ * with `simulate()` and derives the fee from the reported `groupUsage` (see `feeFromGroupUsage`).
+ * Simulate must itself run at a fee that already passes the usage check, which is what this is:
+ * the ceiling the probe goes out at. Generous on purpose — it is an upper bound, not the fee paid,
+ * since the real send carries exactly what simulate asked for.
  */
 export const UPLOAD_APPROVAL_MAX_FEE_MICROALGOS = 20_000
