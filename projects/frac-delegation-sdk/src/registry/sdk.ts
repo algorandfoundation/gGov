@@ -493,13 +493,13 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
       onSchemaBreak: update ? 'fail' : 'append',
       createParams: {
         // Sized from the compiled program rather than pinned at the old AVM maximum, plus ONE spare
-        // page. Sized exactly, GGovRegistry would get a 6144-byte ceiling for a ~5.6KB program, which
-        // is tighter than the 3 pages it used to carry — and adding pages later is the one thing
-        // `factory.deploy` cannot do: it treats "existing pages < needed" as a schema break whose
-        // only remedies are failing or creating a NEW app. So without the spare page, the next time
-        // the program crossed that ceiling a routine `createRegistry({ update: true })` would start
-        // failing with "Schema break detected". 100k µAlgo once per registry removes that trap.
-        // (Spawned period/instance apps need no such margin: the registry sizes each one from the
+        // page. Sized exactly, this registry would get a 4096-byte ceiling for a ~2.9KB program,
+        // which is tighter than the 3 pages it used to carry — and adding pages later is the one
+        // thing `factory.deploy` cannot do: it treats "existing pages < needed" as a schema break
+        // whose only remedies are failing or creating a NEW app. So without the spare page, the next
+        // time the program crossed that ceiling a routine `createRegistry({ update: true })` would
+        // start failing with "Schema break detected". 100k µAlgo once per registry removes that
+        // trap. (Spawned instance apps need no such margin: the registry sizes each one from the
         // bytecode in its approval box at every create.)
         extraProgramPages:
           extraProgramPages(
