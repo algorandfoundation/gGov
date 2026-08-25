@@ -1,8 +1,15 @@
 import { Arc56Contract } from '@algorandfoundation/algokit-utils/types/app-arc56'
 import { ABIType, ABIValue, base64ToBytes } from 'algosdk'
 import { describe, expect, test } from 'vitest'
+import { FRAC_VOTING_RECORD_KEY_LENGTH } from '../../frac-delegation-sdk/src/constants'
 import { instanceBoxName, periodBoxName as fracPeriodBoxName } from '../../frac-delegation-sdk/src/util/boxes'
 import { asciiBoxName, periodBoxName, topicBodyBoxName } from '../../ggov-sdk/src/util/boxNames'
+import {
+  GGOV_VOTE_RECORD_KEY_LENGTH,
+  voteRecordBoxMbr,
+  voteRecordValueLength,
+} from '../../ggov-sdk/src/util/voteRecordMbr'
+import { APP_SPEC as FRAC_INSTANCE_SPEC } from './artifacts/frac-delegation/FracDelegationInstanceClient'
 import { APP_SPEC as FRAC_REGISTRY_SPEC } from './artifacts/frac-delegation/FracDelegationRegistryClient'
 import { APP_SPEC as GGOV_PERIOD_SPEC } from './artifacts/ggov-period/GGovPeriodClient'
 import { APP_SPEC as GGOV_REGISTRY_SPEC } from './artifacts/ggov-registry/GGovRegistryClient'
@@ -79,5 +86,73 @@ describe('box name helpers match the compiled ARC-56 specs', () => {
       expect(registryApprovalKey.length).toBeGreaterThan(1)
       expect(hex(asciiBoxName('P'))).not.toBe(hex(registryApprovalKey))
     })
+  })
+})
+
+// Same principle as the name pins above, applied to the vote-record box *size*: `voteRecordBoxMbr`
+// hardcodes an ARC-4 layout, and nothing on the happy path fails if that layout drifts — an
+// under-estimate just means the registry runs dry later, in production, at someone else's vote. So
+// the expectation is rebuilt here from the compiled specs (prefix + keyType for the name, the
+// struct's own field types for the value) and encoded by algosdk, never by the same arithmetic.
+describe('vote-record box MBR matches the compiled ARC-56 specs', () => {
+  /** ARC-4 tuple type for a spec struct, e.g. GGovVoteRecord -> `(bool,uint32[][])`. */
+  const structType = (spec: Arc56Contract, name: string): ABIType =>
+    ABIType.from(`(${spec.structs[name].map((f) => f.type as string).join(',')})`)
+
+  /** Name length of a BoxMap entry: the spec's base64 prefix plus the ARC-4 encoded key. */
+  const mapKeyLength = (spec: Arc56Contract, map: string, key: ABIValue): number => {
+    const { prefix, keyType } = spec.state.maps.box[map]
+    return base64ToBytes(prefix!).length + ABIType.from(keyType).encode(key).length
+  }
+
+  /** A [topic][option] ballot with `topics` topics of `options` options each. */
+  const ballot = (topics: number, options: number): number[] => Array.from({ length: topics }, () => options)
+
+  /** An all-zero record of that shape — only its encoded length matters here. */
+  const emptyRecord = (optionCounts: number[]): ABIValue => [
+    false,
+    optionCounts.map((n) => Array.from({ length: n }, () => 0)),
+  ]
+
+  const ZERO_ADDRESS = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ'
+
+  // 1x1 is the floor a ready period can reach; 22x4 is the shape VOTE.md sizes operator funding
+  // against; 60x8 approaches the ballot width setReady's 1024-byte log ceiling still admits. A
+  // single shape would pass against a formula that had the per-topic and per-option terms confused.
+  const SHAPES: [number, number][] = [
+    [1, 1],
+    [3, 2],
+    [22, 4],
+    [60, 8],
+  ]
+
+  test.each(SHAPES)('GGovPeriod voteRecords, %s topics x %s options', (topics, options) => {
+    const optionCounts = ballot(topics, options)
+    const keyLength = mapKeyLength(GGOV_PERIOD_SPEC, 'voteRecords', ZERO_ADDRESS)
+    const encoded = structType(GGOV_PERIOD_SPEC, 'GGovVoteRecord').encode(emptyRecord(optionCounts))
+
+    expect(keyLength).toBe(GGOV_VOTE_RECORD_KEY_LENGTH)
+    expect(voteRecordValueLength(optionCounts)).toBe(encoded.length)
+    expect(voteRecordBoxMbr(keyLength, optionCounts)).toBe(2_500n + 400n * BigInt(keyLength + encoded.length))
+  })
+
+  test.each(SHAPES)('FracDelegationInstance votingRecords, %s topics x %s options', (topics, options) => {
+    const optionCounts = ballot(topics, options)
+    const keyLength = mapKeyLength(FRAC_INSTANCE_SPEC, 'votingRecords', [0, 0])
+    const encoded = structType(FRAC_INSTANCE_SPEC, 'FracVotingRecord').encode(emptyRecord(optionCounts))
+
+    expect(keyLength).toBe(FRAC_VOTING_RECORD_KEY_LENGTH)
+    expect(voteRecordValueLength(optionCounts)).toBe(encoded.length)
+    expect(voteRecordBoxMbr(keyLength, optionCounts)).toBe(2_500n + 400n * BigInt(keyLength + encoded.length))
+  })
+
+  // The two records are the same ARC-4 shape and differ only in key width, which is the whole reason
+  // voteRecordBoxMbr takes a key length instead of existing twice. If they ever diverge, the shared
+  // helper is wrong for one of them and the assertions above stop being independent.
+  test('both records are the same ARC-4 shape', () => {
+    expect(structType(FRAC_INSTANCE_SPEC, 'FracVotingRecord').toString()).toBe(
+      structType(GGOV_PERIOD_SPEC, 'GGovVoteRecord').toString(),
+    )
+    expect(GGOV_VOTE_RECORD_KEY_LENGTH - FRAC_VOTING_RECORD_KEY_LENGTH).toBe(24)
   })
 })

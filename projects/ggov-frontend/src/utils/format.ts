@@ -37,3 +37,20 @@ export function toPlainText(markdown: string): string {
     .replace(/\s+/g, ' ')
     .trim()
 }
+
+/**
+ * µAlgo as ALGO, e.g. 57_800n → "0.0578", 5_000_000n → "5". Trailing zeros are trimmed, so a round
+ * figure reads as one; the unit is left to the caller, which usually renders it as a separate,
+ * quieter element.
+ *
+ * Six decimals is the full µAlgo precision and never rounds, which matters where the number is a
+ * funding requirement — a display that rounded down would understate a shortfall.
+ */
+export function formatAlgo(microAlgos: bigint): string {
+  const negative = microAlgos < 0n
+  const abs = negative ? -microAlgos : microAlgos
+  const whole = abs / 1_000_000n
+  const fraction = (abs % 1_000_000n).toString().padStart(6, '0').replace(/0+$/, '')
+  const sign = negative ? '-' : ''
+  return `${sign}${whole.toLocaleString()}${fraction ? `.${fraction}` : ''}`
+}

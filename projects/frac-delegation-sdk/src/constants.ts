@@ -101,3 +101,14 @@ export const DEFAULT_INSTANCE_MBR_MICROALGOS = 1_000_000n
  * since the real send carries exactly what simulate asked for.
  */
 export const UPLOAD_APPROVAL_MAX_FEE_MICROALGOS = 20_000
+
+/**
+ * Key length of `FracDelegationInstance.votingRecords`: the 1-byte 'r' prefix plus an 8-byte
+ * `FracPeriodAccountKey` (`[Uint32, Uint32]` — period id, registry account id).
+ *
+ * Keyed by numeric account id rather than by address, which is what makes it 24 bytes cheaper per
+ * voter than the gGov period's address-keyed `voteRecords`. Pair it with ggov-sdk's
+ * `voteRecordBoxMbr`, which both records share: they are the same ARC-4 `(bool, uint32[][])` shape
+ * and differ only here.
+ */
+export const FRAC_VOTING_RECORD_KEY_LENGTH = 9
