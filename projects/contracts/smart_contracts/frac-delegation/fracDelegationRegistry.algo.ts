@@ -181,24 +181,34 @@ export class FracDelegationRegistryContract extends BaseContract {
   // ── Admin: instance app bytecode ─────────────────────────---------
 
   /**
-   * Upload (or re-upload) a chunk of the FracDelegationInstance approval bytecode into
-   * a registry box. Admin only. `startOffset === 0` deletes the existing box and creates
-   * a fresh one at the chunk length; subsequent chunks resize/replace.
+   * Upload (or re-upload) the whole FracDelegationInstance approval bytecode into a registry box in
+   * one call. Admin only.
+   *
+   * Takes the program as three pages, because the network rejects any single application argument
+   * over 4096 bytes and an ARC-4 `byte[]` spends 2 of those on its length prefix, so a page
+   * carries at most 4094 bytes of program, and one argument could never hold a whole one. Three
+   * pages (12282 bytes) cover an approval program grown into AVM v13's 7 extra program pages,
+   * alongside the clear-state program sharing them. Pass the program in `page1` and leave the
+   * trailing pages empty when it fits; the pages are simply concatenated here, so the split points
+   * carry no meaning.
+   *
+   * Replaces a chunked `uploadInstanceApprovalPartial(startOffset, data)` that needed a full
+   * 16-transaction group: total application arguments were capped at 2KB before AVM v13 raised the
+   * limit to 16KB, so the bytecode had to be dribbled in 2000 bytes at a time.
    */
-  public uploadInstanceApprovalPartial(startOffset: uint64, data: bytes): void {
+  public uploadInstanceApproval(page1: bytes, page2: bytes, page3: bytes): void {
     this.ensureCallerIsAdmin()
+
     const boxKey = Bytes`Iap`
-    const writeEnd: uint64 = startOffset + data.length
-    if (startOffset === 0) {
-      op.Box.delete(boxKey)
-      op.Box.create(boxKey, writeEnd)
-    } else {
-      const [boxLen] = op.Box.length(boxKey)
-      if (writeEnd > boxLen) {
-        op.Box.resize(boxKey, writeEnd)
-      }
+    op.Box.delete(boxKey)
+    op.Box.create(boxKey, page1.length + page2.length + page3.length)
+    op.Box.replace(boxKey, 0, page1)
+    if (page2.length > 0) {
+      op.Box.replace(boxKey, page1.length, page2)
     }
-    op.Box.replace(boxKey, startOffset, data)
+    if (page3.length > 0) {
+      op.Box.replace(boxKey, page1.length + page2.length, page3)
+    }
   }
 
   // ── Admin: instance management ─────────────────────────---------
@@ -215,18 +225,21 @@ export class FracDelegationRegistryContract extends BaseContract {
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
-    const INSTANCE_EXTRA_PROGRAM_PAGES: uint64 = 3 // 8192-byte approval/clear ceiling
-
-    // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
-    // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
-    // together at appcreate time; an empty trailing page is a no-op.
+    // AVM stack-bytes values are capped at 4096 bytes, so the box is read in three pages — matching
+    // what uploadInstanceApproval accepts. That upload carries at most 12282 bytes (3 args of 4094,
+    // an ARC-4 `byte[]` costing 2 bytes of length prefix), so it is short of the 16384 bytes v13's
+    // 7 extra program pages allow: a program that fills them cannot be uploaded this way. The AVM
+    // concatenates the pages back together at appcreate time; empty trailing pages are a no-op.
     const approvalKey = Bytes`Iap`
     const [approvalLen] = op.Box.length(approvalKey)
     const PAGE_SIZE: uint64 = 4096
     const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
+    const rest: uint64 = approvalLen - page1Len
+    const page2Len: uint64 = rest <= PAGE_SIZE ? rest : PAGE_SIZE
+    const page3Len: uint64 = rest - page2Len
     const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
-    const page2: bytes =
-      approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
+    const page2: bytes = page2Len > 0 ? op.Box.extract(approvalKey, page1Len, page2Len) : Bytes('')
+    const page3: bytes = page3Len > 0 ? op.Box.extract(approvalKey, page1Len + page2Len, page3Len) : Bytes('')
 
     this.lastInstanceNumId.value++
     const instanceNum = u16(this.lastInstanceNumId.value)
@@ -240,9 +253,22 @@ export class FracDelegationRegistryContract extends BaseContract {
     // registry, so uploading a newer instance program to the `Iap` box that needs more globals means
     // rebuilding the registry too, or growing each spawned app afterwards.
     const compiled = compile(FracDelegationInstanceContract) // clearStateProgram + schema — approval comes from box
+
+    // Pages are sized from the bytecode actually being deployed, not from a constant: an app gets
+    // (1 + extraProgramPages) pages of 2048 bytes to hold approval + clear. Deliberately measured
+    // against the BOX, not `compiled.extraProgramPages` — the box is the source of truth for what is
+    // being created, and it exists precisely so instance code can be upgraded without redeploying
+    // the registry. Sizing off the build-time compile would under-allocate the moment a newer,
+    // larger instance program is uploaded. AVM v13 raised the ceiling to 7 extra pages (16KB).
+    // ceil(n / 2048) - 1, written as (n - 1) / 2048 so the uint64 maths cannot underflow: the box is
+    // asserted to exist above, so programBytes >= 1.
+    const PROGRAM_PAGE_BYTES: uint64 = 2048
+    const programBytes: uint64 = approvalLen + compiled.clearStateProgram.length
+    const extraPages: uint64 = (programBytes - 1) / PROGRAM_PAGE_BYTES
+
     const created = itxn
       .applicationCall({
-        approvalProgram: [page1, page2],
+        approvalProgram: [page1, page2, page3],
         // ABI create call: selector + encoded (uint16 instanceNum, string name)
         appArgs: [
           methodSelector(FracDelegationInstanceContract.prototype.createApplication),
@@ -250,7 +276,7 @@ export class FracDelegationRegistryContract extends BaseContract {
           encodeArc4(name),
         ],
         clearStateProgram: compiled.clearStateProgram,
-        extraProgramPages: INSTANCE_EXTRA_PROGRAM_PAGES,
+        extraProgramPages: extraPages,
         globalNumUint: compiled.globalUints,
         globalNumBytes: compiled.globalBytes,
       })

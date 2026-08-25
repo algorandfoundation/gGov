@@ -188,8 +188,24 @@ describe('GGovRegistry periods', () => {
   })
 
   describe('uploadPeriodApprovalProgram (SDK wrapper)', () => {
-    // chunked upload - uploadPeriodApprovalPartial wrapper
-    test('period box assembled via chunks enables createPeriod', async () => {
+    // One-shot upload: the whole program rides in a single call as up to three 4094-byte pages.
+    // 10000 bytes is past both ceilings at once: the 8188 two application arguments carry, and the
+    // 8192 of box write budget the 8 references a single app call can hold buy. It exercises the
+    // third page and the reference-carrying companion calls together.
+    test('period approval box uploaded in one call spans three pages', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, client } = await deployRegistry(localnet, testAccount)
+      // A 10000-byte box costs ~4 ALGO of MBR, well past what the registry is deployed with.
+      await localnet.algorand.account.ensureFundedFromEnvironment(client.appAddress, (10).algos())
+
+      const bytecode = new Uint8Array(10000).map((_, i) => i % 251)
+      await sdk.uploadPeriodApprovalProgram({ bytecode })
+
+      const box = await localnet.algorand.app.getBoxValue(sdk.appId, 'Pap')
+      expect(box).toEqual(bytecode)
+    })
+
+    test('period box uploaded in one call enables createPeriod', async () => {
       const { testAccount } = localnet.context
       // Deploy bare registry (no period bytecode) by bypassing the deployRegistry helper
       await localnet.algorand.account.ensureFundedFromEnvironment(testAccount, (25).algos())

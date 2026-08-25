@@ -183,7 +183,7 @@ increment lastCommitteeId
 - `setXGovRegistryApp(appId: Application)` - Set the xGov Registry Application ID
 - `setAdmin(newAdmin: Account)` - Transfer admin (zero address rejected)
 - `setOperator(account: Account)` - Set the operator account
-- `uploadPeriodApprovalPartial(startOffset: uint64, data: bytes, last: boolean)` - Upload/replace a chunk of the GGovPeriod approval bytecode (`startOffset === 0` resets the box)
+- `uploadPeriodApproval(page1: bytes, page2: bytes, page3: bytes)` - Upload/replace the whole GGovPeriod approval bytecode in one call; the pages are concatenated into box `Pap`, and trailing pages may be empty
 
 ### Operator & Delegation Methods
 
@@ -196,7 +196,7 @@ ensure mbrPayment.receiver === registry address
 ensure committee exists and fully ingested (ingestedVotes === totalVotes)
 ensure period approval bytecode uploaded
 increment lastPeriodId
-inner-txn: create GGovPeriod app (approval from box, max extra program pages + reserved schema)
+inner-txn: create GGovPeriod app (approval read back from the box in 3 pages, extra program pages sized from the box, schema off the compiled child)
 inner-txn: fund new app MBR from mbrPayment
 inner-call: GGovPeriod.init(registry, periodId, committeeId, votingStart, votingEnd)
 store period summary { appId, votingStart, votingEnd, numTopics: 0, ready: false }
