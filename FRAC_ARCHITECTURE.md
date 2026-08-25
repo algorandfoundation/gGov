@@ -64,18 +64,18 @@ after, or admin auth can be bricked.
 
 ### Permission matrix
 
-| Action                                                                                                              | Admin | Operator | App caller | Anyone |
-| ------------------------------------------------------------------------------------------------------------------- | :---: | :------: | :--------: | :----: |
-| Registry `setAdmin` / `setDefaultOperator` / `setGGovRegistryApp` / `withdrawALGO`                                  |   ✓   |          |            |        |
-| Registry `uploadInstanceApprovalPartial`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) |   ✓   |          |            |        |
-| Registry `createInstance` (spawn instance app), `registerEscrow`                                                    |   ✓   |          |            |        |
-| Registry `getOrCreateAccountWithInstance`                                                                           |   ✓   |          |     ✓¹     |        |
-| Instance `setOperator` / `setRegistryApp` / `withdrawALGO`                                                          |  ✓²   |          |            |        |
-| Update/delete instance app code (`UpdateApplication`/`DeleteApplication`)                                           |  ✓²   |          |            |        |
-| Instance `registerEscrow`                                                                                           |  ✓²   |          |     ✓³     |        |
-| Instance `syncCommittee` / `startAqIngest` / `ingestAq` / `uningestAq` / `syncPeriod`                               |       |    ✓     |            |        |
-| Instance `vote` (internal vote)                                                                                     |       |          |            |   ✓⁴   |
-| Registry/instance `getAccount` / `getCommitteeAq` / `logPeriodVotingState` / `canVote` / readonly getters           |       |          |            |   ✓    |
+| Action                                                                                                       | Admin | Operator | App caller | Anyone |
+| ------------------------------------------------------------------------------------------------------------ | :---: | :------: | :--------: | :----: |
+| Registry `setAdmin` / `setDefaultOperator` / `setGGovRegistryApp` / `withdrawALGO`                           |   ✓   |          |            |        |
+| Registry `uploadInstanceApproval`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) |   ✓   |          |            |        |
+| Registry `createInstance` (spawn instance app), `registerEscrow`                                             |   ✓   |          |            |        |
+| Registry `getOrCreateAccountWithInstance`                                                                    |   ✓   |          |     ✓¹     |        |
+| Instance `setOperator` / `setRegistryApp` / `withdrawALGO`                                                   |  ✓²   |          |            |        |
+| Update/delete instance app code (`UpdateApplication`/`DeleteApplication`)                                    |  ✓²   |          |            |        |
+| Instance `registerEscrow`                                                                                    |  ✓²   |          |     ✓³     |        |
+| Instance `syncCommittee` / `startAqIngest` / `ingestAq` / `uningestAq` / `syncPeriod`                        |       |    ✓     |            |        |
+| Instance `vote` (internal vote)                                                                              |       |          |            |   ✓⁴   |
+| Registry/instance `getAccount` / `getCommitteeAq` / `logPeriodVotingState` / `canVote` / readonly getters    |       |          |            |   ✓    |
 
 **App caller** = a structural (inter-app) caller rather than a keyed role. ¹ The bound instance app
 (production path, as `Txn.sender`) or the admin (bootstrap). ² Resolved via the registry `admin`
@@ -88,7 +88,7 @@ gGov-registry delegatee.
 ```
 deploy (creator = admin = defaultOperator)
   └─ setGGovRegistryApp / setDefaultOperator
-  └─ uploadInstanceApprovalPartial ……… chunk-upload FracDelegationInstance approval bytecode into box `Iap`
+  └─ uploadInstanceApproval ……………… upload FracDelegationInstance approval bytecode into box `Iap` in one call (3 pages)
 instance creation
   └─ createInstance(name, mbrPayment) → spawns FracDelegationInstance app  (admin only)
 escrow assignment

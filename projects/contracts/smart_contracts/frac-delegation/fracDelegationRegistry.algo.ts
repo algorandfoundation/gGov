@@ -225,16 +225,20 @@ export class FracDelegationRegistryContract extends BaseContract {
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
-    // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
-    // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
-    // together at appcreate time; an empty trailing page is a no-op.
+    // AVM stack-bytes values are capped at 4096 bytes, so the box is read in three pages — matching
+    // what uploadInstanceApproval accepts, and covering the 12288 bytes an approval program can
+    // reach under v13's 7 extra program pages. The AVM concatenates the pages back together at
+    // appcreate time; empty trailing pages are a no-op.
     const approvalKey = Bytes`Iap`
     const [approvalLen] = op.Box.length(approvalKey)
     const PAGE_SIZE: uint64 = 4096
     const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
+    const rest: uint64 = approvalLen - page1Len
+    const page2Len: uint64 = rest <= PAGE_SIZE ? rest : PAGE_SIZE
+    const page3Len: uint64 = rest - page2Len
     const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
-    const page2: bytes =
-      approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
+    const page2: bytes = page2Len > 0 ? op.Box.extract(approvalKey, page1Len, page2Len) : Bytes('')
+    const page3: bytes = page3Len > 0 ? op.Box.extract(approvalKey, page1Len + page2Len, page3Len) : Bytes('')
 
     this.lastInstanceNumId.value++
     const instanceNum = u16(this.lastInstanceNumId.value)
@@ -263,7 +267,7 @@ export class FracDelegationRegistryContract extends BaseContract {
 
     const created = itxn
       .applicationCall({
-        approvalProgram: [page1, page2],
+        approvalProgram: [page1, page2, page3],
         // ABI create call: selector + encoded (uint16 instanceNum, string name)
         appArgs: [
           methodSelector(FracDelegationInstanceContract.prototype.createApplication),
