@@ -144,13 +144,29 @@ describe('FracDelegationRegistry instances', () => {
   })
 
   describe('uploadInstanceApprovalProgram (SDK wrapper)', () => {
-    // chunked upload - uploadInstanceApprovalPartial wrapper
-    test('instance approval box assembled via chunks matches the uploaded bytecode', async () => {
+    // One-shot upload: the whole program rides in a single call as up to three 4094-byte pages.
+    test('instance approval box uploaded in one call matches the uploaded bytecode', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployFracRegistry(localnet, testAccount)
 
-      // Three chunks (2000 + 2000 + 1000): exercises box create (chunk 0) and resize (later chunks).
+      // 5000 bytes: spans both pages, so it exercises the page split and the offset-4096 write.
       const bytecode = new Uint8Array(5000).map((_, i) => i % 251)
+      await sdk.uploadInstanceApprovalProgram({ bytecode })
+
+      const box = await localnet.algorand.app.getBoxValue(sdk.appId, 'Iap')
+      expect(box).toEqual(bytecode)
+    })
+
+    // 10000 bytes is past both ceilings at once: the 8188 two application arguments carry, and the
+    // 8192 of box write budget the 8 references a single app call can hold buy. It exercises the
+    // third page and the reference-carrying companion calls together.
+    test('instance approval box uploaded in one call spans three pages', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployFracRegistry(localnet, testAccount)
+      // A 10000-byte box costs ~4 ALGO of MBR, well past what the registry is deployed with.
+      await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(sdk.appId), (10).algos())
+
+      const bytecode = new Uint8Array(10000).map((_, i) => i % 251)
       await sdk.uploadInstanceApprovalProgram({ bytecode })
 
       const box = await localnet.algorand.app.getBoxValue(sdk.appId, 'Iap')
@@ -172,7 +188,7 @@ describe('FracDelegationRegistry instances', () => {
       expect(box).toEqual(compiled)
     })
 
-    test('instance approval box assembled via chunks enables createInstance', async () => {
+    test('instance approval box uploaded in one call enables createInstance', async () => {
       const { testAccount: admin } = localnet.context
       // Deploy bare registry (no period bytecode) by bypassing the deployRegistry helper
       const sdk = await deployRegistryWithoutBytecode(localnet, admin)

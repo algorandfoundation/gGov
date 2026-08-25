@@ -378,9 +378,13 @@ describe('GGovRegistry admin', () => {
       await expect(nonAdminSDK.setMBRTopUp({ amount: 2_000_000n })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('non-admin cannot uploadPeriodApprovalPartial', async () => {
+    test('non-admin cannot uploadPeriodApproval', async () => {
       await expect(
-        nonAdminSDK.uploadPeriodApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]) }),
+        nonAdminSDK.uploadPeriodApproval({
+          page1: new Uint8Array([0x01]),
+          page2: new Uint8Array(),
+          page3: new Uint8Array(),
+        }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 

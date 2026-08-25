@@ -45,17 +45,17 @@ The period app resolves `admin` and `operator` directly from registry app's glob
 
 ### Permission matrix
 
-| Action                                                                                                                                     | Admin | Operator | Anyone |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | :---: | :------: | :----: |
-| `registerCommittee` / `unregisterCommittee` / `ingestGovs` / `uningestGovs`                                                                |   ✓   |          |        |
-| `setOperator`, `setAdmin`, `setXGovRegistryApp`, `setFracRegistryApp`, `setLastPeriodId`                                                   |   ✓   |          |        |
-| `uploadPeriodApprovalPartial` (period bytecode), `withdrawALGO`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) |   ✓   |          |        |
-| `mirrorXGovDelegation` / `importFracDelegations`                                                                                           |   ✓   |          |        |
-| `createPeriod` (spawn period app)                                                                                                          |       |    ✓     |        |
-| Period `editPeriod` / `addTopic` / `editTopic` / `removeTopic` / `setReady` / body uploads                                                 |       |    ✓     |        |
-| Update/delete period app code (`UpdateApplication`/`DeleteApplication`), period `withdrawALGO`, `deleteTopicBodies`                        |  ✓¹   |          |        |
-| Registry `setVotingAccount` (delegate)                                                                                                     |       |          |   ✓²   |
-| Period `vote()` / `canVote`                                                                                                                |       |          |   ✓³   |
+| Action                                                                                                                              | Admin | Operator | Anyone |
+| ----------------------------------------------------------------------------------------------------------------------------------- | :---: | :------: | :----: |
+| `registerCommittee` / `unregisterCommittee` / `ingestGovs` / `uningestGovs`                                                         |   ✓   |          |        |
+| `setOperator`, `setAdmin`, `setXGovRegistryApp`, `setFracRegistryApp`, `setLastPeriodId`                                            |   ✓   |          |        |
+| `uploadPeriodApproval` (period bytecode), `withdrawALGO`, update/delete registry app code (`UpdateApplication`/`DeleteApplication`) |   ✓   |          |        |
+| `mirrorXGovDelegation` / `importFracDelegations`                                                                                    |   ✓   |          |        |
+| `createPeriod` (spawn period app)                                                                                                   |       |    ✓     |        |
+| Period `editPeriod` / `addTopic` / `editTopic` / `removeTopic` / `setReady` / body uploads                                          |       |    ✓     |        |
+| Update/delete period app code (`UpdateApplication`/`DeleteApplication`), period `withdrawALGO`, `deleteTopicBodies`                 |  ✓¹   |          |        |
+| Registry `setVotingAccount` (delegate)                                                                                              |       |          |   ✓²   |
+| Period `vote()` / `canVote`                                                                                                         |       |          |   ✓³   |
 
 ¹ Resolved from the registry's `admin` global; deleting the period app code and `deleteTopicBodies` also require the period be **not ready**.\
 ² Authorization = the `govAddress` itself **or** its current delegatee (matches xGov registry rule).\
@@ -66,7 +66,7 @@ The period app resolves `admin` and `operator` directly from registry app's glob
 ```
 deploy (creator = admin)
   └─ setOperator / setXGovRegistryApp / setFracRegistryApp
-  └─ uploadPeriodApprovalPartial ……… chunk-upload GGovPeriod approval bytecode into box `Pap`
+  └─ uploadPeriodApproval ……………… upload GGovPeriod approval bytecode into box `Pap` in one call (3 pages)
   └─ setLastPeriodId(15) ……………………… seed counter to continue contiguous numbering after legacy periods
 committee setup
   └─ registerCommittee ……………………… allocate metadata + committee superbox

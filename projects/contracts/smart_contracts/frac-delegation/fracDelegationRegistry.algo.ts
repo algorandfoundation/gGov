@@ -181,24 +181,34 @@ export class FracDelegationRegistryContract extends BaseContract {
   // ── Admin: instance app bytecode ─────────────────────────---------
 
   /**
-   * Upload (or re-upload) a chunk of the FracDelegationInstance approval bytecode into
-   * a registry box. Admin only. `startOffset === 0` deletes the existing box and creates
-   * a fresh one at the chunk length; subsequent chunks resize/replace.
+   * Upload (or re-upload) the whole FracDelegationInstance approval bytecode into a registry box in
+   * one call. Admin only.
+   *
+   * Takes the program as three pages, because the network rejects any single application argument
+   * over 4096 bytes and an ARC-4 `byte[]` spends 2 of those on its length prefix, so a page
+   * carries at most 4094 bytes of program, and one argument could never hold a whole one. Three
+   * pages (12282 bytes) cover an approval program grown into AVM v13's 7 extra program pages,
+   * alongside the clear-state program sharing them. Pass the program in `page1` and leave the
+   * trailing pages empty when it fits; the pages are simply concatenated here, so the split points
+   * carry no meaning.
+   *
+   * Replaces a chunked `uploadInstanceApprovalPartial(startOffset, data)` that needed a full
+   * 16-transaction group: total application arguments were capped at 2KB before AVM v13 raised the
+   * limit to 16KB, so the bytecode had to be dribbled in 2000 bytes at a time.
    */
-  public uploadInstanceApprovalPartial(startOffset: uint64, data: bytes): void {
+  public uploadInstanceApproval(page1: bytes, page2: bytes, page3: bytes): void {
     this.ensureCallerIsAdmin()
+
     const boxKey = Bytes`Iap`
-    const writeEnd: uint64 = startOffset + data.length
-    if (startOffset === 0) {
-      op.Box.delete(boxKey)
-      op.Box.create(boxKey, writeEnd)
-    } else {
-      const [boxLen] = op.Box.length(boxKey)
-      if (writeEnd > boxLen) {
-        op.Box.resize(boxKey, writeEnd)
-      }
+    op.Box.delete(boxKey)
+    op.Box.create(boxKey, page1.length + page2.length + page3.length)
+    op.Box.replace(boxKey, 0, page1)
+    if (page2.length > 0) {
+      op.Box.replace(boxKey, page1.length, page2)
     }
-    op.Box.replace(boxKey, startOffset, data)
+    if (page3.length > 0) {
+      op.Box.replace(boxKey, page1.length + page2.length, page3)
+    }
   }
 
   // ── Admin: instance management ─────────────────────────---------
@@ -215,16 +225,20 @@ export class FracDelegationRegistryContract extends BaseContract {
     loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
-    // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
-    // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
-    // together at appcreate time; an empty trailing page is a no-op.
+    // AVM stack-bytes values are capped at 4096 bytes, so the box is read in three pages — matching
+    // what uploadInstanceApproval accepts, and covering the 12288 bytes an approval program can
+    // reach under v13's 7 extra program pages. The AVM concatenates the pages back together at
+    // appcreate time; empty trailing pages are a no-op.
     const approvalKey = Bytes`Iap`
     const [approvalLen] = op.Box.length(approvalKey)
     const PAGE_SIZE: uint64 = 4096
     const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
+    const rest: uint64 = approvalLen - page1Len
+    const page2Len: uint64 = rest <= PAGE_SIZE ? rest : PAGE_SIZE
+    const page3Len: uint64 = rest - page2Len
     const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
-    const page2: bytes =
-      approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
+    const page2: bytes = page2Len > 0 ? op.Box.extract(approvalKey, page1Len, page2Len) : Bytes('')
+    const page3: bytes = page3Len > 0 ? op.Box.extract(approvalKey, page1Len + page2Len, page3Len) : Bytes('')
 
     this.lastInstanceNumId.value++
     const instanceNum = u16(this.lastInstanceNumId.value)
@@ -253,7 +267,7 @@ export class FracDelegationRegistryContract extends BaseContract {
 
     const created = itxn
       .applicationCall({
-        approvalProgram: [page1, page2],
+        approvalProgram: [page1, page2, page3],
         // ABI create call: selector + encoded (uint16 instanceNum, string name)
         appArgs: [
           methodSelector(FracDelegationInstanceContract.prototype.createApplication),

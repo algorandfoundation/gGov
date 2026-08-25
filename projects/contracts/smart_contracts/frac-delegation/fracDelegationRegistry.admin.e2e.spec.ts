@@ -253,9 +253,13 @@ describe('FracDelegationRegistry admin', () => {
       await expect(nonAdminSDK.setMBRTopUp({ amount: 2_000_000n })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('non-admin cannot uploadInstanceApprovalPartial', async () => {
+    test('non-admin cannot uploadInstanceApproval', async () => {
       await expect(
-        nonAdminSDK.uploadInstanceApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]) }),
+        nonAdminSDK.uploadInstanceApproval({
+          page1: new Uint8Array([0x01]),
+          page2: new Uint8Array(),
+          page3: new Uint8Array(),
+        }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
