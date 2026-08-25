@@ -183,6 +183,40 @@ headroom first — `syncPeriod`'s boxes are paid by the instance app, which (unl
 `checkNeedMBR` path to pull a top-up from the registry, and the AQ ingest leaves it sitting at
 exactly its MBR. Three periods cost it ~0.5 ALGO at these shapes.
 
+### Council election preview
+
+`seed-council-election` is the mirror seed's counterpart: one election period on the registries
+`.mirror-seed.<network>.json` names, faking the **second xGov Council election**. It is shaped after
+the real first one (governance period 15, voting session 1, from `common/gov-fixtures`): the
+session description adapted to a second term, 22 candidates for 11 seats, one Yes/No/Abstain
+measure per candidate with the application layout the real ones had (experience summary, application
+link, project affiliations, social profiles, closing question). The candidates themselves are
+invented — names, bios, products, handles and links are all mocked, deterministically, so every run
+and network gets the same ballot (`src/mirror/council-election.ts`).
+
+```bash
+pnpm seed-council-election                                  # localnet, opens now for 8 days
+STATE=upcoming pnpm seed-council-election                   # opens in 3 days; STATE=ended closed 3 days ago
+NETWORK=testnet DEPLOYER_MNEMONIC=… pnpm seed-council-election
+PERIOD_ID=7 pnpm seed-council-election                      # resume: sync an existing period, create nothing
+```
+
+| env                             | default         |                                                                |
+| ------------------------------- | --------------- | -------------------------------------------------------------- |
+| `NETWORK`                       | `localnet`      | which `.mirror-seed.<network>.json` to read; `testnet`         |
+| `WRITE_ALGOD_SERVER/PORT/TOKEN` | Nodely testnet  | testnet algod                                                  |
+| `DEPLOYER_MNEMONIC`             | —               | required on testnet: the registries' operator. Shell only.     |
+| `STATE`                         | `active`        | `upcoming` / `ended`: where the voting window sits vs now      |
+| `VOTING_DAYS`                   | `8`             | window length, as the real election's                          |
+| `COMMITTEE_ID`                  | the seed file's | bind the period to another committee on the registry           |
+| `PERIOD_ID`                     | —               | sync this period instead of creating one (resume a failed run) |
+
+No votes are cast — the synthetic stand-ins are unfunded, and a preview is what this is for. The
+period app is funded upfront for its body boxes (~9 ALGO for 22 application-sized candidates, plus a
+3 ALGO allowance for vote records), and instances get the same 3 ALGO headroom as `seed-periods`: a
+22-topic period's vote cache and per-escrow boxes need ~1.5 ALGO on an instance. Every run creates a
+new period; a run that dies mid-sync prints the id to resume with.
+
 ## Checking the numbers
 
 ```bash

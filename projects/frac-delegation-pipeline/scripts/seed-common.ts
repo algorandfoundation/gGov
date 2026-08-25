@@ -151,3 +151,62 @@ export function printSections(title: string, sections: { label: string; rows: st
   console.log(`\n${rule}\n${title}\n${rule}\n`)
   console.log(out.join('\n'))
 }
+
+// =========================================================
+// MIRROR SEED (localnet or testnet) — shared by seed-mirror and the scripts that build on it
+// =========================================================
+
+export type Network = 'localnet' | 'testnet'
+
+/** `NETWORK` env: localnet (default) or testnet. */
+export function networkFromEnv(): Network {
+  const network = process.env.NETWORK ?? 'localnet'
+  if (network !== 'localnet' && network !== 'testnet')
+    throw new Error(`NETWORK must be localnet or testnet, got ${network}`)
+  return network
+}
+
+/** The write-side client: localnet, or the testnet algod named by `WRITE_ALGOD_SERVER/PORT/TOKEN` (default Nodely). */
+export function writeClient(network: Network): AlgorandClient {
+  if (network === 'localnet') return AlgorandClient.defaultLocalNet()
+  return AlgorandClient.fromConfig({
+    algodConfig: {
+      server: process.env.WRITE_ALGOD_SERVER ?? 'https://testnet-api.4160.nodely.dev',
+      port: process.env.WRITE_ALGOD_PORT ?? 443,
+      token: process.env.WRITE_ALGOD_TOKEN ?? '',
+    },
+  })
+}
+
+/** What `seed-mirror` writes to `.mirror-seed.<network>.json`. */
+export type MirrorSeedFile = {
+  network: Network
+  gGovRegistryAppId: number
+  fracRegistryAppId: number
+  /** The synthetic committee's id (base64) — the one on chain. */
+  committeeId: string
+  realCommitteeId: string
+  expectedInstances: { name: string; escrows: string[] }[]
+  /** Localnet only: the deterministic deployer. On testnet the deployer comes from `DEPLOYER_MNEMONIC`. */
+  accounts?: { deployer: { address: string; mnemonic: string } }
+}
+
+export const mirrorSeedFilePath = (network: Network) =>
+  fileURLToPath(new URL(`../.mirror-seed.${network}.json`, import.meta.url))
+
+export function readMirrorSeedFile(network: Network): MirrorSeedFile {
+  const path = mirrorSeedFilePath(network)
+  if (!fs.existsSync(path)) throw new Error(`No ${path} — run \`pnpm seed-mirror\` for ${network} first`)
+  return JSON.parse(fs.readFileSync(path, 'utf-8')) as MirrorSeedFile
+}
+
+/**
+ * The mirror's deployer signer: the localnet manifest's deterministic account, or `DEPLOYER_MNEMONIC`
+ * on testnet (a secret — supply it in the shell, never in a file).
+ */
+export function mirrorDeployerMnemonic(network: Network, seed: MirrorSeedFile): string {
+  if (network === 'localnet') return seed.accounts?.deployer.mnemonic ?? deterministicAccount('deployer').mnemonic
+  const mnemonic = process.env.DEPLOYER_MNEMONIC
+  if (!mnemonic) throw new Error('DEPLOYER_MNEMONIC is required on testnet')
+  return mnemonic
+}

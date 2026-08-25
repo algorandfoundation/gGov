@@ -11,6 +11,7 @@
     "seed-full-instances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/seed-full-instances.ts",
     "seed-mirror": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/seed-mirror.ts",
     "seed-periods": "node --experimental-strip-types scripts/seed-periods.ts",
+    "seed-council-election": "node --experimental-strip-types scripts/seed-council-election.ts",
     "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
     "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-balances.ts",
     "verify-xalgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-xalgo-balances.ts",

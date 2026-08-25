@@ -46,7 +46,16 @@ import { FracDelegationPipeline, type AqAccountMapper } from '../src/pipeline.ts
 import { AVAILABLE_SOURCES, getPlugin } from '../src/plugins/index.ts'
 import { FracAccountClassifier, algodAuthAddrLookup, classifyCoreGovs } from '../src/mirror/classify.ts'
 import { SubstitutionBook, rewriteCommittee } from '../src/mirror/substitutions.ts'
-import { algosdk, configLogger, deterministicAccount, hex, num, printSections } from './seed-common.ts'
+import {
+  algosdk,
+  configLogger,
+  deterministicAccount,
+  hex,
+  networkFromEnv,
+  num,
+  printSections,
+  writeClient,
+} from './seed-common.ts'
 
 configLogger()
 
@@ -60,10 +69,7 @@ const DEFAULT_COMMITTEE_FILE = fileURLToPath(
   new URL('../../common/committee-files/61000000-64000000.json', import.meta.url),
 )
 
-type Network = 'localnet' | 'testnet'
-const NETWORK = (process.env.NETWORK ?? 'localnet') as Network
-if (NETWORK !== 'localnet' && NETWORK !== 'testnet')
-  throw new Error(`NETWORK must be localnet or testnet, got ${NETWORK}`)
+const NETWORK = networkFromEnv()
 
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 4)
 const SOURCES = process.env.SOURCES ? process.env.SOURCES.split(',').map((s) => s.trim()) : AVAILABLE_SOURCES
@@ -87,17 +93,6 @@ const algo = (micro: bigint) => `${(Number(micro) / 1e6).toFixed(2)} ALGO`
 
 let stepNumber = 0
 const step = (label: string) => console.log(`[${++stepNumber}/7] ${label}`)
-
-function writeClient(): AlgorandClient {
-  if (NETWORK === 'localnet') return AlgorandClient.defaultLocalNet()
-  return AlgorandClient.fromConfig({
-    algodConfig: {
-      server: process.env.WRITE_ALGOD_SERVER ?? 'https://testnet-api.4160.nodely.dev',
-      port: process.env.WRITE_ALGOD_PORT ?? 443,
-      token: process.env.WRITE_ALGOD_TOKEN ?? '',
-    },
-  })
-}
 
 function deployerMnemonic(): string {
   if (NETWORK === 'localnet') return deterministicAccount('deployer').mnemonic
@@ -136,7 +131,7 @@ async function main() {
 
   step(`Connecting to ${NETWORK} and resolving registries…`)
 
-  const algorand = writeClient()
+  const algorand = writeClient(NETWORK)
   const mnemonic = deployerMnemonic()
   const deployerKey = algosdk.mnemonicToSecretKey(mnemonic)
   algorand.account.setSignerFromAccount(deployerKey)
