@@ -9,6 +9,7 @@
     "add-committee": "node --experimental-strip-types --env-file=.env.test scripts/add-committee.ts",
     "test-pipeline": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
     "seed-full-instances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/seed-full-instances.ts",
+    "seed-mirror": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/seed-mirror.ts",
     "seed-periods": "node --experimental-strip-types scripts/seed-periods.ts",
     "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
     "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-balances.ts",
@@ -24,6 +25,7 @@
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",
+    "@d13co/escreg-sdk": "^0.1.0",
     "algosdk": "^3.7.0",
     "frac-delegation-sdk": "link:../frac-delegation-sdk",
     "ggov-sdk": "link:../ggov-sdk",

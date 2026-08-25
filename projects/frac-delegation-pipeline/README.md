@@ -112,6 +112,52 @@ instance creation — which also lands ~0.9 ALGO of creator-side MBR on the frac
 so that app is topped up too (62 instances overran its 50 ALGO deploy funding) — and the full AQ
 ingest of tALGO + xALGO (see _What stage 3 needs_).
 
+## Mirror seed — localnet or testnet, with synthetic stand-ins
+
+`seed-full-instances` mirrors production onto localnet with every account kept real, which means
+nobody can vote on it. The mirror seed does the same work on **localnet or testnet** but swaps the
+accounts nobody could sign for there with generated ones, keeping their exact voting power:
+
+| governors                    | swapped when                                                                                                                                                                                                               |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| core (committee members)     | [escreg](https://github.com/d13co/escreg) says the address is an app escrow **and** it is not one of the committee's frac escrows — pool escrows stay real so stage 1 recognizes their instance and stage 2 delegates them |
+| frac (AlgoQuarters accounts) | escreg says the address is an app escrow, **or** the account is a Tinyman liquidity pool (rekeyed to `XSKED5…VDEYM`)                                                                                                       |
+
+Votes and AlgoQuarters are carried over unchanged; the synthetic committee therefore has its own
+id (the mainnet one is recorded alongside). Synthetic accounts are **not funded**.
+
+```bash
+pnpm seed-mirror [committee-file]                                       # localnet: deploys + wires both registries if no ids are given
+SOURCES=talgo pnpm seed-mirror                                          # a subset of staking sources
+NETWORK=testnet DEPLOYER_MNEMONIC=… GGOV_REGISTRY_APP_ID=… FRAC_REGISTRY_APP_ID=… pnpm seed-mirror
+```
+
+| env                      | localnet (default)                                                                                                                                | testnet                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `NETWORK`                | `localnet`                                                                                                                                        | `testnet`                                                                                |
+| write client             | algokit localnet                                                                                                                                  | `WRITE_ALGOD_SERVER` / `WRITE_ALGOD_PORT` / `WRITE_ALGOD_TOKEN` (default Nodely testnet) |
+| deployer                 | deterministic seed deployer, topped up from the dispenser                                                                                         | `DEPLOYER_MNEMONIC`, admin + operator of both registries (checked up front)              |
+| registries               | `GGOV_REGISTRY_APP_ID` / `FRAC_REGISTRY_APP_ID`, or deployed and wired when absent                                                                | both ids required; nothing is deployed                                                   |
+| `SOURCES`, `CONCURRENCY` | staking sources the pipeline runs (default all) — escrow recognition for the core swap always asks every source; pipeline concurrency (default 4) | same                                                                                     |
+
+`.env.test` keeps supplying the **mainnet** discovery client; keep testnet secrets in the shell.
+The deployer pays every MBR: ~66 ALGO for the members, ~2 ALGO per instance and ~0.027 ALGO per
+AQ account (xALGO alone is ~8k accounts). The known part is checked against its balance before
+anything is written.
+
+Output, both gitignored, next to this README:
+
+- `.synthetic-accounts.<network>.json` — one entry per swapped account: `address`, `mnemonic`, the
+  mainnet address it `replaces`, the `reason` (`app-escrow` with its `appId`, or `tinyman-pool`),
+  a `votingPower` list (core votes and/or AlgoQuarters per instance — an account staked in several
+  instances gets one stand-in with several entries) and a human-readable `note`.
+- `.mirror-seed.<network>.json` — registries, both committee ids and the instances discovery found.
+
+It is resumable: the accounts file is written after every generated account, so a re-run reuses the
+same stand-ins, reproduces the same committee id and manifests, and the committee upload and the
+pipeline finish what is left. A file written for other registries makes the run abort rather than
+mixing keys — move it away to start over.
+
 ## Voting periods
 
 Nothing in the pipeline creates a gGov period, so neither run above leaves one behind.
