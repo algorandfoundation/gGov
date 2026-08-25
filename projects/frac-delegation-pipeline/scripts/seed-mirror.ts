@@ -11,6 +11,8 @@
  *                   instances by them, stage 2 delegates them)
  *   frac governors  swapped when escreg says the address is an app escrow, OR the account is a
  *                   Tinyman liquidity pool (rekeyed to XSKED5…VDEYM)
+ *   either          swapped when it is one of the Algorand Foundation's accounts
+ *                   (src/mirror/foundation-accounts.ts)
  *
  * Votes and AlgoQuarters are carried over unchanged. Synthetic accounts are NOT funded.
  *
@@ -259,7 +261,9 @@ async function main() {
   const committeeIdB64 = Buffer.from(committeeId).toString('base64')
   book.setCommitteeIds({ committeeId: committeeIdB64, realCommitteeId: realCommitteeIdB64 })
   console.log(
-    `  ${coreSwaps.size} of ${num(realCommittee.totalMembers)} members are app escrows outside the frac registry → swapped` +
+    `  ${coreSwaps.size} of ${num(realCommittee.totalMembers)} members swapped: ` +
+      `${[...coreSwaps.values()].filter((v) => v.reason === 'app-escrow').length} app escrows outside the frac registry, ` +
+      `${[...coreSwaps.values()].filter((v) => v.reason === 'foundation').length} Algorand Foundation accounts` +
       ` (${escrowAddresses.size} frac escrows kept real)\n  synthetic committee id ${committeeIdB64}`,
   )
 
@@ -316,7 +320,7 @@ async function main() {
   step('Running the pipeline (stages 1-3) with frac governor swaps…')
 
   const classifier = new FracAccountClassifier(escreg, algodAuthAddrLookup(mainnet), CONCURRENCY)
-  const fracSwapCounts = { 'app-escrow': 0, 'tinyman-pool': 0 }
+  const fracSwapCounts = { 'app-escrow': 0, 'tinyman-pool': 0, foundation: 0 }
   const mapAqAccounts: AqAccountMapper = async (accounts, { source, instanceName }) => {
     const verdicts = await classifier.classify(Object.keys(accounts))
     if (verdicts.size === 0) return accounts
@@ -378,7 +382,7 @@ async function main() {
       rows: [
         `${book.size} synthetic accounts`,
         `core governors  ${byKind.core}`,
-        `frac governors  ${byKind.frac} entries this run: ${fracSwapCounts['app-escrow']} app escrows, ${fracSwapCounts['tinyman-pool']} Tinyman pools`,
+        `frac governors  ${byKind.frac} entries this run: ${fracSwapCounts['app-escrow']} app escrows, ${fracSwapCounts['tinyman-pool']} Tinyman pools, ${fracSwapCounts.foundation} Foundation accounts`,
       ],
     },
     { label: 'FILES', rows: [SYNTHETIC_FILE, SEED_FILE] },

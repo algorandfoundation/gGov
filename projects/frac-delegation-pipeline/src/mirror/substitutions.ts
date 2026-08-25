@@ -1,8 +1,8 @@
 /**
  * Synthetic-account substitution for the mirror seed.
  *
- * A mirror of mainnet on another network carries accounts nobody can sign for there: app escrows
- * and liquidity pools. Each such account is replaced 1:1 by a freshly generated one whose mnemonic
+ * A mirror of mainnet on another network carries accounts nobody can sign for there: app escrows,
+ * liquidity pools and the Algorand Foundation's own accounts. Each such account is replaced 1:1 by a freshly generated one whose mnemonic
  * we keep, so testers can vote with its exact voting power. The `SubstitutionBook` owns that
  * `real → synthetic` map and persists it after every mutation: the accounts are random, so a resumed
  * run has to reuse them for the committee id and the AQ manifests to reproduce.
@@ -13,7 +13,7 @@ import * as algosdk from 'algosdk'
 import type { GGovCommitteeFile } from 'ggov-sdk'
 
 /** Why a real account cannot sign on the target network. */
-export type SubstitutionReason = 'app-escrow' | 'tinyman-pool'
+export type SubstitutionReason = 'app-escrow' | 'tinyman-pool' | 'foundation'
 
 export type VotingPowerEntry =
   | { kind: 'core'; votes: number; totalVotes: number }
@@ -61,7 +61,9 @@ function renderNote(account: Omit<SyntheticAccount, 'note'>): string {
   const why =
     account.reason === 'tinyman-pool'
       ? `Tinyman pool, rekeyed to ${short(TINYMAN_POOL_AUTH_ADDR)}`
-      : `app escrow${account.appId ? ` of app ${account.appId}` : ''}`
+      : account.reason === 'foundation'
+        ? 'Algorand Foundation account'
+        : `app escrow${account.appId ? ` of app ${account.appId}` : ''}`
   return `${power.join('. ') || 'No voting power recorded yet'}. Replaces ${account.replaces} (${why}).`
 }
 

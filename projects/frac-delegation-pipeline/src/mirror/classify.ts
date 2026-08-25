@@ -5,10 +5,12 @@
  *   escrows stay real: stage 1 recognizes instances by them and stage 2 delegates them.
  * - Frac governors (AQ accounts inside an instance): app escrows per escreg, or Tinyman liquidity
  *   pools — plain accounts rekeyed to the Tinyman pool logic-sig signer.
+ * - Either kind: the Algorand Foundation's accounts (`foundation-accounts.ts`), a fixed list.
  */
 
 import type { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import pMap from 'p-map'
+import { FOUNDATION_ACCOUNTS } from './foundation-accounts.ts'
 import { TINYMAN_POOL_AUTH_ADDR, type SubstitutionReason } from './substitutions.ts'
 
 /** The slice of `EscregSDK` used here, so tests can stub it. */
@@ -32,22 +34,33 @@ export function algodAuthAddrLookup(algorand: AlgorandClient): AuthAddrLookup {
   }
 }
 
-/** Committee members that are app escrows but not frac escrows: `address → classification`. */
+/**
+ * Committee members that are Foundation accounts, or app escrows but not frac escrows:
+ * `address → classification`.
+ */
 export async function classifyCoreGovs({
   addresses,
   escrowAddresses,
   escreg,
   concurrency,
+  foundation = FOUNDATION_ACCOUNTS,
 }: {
   addresses: string[]
   escrowAddresses: Iterable<string>
   escreg: EscrowLookup
   concurrency?: number
+  foundation?: Iterable<string>
 }): Promise<Map<string, Classification>> {
   const escrows = new Set(escrowAddresses)
-  const candidates = addresses.filter((a) => !escrows.has(a))
-  const owners = candidates.length ? await escreg.lookup({ addresses: candidates, concurrency }) : {}
+  const known = new Set(foundation)
   const out = new Map<string, Classification>()
+  const candidates: string[] = []
+  for (const address of addresses) {
+    if (escrows.has(address)) continue
+    if (known.has(address)) out.set(address, { reason: 'foundation' })
+    else candidates.push(address)
+  }
+  const owners = candidates.length ? await escreg.lookup({ addresses: candidates, concurrency }) : {}
   for (const address of candidates) {
     const appId = owners[address]
     if (appId !== undefined) out.set(address, { reason: 'app-escrow', appId })
@@ -57,8 +70,8 @@ export async function classifyCoreGovs({
 
 /**
  * Classifies AQ accounts, remembering every verdict so the same account seen in a second instance
- * costs nothing. Escreg first (one batched simulate), then an algod read per remaining account for
- * the Tinyman pool rekey.
+ * costs nothing. The Foundation list first (no I/O), then escreg (one batched simulate), then an
+ * algod read per remaining account for the Tinyman pool rekey.
  */
 export class FracAccountClassifier {
   private readonly cache = new Map<string, Classification | null>()
@@ -67,10 +80,16 @@ export class FracAccountClassifier {
   private readonly concurrency: number
 
   // No parameter properties: `--experimental-strip-types` does not support them (see plugins/base.ts)
-  constructor(escreg: EscrowLookup, auth: AuthAddrLookup, concurrency = 4) {
+  constructor(
+    escreg: EscrowLookup,
+    auth: AuthAddrLookup,
+    concurrency = 4,
+    foundation: Iterable<string> = FOUNDATION_ACCOUNTS,
+  ) {
     this.escreg = escreg
     this.auth = auth
     this.concurrency = concurrency
+    for (const address of foundation) this.cache.set(address, { reason: 'foundation' })
   }
 
   async classify(addresses: string[]): Promise<Map<string, Classification>> {

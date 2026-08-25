@@ -44,6 +44,13 @@ describe('classifyCoreGovs', () => {
     expect(out.get(A)).toEqual({ reason: 'app-escrow', appId: 1001n })
     expect(escreg.calls).toEqual([[A, C]])
   })
+
+  it('swaps Foundation accounts without asking escreg, unless they are frac escrows', async () => {
+    const escreg = escregOf()
+    const out = await classifyCoreGovs({ addresses: [A, B, C], escrowAddresses: [B], escreg, foundation: [A, B] })
+    expect([...out]).toEqual([[A, { reason: 'foundation' }]])
+    expect(escreg.calls).toEqual([[C]])
+  })
 })
 
 describe('FracAccountClassifier', () => {
@@ -68,6 +75,14 @@ describe('FracAccountClassifier', () => {
     expect([...second.keys()]).toEqual([A, B])
     expect(escreg.calls).toEqual([[A, B, C, E], [D]])
     expect(asked.length).toBe(4) // only D was new
+  })
+
+  it('knows Foundation accounts up front', async () => {
+    const escreg = escregOf()
+    const classifier = new FracAccountClassifier(escreg, { authAddrOf: async () => undefined }, 2, [A])
+    const out = await classifier.classify([A, B])
+    expect([...out]).toEqual([[A, { reason: 'foundation' }]])
+    expect(escreg.calls).toEqual([[B]])
   })
 })
 

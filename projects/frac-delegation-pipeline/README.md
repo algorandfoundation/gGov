@@ -122,6 +122,7 @@ accounts nobody could sign for there with generated ones, keeping their exact vo
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | core (committee members)     | [escreg](https://github.com/d13co/escreg) says the address is an app escrow **and** it is not one of the committee's frac escrows — pool escrows stay real so stage 1 recognizes their instance and stage 2 delegates them |
 | frac (AlgoQuarters accounts) | escreg says the address is an app escrow, **or** the account is a Tinyman liquidity pool (rekeyed to `XSKED5…VDEYM`)                                                                                                       |
+| either                       | the address is one of the Algorand Foundation's consensus accounts (`src/mirror/foundation-accounts.ts`, from the consensus dashboard's owner export)                                                                      |
 
 Votes and AlgoQuarters are carried over unchanged; the synthetic committee therefore has its own
 id (the mainnet one is recorded alongside). Synthetic accounts are **not funded**.
