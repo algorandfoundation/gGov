@@ -24,7 +24,7 @@
  *   DEPLOYER_MNEMONIC      required on testnet; the registries' admin + operator. Localnet uses the
  *                          deterministic deployer, topped up from the dispenser.
  *   GGOV_REGISTRY_APP_ID / FRAC_REGISTRY_APP_ID   required on testnet; on localnet, absent means
- *                          "deploy and wire both" (no localnet reset).
+ *                          "deploy and wire both", with periods numbered from 16 (no localnet reset).
  *   SOURCES                comma-separated staking sources (default all), e.g. SOURCES=talgo
  *   CONCURRENCY            pipeline concurrency (default 4)
  *
@@ -74,6 +74,12 @@ const NETWORK = networkFromEnv()
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 4)
 const SOURCES = process.env.SOURCES ? process.env.SOURCES.split(',').map((s) => s.trim()) : AVAILABLE_SOURCES
 
+/**
+ * Localnet-only: the id the first period created on the deployed gGov registry gets. Legacy
+ * governance ran 15 periods, so a mirror continues the numbering at 16 (the registry's period
+ * counter is seeded to 15, as production's is) — the council election preview is then period #16.
+ */
+const FIRST_PERIOD_ID = 16
 /** Localnet-only: the deployer is topped up to this floor at the start of every run (see seed-full-instances). */
 const DEPLOYER_FLOOR_ALGOS = 3_000n
 /** Per-member top-up of the gGov registry app before the committee upload, matching the uploader. */
@@ -162,12 +168,15 @@ async function main() {
       )
     }
     if (gGovRegistryAppId || fracRegistryAppId) throw new Error('Set both registry app ids or neither')
-    console.log('  no registry app ids given: deploying and wiring both on localnet')
+    console.log(
+      `  no registry app ids given: deploying and wiring both on localnet (periods start at #${FIRST_PERIOD_ID})`,
+    )
     const created = await GGovRegistrySDK.createRegistry({
       algorand,
       deployer: deployerAccount,
       operatorAccount: deployer,
       initialFundingAlgos: 50n,
+      firstPeriodId: FIRST_PERIOD_ID,
     })
     const { appClient: fracRegistryApp } = await FracDelegationRegistrySDK.createRegistry({
       algorand,
