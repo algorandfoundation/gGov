@@ -658,9 +658,10 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const periodId = u32(this.lastPeriodId.value)
 
     // AVM stack-bytes values are capped at 4096 bytes, so the box is read in three pages — matching
-    // what uploadPeriodApproval accepts, and covering the 12288 bytes an approval program can reach
-    // under v13's 7 extra program pages. The AVM concatenates the pages back together at appcreate
-    // time; empty trailing pages are a no-op.
+    // what uploadPeriodApproval accepts. That upload carries at most 12282 bytes (3 args of 4094,
+    // an ARC-4 `byte[]` costing 2 bytes of length prefix), so it is short of the 16384 bytes v13's
+    // 7 extra program pages allow: a program that fills them cannot be uploaded this way. The AVM
+    // concatenates the pages back together at appcreate time; empty trailing pages are a no-op.
     const approvalKey = Bytes`Pap`
     const [approvalLen] = op.Box.length(approvalKey)
     const PAGE_SIZE: uint64 = 4096

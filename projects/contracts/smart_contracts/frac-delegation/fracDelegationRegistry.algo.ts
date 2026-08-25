@@ -244,9 +244,10 @@ export class FracDelegationRegistryContract extends BaseContract {
     loggedAssert(this.instanceApprovalBox.exists, errInstanceAppNotConfigured)
 
     // AVM stack-bytes values are capped at 4096 bytes, so the box is read in three pages — matching
-    // what uploadInstanceApproval accepts, and covering the 12288 bytes an approval program can
-    // reach under v13's 7 extra program pages. The AVM concatenates the pages back together at
-    // appcreate time; empty trailing pages are a no-op.
+    // what uploadInstanceApproval accepts. That upload carries at most 12282 bytes (3 args of 4094,
+    // an ARC-4 `byte[]` costing 2 bytes of length prefix), so it is short of the 16384 bytes v13's
+    // 7 extra program pages allow: a program that fills them cannot be uploaded this way. The AVM
+    // concatenates the pages back together at appcreate time; empty trailing pages are a no-op.
     const approvalKey = Bytes`Iap`
     const [approvalLen] = op.Box.length(approvalKey)
     const PAGE_SIZE: uint64 = 4096
