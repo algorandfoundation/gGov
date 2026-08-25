@@ -3,7 +3,7 @@
  *
  * Creates one election period on the gGov registry `seed-mirror` populated, shaped after the real
  * first council election (governance period 15, voting session 1): its description adapted to a
- * second term, one Yes/No/Abstain measure per candidate, 11 seats — but every candidate mocked
+ * second term, one Support/Veto/Abstain measure per candidate, 11 seats — but every candidate mocked
  * (names, bios, project affiliations, handles; see `src/mirror/council-election.ts`). The period is
  * then synced onto every frac instance holding the mirror committee, so both core governors and
  * fractional governors (the synthetic stand-ins included) can preview and vote on it.

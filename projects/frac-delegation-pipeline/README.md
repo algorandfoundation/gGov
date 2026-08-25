@@ -188,7 +188,7 @@ exactly its MBR. Three periods cost it ~0.5 ALGO at these shapes.
 `seed-council-election` is the mirror seed's counterpart: one election period on the registries
 `.mirror-seed.<network>.json` names, faking the **second xGov Council election**. It is shaped after
 the real first one (governance period 15, voting session 1, from `common/gov-fixtures`): the
-session description adapted to a second term, 22 candidates for 11 seats, one Yes/No/Abstain
+session description adapted to a second term, 22 candidates for 11 seats, one Support/Veto/Abstain
 measure per candidate with the application layout the real ones had (experience summary, application
 link, project affiliations, social profiles, closing question). The candidates themselves are
 invented — names, bios, products, handles and links are all mocked, deterministically, so every run

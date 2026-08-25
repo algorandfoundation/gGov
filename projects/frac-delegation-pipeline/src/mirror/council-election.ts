@@ -3,7 +3,7 @@
  * voting session 1 — `common/gov-fixtures/voting-session-period-15-voting-session-1.json`).
  *
  * What is taken from the fixture is the *shape*: the session description (adapted to a second
- * term), the candidate count, the one-measure-per-candidate ballot with Yes/No/Abstain, and the
+ * term), the candidate count, the one-measure-per-candidate ballot (Support/Veto/Abstain here, as gGov elections use), and the
  * layout every candidate application follows (experience summary, application link, project
  * affiliations, social profiles, the closing question). Every candidate is otherwise invented:
  * names, bios, products, handles and links are mocked, deterministically, so re-runs and networks
@@ -209,14 +209,21 @@ function candidateBody(c: Omit<MockCandidate, 'body'>, rand: () => number): stri
  */
 function secondTermDescription(firstTermHtml: string): string {
   const md = htmlToMarkdown(firstTermHtml)
-  return md
-    .replace(
-      /As we begin the unincentivized governance era, we would like to thank all governors for participating in this democratic process\./,
-      'One term into the unincentivized governance era, we would like to thank all governors for participating in this democratic process.',
-    )
-    .replace(/the first xGov council election/g, 'the second xGov council election')
-    .replace(/For the first implementation, /, 'For the second term, ')
-    .replace(/will form the first 12-month council with cohort/, 'will form the second 12-month council cohort')
+  return (
+    md
+      .replace(
+        /As we begin the unincentivized governance era, we would like to thank all governors for participating in this democratic process\./,
+        'One term into the unincentivized governance era, we would like to thank all governors for participating in this democratic process.',
+      )
+      .replace(/the first xGov council election/g, 'the second xGov council election')
+      .replace(/For the first implementation, /, 'For the second term, ')
+      .replace(/will form the first 12-month council with cohort/, 'will form the second 12-month council cohort')
+      // gGov election candidates carry Support/Veto/Abstain; the first election's ballot said yes/no.
+      .replace(
+        /selecting one of three options: yes, no, abstain/,
+        'selecting one of three options: support, veto, abstain',
+      )
+  )
 }
 
 /**
@@ -247,7 +254,7 @@ export function buildCouncilElection(fixture: VotingSessionFixture, seed = 2): C
     body: secondTermDescription(fixture.description_html),
     elect: [{ t: 'xGov Council', s: COUNCIL_SEATS }],
     candidates,
-    options: ['Yes', 'No', 'Abstain'],
+    options: ['Support', 'Veto', 'Abstain'],
   }
 }
 

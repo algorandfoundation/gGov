@@ -24,10 +24,10 @@ describe('buildCouncilElection', () => {
   it('mirrors the shape of the real first election', () => {
     expect(election.candidates).toHaveLength(fixture.topics.length)
     expect(election.elect).toEqual([{ t: 'xGov Council', s: COUNCIL_SEATS }])
-    expect(election.options).toEqual(['Yes', 'No', 'Abstain'])
+    expect(election.options).toEqual(['Support', 'Veto', 'Abstain'])
     expect(election.title).toBe('xGov Council Election Term 2')
     expect(election.body).toContain('the second xGov council election')
-    expect(election.body).toContain('one of three options: yes, no, abstain')
+    expect(election.body).toContain('one of three options: support, veto, abstain')
     expect(election.body).not.toMatch(/<[a-z]+>/)
   })
 
