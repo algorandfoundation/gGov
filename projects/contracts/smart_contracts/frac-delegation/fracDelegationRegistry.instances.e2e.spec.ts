@@ -25,7 +25,7 @@ const deployRegistryWithoutBytecode = async (localnet: AlgorandFixture, admin: A
   const { appClient } = await factory.deploy({
     onUpdate: 'append',
     onSchemaBreak: 'append',
-    createParams: { extraProgramPages: 3 },
+    createParams: { method: 'createApplication', args: [], extraProgramPages: 3 },
   })
   await localnet.algorand.account.ensureFundedFromEnvironment(appClient.appAddress, (10).algos())
   return createFracRegistrySDK(localnet, appClient.appId, admin)

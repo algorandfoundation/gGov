@@ -11,6 +11,23 @@ import { FracDelegationRegistryContract } from './fracDelegationRegistry.algo'
 // Expose the protected read subroutine for testing.
 class FracDelegationRegistryContractTest extends FracDelegationRegistryContract {
   declare public getAccountIfExists: (account: Account) => FracRegAccount
+
+  /**
+   * Stub out the real create, which runs `app_params_set` to open the registry's boxes to foreign
+   * reads. ATST 1.2.0 predates AVM v13 and has no implementation for that opcode, so the genuine
+   * body cannot execute in the emulator; the box-read opt-in is covered e2e instead.
+   *
+   * It still has to *run*: ATST holds a contract with any create method in `isCreating` and rejects
+   * every ABI call with "method can not be called while creating" until one of them is invoked.
+   */
+  public override createApplication(): void {}
+}
+
+/** Create the contract and clear ATST's `isCreating`, so ABI methods are callable. */
+const createTestContract = (ctx: TestExecutionContext): FracDelegationRegistryContractTest => {
+  const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+  contract.createApplication()
+  return contract
 }
 
 /** Numeric IDs of the instances an account is associated with. */
@@ -33,7 +50,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
 
   describe('getAccount / getAccountIfExists', () => {
     it('getAccount returns zero accountId and no instances for an unknown account', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
 
       const actual = contract.getAccount(ctx.any.account())
 
@@ -42,7 +59,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('getAccountIfExists returns an empty struct for an unknown account', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
 
       const actual = contract.getAccountIfExists(ctx.any.account())
 
@@ -51,7 +68,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('getAccount returns the stored record for a known account', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const account = ctx.any.account()
       // Seed the account box directly (FracRegAccount is all arc4 types, so it round-trips).
       contract.accounts(account).value = { accountId: u32(7), instanceNumIds: [u16(1), u16(2)] }
@@ -71,7 +88,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
 
   describe('getOrCreateAccountWithInstance', () => {
     it('rejects when the instance does not exist', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
 
       expectArc65Error(
         ctx,
@@ -89,7 +106,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
   // fracDelegationRegistry.reader.e2e.spec.ts.
   describe('getOrCreateAccountWithInstance — creation & auth', () => {
     it('creates account id 1 and associates the instance', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const instanceApp = ctx.any.application()
       const instanceNum = u16(1)
       seedInstance(contract, instanceNum, instanceApp)
@@ -109,7 +126,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('reuses the account and does not duplicate the instance on a repeat call', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const instanceApp = ctx.any.application()
       const instanceNum = u16(1)
       seedInstance(contract, instanceNum, instanceApp)
@@ -125,7 +142,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('adds a second instance to an existing account', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const instanceAppA = ctx.any.application()
       const instanceAppB = ctx.any.application()
       seedInstance(contract, u16(1), instanceAppA)
@@ -144,7 +161,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('assigns incrementing account ids to distinct accounts', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const instanceApp = ctx.any.application()
       const instanceNum = u16(1)
       seedInstance(contract, instanceNum, instanceApp)
@@ -158,7 +175,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('allows the registry admin to register an account', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const instanceApp = ctx.any.application()
       const instanceNum = u16(1)
       seedInstance(contract, instanceNum, instanceApp)
@@ -171,7 +188,7 @@ describe('[fast] FracDelegationRegistryContract accounts', () => {
     })
 
     it('rejects when the caller is neither the instance app nor the admin', () => {
-      const contract = ctx.contract.create(FracDelegationRegistryContractTest)
+      const contract = createTestContract(ctx)
       const instanceApp = ctx.any.application()
       const instanceNum = u16(1)
       seedInstance(contract, instanceNum, instanceApp)
