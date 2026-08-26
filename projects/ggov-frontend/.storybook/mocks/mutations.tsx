@@ -96,6 +96,8 @@ export const useUndelegateMutation = useFakeMutation
 export const useVoteMutation = useFakeMutation
 /** Pooled ballot cast on a staking pool's frac instance — same fake phase timeline. */
 export const useFracVoteMutation = useFakeMutation
+// Registry funding panel (RegistryFundingPanel) — a plain payment in the real module.
+export const useTopUpRegistryMutation = useFakeMutation
 
 /**
  * Typed payload because the account page's delegator rows read `variables` to tell

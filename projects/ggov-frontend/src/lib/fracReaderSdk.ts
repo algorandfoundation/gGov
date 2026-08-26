@@ -68,3 +68,17 @@ export function createFracSDK(writerAccount: SenderWithSigner): Promise<FracDele
       }),
   )
 }
+
+/**
+ * Key length of the instance's `votingRecords` box, for sizing a pooled voter's MBR.
+ *
+ * A constant, but reached through the same dynamic `import()` as the SDKs above rather than a static
+ * one: importing any value from the package root pulls in the generated clients and their inline
+ * ARC-56 specs, which is exactly what this module exists to keep out of the main bundle. The import
+ * resolves to the already-loaded chunk whenever a pooled query has run, so it costs no extra
+ * download. Null on a network with no frac registry, like its neighbours.
+ */
+export function getFracVotingRecordKeyLength(): Promise<number> | null {
+  if (fracRegistryAppId === undefined) return null
+  return import('frac-delegation-sdk').then(({ FRAC_VOTING_RECORD_KEY_LENGTH }) => FRAC_VOTING_RECORD_KEY_LENGTH)
+}

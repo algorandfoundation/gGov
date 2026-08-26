@@ -1,4 +1,6 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { microAlgo } from '@algorandfoundation/algokit-utils'
+import { getApplicationAddress } from 'algosdk'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { toast } from 'sonner'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
@@ -438,6 +440,39 @@ export function useSetReadyMutation() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.period(vars.periodId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.periods })
       txnSuccessToast(vars.ready ? 'Period marked ready' : 'Period marked draft', data)
+    },
+    onError: (err) => showError(err, { transaction: true }),
+  })
+}
+
+/**
+ * Fund a registry app account by the amount the funding panel says it is short.
+ *
+ * An ordinary payment, not a contract call: both registries spend from their plain account balance,
+ * and neither exposes (or needs) a deposit method. That is also why this serves the frac registry
+ * without touching the frac SDK — a payment does not care what the receiver is, so a network with
+ * pooled voting pays no extra bundle cost to fund it.
+ *
+ * Unlike the operator-gated writes above, nothing on chain restricts who may send it; the caller is
+ * whichever wallet is connected.
+ */
+export function useTopUpRegistryMutation() {
+  const { sdk } = useGGovSDK()
+  const queryClient = useQueryClient()
+  const { showError } = useErrorDialog()
+
+  return useMutation({
+    mutationFn: (args: { appId: bigint; amount: bigint; label: string }) =>
+      sdk!.algorand.send.payment({
+        sender: sdk!.writerAccount!.sender,
+        signer: sdk!.writerAccount!.signer,
+        receiver: getApplicationAddress(args.appId),
+        amount: microAlgo(args.amount),
+      }),
+    onSuccess: (data, vars) => {
+      // The panel reads straight off the app account, so its balance entry is the thing that moved.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.appAccountInfo(vars.appId) })
+      txnSuccessToast(`Topped up the ${vars.label} registry`, data)
     },
     onError: (err) => showError(err, { transaction: true }),
   })
