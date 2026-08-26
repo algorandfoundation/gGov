@@ -10,8 +10,12 @@ interface PeriodInfoCardProps {
   votingStart: number
   /** Voting window end, unix seconds. */
   votingEnd: number
-  /** Number of topics in the period. */
+  /** Number of ballot items in the period — topics, or candidates for an election. */
   topics: number
+  /** Row label for {@link topics}. Defaults to the standard-period noun. */
+  topicsLabel?: string
+  /** Races the period declares. A row is added when it runs more than one. */
+  elections?: number
   /** Total voting power exercised so far across the period. */
   votesCast: number
   /** Committee size — number of governors eligible to vote. Undefined while loading. */
@@ -42,6 +46,8 @@ export default function PeriodInfoCard({
   votingStart,
   votingEnd,
   topics,
+  topicsLabel = 'Topics',
+  elections,
   votesCast,
   eligibleGovernors,
   committeeHref,
@@ -60,7 +66,14 @@ export default function PeriodInfoCard({
         <InfoRow label="Ends">
           <span className="text-sm font-medium tabular-nums">{formatTimestamp(votingEnd)}</span>
         </InfoRow>
-        <InfoRow label="Topics">
+        {/* A single-election period is just "N candidates" — the race count only
+            says something once there is more than one. */}
+        {elections !== undefined && elections > 1 && (
+          <InfoRow label="Elections">
+            <span className="font-display text-[19px] font-bold tabular-nums">{elections.toLocaleString()}</span>
+          </InfoRow>
+        )}
+        <InfoRow label={topicsLabel}>
           <span className="font-display text-[19px] font-bold tabular-nums">{topics.toLocaleString()}</span>
         </InfoRow>
         <InfoRow label="Eligible governors" href={committeeHref}>

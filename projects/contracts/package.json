@@ -4,7 +4,7 @@
   "description": "Smart contract deployer",
   "main": "smart_contracts/index.ts",
   "scripts": {
-    "build": "algokit compile ts smart_contracts --output-source-map --out-dir artifacts && algokit generate client smart_contracts/artifacts --output {app_spec_dir}/{contract_name}Client.ts",
+    "build": "algokit compile ts smart_contracts --output-source-map --target-avm-version 13 --out-dir artifacts && algokit generate client smart_contracts/artifacts --output {app_spec_dir}/{contract_name}Client.ts",
     "deploy": "tsx watch --clear-screen=false -r dotenv/config smart_contracts/index.ts",
     "deploy:ci": "tsx -r dotenv/config smart_contracts/index.ts",
     "lint": "eslint smart_contracts",
@@ -17,30 +17,30 @@
     "test:watch": "vitest watch",
     "sync-clock": "tsx scripts/sync-localnet-clock.ts",
     "check-clients": "tsx scripts/check-generated-clients.ts",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit && tsc -p scripts/tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@algorandfoundation/algorand-typescript": "^1.1.0",
+    "@algorandfoundation/algorand-typescript": "^1.3.0",
     "@d13co/superbox": "^2.0.0",
-    "ggov-sdk": "link:../ggov-sdk",
-    "xgov-delegator-sdk": "link:../delegator-sdk"
+    "frac-delegation-sdk": "link:../frac-delegation-sdk",
+    "ggov-sdk": "link:../ggov-sdk"
   },
   "devDependencies": {
     "@algorandfoundation/algokit-client-generator": "^6.0.0",
-    "@algorandfoundation/algokit-utils": "^9.0.0",
+    "@algorandfoundation/algokit-utils": "^9.2.0",
     "@algorandfoundation/algokit-utils-debug": "^1.0.4",
-    "@algorandfoundation/algorand-typescript-testing": "^1.1.0",
-    "@algorandfoundation/puya-ts": "^1.1.0",
+    "@algorandfoundation/algorand-typescript-testing": "^1.2.0",
+    "@algorandfoundation/puya-ts": "^1.3.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^25.2.1",
-    "@vitest/coverage-v8": "^4.1.9",
-    "algosdk": "^3.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "algosdk": "^3.7.0",
     "better-npm-audit": "^3.11.0",
     "dotenv": "^16.4.7",
     "tslib": "^2.8.1",
     "tsx": "^4.21.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "esbuild": "0.25.0"

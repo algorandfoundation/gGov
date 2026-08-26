@@ -1,0 +1,45 @@
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { FracDelegationRegistrySDK, FracDelegationSDK } from 'frac-delegation-sdk'
+
+// Cross-app links (gGovRegistryApp) are set by wireRegistries in ../wire-registries.ts, after
+// every deploy config has run.
+export async function deploy() {
+  console.log('\n=== Deploying FracRegistry ===')
+
+  const algorand = AlgorandClient.fromEnvironment()
+  const deployer = await algorand.account.fromEnvironment('DEPLOYER')
+  const writerAccount = { sender: deployer.addr, signer: deployer.signer }
+
+  const { appClient } = await FracDelegationRegistrySDK.createRegistry({
+    algorand,
+    deployer: writerAccount,
+    defaultOperatorAccount: deployer.addr.toString(),
+    initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
+    update: true,
+  })
+  console.log(`FracDelegationRegistry app id ${appClient.appId} (${appClient.appAddress})`)
+
+  // Combined SDK for instance ops; registry ops go through sdk.registry.
+  const sdk = new FracDelegationSDK({
+    algorand,
+    registryAppId: appClient.appId,
+    writerAccount,
+  })
+
+  // If the registry already has instances, update each one's on-chain app code to the
+  // latest FracDelegationInstance bytecode bundled with this fractional-delegation-sdk
+  // build (createRegistry only refreshed the bytecode stored on the registry, not the
+  // already-deployed instance apps).
+  const instances = await sdk.registry.getExistingInstances()
+  if (instances.size === 0) {
+    console.log('Registry has no instances to update')
+  } else {
+    console.log(`Updating ${instances.size} instance app(s) to the latest FracDelegationInstance build`)
+    for (const [id, instance] of instances) {
+      await sdk.updateInstanceApp({ instanceNumId: id })
+      console.log(`Updated instance app ${instance.appId} (instanceId ${id})`)
+    }
+  }
+
+  return appClient.appId
+}

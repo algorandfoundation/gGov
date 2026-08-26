@@ -1,9 +1,10 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { GGovSDK, GGovRegistrySDK } from 'ggov-sdk'
 
-// Below is a showcase of various deployment options you can use in TypeScript Client
+// Cross-app links (xGovRegistryApp, fracRegistryApp) are set by wireRegistries in
+// ../wire-registries.ts, after every deploy config has run.
 export async function deploy() {
-  console.log('=== Deploying GGovRegistry ===')
+  console.log('\n=== Deploying GGovRegistry ===')
 
   const algorand = AlgorandClient.fromEnvironment()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
@@ -12,10 +13,10 @@ export async function deploy() {
     algorand,
     deployer: { sender: deployer.addr, signer: deployer.signer },
     operatorAccount: deployer.addr.toString(),
-    // xGovRegistryAppId: 1234n, // optional: pre-configure the xGov registry app id
     initialFundingAlgos: 50, // optional: defaults to 10 ALGO (covers approval-box MBR + base)
     update: true,
   })
+  console.log(`GGovRegistry app id ${appClient.appId} (${appClient.appAddress})`)
   // Combined SDK for period ops; registry ops go through sdk.registry.
   const sdk = new GGovSDK({
     algorand,
@@ -37,4 +38,6 @@ export async function deploy() {
       console.log(`Updated period app ${appId} (periodId ${id})`)
     }
   }
+
+  return appClient.appId
 }

@@ -6,7 +6,6 @@ export default defineConfig({
   esbuild: {},
   test: {
     globalSetup: ['./vitest.globalSetup.ts'],
-    minWorkers: 1,
     maxWorkers: 3,
     testTimeout: 30000,
     hookTimeout: 40000,

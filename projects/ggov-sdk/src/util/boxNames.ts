@@ -8,3 +8,14 @@ export const topicBodyBoxName = (index: number | bigint): Uint8Array => {
   new DataView(name.buffer).setUint32(1, Number(index))
   return name
 }
+
+/** Box name for the registry's `periods` entry: 'p' (0x70) followed by the big-endian uint32 periodId. */
+export const periodBoxName = (periodId: number | bigint): Uint8Array => {
+  const name = new Uint8Array(5)
+  name[0] = 0x70 // 'p'
+  new DataView(name.buffer).setUint32(1, Number(periodId))
+  return name
+}
+
+/** The registry box holding the GGovPeriod approval bytecode: the ASCII key 'Pap'. */
+export const PERIOD_APPROVAL_BOX_NAME = new TextEncoder().encode('Pap')

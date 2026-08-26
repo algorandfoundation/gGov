@@ -15,7 +15,7 @@ class AccountIdContractTest extends AccountIdContract {
   declare public getOrCreateAccountId: (account: Account) => Uint32
 }
 
-describe('AccountIdContract', () => {
+describe('[fast] AccountIdContract', () => {
   const ctx = new TestExecutionContext()
 
   beforeEach(() => ctx.reset())

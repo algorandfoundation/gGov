@@ -13,11 +13,14 @@ import { formatMonthDayYear, formatTime, roundsToDays } from '@/utils/time'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import { Surface } from '@/components/ui/surface'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { useAddressName } from '@/hooks/use-nfd'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { AccountAvatar } from '@/components/AccountAvatar'
 import BackButton from '@/components/BackButton'
+import PooledVotingCard from '@/components/PooledVotingCard'
+import { csvDocument, downloadBlob } from '@/utils/download'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE = 25
@@ -27,19 +30,9 @@ function ellipseCommitteeId(id: string): string {
   return id.length > 18 ? `${id.slice(0, 8)}…${id.slice(-6)}` : id
 }
 
-/** Card surface matching the vote/period pages (hairline border + sm shadow). */
-function Surface({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('rounded-xl border border-border bg-card shadow-sm', className)} {...props} />
-}
-
 // ── Export dropdown ─────────────────────────────────────────────────────────
 
 type ExportKind = 'csv' | 'json'
-
-function csvCell(value: string | number): string {
-  const s = String(value)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-}
 
 /** Build and download the full committee as CSV or the canonical ARC-86 JSON. */
 async function downloadCommittee(
@@ -55,16 +48,15 @@ async function downloadCommittee(
     const sharePct = (votes: number) => (total > 0 ? (votes / total) * 100 : 0)
     // Members are stored ranked by votes; mirror that ordering in the export.
     const ranked = [...members].sort((a, b) => b.votes - a.votes)
-    const header = 'rank,account,votes,share_pct'
-    const body = ranked.map((m, i) => {
-      const addr = m.account.toString()
-      return [i + 1, addr, m.votes, sharePct(m.votes).toFixed(4)].map(csvCell).join(',')
-    })
-    blob = new Blob([[header, ...body].join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const csv = csvDocument(
+      ['rank', 'account', 'votes', 'share_pct'],
+      ranked.map((m, i) => [i + 1, m.account.toString(), m.votes, sharePct(m.votes).toFixed(4)]),
+    )
+    blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     filename = `${committee.periodStart}-${committee.periodEnd}-${committee.idBase64Url}.csv`
   } else {
     // Read the committee straight from chain and serialise it as the canonical
-    // ARC-86 committee file: minified, fields in canonical order, xGovs sorted by
+    // ARC-86 committee file: minified, fields in canonical order, govs sorted by
     // address. This is byte-identical to the published committee files, so the
     // file's hash reproduces the committee id.
     const file = await readerSDK.registry.fastGetCommittee(committee.id)
@@ -73,14 +65,7 @@ async function downloadCommittee(
     filename = `${file.periodStart}-${file.periodEnd}-${committee.idBase64Url}.json`
   }
 
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  downloadBlob(blob, filename)
 }
 
 function ExportMenu({ onExport, disabled }: { onExport: (kind: ExportKind) => void; disabled: boolean }) {
@@ -209,7 +194,31 @@ function StartEndPanel({ committee }: { committee: CommitteeOption }) {
 
 // ── Members leaderboard ──────────────────────────────────────────────────────
 
-const LEADERBOARD_GRID = 'grid grid-cols-[36px_1fr_minmax(120px,200px)_90px] items-center gap-3.5'
+/**
+ * Four columns on tablet and up. Narrower than that the share column's 120px
+ * minimum left the account column ~46px — enough for the avatar and nothing
+ * else — so below `sm` the row drops to rank / account / votes and the share
+ * bar moves inline under the account name (matching the design's mobile frame).
+ */
+const LEADERBOARD_GRID =
+  'grid grid-cols-[28px_1fr_auto] items-center gap-3 sm:grid-cols-[36px_1fr_minmax(120px,200px)_90px] sm:gap-3.5'
+
+/**
+ * Share-of-total meter. Same track/fill at both breakpoints, different height.
+ *
+ * Decorative: the bar is scaled against the *largest* member rather than the
+ * total, so it is a ranking cue and not the figure itself. The share is always
+ * carried in text beside it — visibly above `sm`, screen-reader-only below,
+ * where the share column is dropped — so the bar is hidden from assistive tech
+ * rather than given a value it does not actually encode.
+ */
+function ShareBar({ barPct, className }: { barPct: number; className?: string }) {
+  return (
+    <div aria-hidden="true" className={cn('overflow-hidden rounded-full bg-muted', className)}>
+      <div className="h-full rounded-full bg-algo-blue dark:bg-algo-teal" style={{ width: `${barPct}%` }} />
+    </div>
+  )
+}
 
 function MemberRow({
   address,
@@ -232,7 +241,7 @@ function MemberRow({
       params={{ address }}
       className={cn(
         LEADERBOARD_GRID,
-        'border-b border-border px-4.5 py-3 transition-colors last:border-0 hover:bg-muted/40',
+        'border-b border-border px-3.5 py-3 transition-colors last:border-0 hover:bg-muted/40 sm:px-4.5',
       )}
     >
       <span
@@ -244,23 +253,26 @@ function MemberRow({
         {rank}
       </span>
       <div className="flex min-w-0 items-center gap-2.5">
-        <AccountAvatar address={address} name={name} size={28} />
-        <div className="min-w-0">
+        <AccountAvatar address={address} name={name} size={28} className="shrink-0" />
+        <div className="min-w-0 flex-1">
           <div className="truncate text-[13.5px] font-semibold text-algo-blue dark:text-algo-teal">
             {name ?? ellipsed}
           </div>
           {name && <div className="truncate font-mono text-[11.5px] text-muted-foreground">{ellipsed}</div>}
+          {/* Below `sm` the share column is gone, so the bar rides under the name —
+              with the percentage it stands for kept for screen readers, which
+              would otherwise lose the figure entirely at this breakpoint. */}
+          <ShareBar barPct={barPct} className="mt-1.5 h-[5px] sm:hidden" />
+          <span className="sr-only sm:hidden">{share.toFixed(2)}% of committee votes</span>
         </div>
       </div>
-      <div className="flex items-center gap-2.5">
-        <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-algo-blue dark:bg-algo-teal" style={{ width: `${barPct}%` }} />
-        </div>
+      <div className="hidden items-center gap-2.5 sm:flex">
+        <ShareBar barPct={barPct} className="h-[7px] flex-1" />
         <span className="w-[46px] shrink-0 text-right text-xs tabular-nums text-muted-foreground">
           {share.toFixed(2)}%
         </span>
       </div>
-      <span className="text-right text-sm font-semibold tabular-nums">{votes.toLocaleString()}</span>
+      <span className="text-right text-[13px] font-semibold tabular-nums sm:text-sm">{votes.toLocaleString()}</span>
     </Link>
   )
 }
@@ -357,6 +369,18 @@ export default function CommitteeDetail() {
         </div>
       )}
 
+      {/* Pooled voting. Part of the summary, so it follows the block panel in
+          being omitted when the committee isn't found — but it fetches its own
+          pool data and fills in independently of everything above it. */}
+      {(loadingCommittee || committee) && (
+        <PooledVotingCard
+          className="mt-5"
+          committeeId={committeeId}
+          totalVotes={committee?.totalVotes}
+          loadingTotalVotes={loadingCommittee}
+        />
+      )}
+
       {/* Members leaderboard. */}
       <div className="mt-7 flex items-baseline justify-between gap-3">
         <Eyebrow>Members</Eyebrow>
@@ -367,17 +391,18 @@ export default function CommitteeDetail() {
         <div
           className={cn(
             LEADERBOARD_GRID,
-            'border-b border-input px-4.5 py-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground',
+            'border-b border-input px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground sm:px-4.5',
           )}
         >
           <span>#</span>
           <span>Account</span>
-          <span>Share of total</span>
+          {/* Hidden below `sm`, where the row has no share column of its own. */}
+          <span className="hidden sm:block">Share of total</span>
           <span className="text-right">Votes</span>
         </div>
 
         {loadingMembers ? (
-          <div className="flex flex-col gap-2 p-4.5">
+          <div className="flex flex-col gap-2 p-3.5 sm:p-4.5">
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
@@ -404,7 +429,7 @@ export default function CommitteeDetail() {
             })}
 
             {/* Pager + caption on an inset footer. */}
-            <div className="flex items-center justify-between gap-3.5 bg-muted/40 px-4.5 py-3">
+            <div className="flex items-center justify-between gap-2 bg-muted/40 px-3.5 py-3 sm:gap-3.5 sm:px-4.5">
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}

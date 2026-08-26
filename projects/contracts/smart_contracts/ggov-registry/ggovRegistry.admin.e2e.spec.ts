@@ -1,10 +1,17 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovRegistrySDK, increaseBudgetBaseCost, increaseBudgetIncrementCost, XGovCommitteeFile } from 'ggov-sdk'
-import { errUnauthorized } from '../base/errors.algo'
+import { GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
+import { errRegistryMissing, errUnauthorized } from '../base/errors.algo'
 import { createSDK, deployRegistry, generateAccountWithSDK, transformedError } from '../common-tests'
 import committeeTemplate from '../../../common/committee-files/template.json'
 import { configureTestLogging } from '../test-utils'
+import registryArc56 from '../artifacts/ggov-registry/GGovRegistry.arc56.json'
+import { extraProgramPages } from '../../../ggov-sdk/src/util/extraProgramPages'
+
+const expectedRegistryPages = extraProgramPages(
+  Buffer.from(registryArc56.byteCode!.approval, 'base64'),
+  Buffer.from(registryArc56.byteCode!.clear, 'base64'),
+)
 
 describe('GGovRegistry admin', () => {
   const localnet = algorandFixture()
@@ -14,12 +21,14 @@ describe('GGovRegistry admin', () => {
 
   // Infrastructure
   describe('deployment configuration', () => {
-    // GGovRegistrySDK.createRegistry() is the production deploy path. It hard-codes
-    // extraProgramPages: 3 so the approval program can grow toward the AVM ceiling
-    // without ever needing a redeploy. The registry's global schema is declared by the
-    // contract itself and sits exactly at the AVM hard cap of 64 (44 uints + 20 bytes);
-    // these two assertions guard against either drifting silently on a contract change.
-    test('registry deploys with extraProgramPages=3 and a global schema summing to 64', async () => {
+    // GGovRegistrySDK.createRegistry() is the production deploy path. It sizes extraProgramPages
+    // from the compiled program plus one spare page (see createRegistry for why the margin is
+    // there rather than an exact fit). The registry's global schema is no longer declared
+    // by hand — the contract dropped its stateTotals override, so puya infers it from the
+    // GlobalState fields (including those inherited from GGovRegistryAccountContract).
+    // Asserting the deployed app against the compiled app spec catches a create path that
+    // stops matching what the contract actually declares.
+    test('registry deploys with computed extraProgramPages and the schema its app spec declares', async () => {
       const { testAccount: admin } = localnet.context
       // createRegistry pays the registry MBR + box MBR + initial funding out of the
       // deployer's balance; top the test admin up so it can cover the transfers + fees.
@@ -30,36 +39,98 @@ describe('GGovRegistry admin', () => {
       })
 
       const appInfo = await localnet.algorand.app.getById(appClient.appId)
-      expect(appInfo.extraProgramPages).toBe(3)
-      expect(appInfo.globalInts + appInfo.globalByteSlices).toBe(64)
+      // Computed from the app spec, not pinned: the assertion tracks the contract's real size.
+      expect(Number(appInfo.extraProgramPages)).toBe(expectedRegistryPages + 1)
+      expect({ ints: appInfo.globalInts, bytes: appInfo.globalByteSlices }).toEqual(registryArc56.state.schema.global)
     })
-  })
 
-  describe('increaseBudget opcode cost', () => {
-    let sdk: GGovRegistrySDK
-    beforeAll(async () => {
-      await localnet.newScope()
-      ;({ sdk } = await deployRegistry(localnet, localnet.context.testAccount))
-    })
-    for (let i = 0; i < 3; i++) {
-      test(`It should cost ${increaseBudgetBaseCost + i * increaseBudgetIncrementCost} with itxns=${i}`, async () => {
-        const { testAccount } = localnet.context
-        const {
-          simulateResponse: {
-            txnGroups: [{ appBudgetConsumed }],
-          },
-        } = await sdk
-          .writeClient!.newGroup()
-          .increaseBudget({
-            sender: testAccount.toString(),
-            signer: testAccount.signer,
-            args: { itxns: BigInt(i) },
-            extraFee: (i * 1000).microAlgo(),
-          })
-          .simulate()
-        expect(appBudgetConsumed).toBe(increaseBudgetBaseCost + i * increaseBudgetIncrementCost) // if this fails then update the new value in SDK/constants
+    // AVM v13 made the global schema and extra program pages mutable, but only via an
+    // ApplicationUpdate carrying numGlobalInts/numGlobalByteSlices/extraPages. algokit-utils cannot
+    // express that (AppUpdateParams has no schema fields and its composer zeroes them when
+    // appId !== 0), so GGovRegistrySDK.updateApplication({ size }) leaves the composer and builds
+    // the txn with algosdk. This is what makes dropping the contract's padded stateTotals safe:
+    // the registry can be grown later rather than pre-paying for slots it may never use.
+    test('updateApplication({ size }) grows the registry schema and pages, and sets sizeSponsor', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client, sdk } = await deployRegistry(localnet, admin)
+
+      const before = await localnet.algorand.app.getById(client.appId)
+      const beforeParams = await localnet.algorand.client.algod.getApplicationByID(client.appId).do()
+      expect(beforeParams.params?.sizeSponsor).toBeUndefined()
+
+      const adminMinBalBefore = (await localnet.algorand.client.algod.accountInformation(admin).do()).minBalance
+
+      await sdk.updateApplication({
+        size: {
+          globalUints: Number(before.globalInts) + 4,
+          globalBytes: Number(before.globalByteSlices) + 2,
+          extraProgramPages: Number(before.extraProgramPages) + 1,
+        },
       })
-    }
+
+      const after = await localnet.algorand.app.getById(client.appId)
+      expect(Number(after.globalInts)).toBe(Number(before.globalInts) + 4)
+      expect(Number(after.globalByteSlices)).toBe(Number(before.globalByteSlices) + 2)
+      expect(Number(after.extraProgramPages)).toBe(Number(before.extraProgramPages) + 1)
+
+      // A size increase moves the schema + extra-page MBR in full — not just the delta — onto the
+      // sender of the update. Here the admin IS the creator (createRegistry deploys from it), so the
+      // MBR simply stays put and grows, and no separate sizeSponsor is recorded. When a NON-creator
+      // grows an app the AVM records that sender as `sizeSponsor` and moves the whole schema +
+      // page MBR to it, leaving the creator only the flat 100_000 µAlgo per-app base.
+      const afterParams = await localnet.algorand.client.algod.getApplicationByID(client.appId).do()
+      expect(afterParams.params?.sizeSponsor).toBeUndefined()
+
+      const adminMinBalAfter = (await localnet.algorand.client.algod.accountInformation(admin).do()).minBalance
+      // +4 uints, +2 byte slices, +1 page = 4*28_500 + 2*50_000 + 100_000
+      expect(Number(adminMinBalAfter) - Number(adminMinBalBefore)).toBe(4 * 28_500 + 2 * 50_000 + 100_000)
+    })
+
+    // A code-only update must not disturb sizing — it keeps taking the composer path.
+    test('updateApplication() without size leaves schema and pages untouched', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client, sdk } = await deployRegistry(localnet, admin)
+
+      const before = await localnet.algorand.app.getById(client.appId)
+      await sdk.updateApplication({})
+      const after = await localnet.algorand.app.getById(client.appId)
+
+      expect(Number(after.globalInts)).toBe(Number(before.globalInts))
+      expect(Number(after.globalByteSlices)).toBe(Number(before.globalByteSlices))
+      expect(Number(after.extraProgramPages)).toBe(Number(before.extraProgramPages))
+    })
+
+    // AVM v13 relaxes box isolation: an app can open its own boxes to reads by any other app. The
+    // registries do this in createApplication, which is why their create is an ABI call now rather
+    // than a bare one — app_params_set can only be run by an app on itself.
+    test('registry opens its boxes to foreign reads at create', async () => {
+      const { testAccount: admin } = localnet.context
+      const { client } = await deployRegistry(localnet, admin)
+
+      const params = (await localnet.algorand.client.algod.getApplicationByID(client.appId).do()).params
+      expect(params?.foreignBoxReads).toBe(true)
+      // Reads only: writes stay exclusive to the owning app.
+      expect(params?.familyBoxAccess ?? false).toBe(false)
+    })
+
+    test('createRegistry applies optional configuration', async () => {
+      // note: normally frac registry will be deployed after ggov registry, but this test exercises the config
+      const { testAccount: admin } = localnet.context
+      await localnet.algorand.account.ensureFundedFromEnvironment(admin, (25).algos())
+      const operator = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      const { sdk } = await GGovRegistrySDK.createRegistry({
+        algorand: localnet.algorand,
+        deployer: { sender: admin, signer: localnet.algorand.account.getSigner(admin) },
+        operatorAccount: operator,
+        xGovRegistryAppId: 12345n,
+        fracRegistryAppId: 67890n,
+      })
+
+      expect(await sdk.readClient.state.global.operator()).toBe(operator.toString())
+      expect(await sdk.readClient.state.global.xGovRegistryApp()).toBe(12345n)
+      expect(await sdk.readClient.state.global.fracRegistryApp()).toBe(67890n)
+    })
   })
 
   // Admin configs and management
@@ -77,8 +148,60 @@ describe('GGovRegistry admin', () => {
     test('admin can set the xGov registry app id', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
+      // Key is initialized to 0 on deploy, so it reads back 0n until the admin sets it.
+      expect(await sdk.readClient.state.global.xGovRegistryApp()).toBe(0n)
+
       await sdk.setXGovRegistryApp({ appId: 12345n })
       expect(await sdk.readClient.state.global.xGovRegistryApp()).toBe(12345n)
+    })
+
+    test('admin cannot mirrorXGovDelegation while the xGov registry app id is unset', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const account = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await expect(sdk.mirrorXGovDelegation({ account: account.toString() })).rejects.toThrow(
+        transformedError(errRegistryMissing),
+      )
+    })
+  })
+
+  describe('setFracRegistryApp', () => {
+    test('admin can set the frac-delegation registry app id', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      // Key is initialized to 0 on deploy, so it reads back 0n until the admin sets it.
+      expect(await sdk.readClient.state.global.fracRegistryApp()).toBe(0n)
+
+      await sdk.setFracRegistryApp({ appId: 12345n })
+      expect(await sdk.readClient.state.global.fracRegistryApp()).toBe(12345n)
+    })
+
+    test('admin cannot importFracDelegations while the frac registry app id is unset', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      const escrow = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+
+      await expect(sdk.importFracDelegations({ escrowAccounts: [escrow.toString()] })).rejects.toThrow(
+        transformedError(errRegistryMissing),
+      )
+
+      // The guard precedes the per-escrow checks, so it also fires on an empty batch.
+      await expect(sdk.importFracDelegations({ escrowAccounts: [] })).rejects.toThrow(
+        transformedError(errRegistryMissing),
+      )
+    })
+  })
+
+  describe('setMBRTopUp', () => {
+    test('admin can set the MBR top-up amount', async () => {
+      const { testAccount } = localnet.context
+      const { sdk } = await deployRegistry(localnet, testAccount)
+      // 5 ALGO default, set at deploy by the global's initialValue.
+      expect(await sdk.getMBRTopUp()).toBe(5_000_000n)
+
+      await sdk.setMBRTopUp({ amount: 2_000_000n })
+      expect(await sdk.getMBRTopUp()).toBe(2_000_000n)
     })
   })
 
@@ -118,17 +241,13 @@ describe('GGovRegistry admin', () => {
     test('admin can update the registry app', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      await expect(
-        sdk.readClient.send.update.bare({ sender: testAccount.toString(), signer: testAccount.signer }),
-      ).resolves.toBeDefined()
+      await expect(sdk.updateApplication({})).resolves.toBeDefined()
     })
 
     test('admin can delete the registry app', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      await expect(
-        sdk.readClient.send.delete.bare({ sender: testAccount.toString(), signer: testAccount.signer }),
-      ).resolves.toBeDefined()
+      await expect(sdk.deleteApplication({})).resolves.toBeDefined()
     })
   })
 
@@ -196,7 +315,7 @@ describe('GGovRegistry admin', () => {
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('non-admin cannot ingestXGovs', async () => {
+    test('non-admin cannot ingestGovs', async () => {
       const committeeId = new Uint8Array(32)
       await sdk.registerCommittee({
         committeeId,
@@ -207,31 +326,37 @@ describe('GGovRegistry admin', () => {
         xGovRegistryId: 0n,
       })
       await expect(
-        nonAdminSDK.ingestXGovs({
+        nonAdminSDK.ingestGovs({
           committeeId,
-          xGovs: [{ account: nonAdmin.toString(), votes: 10 }],
+          govs: [{ account: nonAdmin.toString(), votes: 10 }],
         }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
-    test('non-admin cannot uningestXGovs', async () => {
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const committeeFile: XGovCommitteeFile = {
+    test('non-admin cannot uningestGovs', async () => {
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       }
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
-      await expect(nonAdminSDK.uningestXGovs({ committeeId, xGovs: [xGovAccount.toString()] })).rejects.toThrow(
+      await expect(nonAdminSDK.uningestGovs({ committeeId, govs: [govAccount.toString()] })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
 
     test('non-admin cannot mirrorXGovDelegation', async () => {
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await expect(nonAdminSDK.mirrorXGovDelegation({ account: xGovAccount.toString() })).rejects.toThrow(
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      await expect(nonAdminSDK.mirrorXGovDelegation({ account: govAccount.toString() })).rejects.toThrow(
+        transformedError(errUnauthorized),
+      )
+    })
+
+    test('non-admin cannot importFracDelegations', async () => {
+      await expect(nonAdminSDK.importFracDelegations({ escrowAccounts: [nonAdmin.toString()] })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
@@ -252,15 +377,27 @@ describe('GGovRegistry admin', () => {
       await expect(nonAdminSDK.setXGovRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
     })
 
+    test('non-admin cannot set the frac-delegation registry app id', async () => {
+      await expect(nonAdminSDK.setFracRegistryApp({ appId: 12345n })).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
     test('non-admin cannot setOperator', async () => {
       await expect(nonAdminSDK.setOperator({ account: nonAdmin.toString() })).rejects.toThrow(
         transformedError(errUnauthorized),
       )
     })
 
-    test('non-admin cannot uploadPeriodApprovalPartial', async () => {
+    test('non-admin cannot set the MBR top-up amount', async () => {
+      await expect(nonAdminSDK.setMBRTopUp({ amount: 2_000_000n })).rejects.toThrow(transformedError(errUnauthorized))
+    })
+
+    test('non-admin cannot uploadPeriodApproval', async () => {
       await expect(
-        nonAdminSDK.uploadPeriodApprovalPartial({ startOffset: 0n, data: new Uint8Array([0x01]) }),
+        nonAdminSDK.uploadPeriodApproval({
+          page1: new Uint8Array([0x01]),
+          page2: new Uint8Array(),
+          page3: new Uint8Array(),
+        }),
       ).rejects.toThrow(transformedError(errUnauthorized))
     })
 
@@ -271,12 +408,7 @@ describe('GGovRegistry admin', () => {
     })
 
     test('non-admin cannot update the registry app', async () => {
-      await expect(
-        sdk.readClient.send.update.bare({
-          sender: nonAdmin.toString(),
-          signer: nonAdmin.signer,
-        }),
-      ).rejects.toThrow(transformedError(errUnauthorized))
+      await expect(nonAdminSDK.updateApplication({})).rejects.toThrow(transformedError(errUnauthorized))
     })
 
     test('non-admin cannot delete the registry app', async () => {
@@ -286,39 +418,6 @@ describe('GGovRegistry admin', () => {
           signer: nonAdmin.signer,
         }),
       ).rejects.toThrow(transformedError(errUnauthorized))
-    })
-  })
-
-  describe('verifyAdmin / verifyOperator', () => {
-    let sdk: GGovRegistrySDK
-    let admin: string
-    let operator: string
-    let other: string
-
-    beforeAll(async () => {
-      await localnet.newScope()
-      const { testAccount } = localnet.context
-      admin = testAccount.toString()
-      ;({ sdk } = await deployRegistry(localnet, testAccount))
-      const operatorAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const otherAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      operator = operatorAccount.toString()
-      other = otherAccount.toString()
-      await sdk.setOperator({ account: operator })
-    })
-
-    test('verifyAdmin returns true for the admin and false for any other account', async () => {
-      const { return: isAdmin } = await sdk.readClient.send.verifyAdmin({ args: { account: admin } })
-      expect(isAdmin).toBe(true)
-      const { return: isAdminOther } = await sdk.readClient.send.verifyAdmin({ args: { account: other } })
-      expect(isAdminOther).toBe(false)
-    })
-
-    test('verifyOperator returns true for the operator and false for any other account', async () => {
-      const { return: isOperator } = await sdk.readClient.send.verifyOperator({ args: { account: operator } })
-      expect(isOperator).toBe(true)
-      const { return: isOperatorOther } = await sdk.readClient.send.verifyOperator({ args: { account: other } })
-      expect(isOperatorOther).toBe(false)
     })
   })
 })

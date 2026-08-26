@@ -15,6 +15,8 @@ import {
   gtxn,
   itxn,
   log,
+  loggedAssert,
+  loggedErr,
   op,
   Txn,
   uint64,
@@ -30,21 +32,23 @@ import {
   errCommitteeIdOverflow,
   errCommitteeIncomplete,
   errCommitteeNotExists,
+  errEscrowNotAssigned,
   errGGovDelegationExists,
   errGGovPeriodNotExists,
   errGGovSelfDelegate,
   errIngestedVotesNotZero,
-  errNumXGovsExceeded,
+  errNumGovsExceeded,
   errOutOfOrder,
   errPeriodAppNotConfigured,
   errPeriodEndLessThanStart,
   errPeriodInRange,
+  errRegistryMissing,
+  errTotalGovsExceeded,
   errTotalMembersOverflow,
   errTotalMembersZero,
   errTotalVotesExceeded,
   errTotalVotesMismatch,
   errTotalVotesZero,
-  errTotalXGovsExceeded,
   errUnauthorized,
   errZeroVotes,
 } from '../base/errors.algo'
@@ -54,39 +58,49 @@ import {
   AccountWithVotes,
   CommitteeId,
   CommitteeMetadata,
+  getEmptyCommitteeMetadata,
+  getEmptyGGovPeriodSummary,
   GGovDelegationCleared,
   GGovDelegationSet,
   GGovPeriodSummary,
-  getEmptyCommitteeMetadata,
-  getEmptyGGovPeriodSummary,
 } from '../base/types.algo'
-import { ensure, ensureExtra, u16, u32 } from '../base/utils.algo'
+import { u16, u32 } from '../base/utils.algo'
+import { FracDelegationRegistryContract } from '../frac-delegation/fracDelegationRegistry.algo'
 import { GGovPeriodContract } from '../ggov-period/ggovPeriod.algo'
 import { XGovRegistryMock } from '../xgov-registry-mock/xGovRegistryMock.algo'
 import { GGovRegistryAccountContract } from './ggovRegistryAccount.algo'
 
 /**
- * Count total xGovs stored in committee superbox
+ * Count total govs stored in committee superbox
  */
-function getCommitteeSBXGovs(sbMeta: Box<SuperboxMeta>): uint64 {
+function getCommitteeSBGovs(sbMeta: Box<SuperboxMeta>): uint64 {
   return sbMeta.value.totalByteLength.asUint64() / ACCOUNT_ID_WITH_VOTES_STORED_SIZE
 }
 
-export const ggovRegistryXGovKey = Bytes`xGovRegistryApp`
+export const gGovRegistryXGovKey = Bytes`xGovRegistryApp`
+export const gGovRegistryFDKey = Bytes`fracRegistryApp`
 
-@contract({ name: 'GGovRegistry', stateTotals: { globalBytes: 20, globalUints: 44 } })
+@contract({ name: 'GGovRegistry' })
 export class GGovRegistryContract extends GGovRegistryAccountContract {
   /** xGov registry application ID */
-  xGovRegistryApp = GlobalState<Application>({ key: ggovRegistryXGovKey })
+  xGovRegistryApp = GlobalState<Application>({ key: gGovRegistryXGovKey, initialValue: Application(0) })
+  /** Fractional delegation registry application ID */
+  fracRegistryApp = GlobalState<Application>({ key: gGovRegistryFDKey, initialValue: Application(0) })
   /** Committee metadata box map */
   committees = BoxMap<CommitteeId, CommitteeMetadata>({ keyPrefix: 'c' })
-  /** Last committee numeric ID; superbox prefix for committees */
-  lastCommitteeId = GlobalState<uint64>({ initialValue: 0 })
+  /**
+   * Last committee numeric ID; superbox prefix for committees. Starts at 1 so that numeric ID 0
+   * is never assigned and can be relied on as the "no such committee" sentinel returned by
+   * `getEmptyCommitteeMetadata`.
+   */
+  lastCommitteeId = GlobalState<uint64>({ initialValue: 1 })
 
   /** Admin address; defaults to creator. Rotatable via `setAdmin`. */
   admin = GlobalState<Account>({ initialValue: Global.creatorAddress })
   /** Operator address (manages periods on spawned ggov-period apps) */
   operator = GlobalState<Account>()
+  /** microALGO sent to a period per `requestMBR` top-up. Configurable via `setMBRTopUp`. */
+  mbrTopUp = GlobalState<uint64>({ initialValue: 5_000_000 })
   /** Auto-increment period IDs */
   lastPeriodId = GlobalState<uint64>({ initialValue: 0 })
   /** Per-period summary: periodId → { appId, votingStart, votingEnd, numTopics } */
@@ -116,7 +130,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    * @param committeeId Committee ID
    * @param periodStart Period start
    * @param periodEnd Period end
-   * @param totalMembers Total xGovs
+   * @param totalMembers Total govs
    * @param totalVotes Total votes in committee
    */
   public registerCommittee(
@@ -130,12 +144,12 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
 
     const committeeBox = this.committees(committeeId)
-    ensure(!committeeBox.exists, errCommitteeExists)
-    ensure(periodEnd.asUint64() > periodStart.asUint64(), errPeriodEndLessThanStart)
-    ensure(totalMembers.asUint64() > 0, errTotalMembersZero)
-    ensure(totalVotes.asUint64() > 0, errTotalVotesZero)
-    ensure(totalMembers.asUint64() <= 65535, errTotalMembersOverflow)
-    ensure(this.lastCommitteeId.value <= 65535, errCommitteeIdOverflow)
+    loggedAssert(!committeeBox.exists, errCommitteeExists)
+    loggedAssert(periodEnd.asUint64() > periodStart.asUint64(), errPeriodEndLessThanStart)
+    loggedAssert(totalMembers.asUint64() > 0, errTotalMembersZero)
+    loggedAssert(totalVotes.asUint64() > 0, errTotalVotesZero)
+    loggedAssert(totalMembers.asUint64() <= 65535, errTotalMembersOverflow)
+    loggedAssert(this.lastCommitteeId.value <= 65535, errCommitteeIdOverflow)
     committeeBox.value = {
       periodStart,
       periodEnd,
@@ -150,99 +164,102 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Delete committee. Must not have any xGovs
+   * Delete committee. Must not have any govs
    * @param committeeId committee ID
    */
   public unregisterCommittee(committeeId: CommitteeId): void {
     this.ensureCallerIsAdmin()
 
     const committeeBox = this.committees(committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
-    ensure(committeeBox.value.ingestedVotes === u32(0), errIngestedVotesNotZero)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.value.ingestedVotes === u32(0), errIngestedVotesNotZero)
     sbDeleteSuperbox(this.getCommitteeSBPrefix(committeeId))
     committeeBox.delete()
   }
 
   /**
-   * Ingest xGovs into a committee
+   * Ingest govs into a committee
    * @param committeeId committee ID
-   * @param xGovs xGovs to ingest, strictly ascending order by account ID
+   * @param govs govs to ingest, strictly ascending order by account ID
    */
-  public ingestXGovs(committeeId: CommitteeId, xGovs: AccountWithVotes[]): void {
+  public ingestGovs(committeeId: CommitteeId, govs: AccountWithVotes[]): void {
     this.ensureCallerIsAdmin()
 
     const committee = this.mustGetCommitteeMetadata(committeeId)
     const superboxName = this.getMetadataSBPrefix(committee)
     const sbMeta = sbMetaBox(superboxName)
     // figure out ingested accounts from superbox size
-    const ingestedAccounts: uint64 = getCommitteeSBXGovs(sbMeta)
-    // not exceeding total xGovs
-    ensure(ingestedAccounts + xGovs.length <= committee.totalMembers.asUint64(), errTotalXGovsExceeded)
+    const ingestedAccounts: uint64 = getCommitteeSBGovs(sbMeta)
+    // not exceeding total govs
+    loggedAssert(ingestedAccounts + govs.length <= committee.totalMembers.asUint64(), errTotalGovsExceeded)
 
     let lastAccountId = u32(0)
     if (ingestedAccounts > 0) {
-      const lastXGov = this.getStoredXGovAt(superboxName, ingestedAccounts - 1)
-      lastAccountId = lastXGov.accountId
+      const lastGov = this.getStoredGovAt(superboxName, ingestedAccounts - 1)
+      lastAccountId = lastGov.accountId
     }
 
     let ingestedAccountCtr = ingestedAccounts
     let ingestedVotes = committee.ingestedVotes.asUint64()
     let writeBuffer = Bytes``
-    for (const xGov of clone(xGovs)) {
-      // reject zero-vote xGovs; they carry no voting power and would skew totals/member counts
-      ensure(xGov.votes.asUint64() > 0, errZeroVotes)
-      const gGovAccount = this.getOrCreateAccount(xGov.account)
+    for (const gov of clone(govs)) {
+      // reject zero-vote govs; they carry no voting power and would skew totals/member counts
+      loggedAssert(gov.votes.asUint64() > 0, errZeroVotes)
+      const gGovAccount = this.getOrCreateAccount(gov.account)
       const accountId = gGovAccount.accountId
-      // ensure xGovs are added in ascending order
-      ensure(accountId.asUint64() > lastAccountId.asUint64(), errOutOfOrder)
+      // ensure govs are added in ascending order
+      loggedAssert(accountId.asUint64() > lastAccountId.asUint64(), errOutOfOrder)
       // store variant removes account
-      const xGovStored: AccountIdWithVotes = {
+      const govStored: AccountIdWithVotes = {
         accountId: accountId,
-        votes: xGov.votes,
+        votes: gov.votes,
       }
       // append to write buffer, write to superbox once
-      writeBuffer = writeBuffer.concat(encodeArc4(xGovStored))
-      this.addCommitteeAccountOffsetHint(committee.numericId, xGov.account, gGovAccount, u16(ingestedAccountCtr++))
+      writeBuffer = writeBuffer.concat(encodeArc4(govStored))
+      this.addCommitteeAccountOffsetHint(committee.numericId, gov.account, gGovAccount, u16(ingestedAccountCtr++))
       lastAccountId = accountId
-      ingestedVotes += xGov.votes.asUint64()
+      ingestedVotes += gov.votes.asUint64()
     }
 
     // ensure we did not exceed total votes
-    ensure(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
+    loggedAssert(ingestedVotes <= committee.totalVotes.asUint64(), errTotalVotesExceeded)
 
     sbAppend(superboxName, writeBuffer)
 
     committee.ingestedVotes = u32(ingestedVotes)
     // if we are finished, ensure total votes match
-    if (ingestedAccounts + xGovs.length === committee.totalMembers.asUint64()) {
-      ensure(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
+    if (ingestedAccounts + govs.length === committee.totalMembers.asUint64()) {
+      loggedAssert(committee.ingestedVotes === committee.totalVotes, errTotalVotesMismatch)
     }
     this.committees(committeeId).value = clone(committee)
   }
 
   /**
-   * Uningest last N xGovs from committee
+   * Uningest last N govs from committee
    * @param committeeId committee ID
-   * @param xGovs xGovs to uningest, strictly descending order by account ID
+   * @param govs govs to uningest, strictly descending order by account ID
    */
-  public uningestXGovs(committeeId: CommitteeId, xGovs: Account[]): void {
+  public uningestGovs(committeeId: CommitteeId, govs: Account[]): void {
     this.ensureCallerIsAdmin()
     const committee = this.mustGetCommitteeMetadata(committeeId)
     const superboxName = this.getMetadataSBPrefix(committee)
     const sbMeta = sbMetaBox(superboxName)
-    const totalXGovs = getCommitteeSBXGovs(sbMeta)
-    ensure(xGovs.length <= totalXGovs, errNumXGovsExceeded)
+    const totalGovs = getCommitteeSBGovs(sbMeta)
+    loggedAssert(govs.length <= totalGovs, errNumGovsExceeded)
     let ingestedVotes = committee.ingestedVotes.asUint64()
-    let expectedXGovOffset = totalXGovs
-    for (const account of clone(xGovs)) {
-      expectedXGovOffset--
+    let expectedGovOffset = totalGovs
+    for (const account of clone(govs)) {
+      expectedGovOffset--
       const gGovAccount = this.mustGetAccount(account)
       const offset = this.getCommitteeAccountOffsetHint(committee.numericId, gGovAccount)
-      ensureExtra(expectedXGovOffset === offset, errOutOfOrder, account.bytes)
-      const xGovStored = this.getStoredXGovAt(superboxName, offset)
+      if (expectedGovOffset !== offset) {
+        log(account.bytes)
+        loggedErr(errOutOfOrder)
+      }
+      const govStored = this.getStoredGovAt(superboxName, offset)
       this.removeCommitteeAccountOffsetHint(committee.numericId, account, gGovAccount)
       sbDeleteIndex(superboxName, offset)
-      ingestedVotes -= xGovStored.votes.asUint64()
+      ingestedVotes -= govStored.votes.asUint64()
     }
     committee.ingestedVotes = u32(ingestedVotes)
     this.committees(committeeId).value = clone(committee)
@@ -257,18 +274,60 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.xGovRegistryApp.value = appId
   }
 
+  /**
+   * Set the Frac Delegation Registry Application ID
+   * @param appId Frac Delegation Registry Application ID
+   */
+  public setFracRegistryApp(appId: Application): void {
+    this.ensureCallerIsAdmin()
+    this.fracRegistryApp.value = appId
+  }
+
+  // ── Create ────────────────────────────────────────────────────────
+
+  /**
+   * Convention-based create.
+   *
+   * Opts this app's boxes into reads by any application (AVM v13 `ForeignBoxReads`). Box isolation
+   * used to mean only the owning app could touch its boxes, which is why this registry carries a
+   * wall of readonly getters and log-dumping methods that exist solely so other apps and off-chain
+   * readers can see box contents. Opening reads here lets a reader go straight to the box.
+   *
+   * Reads only — writes stay exclusive to this app. `app_params_set` is run by an app on itself, so
+   * it can only be enabled from inside a call like this one; an app that is not updatable can never
+   * opt in later, which is what preserves intentional immutability.
+   */
+  public createApplication(): void {
+    op.AppParamsSet.appForeignBoxReads(true)
+  }
+
   // ── Admin ─────────────────────────────────────────────────────────
 
   /** Caller must match this registry's stored `admin` (`BaseContract` override). */
   protected override ensureCallerIsAdmin(): void {
-    ensure(Txn.sender === this.admin.value, errUnauthorized)
+    loggedAssert(Txn.sender === this.admin.value, errUnauthorized)
   }
 
   /** Transfer admin to `newAdmin`. Admin only; zero address rejected. */
   public setAdmin(newAdmin: Account): void {
     this.ensureCallerIsAdmin()
-    ensure(newAdmin !== Global.zeroAddress, errUnauthorized)
+    loggedAssert(newAdmin !== Global.zeroAddress, errUnauthorized)
     this.admin.value = newAdmin
+  }
+
+  /**
+   * Set the amount sent per `requestMBR`. Admin only. Economic parameter: it trades how often periods
+   * request against how much ALGO sits as available balance buffer in them. Leftovers always recoverable
+   * via `withdrawALGO`.
+   *
+   * Unguarded, but keep it well above one vote record's max MBR; recommended: greater than 0.4 ALGO.
+   * 393,700 microALGO at the largest shape `GGovVoteCast` could emit (1024 bytes), plus the 1,000
+   * `requestMBR` fee; below that, votes could start failing.
+   * @param amount microALGO sent to a period per `requestMBR` call
+   */
+  public setMBRTopUp(amount: uint64): void {
+    this.ensureCallerIsAdmin()
+    this.mbrTopUp.value = amount
   }
 
   /**
@@ -280,14 +339,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
     this.ensureCallerIsAdmin()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
     itxn.payment({ receiver, amount }).submit()
-  }
-
-  /** Whether `account` is the admin. Called by period contracts via inner txn. */
-  @abimethod({ readonly: true })
-  public verifyAdmin(account: Account): boolean {
-    return account === this.admin.value
   }
 
   /** App updatable by admin */
@@ -296,7 +348,15 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
   }
 
-  /** App deletable by admin */
+  /**
+   * App deletable by admin.
+   *
+   * NOTE: MBR is not recovered by this implementation — the whole account balance (base + any MBR,
+   * including boxes' ones) stays locked forever. This should be a rare action; if recovery is ever
+   * needed, update this method to delete every box first, then add a closeRemainderTo payment
+   * (it fails if any box is still present). See GGovPeriodContract.deleteApplication() for
+   * a reference implementation.
+   */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
     this.ensureCallerIsAdmin()
@@ -310,38 +370,39 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.operator.value = account
   }
 
-  /** Whether `account` is the registered operator. Called by period contracts via inner txn. */
-  @abimethod({ readonly: true })
-  public verifyOperator(account: Account): boolean {
-    return account === this.operator.value
-  }
-
   /**
    * xGov-registry-compatible delegation entrypoint. The ABI selector equals the xGov registry's
    * `set_voting_account(address,address)void`, so callers/tooling built for the xGov registry work
    * unchanged against gGov. Maps xGov's (xgov_address, voting_address) onto gGov's (delegator,
    * delegatee):
-   *  - `votingAddress === xgovAddress` is xGov's "vote for self" (no external delegation) and clears
+   *  - `votingAddress === govAddress` is xGov's "vote for self" (no external delegation) and clears
    *    any existing gGov delegation.
-   *  - otherwise records the delegation `xgovAddress → votingAddress`.
+   *  - otherwise records the delegation `govAddress → votingAddress`.
    * Authorization matches xGov: the xgov_address itself OR its current delegatee may set it.
+   *
+   * This registry is the single source of truth for fractional-delegation user delegations too, so
+   * the delegator may be known to gGov or to the frac registry - see `ensureDelegatorRegistered`.
    */
   @abimethod({ name: 'set_voting_account' })
-  public setVotingAccount(xgovAddress: Account, votingAddress: Account): void {
-    ensure(this.accounts(xgovAddress).exists, errAccountNotExists) // xGov NOT_XGOV analog
-    this.ensureCallerCanManageDelegation(xgovAddress)
-    if (votingAddress === xgovAddress || votingAddress === Global.zeroAddress) {
-      this.removeDelegation(xgovAddress)
+  public setVotingAccount(govAddress: Account, votingAddress: Account): void {
+    this.ensureDelegatorRegistered(govAddress) // xGov NOT_XGOV analog
+    this.ensureCallerCanManageDelegation(govAddress)
+    if (votingAddress === govAddress || votingAddress === Global.zeroAddress) {
+      this.removeDelegation(govAddress)
     } else {
-      this.addDelegation(xgovAddress, votingAddress)
+      this.addDelegation(govAddress, votingAddress)
     }
   }
 
   /** Mirror delegation from the xGov registry's box (if present). Admin only. */
   public mirrorXGovDelegation(account: Account): void {
     this.ensureCallerIsAdmin()
+    loggedAssert(this.xGovRegistryApp.value.id > 0, errRegistryMissing)
+    // Mirroring is an xGov-account-only path, so the delegator gate stays strict here rather than
+    // going through ensureDelegatorRegistered (addDelegation trusts its callers to have checked).
+    loggedAssert(this.accounts(account).exists, errAccountNotExists)
     // never overwrite an existing gGov delegation; mirroring only seeds delegations not yet set locally
-    ensure(!this.delegations(account).exists, errGGovDelegationExists)
+    loggedAssert(!this.delegations(account).exists, errGGovDelegationExists)
 
     const registry = compileArc4(XGovRegistryMock)
     const [xGovBox, exists] = registry.call.getXGovBox({
@@ -356,16 +417,58 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
+   * Import delegations from the frac-delegation registry for a batch of escrow accounts. Admin only.
+   *
+   * Each escrow is resolved to its frac instance via a readonly inner call to the frac registry,
+   * then delegated to that instance's app address, so the instance contract can cast pooled gGov
+   * votes on the escrows' behalf. Unlike `mirrorXGovDelegation`, this OVERWRITES an existing
+   * delegation - fully auditable from logs via `GGovDelegationSet`; re-importing an unchanged
+   * delegation is a no-op.
+   *
+   * Fail-loud batch: an escrow that is not a registered gGov account (`errAccountNotExists`) or
+   * not registered to any frac instance (`errEscrowNotAssigned`) rejects the whole call.
+   * @param escrowAccounts Escrow accounts registered to an instance, tracked by frac-delegation registry
+   */
+  public importFracDelegations(escrowAccounts: Account[]): void {
+    this.ensureCallerIsAdmin()
+    loggedAssert(this.fracRegistryApp.value.id > 0, errRegistryMissing)
+    for (const escrow of escrowAccounts) {
+      // Checked before the inner call so the likely admin mistake fails cheaply
+      if (!this.accounts(escrow).exists) {
+        log(escrow.bytes)
+        loggedErr(errAccountNotExists)
+      }
+
+      const escrowInstance = compileArc4(FracDelegationRegistryContract).call.getEscrow({
+        appId: this.fracRegistryApp.value,
+        args: [escrow],
+      }).returnValue
+
+      // getEscrow returns the zero sentinel (instanceNumId 0) instead of throwing for an unregistered escrow
+      if (escrowInstance.instanceNumId.asUint64() === 0) {
+        log(escrow.bytes)
+        loggedErr(errEscrowNotAssigned)
+      }
+
+      this.addDelegation(escrow, Application(escrowInstance.instanceAppId).address)
+    }
+  }
+
+  /**
    * Record a delegation from `delegator` to `delegatee`, keeping the forward (`delegations`) and
    * reverse (`reverseDelegations`) indexes in sync. Single entry point for adding a delegation —
    * reused by `setVotingAccount` and `mirrorXGovDelegation`. Re-delegating moves the delegator's address
    * off the previous delegatee's reverse list onto the new one.
+   *
+   * PRECONDITION: callers must have already established that `delegator` is a known account, so the
+   * reverse index can't be spammed from random addresses. `setVotingAccount` goes through
+   * `ensureDelegatorRegistered` (gGov OR frac registry); `mirrorXGovDelegation` and
+   * `importFracDelegations` each assert `accounts(delegator).exists` themselves. The check is not
+   * repeated here because the frac fallback costs an inner call.
    */
   private addDelegation(delegator: Account, delegatee: Account): void {
-    ensure(delegator !== delegatee, errGGovSelfDelegate)
-    ensure(delegator !== Global.zeroAddress, errGGovSelfDelegate)
-    // only existing accounts can delegate; prevents spamming delegations from random addresses and keeps reverse index clean
-    ensure(this.accounts(delegator).exists, errAccountNotExists)
+    loggedAssert(delegator !== delegatee, errGGovSelfDelegate)
+    loggedAssert(delegator !== Global.zeroAddress, errGGovSelfDelegate)
     let previousDelegatee = Global.zeroAddress
     const fwdBox = this.delegations(delegator)
     if (fwdBox.exists) {
@@ -379,6 +482,32 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
+   * A delegator must be known to this registry (`accounts` box, i.e. ingested onto some committee)
+   * OR to the fractional-delegation registry (`FracRegAccount.accountId !== 0`). This registry is
+   * the single source of truth for both kinds of delegation, and a frac user - someone holding
+   * AlgoQuarters in an instance - may have no gGov committee membership at all, so gating on the
+   * gGov account alone would leave them unable to delegate their frac voting weight.
+   *
+   * The frac branch costs one readonly inner call and is only reached when the cheap gGov box read
+   * misses; a registry with no `fracRegistryApp` configured behaves exactly as before. Frac accounts
+   * are minted by the instance's `ingestAq` (→ frac registry `getOrCreateAccountWithInstance`), so
+   * any AQ holder qualifies and random addresses still cannot spam the reverse index.
+   */
+  private ensureDelegatorRegistered(delegator: Account): void {
+    if (this.accounts(delegator).exists) return
+    // No frac registry wired up: the account is simply unknown.
+    loggedAssert(this.fracRegistryApp.value.id > 0, errAccountNotExists)
+
+    const fracAccount = compileArc4(FracDelegationRegistryContract).call.getAccount({
+      appId: this.fracRegistryApp.value,
+      args: [delegator],
+    }).returnValue
+
+    // getAccount returns the zero sentinel (accountId 0) instead of throwing for an unknown account
+    loggedAssert(fracAccount.accountId.asUint64() > 0, errAccountNotExists)
+  }
+
+  /**
    * Caller may manage `delegator`'s delegation if they are the delegator themselves or its current
    * delegatee. Reused by `setVotingAccount` to match the xGov registry's auth rule (xgov_address or
    * current voting_address).
@@ -386,7 +515,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   private ensureCallerCanManageDelegation(delegator: Account): void {
     const box = this.delegations(delegator)
     const isCurrentDelegatee = box.exists && box.value === Txn.sender
-    ensure(Txn.sender === delegator || isCurrentDelegatee, errUnauthorized)
+    loggedAssert(Txn.sender === delegator || isCurrentDelegatee, errUnauthorized)
   }
 
   /** Remove `delegator`'s delegation if present (idempotent), keeping the reverse index in sync. */
@@ -469,24 +598,34 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   // ── Period app bytecode (admin-managed) ──────────────────────────
 
   /**
-   * Upload (or re-upload) a chunk of the GGovPeriod approval bytecode into a registry box.
-   * Admin only. `startOffset === 0` deletes the existing box and creates a fresh one at
-   * the chunk length; subsequent chunks resize/replace.
+   * Upload (or re-upload) the whole GGovPeriod approval bytecode into a registry box in one call.
+   * Admin only.
+   *
+   * Takes the program as three pages `createPeriod` reads back out, because the network rejects any
+   * single application argument over 4096 bytes and an ARC-4 `byte[]` spends 2 of those on its
+   * length prefix — so a page carries at most 4094 bytes of program, and one argument could never
+   * hold a whole one. Three pages (12282 bytes) cover an approval program grown into AVM v13's 7
+   * extra program pages, alongside the clear-state program sharing them. Pass the program in
+   * `page1` and leave the trailing pages empty when it fits; the pages are simply concatenated
+   * here, so the split points carry no meaning.
+   *
+   * Replaces a chunked `uploadPeriodApprovalPartial(startOffset, data)` that needed a full
+   * 16-transaction group: total application arguments were capped at 2KB before AVM v13 raised the
+   * limit to 16KB, so the bytecode had to be dribbled in 2000 bytes at a time.
    */
-  public uploadPeriodApprovalPartial(startOffset: uint64, data: bytes): void {
+  public uploadPeriodApproval(page1: bytes, page2: bytes, page3: bytes): void {
     this.ensureCallerIsAdmin()
+
     const boxKey = Bytes`Pap`
-    const writeEnd: uint64 = startOffset + data.length
-    if (startOffset === 0) {
-      op.Box.delete(boxKey)
-      op.Box.create(boxKey, writeEnd)
-    } else {
-      const [boxLen] = op.Box.length(boxKey)
-      if (writeEnd > boxLen) {
-        op.Box.resize(boxKey, writeEnd)
-      }
+    op.Box.delete(boxKey)
+    op.Box.create(boxKey, page1.length + page2.length + page3.length)
+    op.Box.replace(boxKey, 0, page1)
+    if (page2.length > 0) {
+      op.Box.replace(boxKey, page1.length, page2)
     }
-    op.Box.replace(boxKey, startOffset, data)
+    if (page3.length > 0) {
+      op.Box.replace(boxKey, page1.length + page2.length, page3)
+    }
   }
 
   // ── Periods registry ──────────────────────────────────────────────
@@ -505,71 +644,89 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     votingEnd: uint64,
     mbrPayment: gtxn.PaymentTxn,
   ): [Uint32, uint64] {
-    ensure(Txn.sender === this.operator.value, errUnauthorized)
-    ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
-    ensure(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
+    loggedAssert(Txn.sender === this.operator.value, errUnauthorized)
+    loggedAssert(votingEnd > votingStart, errPeriodEndLessThanStart)
+    loggedAssert(mbrPayment.receiver === Global.currentApplicationAddress, errUnauthorized)
 
     const committeeBox = this.committees(committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
-    ensure(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
 
-    ensure(this.periodApprovalBox.exists, errPeriodAppNotConfigured)
+    loggedAssert(this.periodApprovalBox.exists, errPeriodAppNotConfigured)
 
     this.lastPeriodId.value++
     const periodId = u32(this.lastPeriodId.value)
 
-    // IMPORTANT: Always allocate the MAXIMUM AVM extraProgramPages (3) and reserve 2 extra
-    // slots in each global-schema dimension (uint + bytes). This headroom lets the
-    // period contract grow up to the AVM hard ceiling without ever requiring a registry
-    // redeploy. Do NOT shrink these constants when adding fields to GGovPeriodContract.
-    const PERIOD_GLOBAL_NUM_UINT: uint64 = 7 // 5 used today + 2 reserved
-    const PERIOD_GLOBAL_NUM_BYTES: uint64 = 3 // 1 used today + 2 reserved
-    const PERIOD_EXTRA_PROGRAM_PAGES: uint64 = 3 // AVM max → 8192-byte approval/clear ceiling
-
-    // AVM stack-bytes values are capped at 4096 bytes; approval can be up to 8192. Read the
-    // approval box in two pages and pass them as a tuple. The AVM concatenates pages back
-    // together at appcreate time; an empty trailing page is a no-op.
+    // AVM stack-bytes values are capped at 4096 bytes, so the box is read in three pages — matching
+    // what uploadPeriodApproval accepts. That upload carries at most 12282 bytes (3 args of 4094,
+    // an ARC-4 `byte[]` costing 2 bytes of length prefix), so it is short of the 16384 bytes v13's
+    // 7 extra program pages allow: a program that fills them cannot be uploaded this way. The AVM
+    // concatenates the pages back together at appcreate time; empty trailing pages are a no-op.
     const approvalKey = Bytes`Pap`
     const [approvalLen] = op.Box.length(approvalKey)
     const PAGE_SIZE: uint64 = 4096
     const page1Len: uint64 = approvalLen <= PAGE_SIZE ? approvalLen : PAGE_SIZE
+    const rest: uint64 = approvalLen - page1Len
+    const page2Len: uint64 = rest <= PAGE_SIZE ? rest : PAGE_SIZE
+    const page3Len: uint64 = rest - page2Len
     const page1: bytes = op.Box.extract(approvalKey, 0, page1Len)
-    const page2: bytes =
-      approvalLen > PAGE_SIZE ? op.Box.extract(approvalKey, PAGE_SIZE, approvalLen - PAGE_SIZE) : Bytes('')
+    const page2: bytes = page2Len > 0 ? op.Box.extract(approvalKey, page1Len, page2Len) : Bytes('')
+    const page3: bytes = page3Len > 0 ? op.Box.extract(approvalKey, page1Len + page2Len, page3Len) : Bytes('')
 
-    const compiled = compile(GGovPeriodContract) // clearStateProgram only — approval comes from box
+    // Schema comes straight off the compiled child rather than hand-written constants: under AVM v13
+    // a global schema can be expanded by a later update (see GGovSDK.updatePeriodApp), so reserving
+    // spare slots only buys dead MBR. The former `5 used today + 2 reserved` comment had already gone
+    // stale — GGovPeriod declares 7 uints today, having silently eaten its own reserve.
+    //
+    // The one coupling this leaves: `compiled` is the GGovPeriod built into *this* registry, so
+    // uploading a newer period program to the `Pap` box that needs more globals means rebuilding the
+    // registry too, or growing each spawned app afterwards.
+    const compiled = compile(GGovPeriodContract) // clearStateProgram + schema — approval comes from box
+
+    // Pages are sized from the bytecode actually being deployed, not from a constant: an app gets
+    // (1 + extraProgramPages) pages of 2048 bytes to hold approval + clear. Deliberately measured
+    // against the BOX, not `compiled.extraProgramPages` — the box is the source of truth for what is
+    // being created, and it exists precisely so period code can be upgraded without redeploying the
+    // registry. Sizing off the build-time compile would under-allocate the moment a newer, larger
+    // period program is uploaded. AVM v13 raised the ceiling to 7 extra pages (16KB).
+    // ceil(n / 2048) - 1, written as (n - 1) / 2048 so the uint64 maths cannot underflow: the box is
+    // asserted to exist above, so programBytes >= 1.
+    const PROGRAM_PAGE_BYTES: uint64 = 2048
+    const programBytes: uint64 = approvalLen + compiled.clearStateProgram.length
+    const extraPages: uint64 = (programBytes - 1) / PROGRAM_PAGE_BYTES
+
     const created = itxn
       .applicationCall({
-        approvalProgram: [page1, page2],
+        approvalProgram: [page1, page2, page3],
         clearStateProgram: compiled.clearStateProgram,
-        extraProgramPages: PERIOD_EXTRA_PROGRAM_PAGES,
-        globalNumUint: PERIOD_GLOBAL_NUM_UINT,
-        globalNumBytes: PERIOD_GLOBAL_NUM_BYTES,
+        extraProgramPages: extraPages,
+        globalNumUint: compiled.globalUints,
+        globalNumBytes: compiled.globalBytes,
       })
       .submit()
-    const newAppId = created.createdApp
+    const newApp = created.createdApp
 
     itxn
       .payment({
-        receiver: newAppId.address,
+        receiver: newApp.address,
         amount: mbrPayment.amount,
       })
       .submit()
 
     compileArc4(GGovPeriodContract).call.init({
-      appId: newAppId,
+      appId: newApp.id,
       args: [Global.currentApplicationId, periodId, committeeId, u32(votingStart), u32(votingEnd)],
     })
 
     this.periods(periodId).value = {
-      appId: newAppId.id,
+      appId: newApp.id,
       votingStart: u32(votingStart),
       votingEnd: u32(votingEnd),
       numTopics: u32(0),
       ready: false,
     }
 
-    return [periodId, newAppId.id]
+    return [periodId, newApp.id]
   }
 
   /**
@@ -588,7 +745,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     this.ensureCallerIsAdmin()
     const cur = this.lastPeriodId.value
     for (let id: uint64 = newLastPeriodId + 1; id <= cur; id++) {
-      ensure(!this.periods(u32(id)).exists, errPeriodInRange)
+      loggedAssert(!this.periods(u32(id)).exists, errPeriodInRange)
     }
     this.lastPeriodId.value = newLastPeriodId
   }
@@ -606,9 +763,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     ready: boolean,
   ): void {
     const box = this.periods(periodId)
-    ensure(box.exists, errGGovPeriodNotExists)
+    loggedAssert(box.exists, errGGovPeriodNotExists)
     const summary = clone(box.value)
-    ensure(Global.callerApplicationId === summary.appId, errUnauthorized)
+    loggedAssert(Global.callerApplicationId === summary.appId, errUnauthorized)
     summary.votingStart = votingStart
     summary.votingEnd = votingEnd
     summary.numTopics = numTopics
@@ -625,9 +782,41 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   public removePeriodSummary(periodId: Uint32): void {
     const box = this.periods(periodId)
-    ensure(box.exists, errGGovPeriodNotExists)
-    ensure(Global.callerApplicationId === box.value.appId, errUnauthorized)
+    loggedAssert(box.exists, errGGovPeriodNotExists)
+    loggedAssert(Global.callerApplicationId === box.value.appId, errUnauthorized)
     box.delete()
+  }
+
+  /**
+   * Send `mbrTopUp` amount to the period registered under `periodId`. Called as an inner txn by that
+   * same period when writing a box vote record left it below its minimum balance.
+   * Policy: users never pay for vote record boxes MBR.
+   *
+   * Trust boundary: caller-app ID must match the appId registered for `periodId`, same as
+   * `updatePeriodSummary` and `removePeriodSummary`. Unlike a frac instance — which can be rebound to
+   * a replacement registry via `setRegistryApp` — a period binds its registry once in `init`, so today
+   * the registered appId and the app creator coincide. Matching on the registered appId anyway keeps
+   * all three period-callable methods on one rule, and stays correct if periods ever gain a rebinding
+   * path.
+   *
+   * NOTE: pays its own fee, against the usual `fee: 0` pooling rule. The top-up is conditional on a
+   * balance another voter can move between simulate and execution, so with pooling a group that
+   * simulated without it could not cover the extra fee. Own fees make the voter's group fee invariant.
+   * Its counterpart does the same - see `GGovPeriod.checkNeedMBR`.
+   * @param periodId Numeric ID of the calling period
+   */
+  public requestMBR(periodId: Uint32): void {
+    const box = this.periods(periodId)
+    loggedAssert(box.exists, errGGovPeriodNotExists)
+    const periodApp = Application(box.value.appId)
+    loggedAssert(Global.callerApplicationId === periodApp.id, errUnauthorized)
+    itxn
+      .payment({
+        receiver: periodApp.address,
+        amount: this.mbrTopUp.value,
+        fee: Global.minTxnFee,
+      })
+      .submit()
   }
 
   /** Get the spawned period app ID for `periodId` (0 if unknown). */
@@ -674,7 +863,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const committeeBox = this.committees(committeeId)
     if (committeeBox.exists) {
       if (mustBeComplete) {
-        ensure(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
+        loggedAssert(committeeBox.value.ingestedVotes === committeeBox.value.totalVotes, errCommitteeIncomplete)
       }
       return committeeBox.value
     }
@@ -718,7 +907,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
     const superboxPrefix = this.getMetadataSBPrefix(committeeMetadata)
     const sbMetaBoxRef = sbMetaBox(superboxPrefix)
-    ensure(sbMetaBoxRef.exists, errCommitteeNotExists)
+    loggedAssert(sbMetaBoxRef.exists, errCommitteeNotExists)
     const sbMeta = clone(sbMetaBoxRef.value)
     if (logMetadata) {
       log(encodeArc4(committeeMetadata))
@@ -749,31 +938,34 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Get xGov voting power
+   * Get gov voting power
    * @param committeeId Committee ID
-   * @param account xGov account
-   * @returns xGov voting power
+   * @param account gov account
+   * @returns gov voting power
    */
   @abimethod({ readonly: true })
-  public getXGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
+  public getGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
     const committeeMetadata = this.mustGetCommitteeMetadata(committeeId)
 
     const gGovAccount = this.getAccountIfExists(account)
-    ensure(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
+    loggedAssert(gGovAccount.accountId.asUint64() !== 0, errAccountNotExists)
 
     const accountOffset = this.getCommitteeAccountOffsetHint(committeeMetadata.numericId, gGovAccount)
-    const xGov = this.getStoredXGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
-    ensureExtra(xGov.accountId === gGovAccount.accountId, errAccountOffsetMismatch, gGovAccount.accountId.bytes)
+    const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), accountOffset)
+    if (gov.accountId !== gGovAccount.accountId) {
+      log(gGovAccount.accountId.bytes)
+      loggedErr(errAccountOffsetMismatch)
+    }
 
-    return xGov.votes
+    return gov.votes
   }
 
   /**
-   * Non-throwing variant of `getXGovVotingPower`. Returns 0 if account/committee unknown
+   * Non-throwing variant of `getGovVotingPower`. Returns 0 if account/committee unknown
    * or the account is not a member of the committee. Used by ggov-period's `canVote`.
    */
   @abimethod({ readonly: true })
-  public tryGetXGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
+  public tryGetGovVotingPower(committeeId: CommitteeId, account: Account): Uint32 {
     const committeeBox = this.committees(committeeId)
     if (!committeeBox.exists) return u32(0)
     const committeeMetadata = clone(committeeBox.value)
@@ -791,9 +983,9 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
     }
     if (!found) return u32(0)
 
-    const xGov = this.getStoredXGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
-    if (xGov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
-    return xGov.votes
+    const gov = this.getStoredGovAt(this.getMetadataSBPrefix(committeeMetadata), foundOffset)
+    if (gov.accountId.asUint64() !== gGovAccount.accountId.asUint64()) return u32(0)
+    return gov.votes
   }
 
   /**
@@ -803,7 +995,7 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
    */
   private mustGetCommitteeMetadata(committeeId: CommitteeId): CommitteeMetadata {
     const committeeBox = this.committees(committeeId)
-    ensure(committeeBox.exists, errCommitteeNotExists)
+    loggedAssert(committeeBox.exists, errCommitteeNotExists)
     return committeeBox.value
   }
 
@@ -825,13 +1017,13 @@ export class GGovRegistryContract extends GGovRegistryAccountContract {
   }
 
   /**
-   * Get xgov stored at index in committee superbox
+   * Get gov stored at index in committee superbox
    * @param superboxName committee superbox name
    * @param index offset
-   * @returns xGov account ID and votes stored at index
+   * @returns gov account ID and votes stored at index
    */
-  private getStoredXGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
-    const xGovData = sbGetData(superboxName, index)
-    return decodeArc4<AccountIdWithVotes>(xGovData)
+  private getStoredGovAt(superboxName: string, index: uint64): AccountIdWithVotes {
+    const govData = sbGetData(superboxName, index)
+    return decodeArc4<AccountIdWithVotes>(govData)
   }
 }

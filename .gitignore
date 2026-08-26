@@ -62,7 +62,7 @@ db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
-instance/
+# instance/
 .webassets-cache
 
 # Scrapy stuff:
@@ -121,6 +121,10 @@ celerybeat.pid
 
 # Environments
 .env
+
+# Deterministic localnet seed output: addresses + mnemonics written by
+# projects/ggov-frontend/scripts/deploy-sample-data.ts. Throwaway keys, but keep them out of git.
+.localnet-seed.json
 
 # Cloudflare Worker local secrets (never commit real values; .example is tracked)
 .dev.vars
@@ -187,4 +191,12 @@ projects/ggov-frontend/worker-configuration.d.ts
 
 
 /TODO
+TODO.md
 /BACKLOG
+BACKLOG.md
+/NOTES
+NOTES.md
+
+# Deterministic localnet seed output: addresses + mnemonics written by
+# projects/ggov-frontend/scripts/deploy-frac-sample-data.ts. Throwaway keys, but keep them out of git.
+.localnet-seed.json

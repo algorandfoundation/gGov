@@ -2,12 +2,14 @@ import type { ReactNode } from 'react'
 import { AlertTriangle, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type CalloutVariant = 'info' | 'warning' | 'danger' | 'neutral'
+export type CalloutVariant = 'info' | 'warning' | 'danger' | 'neutral' | 'pooled'
 
 /**
  * Reusable admonition/callout, one consistent family across the app (formalizes the
  * brief's "Heads up" warning). Per the Algorand palette: info = blue, warning =
- * amber (navy/amber text, never white), danger = orange, neutral = inset/muted.
+ * amber (navy/amber text, never white), danger = orange, neutral = inset/muted,
+ * pooled = teal (the app-wide tone for pooled voting / staking pools, matching the
+ * landing callout and the pooled figures on the account page).
  * Status text uses the themeable `*-strong` tokens so it stays legible in dark mode.
  */
 const VARIANTS: Record<
@@ -41,6 +43,14 @@ const VARIANTS: Record<
     title: 'text-foreground',
     body: 'text-muted-foreground',
     defaultIcon: null,
+  },
+  // No left accent rule: pooled notes are explanatory rather than a status change.
+  pooled: {
+    container: 'border-algo-teal/20 bg-algo-teal/10',
+    icon: 'text-teal-strong',
+    title: 'text-foreground',
+    body: 'text-muted-foreground',
+    defaultIcon: <Info className="size-[18px]" />,
   },
 }
 

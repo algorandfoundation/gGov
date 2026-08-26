@@ -1,8 +1,8 @@
 /**
  * Withdraw ALGO from a GGov contract — either the GGovRegistry app itself or one of its
  * deployed GGovPeriod apps. Both withdrawals are admin-only: the registry's `withdrawALGO`
- * is admin-gated directly, and a period's `withdrawALGO` inner-calls registry.verifyAdmin,
- * so the DEPLOYER environment account must be the registry admin (creator).
+ * is admin-gated directly, and a period's `withdrawALGO` resolves the admin from the registry's
+ * `admin` global state, so the DEPLOYER environment account must be the registry admin (by default, the creator).
  *
  * The target contract is identified by its on-chain application id. The script locates the
  * registry (APP_ID env if set, else the one created by DEPLOYER), then:

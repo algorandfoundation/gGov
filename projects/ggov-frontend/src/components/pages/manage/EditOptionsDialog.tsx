@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Lock, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { TxButton } from '@/components/TxButtonContent'
 import { useEditTopicMutation } from '@/hooks/mutations'
+import { ABSTAIN_OPTION, MIN_CUSTOM_OPTIONS, findOptionIssues, withAbstain } from '@/utils/topicOptions'
 
 interface EditOptionsDialogProps {
   periodId: number
@@ -12,46 +13,44 @@ interface EditOptionsDialogProps {
   topicIndex: number
   /** Current on-chain options, used to seed the form. */
   initialOptions: string[]
+  /**
+   * Capitalised noun for the thing being edited. An election period's options are
+   * fixed, so today the caller only opens this for a standard period's topics —
+   * the prop keeps the title honest if that ever changes.
+   */
+  itemNoun?: string
   onClose: () => void
 }
-
-// A topic must keep at least this many options; Remove is disabled at the floor.
-const MIN_OPTIONS = 2
 
 /**
  * Edit the options of a single topic. Mounted only while a topic is being edited,
  * so it seeds its form state once from `initialOptions` on mount.
  *
- * Validation: at least two options, no blanks, no duplicates. Whitespace is trimmed
- * before saving, but a blank entry is surfaced as an error rather than silently
- * dropped — the operator decides whether to fill it in or remove the row.
+ * State holds only the custom options: Abstain renders as a locked last row, and is appended
+ * to the list on save.
+ *
+ * Validation: at least `MIN_CUSTOM_OPTIONS` options, no blanks, no duplicates, no typed
+ * Abstain. Whitespace is trimmed before saving, but a blank entry is surfaced as an error
+ * rather than silently dropped — the operator decides whether to fill it in or remove it.
  */
-export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClose }: EditOptionsDialogProps) {
+export function EditOptionsDialog({
+  periodId,
+  topicIndex,
+  initialOptions,
+  itemNoun = 'Topic',
+  onClose,
+}: EditOptionsDialogProps) {
   const editTopicMutation = useEditTopicMutation()
-  const [options, setOptions] = useState<string[]>(() =>
-    initialOptions.length >= MIN_OPTIONS ? [...initialOptions] : [...initialOptions, '', ''].slice(0, MIN_OPTIONS),
-  )
+  const [options, setOptions] = useState<string[]>(() => {
+    // `ensureValidOptions` at the smart contract level, asserts Abstain is last *and* appears nowhere else,
+    // so the head is exactly the custom options — nothing to check in what we drop. `withAbstain` puts it back.
+    const custom = initialOptions.slice(0, -1)
+    return custom.length >= MIN_CUSTOM_OPTIONS ? custom : [...custom, '', ''].slice(0, MIN_CUSTOM_OPTIONS)
+  })
 
-  const { trimmed, blankIdx, duplicateIdx, isValid } = useMemo(() => {
-    const trimmed = options.map((o) => o.trim())
-
-    const blankIdx = new Set<number>()
-    trimmed.forEach((t, i) => {
-      if (t === '') blankIdx.add(i)
-    })
-
-    const counts = new Map<string, number>()
-    trimmed.forEach((t) => {
-      if (t !== '') counts.set(t, (counts.get(t) ?? 0) + 1)
-    })
-    const duplicateIdx = new Set<number>()
-    trimmed.forEach((t, i) => {
-      if (t !== '' && (counts.get(t) ?? 0) > 1) duplicateIdx.add(i)
-    })
-
-    const isValid = options.length >= MIN_OPTIONS && blankIdx.size === 0 && duplicateIdx.size === 0
-    return { trimmed, blankIdx, duplicateIdx, isValid }
-  }, [options])
+  const { trimmed, blankIdx, duplicateIdx, abstainIdx } = useMemo(() => findOptionIssues(options), [options])
+  const isValid =
+    options.length >= MIN_CUSTOM_OPTIONS && blankIdx.size === 0 && duplicateIdx.size === 0 && abstainIdx.size === 0
 
   function setOption(i: number, value: string) {
     setOptions((prev) => prev.map((o, j) => (j === i ? value : o)))
@@ -73,19 +72,21 @@ export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClos
 
   function handleSave() {
     if (!isValid) return
-    editTopicMutation.mutate({ periodId, topicIndex, options: trimmed }, { onSuccess: onClose })
+    editTopicMutation.mutate({ periodId, topicIndex, options: withAbstain(trimmed) }, { onSuccess: onClose })
   }
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent onClose={onClose}>
         <DialogHeader>
-          <DialogTitle>Edit Topic {topicIndex + 1} Options</DialogTitle>
+          <DialogTitle>
+            Edit {itemNoun} {topicIndex + 1} options
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-2">
             {options.map((opt, i) => {
-              const invalid = blankIdx.has(i) || duplicateIdx.has(i)
+              const invalid = blankIdx.has(i) || duplicateIdx.has(i) || abstainIdx.has(i)
               return (
                 <div key={i} className="space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -121,7 +122,6 @@ export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClos
                       size="icon-sm"
                       aria-label={`Remove option ${i + 1}`}
                       onClick={() => removeOption(i)}
-                      disabled={options.length <= MIN_OPTIONS}
                     >
                       <X />
                     </Button>
@@ -130,13 +130,30 @@ export function EditOptionsDialog({ periodId, topicIndex, initialOptions, onClos
                     <p className="pl-8 text-xs text-destructive">Option cannot be empty.</p>
                   ) : duplicateIdx.has(i) ? (
                     <p className="pl-8 text-xs text-destructive">Duplicate option.</p>
+                  ) : abstainIdx.has(i) ? (
+                    <p className="pl-8 text-xs text-destructive">
+                      {ABSTAIN_OPTION} is always the last option — it can't be typed here.
+                    </p>
                   ) : null}
                 </div>
               )
             })}
+            {/* Fixed last option: a spacer for the move column, a lock for the remove one. */}
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 shrink-0" />
+              <Input name="topic-option-abstain" aria-label={ABSTAIN_OPTION} value={ABSTAIN_OPTION} readOnly />
+              <div className="flex size-8 shrink-0 items-center justify-center">
+                <Lock className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+            {options.length < MIN_CUSTOM_OPTIONS && (
+              <p className="pl-8 text-xs text-destructive">
+                A topic needs at least {MIN_CUSTOM_OPTIONS} options besides {ABSTAIN_OPTION}.
+              </p>
+            )}
           </div>
           <Button variant="outline" size="sm" onClick={() => setOptions((prev) => [...prev, ''])}>
-            Add Option
+            Add option
           </Button>
         </div>
         <DialogFooter>

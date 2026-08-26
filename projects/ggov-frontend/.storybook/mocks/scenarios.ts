@@ -11,8 +11,9 @@
  * (src/utils/time.ts) classifies them exactly as the requested phase — the same
  * derivation the app uses, so the toolbar `periodPhase` toggle is faithful.
  */
-import type { GGovPeriod, GGovVoteRecord, BodyJson, PeriodBodyJson } from 'ggov-sdk'
+import type { GGovPeriod, GGovVoteRecord, Election, PeriodBodyJson, TopicBodyJson } from 'ggov-sdk'
 import type { PeriodWithId, CommitteeOption, ProducerRank } from '../../src/hooks/queries'
+import type { PooledPosition } from '../../src/hooks/fracQueries'
 // Re-use the app's real base64url codec so committee keys match the ids the
 // components compute via `toBase64Url(period.committeeId)`.
 import { toBase64Url } from '../../src/hooks/queries'
@@ -34,7 +35,7 @@ export interface MockScenario {
     {
       period: GGovPeriod
       body: PeriodBodyJson | null
-      topicBodies: (BodyJson | null)[]
+      topicBodies: (TopicBodyJson | null)[]
       /** Distinct accounts that cast a vote; `.length` is the voter count. */
       voters: string[]
       /** On-chain app id of the GGovPeriod contract (TechnicalInfoCard link). */
@@ -49,14 +50,39 @@ export interface MockScenario {
   canVote: Record<string, { canVote: boolean; votingPower: bigint }>
   /** Vote record per `${periodId}:${account}`; `null` = eligible but didn't vote. */
   voteRecords: Record<string, GGovVoteRecord | null>
-  /** Registry voting power per `${committeeB64}:${account}` (`useXGovVotingPowers`). */
+  /** Registry voting power per `${committeeB64}:${account}` (`useGovVotingPowers`). */
   votingPowers: Record<string, number>
+  /**
+   * Pooled (fractional-delegation) positions per `${committeeB64}:${account}` —
+   * drives `usePooledPositions`. Omit for accounts in no pool; a present-but-empty
+   * array still marks the account a pool member, which is what the merged
+   * voting-power card commits its layout on.
+   */
+  pooled?: Record<string, MockPooledPosition[]>
   /** Producer rank per `${committeeB64}:${account}` (`useProducerRank`). */
   producerRanks?: Record<string, ProducerRank | null>
+  /**
+   * Escrow app id per account (`useAppEscrow`). An account listed here is an
+   * application's escrow, which the account page titles "Application Account".
+   */
+  appEscrows?: Record<string, bigint>
   /** Global registry state (`useGlobalState`, PeriodStatsCard). */
   globalState?: { lastPeriodId?: bigint }
   /** Force loading/error UIs without real async. */
-  flags?: { periodsLoading?: boolean; periodLoading?: boolean; periodsError?: boolean }
+  flags?: {
+    periodsLoading?: boolean
+    periodLoading?: boolean
+    periodsError?: boolean
+    /**
+     * Pool membership known but amounts still resolving — the state where the
+     * merged voting-power card shows its pooled chrome with skeleton amounts.
+     */
+    pooledLoading?: boolean
+    /** Account page: the delegation card / delegator list / vote history skeletons. */
+    delegationLoading?: boolean
+    delegatorsLoading?: boolean
+    votesLoading?: boolean
+  }
 }
 
 const DAY = 86_400
@@ -82,8 +108,8 @@ export function makeTopic(options: string[], tallies?: number[]): [string[], num
   return [options, tallies ?? options.map(() => 0)]
 }
 
-export function makePeriodBody(title: string, body: string, electSeats?: number): PeriodBodyJson {
-  return electSeats !== undefined ? { title, body, electSeats } : { title, body }
+export function makePeriodBody(title: string, body: string, elect?: Election[]): PeriodBodyJson {
+  return elect !== undefined ? { title, body, elect } : { title, body }
 }
 
 export function makeCommittee(
@@ -106,11 +132,42 @@ export interface TopicConfig {
   options: string[]
   /** Result tallies per option; omit for an un-tallied (upcoming/active) topic. */
   tallies?: number[]
+  /** Election index this candidate runs in (`TopicBodyJson.e`); omit on standard topics. */
+  e?: number
+}
+
+/**
+ * A pooled position in a scenario, plus the ballot-only state the vote page needs.
+ * The extra fields are ignored by the account-page surfaces (which only read
+ * `PooledPosition`), so one fixture drives both.
+ */
+export type MockPooledPosition = PooledPosition & {
+  /**
+   * Pool-wide member count for the committee. Fixtures are keyed by account, so
+   * without this a pool has as many "members" as the story gave it accounts —
+   * fine for a card, misleading on the pools index. Set it to the figure the
+   * registry would report.
+   */
+  poolMembers?: number
+  /**
+   * AlgoQuarters in the pool that have cast an internal ballot — the pools
+   * index's turnout column. Defaults to summing the fixture's own `voteRecord`s,
+   * which only reaches pool-scale numbers if the story defines pool-scale accounts.
+   */
+  poolVotedAq?: number
+  /** Ballot eligibility (the contract's `canVote`); defaults to true. */
+  canVote?: boolean
+  /** Recorded pooled ballot, [topic][option] AlgoQuarters; present = this position voted. */
+  voteRecord?: number[][]
+  /** The owner cast it directly, so a delegate can't override. */
+  votedDirectly?: boolean
+  /** Has stake, but the pool hasn't synced this period / is still ingesting AQ. */
+  poolNotReady?: boolean
 }
 
 /** Per-account state within one period. */
 export interface AccountState {
-  /** Registry xGov voting power (also the default eligibility gate). */
+  /** Registry gov voting power (also the default eligibility gate). */
   power?: number
   /** Active-window `canVote` flag; defaults to `power > 0`. */
   canVote?: boolean
@@ -122,13 +179,20 @@ export interface AccountState {
   isDelegated?: boolean
   /** Producer rank for the "Top N% of producers" tag. */
   producerRank?: ProducerRank
+  /**
+   * Pooled positions this account holds in the period's committee. An empty array
+   * still marks the account a pool member — useful for the "member, amounts not in
+   * yet" state the merged voting-power card renders with skeletons.
+   */
+  pooled?: MockPooledPosition[]
 }
 
 export interface PeriodConfig {
   id: number
   phase: Phase
   ready?: boolean
-  electSeats?: number
+  /** Elections this period runs; presence makes it an election period. */
+  elect?: Election[]
   title?: string
   body?: string
   topics?: TopicConfig[]
@@ -149,7 +213,13 @@ export interface PeriodConfig {
  */
 export function buildScenario(
   periods: PeriodConfig[],
-  opts?: { globalLastPeriodId?: number; delegations?: Array<[string, string]>; flags?: MockScenario['flags'] },
+  opts?: {
+    globalLastPeriodId?: number
+    delegations?: Array<[string, string]>
+    /** Accounts that are application escrows, mapped to their owning app id. */
+    appEscrows?: Record<string, bigint | number>
+    flags?: MockScenario['flags']
+  },
 ): MockScenario {
   const scenario: MockScenario = {
     periods: [],
@@ -160,6 +230,10 @@ export function buildScenario(
     voteRecords: {},
     votingPowers: {},
     producerRanks: {},
+    pooled: {},
+    appEscrows: Object.fromEntries(
+      Object.entries(opts?.appEscrows ?? {}).map(([address, appId]) => [address, BigInt(appId)]),
+    ),
     globalState: {
       lastPeriodId: BigInt(opts?.globalLastPeriodId ?? Math.max(0, ...periods.map((p) => p.id))),
     },
@@ -179,12 +253,16 @@ export function buildScenario(
       topics: topicConfigs.map((t) => makeTopic(t.options, t.tallies)),
     }
 
-    scenario.periods.push({ id: cfg.id, ready: cfg.ready ?? true, period })
+    scenario.periods.push({ id: cfg.id, ready: cfg.ready ?? true, period, appId: BigInt(cfg.appId ?? 1000 + cfg.id) })
 
     scenario.periodDetail[cfg.id] = {
       period,
-      body: makePeriodBody(cfg.title ?? `Period ${cfg.id}`, cfg.body ?? 'A sample governance period.', cfg.electSeats),
-      topicBodies: topicConfigs.map((t) => ({ title: t.title, body: t.body ?? '' })),
+      body: makePeriodBody(cfg.title ?? `Period ${cfg.id}`, cfg.body ?? 'A sample governance period.', cfg.elect),
+      topicBodies: topicConfigs.map((t) => ({
+        title: t.title,
+        body: t.body ?? '',
+        ...(t.e !== undefined ? { e: t.e } : {}),
+      })),
       voters: cfg.voters ?? [],
       appId: cfg.appId ?? 1000 + cfg.id,
     }
@@ -207,6 +285,7 @@ export function buildScenario(
         scenario.voteRecords[pakey(cfg.id, address)] = null
       }
       if (state.producerRank) scenario.producerRanks![cakey(committeeB64, address)] = state.producerRank
+      if (state.pooled) scenario.pooled![cakey(committeeB64, address)] = state.pooled
     }
   }
 
@@ -243,17 +322,29 @@ export const SAMPLE_TOPICS_TALLIED: TopicConfig[] = [
 ]
 
 /**
- * Election ballot: one topic PER candidate, each a Support/Against/Abstain vote.
- * The results page derives a net score (Support − Against) per candidate via
- * `tallyBallot` and ranks them; `electSeats` is the seat cutoff. Carries tallies so
- * the (live or final) ranked results render. Candidate name = the topic-body title.
+ * Election ballot: one topic PER candidate, each a Support/Veto/Abstain vote.
+ * The results page derives a net score (Support − Veto) per candidate via
+ * `tallyBallot`, buckets candidates by their `e` tag and ranks each election
+ * separately against its own seat count. Carries tallies so the (live or final)
+ * ranked results render. Candidate name = the topic-body title.
  */
-const candidate = (name: string, support: number, against: number, abstain: number): TopicConfig => ({
+const candidate = (
+  name: string,
+  support: number,
+  veto: number,
+  abstain: number,
+  e = 0,
+  seat = 'a governance council seat',
+): TopicConfig => ({
   title: name,
-  body: 'Candidate for a governance council seat.',
-  options: ['Support', 'Against', 'Abstain'],
-  tallies: [support, against, abstain],
+  body: `Candidate for ${seat}.`,
+  options: ['Support', 'Veto', 'Abstain'],
+  tallies: [support, veto, abstain],
+  e,
 })
+
+/** One council election with 3 seats — the single-election shape. */
+export const COUNCIL_ELECTION: Election[] = [{ t: 'Governance council', s: 3 }]
 
 export const ELECTION_TOPICS: TopicConfig[] = [
   candidate('Alice Acharya', 42_000, 6_000, 3_000),
@@ -263,9 +354,53 @@ export const ELECTION_TOPICS: TopicConfig[] = [
   candidate('Erin Engel', 12_000, 28_000, 6_000),
 ]
 
+/** Two elections on one shared ballot — candidates split across them by `e`. */
+export const MULTI_ELECTIONS: Election[] = [
+  { t: 'Governance council', s: 3 },
+  { t: 'Treasury committee', s: 2 },
+]
+
+const treasurySeat = 'a treasury committee seat'
+
+export const MULTI_ELECTION_TOPICS: TopicConfig[] = [
+  candidate('Alice Acharya', 42_000, 6_000, 3_000),
+  candidate('Bob Bauer', 38_000, 9_000, 2_500),
+  candidate('Carol Chen', 31_000, 14_000, 4_000),
+  candidate('Dave Diaz', 19_000, 22_000, 5_000),
+  candidate('Frank Fischer', 36_000, 7_500, 2_000, 1, treasurySeat),
+  candidate('Grace Gallo', 29_000, 11_000, 3_500, 1, treasurySeat),
+  candidate('Hana Haddad', 24_000, 18_000, 4_500, 1, treasurySeat),
+]
+
 // --- Page presets ------------------------------------------------------------
 
 /** Landing/index list with one period of every phase (alice connected & eligible). */
+/**
+ * Two pooled positions for the stories that exercise pooled voting: a liquid-staking
+ * token and a Réti pool, with the shares/AQ that produce "≈ 5,820.44 via 2 pools".
+ * `votes` is `userAq / totalAq * poolVotes`, as the real hook derives it.
+ */
+export const SAMPLE_POOLED: PooledPosition[] = [
+  {
+    instanceNumId: 1,
+    instanceName: 'Folks Finance xALGO',
+    userAq: 4_120,
+    totalAq: 512_400,
+    sharePct: (4_120 / 512_400) * 100,
+    poolVotes: 509_800,
+    votes: (4_120 / 512_400) * 509_800,
+  },
+  {
+    instanceNumId: 2,
+    instanceName: 'Réti pool #42',
+    userAq: 1_730,
+    totalAq: 91_050,
+    sharePct: (1_730 / 91_050) * 100,
+    poolVotes: 90_600,
+    votes: (1_730 / 91_050) * 90_600,
+  },
+]
+
 export function listScenario(opts: { connected?: boolean; account?: string } = {}): MockScenario {
   const account = opts.account ?? alice.address
   const accounts = (opts.connected ?? true) ? { [account]: { power: 4200, producerRank: rank(4) } } : {}
@@ -288,6 +423,24 @@ export function listScenario(opts: { connected?: boolean; account?: string } = {
         topics: SAMPLE_TOPICS_TALLIED,
         committee: { totalVotes: 84_500 },
       },
+      // One of each election shape, so the list's ballot column shows every label
+      // it can produce: "2 elections", "5 candidates" and "2 topics".
+      {
+        id: 5,
+        phase: 'ended',
+        title: 'Period 5 · Term 2 elections',
+        body: 'Council and treasury committee, elected together.',
+        elect: MULTI_ELECTIONS,
+        topics: MULTI_ELECTION_TOPICS,
+      },
+      {
+        id: 4,
+        phase: 'ended',
+        title: 'Period 4 · Council election',
+        body: 'A single-election period.',
+        elect: COUNCIL_ELECTION,
+        topics: ELECTION_TOPICS,
+      },
       {
         id: 6,
         phase: 'ended',
@@ -309,9 +462,29 @@ export interface DetailOptions {
   eligible?: boolean
   /** Account already voted (seeds a vote record). */
   voted?: boolean
-  electSeats?: number
+  /** Elections this period runs; presence makes it an election period. */
+  elect?: Election[]
+  /**
+   * Ballot contents. Defaults to the standard reward-policy topics — pass the
+   * election fixtures alongside `elect`, or the period is flagged an election
+   * while its topics carry no `e` tag and every one reads as unassigned.
+   */
+  topics?: TopicConfig[]
+  /** Period title; defaults to a reward-policy or council-election name to match `elect`. */
+  title?: string
+  /** Period body prose; defaults alongside {@link title}. */
+  body?: string
   /** Delegators that point at `account` (shown nested in the selector). */
-  delegators?: Array<{ address: string; power?: number; voted?: boolean; votedDirectly?: boolean }>
+  delegators?: Array<{
+    address: string
+    power?: number
+    voted?: boolean
+    votedDirectly?: boolean
+    /** This delegator's own pools — the two-levels-deep rows in the selector. */
+    pooled?: MockPooledPosition[]
+  }>
+  /** Pooled positions `account` holds, nested under it in the selector. */
+  pooled?: MockPooledPosition[]
 }
 
 /** Full detail-page scenario for one period with eligibility/vote permutations. */
@@ -321,7 +494,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
   const connected = o.connected ?? true
   const eligible = o.eligible ?? connected
   const tallied = o.phase === 'ended'
-  const topics = tallied ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS
+  const topics = o.topics ?? (tallied ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS)
   const allOptionCounts = topics.map((t) => t.options.length)
 
   const accounts: Record<string, AccountState> = {}
@@ -340,6 +513,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
       votingPower: BigInt(power),
       voteRecord,
       producerRank: eligible ? rank(4) : undefined,
+      pooled: o.pooled,
     }
     if (voteRecord) voters.push(account)
 
@@ -357,6 +531,7 @@ export function detailScenario(o: DetailOptions): MockScenario {
         // A delegator that voted directly cannot be overridden by its delegate.
         isDelegated: d.votedDirectly ? false : true,
         producerRank: rank(18),
+        pooled: d.pooled,
       }
       delegations.push([d.address, account])
       if (dRecord) voters.push(d.address)
@@ -368,9 +543,13 @@ export function detailScenario(o: DetailOptions): MockScenario {
       {
         id,
         phase: o.phase,
-        title: `Period ${id} · Reward policy`,
-        body: 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.',
-        electSeats: o.electSeats,
+        title: o.title ?? (o.elect ? `Period ${id} · Council election` : `Period ${id} · Reward policy`),
+        body:
+          o.body ??
+          (o.elect
+            ? 'Governors rank the candidates standing in this period. Each is a Support / Veto / Abstain ballot; the highest net scores lead for the seats on offer.'
+            : 'This period asks governors to weigh in on the protocol reward schedule and treasury direction for the next window. Each topic below can be voted independently.'),
+        elect: o.elect,
         topics,
         voters,
         accounts,
@@ -378,6 +557,107 @@ export function detailScenario(o: DetailOptions): MockScenario {
     ],
     { globalLastPeriodId: id, delegations },
   )
+}
+
+// --- Account page ------------------------------------------------------------
+
+/** One committee window the viewed account appears in, newest first. */
+export interface AccountPeriodConfig {
+  /** Direct voting power from blocks the account produced in this committee. */
+  power?: number
+  /** Pooled positions held in this committee; present (even empty) = pool member. */
+  pooled?: MockPooledPosition[]
+  /** The account voted in this period — seeds a vote record ("Votes cast"). */
+  voted?: boolean
+  /** The vote was cast by a delegate ("↪ Voted by a delegate" tag). */
+  votedByDelegate?: boolean
+  /** Spread the vote across the first two options instead of all on the first. */
+  split?: boolean
+  phase?: Phase
+  title?: string
+}
+
+export interface AccountOptions {
+  /** Address the page is viewing (the `address` route param). */
+  account?: string
+  /** Committee windows / periods for this account, newest first. */
+  periods?: AccountPeriodConfig[]
+  /** Address this account delegates its voting power to. */
+  delegatesTo?: string
+  /** Accounts that delegate their voting power to this account. */
+  delegators?: string[]
+  /** Owning app id — makes the page render as an "Application Account". */
+  appEscrow?: bigint | number
+  flags?: MockScenario['flags']
+}
+
+const ACCOUNT_PERIOD_TITLES = ['Reward policy', 'Treasury direction', 'Protocol upgrade', 'Grants framework']
+
+/**
+ * Account-page scenario: a per-committee power history for one account, plus its
+ * delegation, incoming delegators and vote history.
+ *
+ * Every committee is carried by a period (that's how {@link buildScenario} models
+ * them), so one entry in `periods` is both a committee window on the voting-power
+ * card and a candidate row in "Votes cast". Ids/block windows descend from the
+ * newest entry, so index 0 is the current committee.
+ */
+export function accountScenario(o: AccountOptions = {}): MockScenario {
+  const account = o.account ?? alice.address
+  const configs = o.periods ?? [{ power: 12_480, voted: true }, { power: 11_920, voted: true }, { power: 9_640 }]
+
+  const periods: PeriodConfig[] = configs.map((cfg, i) => {
+    const id = 9 - i
+    const phase = cfg.phase ?? (i === 0 ? 'active' : 'ended')
+    const topics = phase === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS
+    const power = cfg.power ?? 0
+    const voted = !!cfg.voted || !!cfg.votedByDelegate
+    // A pool member votes with its pooled share, so a ballot is weighted by whichever
+    // power the account actually has. It must be non-zero: "Votes cast" hides every
+    // all-zero topic, which would otherwise render as an empty card.
+    const ballotWeight = Math.round(power || (cfg.pooled ?? []).reduce((sum, p) => sum + p.votes, 0)) || 1
+    // The card reads each topic's percentage off the account's own allocation, so
+    // an all-on-one-option record reads "100.0%" and a split one reads "N votes".
+    const voteRecord = voted
+      ? topics.map((t) =>
+          Array.from({ length: t.options.length }, (_, oi) => {
+            if (cfg.split)
+              return oi === 0 ? Math.round(ballotWeight * 0.6) : oi === 1 ? Math.round(ballotWeight * 0.4) : 0
+            return oi === 0 ? ballotWeight : 0
+          }),
+        )
+      : undefined
+
+    return {
+      id,
+      phase,
+      title: `Period ${id} · ${cfg.title ?? ACCOUNT_PERIOD_TITLES[i % ACCOUNT_PERIOD_TITLES.length]}`,
+      topics,
+      committee: { periodStart: 48_200_000 - i * 3_200_000, periodEnd: 51_200_000 - i * 3_200_000 },
+      voters: voted ? [account] : [],
+      accounts: {
+        [account]: {
+          power,
+          votingPower: BigInt(power),
+          voteRecord,
+          isDelegated: cfg.votedByDelegate,
+          ...(cfg.pooled ? { pooled: cfg.pooled } : {}),
+        },
+      },
+    }
+  })
+
+  const delegations: Array<[string, string]> = [
+    ...(o.delegatesTo ? ([[account, o.delegatesTo]] as Array<[string, string]>) : []),
+    ...(o.delegators ?? []).map((d): [string, string] => [d, account]),
+  ]
+
+  return buildScenario(periods, {
+    globalLastPeriodId: 9,
+    delegations,
+    appEscrows: o.appEscrow != null ? { [account]: o.appEscrow } : undefined,
+    flags: o.flags,
+  })
 }
 
 /**
@@ -397,7 +677,7 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
   const connected = auth !== 'disconnected'
   const power = 4200
 
-  // Election periods carry `electSeats` (drives the detail page's "Election seats" /
+  // Election periods carry `elect` (drives the detail page's "Election seats" /
   // "View Ranked Results" UI and the results page's ranked layout) plus an
   // election-flavoured title + per-candidate topics. The title is visible on the
   // landing hero and the index row too, so the toggle shows on all four pages.
@@ -406,9 +686,9 @@ export function defaultScenarioFromGlobals(auth: string, phase: string, election
     phase: p,
     title: election ? 'Period 7 · Council election' : 'Period 7 · Reward policy',
     body: election
-      ? 'Elect the next governance council — vote Support/Against/Abstain on each candidate; the top 3 are seated.'
+      ? 'Elect the next governance council — vote Support/Veto/Abstain on each candidate; the top 3 are seated.'
       : 'Weigh in on the protocol reward schedule and treasury direction for the next window.',
-    electSeats: election ? 3 : undefined,
+    elect: election ? COUNCIL_ELECTION : undefined,
     topics: election ? ELECTION_TOPICS : p === 'ended' ? SAMPLE_TOPICS_TALLIED : SAMPLE_TOPICS,
     committee: p === 'ended' || election ? { totalVotes: 84_500 } : undefined,
     accounts: connected

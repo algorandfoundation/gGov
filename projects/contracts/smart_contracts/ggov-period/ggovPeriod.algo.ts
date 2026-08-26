@@ -9,11 +9,12 @@ import {
   clone,
   contract,
   emit,
-  err,
   Global,
   GlobalState,
   itxn,
   log,
+  loggedAssert,
+  loggedErr,
   op,
   Txn,
   uint64,
@@ -25,26 +26,29 @@ import {
   errGGovCannotOverride,
   errGGovDelegationNoAcctRef,
   errGGovHasVotes,
+  errGGovLastOptionAbstain,
   errGGovNoDelegation,
   errGGovNoOptions,
   errGGovNotReady,
   errGGovReady,
-  errGGovUnvotable,
   errGGovTopicIndexOOB,
+  errGGovUnvotable,
   errGGovVoteMismatch,
   errGGovVotePowerMismatch,
   errGGovVotingEnded,
   errGGovVotingNotStarted,
-  errNotOperator,
   errPeriodEndLessThanStart,
+  errRegistryMissing,
   errUnauthorized,
 } from '../base/errors.algo'
 import {
   CommitteeId,
   getEmptyGGovPeriod,
+  getEmptyGGovPeriodShort,
   getEmptyGGovVoteRecord,
   GGovPeriod,
   GGovPeriodMeta,
+  GGovPeriodShort,
   GGovTopic,
   GGovTopicOptions,
   GGovTopicVotes,
@@ -52,7 +56,7 @@ import {
   GGovVoteRecord,
   GGovVoteRecordMeta,
 } from '../base/types.algo'
-import { ensure, u32 } from '../base/utils.algo'
+import { u32 } from '../base/utils.algo'
 import { GGovRegistryContract } from '../ggov-registry/ggovRegistry.algo'
 
 const TOPIC_BODY_BOX_PREFIX = Bytes`T`
@@ -76,7 +80,7 @@ export class GGovPeriodContract extends BaseContract {
   /** Last actual voting round. Used for efficient indexer lookups. 0 until the first vote is cast. */
   lastVotingRound = GlobalState<uint64>({ initialValue: 0 })
 
-  /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). */
+  /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). Last option is always Abstain (enforced). */
   topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
   /** Per-topic vote tallies. Mutated on every vote(). Parallel to topicOptionsArr (same length & order). */
   topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
@@ -84,7 +88,7 @@ export class GGovPeriodContract extends BaseContract {
   periodBody = Box<bytes>({ key: 'P' })
   /** Topic body JSON by topicIndex */
   topicBodies = BoxMap<Uint32, bytes>({ keyPrefix: TOPIC_BODY_BOX_PREFIX }) // squatting key prefix to avoid collisions; code uses op.Box for splicing/resizing
-  /** Per-voter vote record, keyed by voter Account */
+  /** Per-voter vote record, keyed by voter Account. MBR is pulled from the registry on demand via `checkNeedMBR`. */
   voteRecords = BoxMap<Account, GGovVoteRecord>({ keyPrefix: 'v' })
 
   // ── Lifecycle ────────────────────────────────────────────────────
@@ -102,8 +106,8 @@ export class GGovPeriodContract extends BaseContract {
     votingStart: Uint32,
     votingEnd: Uint32,
   ): void {
-    ensure(this.registryApp.value === 0, errAlreadyInit)
-    ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
+    loggedAssert(this.registryApp.value === 0, errAlreadyInit)
+    loggedAssert(Txn.sender === Global.creatorAddress, errUnauthorized)
     this.registryApp.value = registryApp.id
     this.periodId.value = periodId.asUint64()
     this.committeeId.value = committeeId
@@ -115,22 +119,76 @@ export class GGovPeriodContract extends BaseContract {
 
   // ── Helpers ──────────────────────────────────────────────────────
 
-  /** Inner-call the registry's verifyOperator and ensure caller is the operator. */
-  protected ensureCallerIsOperator(): void {
-    const ok = compileArc4(GGovRegistryContract).call.verifyOperator({
-      appId: Application(this.registryApp.value),
-      args: [Txn.sender],
-    }).returnValue
-    ensure(ok, errNotOperator)
+  /**
+   * Admin is the registry's `admin` global, read directly from the registry app's state (no inner
+   * call). `admin` has an initial value on the registry, so a missing key means `registryApp` isn't
+   * a registry — surface that as errRegistryMissing.
+   */
+  protected resolveAdmin(): Account {
+    const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`admin`)
+    loggedAssert(exists, errRegistryMissing)
+    return Account(value)
   }
 
-  /** Inner-call the registry's verifyAdmin and ensure caller is the admin. */
-  protected checkAdminCaller(): void {
-    const ok = compileArc4(GGovRegistryContract).call.verifyAdmin({
+  /**
+   * Operator is the registry's `operator` global, read directly (no inner call). Unlike `admin`,
+   * the registry's `operator` has no initial value, so before setOperator the key is absent; return
+   * the zero address in that case so an operator-gated caller fails the comparison with errUnauthorized
+   * (as under the old c2c check), rather than errRegistryMissing.
+   */
+  protected resolveOperator(): Account {
+    const [value, exists] = op.AppGlobal.getExBytes(this.registryApp.value, Bytes`operator`)
+    return exists ? Account(value) : Global.zeroAddress
+  }
+
+  /**
+   * Caller must match the registry's admin (`BaseContract` override). The creator — the spawning
+   * registry app account — always passes too: a permanent escape hatch, mirroring
+   * FracDelegationInstance.
+   */
+  protected override ensureCallerIsAdmin(): void {
+    if (Txn.sender === Global.creatorAddress) return
+    loggedAssert(Txn.sender === this.resolveAdmin(), errUnauthorized)
+  }
+
+  /** Caller must match the registry's operator. */
+  protected ensureCallerIsOperator(): void {
+    loggedAssert(Txn.sender === this.resolveOperator(), errUnauthorized)
+  }
+
+  /**
+   * Post-condition: if this app account is at or below its minimum balance, pull a top-up from the
+   * registry. The minimum balance requirement itself is enforced for the transaction as a whole, so
+   * an app's account `balance` can be lower than its `minBalance` within the execution of the (outer)
+   * transaction.
+   *
+   * NOTE: pays its own fee, against the usual `fee: 0` pooling rule. The top-up is conditional on a
+   * balance another voter can move between simulate and execution, so with pooling a group that
+   * simulated without it could not cover the extra fee. Own fees make the voter's group fee invariant.
+   * Its counterpart does the same - see `GGovRegistry.requestMBR`.
+   */
+  protected checkNeedMBR(): void {
+    const app = Global.currentApplicationAddress
+    if (app.balance > app.minBalance) return
+    compileArc4(GGovRegistryContract).call.requestMBR({
       appId: Application(this.registryApp.value),
-      args: [Txn.sender],
-    }).returnValue
-    ensure(ok, errUnauthorized)
+      args: [u32(this.periodId.value)],
+      fee: Global.minTxnFee,
+    })
+  }
+
+  /**
+   * Caller must match either gate. Used by deleteTopicBodies, which serves two callers: the admin
+   * clearing every body box before deletePeriodApp, and the operator re-aligning body boxes after a
+   * removeTopic. Granting the operator nothing new — while editable it can already delete any body
+   * box via uploadTopicBodyPartial, whose startOffset-0 path is a box delete + create — and freed
+   * min-balance accrues to the app account, never to the caller. Both resolvers read the registry's
+   * global state directly, so the extra check costs no inner call.
+   */
+  protected ensureCallerIsOperatorOrAdmin(): void {
+    if (Txn.sender === Global.creatorAddress) return
+    if (Txn.sender === this.resolveOperator()) return
+    loggedAssert(Txn.sender === this.resolveAdmin(), errUnauthorized)
   }
 
   /** Mirror current summary (votingStart, votingEnd, numTopics, ready) onto the registry. */
@@ -149,7 +207,7 @@ export class GGovPeriodContract extends BaseContract {
 
   /** Guard for operator edits: period must not be ready */
   protected ensureEditable(): void {
-    ensure(!this.ready.value, errGGovReady)
+    loggedAssert(!this.ready.value, errGGovReady)
   }
 
   /** Box key for the topic-body box of $topicIndex: 'T' + the ARC-4 uint32 index. */
@@ -157,12 +215,28 @@ export class GGovPeriodContract extends BaseContract {
     return TOPIC_BODY_BOX_PREFIX.concat(encodeArc4(u32(topicIndex)))
   }
 
+  /**
+   * Validate a topic's option list: non-empty, ending in the literal 'Abstain', and carrying
+   * 'Abstain' exactly once. This is an enforcement, not convention: `FracDelegationInstance`
+   * relies on the last option being Abstain when casting instance votes, so relaxing this
+   * check would silently corrupt pooled tallies. Called by `addTopic` and `editTopic`, the
+   * only writers of an option list.
+   */
+  protected ensureValidOptions(options: string[]): void {
+    loggedAssert(options.length > 0, errGGovNoOptions)
+    const lastIndex: uint64 = options.length - 1
+    loggedAssert(options[lastIndex] === 'Abstain', errGGovLastOptionAbstain)
+    for (let i: uint64 = 0; i < lastIndex; i++) {
+      loggedAssert(options[i] !== 'Abstain', errGGovLastOptionAbstain)
+    }
+  }
+
   // ── Operator: period/topic CRUD ──────────────────────────────────
 
   public editPeriod(committeeId: CommitteeId, votingStart: uint64, votingEnd: uint64): void {
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    ensure(votingEnd > votingStart, errPeriodEndLessThanStart)
+    loggedAssert(votingEnd > votingStart, errPeriodEndLessThanStart)
     this.committeeId.value = committeeId
     this.votingStart.value = votingStart
     this.votingEnd.value = votingEnd
@@ -172,7 +246,7 @@ export class GGovPeriodContract extends BaseContract {
   public addTopic(options: string[]): uint64 {
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    ensure(options.length > 0, errGGovNoOptions)
+    this.ensureValidOptions(options)
 
     const votes: Uint32[] = []
     for (let i: uint64 = 0; i < options.length; i++) {
@@ -194,10 +268,11 @@ export class GGovPeriodContract extends BaseContract {
   public editTopic(topicIndex: uint64, options: string[]): void {
     this.ensureCallerIsOperator()
     this.ensureEditable()
-    ensure(options.length > 0, errGGovNoOptions)
     const optionsArr = clone(this.topicOptionsArr.value)
     const votesArr = clone(this.topicVotesArr.value)
-    ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
+    loggedAssert(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
+    // Same enforcement as addTopic — the option list is fully replaced
+    this.ensureValidOptions(options)
 
     const votes: Uint32[] = []
     for (let i: uint64 = 0; i < options.length; i++) {
@@ -215,7 +290,7 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureEditable()
     const optionsArr = clone(this.topicOptionsArr.value)
     const votesArr = clone(this.topicVotesArr.value)
-    ensure(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
+    loggedAssert(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     const nextOptions: GGovTopicOptions[] = []
     const nextVotes: GGovTopicVotes[] = []
     for (let i: uint64 = 0; i < optionsArr.length; i++) {
@@ -246,13 +321,13 @@ export class GGovPeriodContract extends BaseContract {
       for (let i: uint64 = 0; i < votesArr.length; i++) {
         logSize += 4 + 4 * votesArr[i].votes.length
       }
-      ensure(logSize <= 1024, errGGovUnvotable)
+      loggedAssert(logSize <= 1024, errGGovUnvotable)
     } else {
       // ensure no votes have been cast yet (only votes box loaded — options skipped)
       for (let i: uint64 = 0; i < votesArr.length; i++) {
         const tallies = clone(votesArr[i].votes)
         for (let j: uint64 = 0; j < tallies.length; j++) {
-          ensure(tallies[j].asUint64() === 0, errGGovHasVotes)
+          loggedAssert(tallies[j].asUint64() === 0, errGGovHasVotes)
         }
       }
     }
@@ -300,14 +375,16 @@ export class GGovPeriodContract extends BaseContract {
   }
 
   /**
-   * Delete the topic-body boxes ('T'+index) for the given topic indexes. Admin only and only while
-   * not ready (same gates as deletePeriodApp). Used by the SDK to clear per-topic body boxes — paged
-   * ≤8 per txn because of the 8-box-reference limit — before deletion, so their min-balance is
-   * reclaimed rather than permanently locked. op.Box.delete is a no-op for an absent box, so
+   * Delete the topic-body boxes ('T'+index) for the given topic indexes. Operator or admin, and only
+   * while not ready. Two callers: the admin clearing every body box before deletePeriodApp, so their
+   * min-balance is reclaimed rather than permanently locked; and the operator re-aligning body boxes
+   * after a removeTopic, which splices the topic arrays but cannot re-key the boxes — without this
+   * the vacated tail box would survive and a later bodyless addTopic would inherit it. Paged ≤8 per
+   * txn because of the 8-box-reference limit. op.Box.delete is a no-op for an absent box, so
    * unknown/stale indexes are harmless. Each referenced box must be in the txn's box-reference array.
    */
   public deleteTopicBodies(topicIndexes: uint64[]): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsOperatorOrAdmin()
     this.ensureEditable()
     for (const idx of clone(topicIndexes)) {
       op.Box.delete(this.topicBodyBoxKey(idx))
@@ -320,13 +397,15 @@ export class GGovPeriodContract extends BaseContract {
    * Sender can be the voter (not delegated) or the delegatee (delegated). Delegation is verified via an inner-call to the registry.
    * Votes are tallied into global topic vote counts, and the voter's individual vote record is updated.
    * Re-votes are allowed and will overwrite the previous vote; if re-voting via delegation, the delegation override guard applies (a delegatee cannot override a direct vote by the delegator).
+   *
+   * Vote record MBR is paid by the period app account on an account's first vote. A top-up is requested from the registry via inner call when needed; see the `checkNeedMBR` post-condition.
    * @param voterAccount Account with voting power
    * @param topicVotes Votes per topic, parallel to the period's topics/options. Each topic's votes are an array of Uint32, parallel to that topic's options, with the count of votes for each option. The sum of every topic's votes must equal the voter's total voting power (enforced in code, not ABI).
    */
   public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
-    ensure(this.ready.value, errGGovNotReady)
-    ensure(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
-    ensure(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
+    loggedAssert(this.ready.value, errGGovNotReady)
+    loggedAssert(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
+    loggedAssert(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
 
     const newTopicVotes = clone(topicVotes) // renaming for clarity. noop in approval
 
@@ -337,23 +416,23 @@ export class GGovPeriodContract extends BaseContract {
         appId: Application(this.registryApp.value),
         args: [voterAccount],
       }).returnValue
-      ensure(expectedDelegatee === Txn.sender, errGGovNoDelegation)
+      loggedAssert(expectedDelegatee === Txn.sender, errGGovNoDelegation)
       // If the sender is a delegatee, ensure the voterAccount is in the foreign-accounts array so
       // delegated voting can be "seen" in indexers, explorers, etc. Index 0 is the sender, so the
       // first referenced foreign account is Txn.accounts(1).
-      ensure(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
+      loggedAssert(Txn.numAccounts > 0 && Txn.accounts(1) === voterAccount, errGGovDelegationNoAcctRef)
       isDelegated = true
     }
 
     // Voting power (inner-call registry — throws errAccountNotExists if voter unknown)
-    const votingPower = compileArc4(GGovRegistryContract).call.getXGovVotingPower({
+    const votingPower = compileArc4(GGovRegistryContract).call.getGovVotingPower({
       appId: Application(this.registryApp.value),
       args: [this.committeeId.value, voterAccount],
     }).returnValue
 
     // Global topic votes
     const globalVotesArr = clone(this.topicVotesArr.value)
-    ensure(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
+    loggedAssert(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
 
     // if voter record box exists, it is a re-vote; subtract old votes from global tallies
     // If the existing record is by original votes (isDelegated=false), a delegatee cannot override it.
@@ -361,8 +440,7 @@ export class GGovPeriodContract extends BaseContract {
     if (voteRecordBox.exists) {
       const existingRecord = clone(voteRecordBox.value)
       if (isDelegated && !existingRecord.isDelegated) {
-        log(errGGovCannotOverride)
-        err()
+        loggedErr(errGGovCannotOverride)
       }
       for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
         const oldTopicVotes = clone(existingRecord.topicVotes[i])
@@ -378,7 +456,7 @@ export class GGovPeriodContract extends BaseContract {
     // Tally new votes & check that the sum of each topic's votes equals the voter's total voting power
     for (let i: uint64 = 0; i < newTopicVotes.length; i++) {
       const topicVote = clone(newTopicVotes[i])
-      ensure(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
+      loggedAssert(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
       let voteSum: uint64 = 0
       const currentGlobalVotes = clone(globalVotesArr[i].votes)
       const nextGlobalVotes: Uint32[] = []
@@ -386,7 +464,7 @@ export class GGovPeriodContract extends BaseContract {
         nextGlobalVotes.push(u32(currentGlobalVotes[j].asUint64() + topicVote[j].asUint64()))
         voteSum += topicVote[j].asUint64()
       }
-      ensure(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
+      loggedAssert(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
       globalVotesArr[i] = { votes: clone(nextGlobalVotes) }
     }
 
@@ -410,6 +488,8 @@ export class GGovPeriodContract extends BaseContract {
       isDelegated: isDelegated,
       topicVotes: clone(newTopicVotes),
     }
+    // Must stay after the vote record write
+    this.checkNeedMBR()
   }
 
   /** Whether an account can vote and the resulting voting power. Returns [false, 0] in any rejection case. */
@@ -433,7 +513,7 @@ export class GGovPeriodContract extends BaseContract {
       if (recordBox.exists && !recordBox.value.isDelegated) return [false, 0]
     }
 
-    const power = compileArc4(GGovRegistryContract).call.tryGetXGovVotingPower({
+    const power = compileArc4(GGovRegistryContract).call.tryGetGovVotingPower({
       appId: Application(this.registryApp.value),
       args: [this.committeeId.value, voterAccount],
     }).returnValue
@@ -457,6 +537,23 @@ export class GGovPeriodContract extends BaseContract {
       votingStart: u32(this.votingStart.value),
       votingEnd: u32(this.votingEnd.value),
       topics: clone(topics),
+    }
+  }
+
+  /** Short period information to be used by fractional delegator */
+  @abimethod({ readonly: true })
+  public getPeriodShort(): GGovPeriodShort {
+    if (this.registryApp.value === 0) return getEmptyGGovPeriodShort()
+    const topics = clone(this.topicOptionsArr.value)
+    const lengths: Uint32[] = []
+    for (let i: uint64 = 0; i < topics.length; i++) {
+      lengths.push(u32(topics[i].options.length))
+    }
+    return {
+      committeeId: this.committeeId.value,
+      votingStart: u32(this.votingStart.value),
+      votingEnd: u32(this.votingEnd.value),
+      topicOptionLengths: lengths,
     }
   }
 
@@ -516,36 +613,35 @@ export class GGovPeriodContract extends BaseContract {
     }
   }
 
-  // ── Admin: withdraw ALGO (via registry C2C verifyAdmin) ──────────
+  // ── Admin: withdraw ALGO ─────────────────────────────────────────
 
   /**
    * Withdraw $amount microALGO from this period app account to $receiver. Registry admin
-   * only (verified via inner call to registry.verifyAdmin). The AVM rejects the inner
-   * payment if it would drop the app account below its min balance.
+   * only (resolved from the registry's `admin` global, or the creator escape hatch). The AVM
+   * rejects the inner payment if it would drop the app account below its min balance.
    */
   public withdrawALGO(receiver: Account, amount: uint64): void {
-    this.checkAdminCaller()
-    ensure(receiver !== Global.zeroAddress, errUnauthorized)
+    this.ensureCallerIsAdmin()
     itxn.payment({ receiver, amount }).submit()
   }
 
-  // ── Lifecycle: update + delete (admin only, via registry C2C) ────
+  // ── Lifecycle: update + delete (admin only) ──────────────────────
 
-  /** App updatable by registry admin (verified via inner call to registry.verifyAdmin) */
+  /** App updatable by registry admin (resolved from the registry's `admin` global) */
   @baremethod({ allowActions: ['UpdateApplication'] })
   public updateApplication(): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsAdmin()
   }
 
   /**
-   * App deletable by registry admin (verified via inner call to registry.verifyAdmin), and only
+   * App deletable by registry admin (resolved from the registry's `admin` global), and only
    * while the period is not ready. Blocking deletion on ready keeps a period that is locked for
    * voting from being torn down; to delete a ready period the admin must setReady(false) first,
    * which itself only succeeds when no votes have been cast.
    */
   @baremethod({ allowActions: ['DeleteApplication'] })
   public deleteApplication(): void {
-    this.checkAdminCaller()
+    this.ensureCallerIsAdmin()
     this.ensureEditable()
     // delete boxes to reclaim their mbr
     // topicOptionsArr and topicVotesArr will always exist

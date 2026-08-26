@@ -7,11 +7,14 @@
   "scripts": {
     "build": "tsx src/build.ts",
     "upload": "tsx src/upload.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",
-    "algosdk": "^3.5.2",
+    "algosdk": "^3.7.0",
     "ggov-sdk": "file:../../ggov-sdk"
   },
   "devDependencies": {

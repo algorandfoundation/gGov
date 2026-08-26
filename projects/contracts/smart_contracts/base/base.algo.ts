@@ -1,7 +1,15 @@
-import { compile, Contract, Global, itxn, OnCompleteAction, Txn, uint64 } from '@algorandfoundation/algorand-typescript'
+import {
+  compile,
+  Contract,
+  Global,
+  itxn,
+  loggedAssert,
+  OnCompleteAction,
+  Txn,
+  uint64,
+} from '@algorandfoundation/algorand-typescript'
 import { abimethod } from '@algorandfoundation/algorand-typescript/arc4'
 import { errUnauthorized } from './errors.algo'
-import { ensure } from './utils.algo'
 
 export class EmptyContract extends Contract {}
 
@@ -11,7 +19,7 @@ export abstract class BaseContract extends Contract {
    * @throws ERR:AUTH if caller is not admin
    */
   protected ensureCallerIsAdmin(): void {
-    ensure(Txn.sender === Global.creatorAddress, errUnauthorized)
+    loggedAssert(Txn.sender === Global.creatorAddress, errUnauthorized)
   }
 
   /**

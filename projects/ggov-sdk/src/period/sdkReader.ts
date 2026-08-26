@@ -1,19 +1,28 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { ABIType, encodeAddress, makeEmptyTransactionSigner } from 'algosdk'
 import pMap from 'p-map'
-import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from '../registry'
-import { GGovRegistryClient, GGovPeriodSummary } from '../generated/GGovRegistryClient'
+import { GGovRegistryReaderSDK, SIMULATE_PARAMS } from '../registry/index.js'
+import { GGovRegistryClient, GGovPeriodSummary } from '../generated/GGovRegistryClient.js'
 import {
   GGovPeriodClient,
   GGovPeriodComposer,
   GGovPeriod,
+  GGovPeriodShort,
   GGovVoteRecord,
   APP_SPEC as PERIOD_APP_SPEC,
-} from '../generated/GGovPeriodClient'
-import { getConstructorConfig } from '../networkConfig'
-import { BodyJson, PeriodBodyJson, parseBodyJson, ReaderConstructorArgs } from './types'
-import { chunked } from '../util/chunked'
-import { errorTransformer, wrapErrors } from '../util/wrapErrors'
+} from '../generated/GGovPeriodClient.js'
+import { getConstructorConfig } from '../networkConfig.js'
+import {
+  PeriodBodyJson,
+  TopicBodyJson,
+  parsePeriodBodyJson,
+  parseTopicBodyJson,
+  ReaderConstructorArgs,
+} from './types.js'
+import { assertUint } from '../util/assertUint.js'
+import { asciiBoxName, topicBodyBoxName } from '../util/boxNames.js'
+import { chunked } from '../util/chunked.js'
+import { errorTransformer, wrapErrors } from '../util/wrapErrors.js'
 
 const EMPTY_PERIOD: GGovPeriod = {
   committeeId: new Uint8Array(32),
@@ -95,7 +104,7 @@ export class GGovReaderSDK {
   /** Resolve the on-chain app ID for a periodId. Throws if the period is unknown. */
   @wrapErrors()
   async getPeriodAppId(periodId: bigint | number): Promise<bigint> {
-    const pid = BigInt(periodId)
+    const pid = assertUint(periodId, 64, 'periodId')
     const cached = this.periodAppCache.get(pid)
     if (cached !== undefined) return cached
     const { return: appId } = await this.registryReadClient.send.getPeriodApp({ args: { periodId: pid } })
@@ -107,7 +116,7 @@ export class GGovReaderSDK {
 
   /** Build (and cache) a read-only per-period client. */
   protected async getPeriodReadClient(periodId: bigint | number): Promise<GGovPeriodClient> {
-    const pid = BigInt(periodId)
+    const pid = assertUint(periodId, 64, 'periodId')
     const cached = this.periodReadClientCache.get(pid)
     if (cached) return cached
     const appId = await this.getPeriodAppId(pid)
@@ -143,6 +152,8 @@ export class GGovReaderSDK {
    */
   @wrapErrors()
   async getPeriod(periodId: bigint | number): Promise<GGovPeriod> {
+    // Validate outside the try so a bad id throws clearly instead of being swallowed as EMPTY_PERIOD.
+    assertUint(periodId, 64, 'periodId')
     try {
       const client = await this.getPeriodReadClient(periodId)
       const { confirmations } = await client.newGroup().logPeriod({ args: {} }).simulate(SIMULATE_PARAMS)
@@ -164,6 +175,19 @@ export class GGovReaderSDK {
     } catch {
       return EMPTY_PERIOD
     }
+  }
+
+  /**
+   * Read the short period shape (committee, voting window, and per-topic option counts) that the
+   * fractional delegator consumes. Unlike `getPeriod`, this never carries the topic options/votes,
+   * so its single ARC-4 return value stays small — no log-line reconstruction needed. Simulated via
+   * the readonly `getPeriodShort` ABI method.
+   */
+  @wrapErrors()
+  async getPeriodShort(periodId: bigint | number): Promise<GGovPeriodShort> {
+    const client = await this.getPeriodReadClient(periodId)
+    const { return: short } = await client.send.getPeriodShort({ args: {} })
+    return short!
   }
 
   /**
@@ -251,27 +275,32 @@ export class GGovReaderSDK {
 
   /** Read the body JSON for a period from its per-period app. */
   async getPeriodBody(periodId: bigint | number): Promise<PeriodBodyJson | null> {
+    // Validate outside the try so a bad id throws clearly instead of being swallowed as null.
+    assertUint(periodId, 64, 'periodId')
     try {
       const appId = await this.getPeriodAppId(periodId)
-      const key = new Uint8Array(1)
-      key[0] = 0x50 // 'P'
-      const raw = await this.algorand.app.getBoxValue(appId, key)
-      return parseBodyJson(raw)
+      const raw = await this.algorand.app.getBoxValue(appId, asciiBoxName('P'))
+      return parsePeriodBodyJson(raw)
     } catch {
       return null
     }
   }
 
-  /** Read the body JSON for a topic from its per-period app. */
-  async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<BodyJson | null> {
+  /**
+   * Read the body JSON for a topic from its per-period app. Parsed with the
+   * topic-shaped validator so the candidate's election tag (`e`) is typed on the
+   * result — the period-shaped parser accepts the very same JSON (neither strips
+   * unknown keys), but hands back a type that knows nothing about `e`.
+   */
+  async getTopicBody(periodId: bigint | number, topicIndex: bigint | number): Promise<TopicBodyJson | null> {
+    // Validate outside the try so a bad id/index throws clearly instead of being swallowed as null.
+    // `setUint32` would otherwise silently wrap/truncate an out-of-range or non-integer topicIndex.
+    assertUint(periodId, 64, 'periodId')
+    const topicIndexArg = Number(assertUint(topicIndex, 32, 'topicIndex'))
     try {
       const appId = await this.getPeriodAppId(periodId)
-      const key = new Uint8Array(5)
-      key[0] = 0x54 // 'T'
-      const view = new DataView(key.buffer)
-      view.setUint32(1, Number(topicIndex))
-      const raw = await this.algorand.app.getBoxValue(appId, key)
-      return parseBodyJson(raw)
+      const raw = await this.algorand.app.getBoxValue(appId, topicBodyBoxName(topicIndexArg))
+      return parseTopicBodyJson(raw)
     } catch {
       return null
     }

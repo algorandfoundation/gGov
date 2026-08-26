@@ -1,4 +1,13 @@
-import { Account, BoxMap, clone, err, GlobalState, log, uint64 } from '@algorandfoundation/algorand-typescript'
+import {
+  Account,
+  BoxMap,
+  clone,
+  GlobalState,
+  log,
+  loggedAssert,
+  loggedErr,
+  uint64,
+} from '@algorandfoundation/algorand-typescript'
 import { abimethod, encodeArc4, Uint16, Uint32 } from '@algorandfoundation/algorand-typescript/arc4'
 import { BaseContract } from '../base/base.algo'
 import {
@@ -8,7 +17,7 @@ import {
   errAccountOffsetNotExists,
 } from '../base/errors.algo'
 import { GGovAccount } from '../base/types.algo'
-import { ensure, u32 } from '../base/utils.algo'
+import { u32 } from '../base/utils.algo'
 
 export class GGovRegistryAccountContract extends BaseContract {
   /** Last account numeric ID */
@@ -19,12 +28,12 @@ export class GGovRegistryAccountContract extends BaseContract {
   /**
    * Create new account ID
    * @param account Account to create ID for
-   * @throws ERR:AUTH if account already has ID
+   * @throws ERR:A_EX if account already has ID
    * @returns new account ID
    */
   protected createAccount(account: Account): GGovAccount {
     const box = this.accounts(account)
-    ensure(!box.exists, errAccountExists)
+    loggedAssert(!box.exists, errAccountExists)
     this.lastAccountId.value++
     const accountId = u32(this.lastAccountId.value)
     box.value = this.getEmptyGGovAccount(accountId)
@@ -55,7 +64,7 @@ export class GGovRegistryAccountContract extends BaseContract {
    */
   protected mustGetAccount(account: Account): GGovAccount {
     const accountBox = this.accounts(account)
-    ensure(accountBox.exists, errAccountNotExists)
+    loggedAssert(accountBox.exists, errAccountNotExists)
     return accountBox.value
   }
 
@@ -79,9 +88,7 @@ export class GGovRegistryAccountContract extends BaseContract {
         return offset.asUint64()
       }
     }
-    // would like to use an arc65 fail() here ideally but this is also ok I guess. see utils.algo.ts
-    log(errAccountOffsetNotExists)
-    err()
+    loggedErr(errAccountOffsetNotExists)
   }
 
   protected addCommitteeAccountOffsetHint(
@@ -91,7 +98,7 @@ export class GGovRegistryAccountContract extends BaseContract {
     offset: Uint16,
   ): void {
     for (const [cNumId, _] of clone(gGovAccount.committeeOffsets)) {
-      ensure(cNumId.asUint64() !== committeeNumId.asUint64(), errAccountOffsetExists)
+      loggedAssert(cNumId.asUint64() !== committeeNumId.asUint64(), errAccountOffsetExists)
     }
     gGovAccount.committeeOffsets.push([committeeNumId, offset])
     this.accounts(account).value = clone(gGovAccount)
@@ -108,7 +115,7 @@ export class GGovRegistryAccountContract extends BaseContract {
         nextOffsets.push([cNumId, existingOffset])
       }
     }
-    ensure(found, errAccountOffsetNotExists)
+    loggedAssert(found, errAccountOffsetNotExists)
     this.accounts(account).value = {
       accountId: gGovAccount.accountId,
       committeeOffsets: clone(nextOffsets),

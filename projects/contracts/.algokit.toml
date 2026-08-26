@@ -15,7 +15,7 @@ name = 'contracts'
 artifacts = 'smart_contracts/artifacts'
 
 [project.deploy]
-command = "npm run deploy:ci"
+command = "pnpm run deploy:ci"
 
 [project.deploy.testnet]
 environment_secrets = [

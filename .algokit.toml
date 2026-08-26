@@ -6,5 +6,5 @@ type = 'workspace'
 projects_root_path = 'projects'
 
 [project.run]
-build = ['contracts', 'ggov-sdk', 'delegator-sdk', 'ggov-frontend']
+build = ['contracts', 'ggov-sdk', 'frac-delegation-sdk', 'ggov-frontend']
 test = ['contracts']

@@ -1,7 +1,16 @@
-import { abimethod, Account, BoxMap, Bytes, GlobalState, Txn, uint64 } from '@algorandfoundation/algorand-typescript'
+import {
+  abimethod,
+  Account,
+  BoxMap,
+  Bytes,
+  GlobalState,
+  loggedAssert,
+  Txn,
+  uint64,
+} from '@algorandfoundation/algorand-typescript'
 import { Contract, StaticBytes } from '@algorandfoundation/algorand-typescript/arc4'
 import { CommitteeId } from '../base/types.algo'
-import { ensure } from '../base/utils.algo'
+import { errUnauthorized } from '../base/errors.algo'
 
 // Proposal Status
 export const STATUS_EMPTY: uint64 = 0 // Empty structure (default values) for a new proposal, waiting for initialization
@@ -75,6 +84,6 @@ export class XGovProposalMock extends Contract {
 
   private ensureCallerIsProposer(): void {
     const caller = Txn.sender
-    ensure(caller === this.proposer.value, 'ERR:AUTH')
+    loggedAssert(caller === this.proposer.value, errUnauthorized)
   }
 }

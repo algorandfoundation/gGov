@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { toast } from 'sonner'
 import { ArrowDown, ArrowLeftRight, BookOpen, Copy, Info, Target } from 'lucide-react'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
 import { useCommitteeVotingPowers, useMyVotes, useDelegation, useDelegatedToMe, useAppEscrow } from '@/hooks/queries'
+import { usePooledPositions } from '@/hooks/fracQueries'
 import { useDelegateMutation, useUndelegateMutation, useRedelegateMutation } from '@/hooks/mutations'
 import { useAddressName } from '@/hooks/use-nfd'
 import { ellipseAddress } from '@/utils/ellipseAddress'
@@ -12,6 +13,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import { Surface } from '@/components/ui/surface'
+import { EmptyPanel } from '@/components/ui/empty-panel'
+import VotingPowerByCommittee from '@/components/vote/VotingPowerByCommittee'
 import { AccountAvatar } from '@/components/AccountAvatar'
 import AppExplorerLink from '@/components/AppExplorerLink'
 import AccountExplorerLink from '@/components/AccountExplorerLink'
@@ -26,11 +30,6 @@ function copyAddress(address: string) {
     () => toast.success('Address copied'),
     () => toast.error("Couldn't copy address"),
   )
-}
-
-/** Restyled card surface matching the vote/period pages (hairline border + sm shadow). */
-function Surface({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('rounded-xl border border-border bg-card shadow-sm', className)} {...props} />
 }
 
 /** Avatar + resolved name over the mono address, in an inset chip (optionally a link). */
@@ -102,20 +101,6 @@ function InfoNote({ children }: { children: ReactNode }) {
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <label className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">{children}</label>
-  )
-}
-
-/** Dashed empty-state panel. */
-function EmptyPanel({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-7 text-center text-[13px] text-muted-foreground',
-        className,
-      )}
-    >
-      {children}
-    </div>
   )
 }
 
@@ -545,7 +530,12 @@ export default function Account() {
     if (address === activeAddress) setShowSwitchBanner(false)
   }, [address, activeAddress])
 
-  const { data: committees = [], isLoading: loadingCommittees } = useCommitteeVotingPowers(address)
+  // Direct power is still read here for `canSelfDelegate` below; the card issues
+  // the same query and shares this cache entry.
+  const { data: committees = [] } = useCommitteeVotingPowers(address)
+  // Pool membership resolves from a single read, and passing no committees means
+  // no per-committee fan-out — the card's own call warms this same cache entry.
+  const { isPoolMember } = usePooledPositions(address, [])
   const { data: votes = [], isLoading: loadingVotes } = useMyVotes(address)
   const { data: delegation, isLoading: loadingDelegation } = useDelegation(address)
   const { data: delegators = [], isLoading: loadingDelegators } = useDelegatedToMe(address)
@@ -557,7 +547,10 @@ export default function Account() {
   // The editable delegation card is only useful to accounts that actually hold voting power in some
   // committee (delegating zero power is pointless) or that have received delegations. Other accounts'
   // delegation is shown read-only as account status.
-  const canSelfDelegate = committees.length > 0 || delegators.length > 0
+  // Pool members count: their power is held by the pool's escrows rather than by
+  // their own block production, so they hold no committee power of their own — but
+  // they can still delegate their internal pooled vote.
+  const canSelfDelegate = committees.length > 0 || delegators.length > 0 || isPoolMember
   const showDelegationCard = isOwnAccount ? canSelfDelegate : true
   const switchName = useAddressName(activeAddress ?? '').data
 
@@ -660,47 +653,7 @@ export default function Account() {
 
         {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-[18px]">
-          <Surface className="overflow-hidden">
-            <div className="p-5 pb-3.5">
-              <Eyebrow>Voting power by committee</Eyebrow>
-              <p className="mt-2 text-[12.5px] leading-snug text-muted-foreground">
-                Blocks this account produced in each period's committee window. One block, one vote.
-              </p>
-            </div>
-            {loadingCommittees ? (
-              <div className="space-y-2 px-5 pb-5">
-                {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-10" />
-                ))}
-              </div>
-            ) : committees.length === 0 ? (
-              <div className="px-5 pb-5">
-                <EmptyPanel>No committees found.</EmptyPanel>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-[1fr_auto] border-b border-border px-5 pb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
-                  <span>Committee</span>
-                  <span className="text-right">Voting power</span>
-                </div>
-                {committees.map((c) => (
-                  <Link
-                    key={c.idBase64Url}
-                    to="/committees/$committeeId"
-                    params={{ committeeId: c.idBase64Url }}
-                    className="grid grid-cols-[1fr_auto] items-center gap-2.5 border-b border-border px-5 py-3 transition-colors hover:bg-muted/40"
-                  >
-                    <span className="truncate font-mono text-[13px] font-medium text-primary dark:text-algo-teal">
-                      {c.periodStart.toLocaleString()}–{c.periodEnd.toLocaleString()}
-                    </span>
-                    <span className="text-right text-sm font-semibold tabular-nums">
-                      {c.votingPower.toLocaleString()}
-                    </span>
-                  </Link>
-                ))}
-              </>
-            )}
-          </Surface>
+          <VotingPowerByCommittee account={address} />
         </div>
       </div>
 

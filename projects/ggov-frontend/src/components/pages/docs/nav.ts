@@ -2,7 +2,7 @@
  * Canonical, ordered model of every docs page. The sidebar, the home "Start here"
  * contents (grouping + numbering), each page's header, and the "Next →" pager chain
  * are all DERIVED from this one array — to add or reorder a page, edit it here (plus
- * its <Route> in App.tsx) and everything else follows.
+ * add its file route under `src/routes/docs.<slug>.tsx`) and everything else follows.
  */
 
 export interface DocsPage {
@@ -55,7 +55,7 @@ export const docsPages: DocsPage[] = [
     eyebrow: 'Core concept',
     navGroup: 'Core concepts',
     homeGroup: 'Participating',
-    desc: 'How periods open and close, and what topics are.',
+    desc: 'How periods open and close, what topics are, and how elections work.',
   },
   {
     to: '/docs/delegation',
@@ -65,6 +65,15 @@ export const docsPages: DocsPage[] = [
     navGroup: 'Core concepts',
     homeGroup: 'Participating',
     desc: 'Hand your power to someone you trust, or vote for others.',
+  },
+  {
+    to: '/docs/pooled-voting',
+    label: 'Pooled voting',
+    title: 'Voting from a staking pool',
+    eyebrow: 'Core concept',
+    navGroup: 'Core concepts',
+    homeGroup: 'Participating',
+    desc: 'Stake through xALGO, tALGO or a Réti pool? Vote your share.',
   },
   {
     to: '/docs/faq',

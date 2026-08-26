@@ -7,11 +7,11 @@ const faqs = [
   },
   {
     q: 'Do I need to opt in or register first?',
-    a: "No. There's nothing to sign up for. If your account produced blocks during a period's window, it's automatically part of that committee — block production is your membership.",
+    a: "No. There's nothing to sign up for: block production is your membership. If your account produced blocks during a committee's window, your account is automatically a member of that committee.",
   },
   {
     q: 'How is my voting power calculated?',
-    a: "It is the number of blocks your account produced during a period's window. One block counts as one vote.",
+    a: "It is the number of blocks your account produced during the committee's window — one block, one vote. Each period is assigned one committee, so your power can differ between periods.",
   },
   {
     q: 'Can I change my vote?',
@@ -19,7 +19,15 @@ const faqs = [
   },
   {
     q: 'What if I delegate and then vote myself?',
-    a: 'A direct vote always wins. If an account votes on its own, its power is locked for that period and a delegate cannot override it.',
+    a: "Voting for yourself shuts your delegate out for the rest of the period — you can still change your vote, but they can't.",
+  },
+  {
+    q: 'I stake ALGO through a pool (xALGO, tALGO, Réti). Can I vote?',
+    a: "Yes. Your share of the pool's voting power is yours to cast — pooled positions appear next to your own accounts on any open period. If you don't vote, your share counts as Abstain: the pool can't decide on your behalf.",
+  },
+  {
+    q: "Why are an election's candidates in a different order on my other device?",
+    a: "Because each browser gets its own candidate order, so that being listed first isn't an advantage. Your order stays the same every time you come back on that browser, and it never affects the result — candidates are ranked by net score alone.",
   },
   {
     q: 'When can I vote?',
@@ -27,7 +35,7 @@ const faqs = [
   },
   {
     q: 'Where are results stored?',
-    a: 'Every vote is recorded on-chain, so anyone can verify the final tally.',
+    a: "Every vote is recorded on-chain — anyone can check the running tally at any point, or verify the final result. A pooled vote lands in two places: your own ballot in the pool's internal records, and the members' combined vote on the period itself.",
   },
 ]
 
@@ -38,27 +46,43 @@ const glossary = [
   },
   {
     term: 'Round',
-    def: "Algorand's unit of time — one round per block. Committees cover a range of rounds.",
+    def: "Algorand's unit of time — one round per block. Committees cover a range of rounds: the committee window, typically 3M rounds.",
   },
   {
     term: 'Voting power',
-    def: "The number of blocks your account produced in a period's window. One block, one vote.",
+    def: "The number of blocks your account produced in a committee's window. One block, one vote.",
   },
   {
     term: 'Committee',
-    def: 'The set of accounts eligible to vote in a window, each with power from its block production.',
+    def: 'The set of accounts eligible to vote in a period, each with power from the blocks it produced in the committee window.',
   },
   {
     term: 'Period',
-    def: 'A round of governance with a start and end, containing one or more topics to decide.',
+    def: 'A session of governance with a start and end, containing one or more topics to decide — or, in an election period, candidates to rank.',
   },
   {
     term: 'Topic',
-    def: 'A single decision within a period — a seat to fill or a question to answer.',
+    def: 'A single decision within a period — a question to answer. In an election period the same thing is called a candidate.',
+  },
+  {
+    term: 'Election',
+    def: 'A period that fills seats instead of answering questions. Candidates are ranked by net score and the top few lead for the seats. One period can run several elections at once.',
+  },
+  {
+    term: 'Candidate',
+    def: 'Someone standing in an election. You vote Support, Veto or Abstain on each one, and each candidate runs in exactly one of the period’s elections.',
   },
   {
     term: 'Delegation',
     def: 'Letting another account vote with your voting power, or voting on behalf of others.',
+  },
+  {
+    term: 'Pooled voting',
+    def: "Voting your prorated share of a staking pool's power. Members' votes are weighted, combined and cast on-chain.",
+  },
+  {
+    term: 'AlgoQuarter (AQ)',
+    def: "A pool's unit of member contribution: 1 ALGO staked for a full 3M-block window equals 1 AQ. Your AQ share is your share of the pool's voting power.",
   },
   {
     term: 'Governor',

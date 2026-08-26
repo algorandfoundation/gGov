@@ -91,8 +91,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Resolve workspace SDK to source for proper bundling
+      // Resolve workspace SDKs to source for proper bundling
       'ggov-sdk': path.resolve(__dirname, '../ggov-sdk/src/index.ts'),
+      'frac-delegation-sdk': path.resolve(__dirname, '../frac-delegation-sdk/src/index.ts'),
       // Resolve node-polyfills shim bare specifiers (see comment above)
       ...shimAliases,
     },

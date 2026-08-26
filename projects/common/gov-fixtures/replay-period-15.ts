@@ -77,9 +77,12 @@ const sdkDir = path.resolve(__dirname, '../../ggov-sdk')
 const sdkRequire = createRequire(path.join(sdkDir, 'package.json'))
 const require = createRequire(import.meta.url)
 
-// CJS dist to dodge ESM-source resolution issues (matches deploy-sample-data.ts).
+// Everything comes off the SDK's CJS build so algokit-utils, algosdk and the SDK share
+// one module realm — the SDK returns `algosdk.Address` objects that the composer checks
+// with `instanceof`. Static bare imports are not an option here: gov-fixtures has no
+// node_modules, so `ggov-sdk` does not resolve as a bare specifier from this directory.
 const { AlgorandClient, microAlgos } = sdkRequire('@algorandfoundation/algokit-utils')
-const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, 'dist/index.js'))
+const { GGovSDK, GGovRegistrySDK } = require(path.join(sdkDir, 'dist/cjs/index.js'))
 const algosdk = sdkRequire('algosdk')
 
 const votingSession = require('./voting-session-period-15-voting-session-1.json')
@@ -342,13 +345,13 @@ async function main() {
     )
 
     // ── Committee file (1 vote of power each) ───────────────────────────────
-    console.log('\nUploading committee (synthetic voters as xGovs, 1 vote each)...')
+    console.log('\nUploading committee (synthetic voters as govs, 1 vote each)...')
     const committeeFile = {
       ...committeeTemplate,
       totalMembers: voters.length,
       totalVotes: voters.length,
       registryId: 0,
-      xGovs: voters.map((address) => ({ address, votes: 1 })),
+      govs: voters.map((address) => ({ address, votes: 1 })),
     }
     const committeeId = await sdk.registry.uploadCommitteeFile(committeeFile)
     const committeeHex = Buffer.from(committeeId as Uint8Array).toString('hex')

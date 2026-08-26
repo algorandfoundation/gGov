@@ -1,24 +1,40 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address } from 'algosdk'
-import { GGovRegistryClient, GGovRegistryComposer, GGovRegistryFactory } from '../generated/GGovRegistryClient'
-import { APP_SPEC as PERIOD_APP_SPEC } from '../generated/GGovPeriodClient'
+import {
+  GGovRegistryClient,
+  GGovRegistryFactory,
+  APP_SPEC as REGISTRY_APP_SPEC,
+} from '../generated/GGovRegistryClient.js'
+import { APP_SPEC as PERIOD_APP_SPEC } from '../generated/GGovPeriodClient.js'
 import {
   ConstructorArgs,
   AccountWithVotes,
   SenderWithSigner,
+  GGovCommitteeFile,
   CommitteeId,
-  XGovCommitteeFile,
   CommonMethodBuilderArgs,
   GGovRegistryContractArgs,
-} from './types'
-import { requireWriter } from '../util/requiresSender'
-import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId'
-import { xGovToTuple } from './xGov'
-import { GGovRegistryReaderSDK } from './sdkReader'
-import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors'
-import { createTxnExecutor } from '../util/txnExecutor'
-import { chunk } from '../util/chunk'
-import { MAX_GROUP_SIZE, BODY_CHUNK_BYTES, DEFAULT_PERIOD_MBR_MICROALGOS } from '../constants'
+  SendResult,
+} from './types.js'
+import { requireWriterWithClient } from '../util/requiresSender.js'
+import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId.js'
+import { govToTuple } from './gov.js'
+import { GGovRegistryReaderSDK } from './sdkReader.js'
+import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
+import { createTxnExecutor } from '../util/txnExecutor.js'
+import { chunk } from '../util/chunk.js'
+import { padForRefSlots } from '../util/padForRefSlots.js'
+import { extraProgramPages } from '../util/extraProgramPages.js'
+import { boxIoRefsFor, boxIoRefsPerCall, splitApprovalPages } from '../util/approvalPages.js'
+import { feeFromGroupUsage, minFeeMicroAlgos } from '../util/groupUsageFee.js'
+import { PERIOD_APPROVAL_BOX_NAME } from '../util/boxNames.js'
+import { noteNonce } from '../util/noteNonce.js'
+import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
+import {
+  DEFAULT_PERIOD_MBR_MICROALGOS,
+  MAX_ESCROWS_PER_FD_IMPORT,
+  UPLOAD_APPROVAL_MAX_FEE_MICROALGOS,
+} from '../constants.js'
 
 export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   public writerAccount?: SenderWithSigner
@@ -45,9 +61,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     () => this.algorand.client.algod,
   )
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  async uploadCommitteeFile(committeeFile: XGovCommitteeFile): Promise<Uint8Array> {
+  async uploadCommitteeFile(committeeFile: GGovCommitteeFile): Promise<Uint8Array> {
     const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
     const committeeMetadata = await this.getCommitteeMetadata(committeeId)
     if (!committeeMetadata) {
@@ -56,8 +72,12 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       const { txIds } = await this.registerCommittee({ committeeId, xGovRegistryId, ...rest })
       if (this.debug) console.log('Committee registered ', ...txIds)
     }
-    const accounts = committeeFile.xGovs.map(({ address }) => address)
-    const [accountIds, lastIngestedXGov] = await Promise.all([
+    const accounts = committeeFile.govs.map(({ address }) => address)
+    const votesByAddress = new Map<string, number>()
+    for (const { address, votes } of committeeFile.govs) {
+      if (!votesByAddress.has(address)) votesByAddress.set(address, votes)
+    }
+    const [accountIds, lastIngestedGov] = await Promise.all([
       this.getAccountIdMap(accounts),
       this.getCommitteeSuperboxDataLast(committeeId),
     ])
@@ -67,33 +87,31 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       .map(([address, id]) => ({ address, id }))
       .sort(({ id: a }, { id: b }) => (a === 0 && b !== 0 ? 1 : a !== 0 && b === 0 ? -1 : a - b))
 
-    if (this.debug) console.log({ acctLen: accountsInOrder.length, lastIngestedXGov })
-    if (lastIngestedXGov.total) {
-      const expectedLastId = accountsInOrder[lastIngestedXGov.total - 1].id
-      if (lastIngestedXGov.last && lastIngestedXGov.last[0] !== expectedLastId) {
-        throw new Error(
-          `Last ingested xGov ID ${lastIngestedXGov.last[0]} does not match expected ID ${expectedLastId}`,
-        )
-        // TODO get xGovs, compare with accountsInOrder, uningest as necessary, resume ingestion
+    if (this.debug) console.log({ acctLen: accountsInOrder.length, lastIngestedGov })
+    if (lastIngestedGov.total) {
+      const expectedLastId = accountsInOrder[lastIngestedGov.total - 1].id
+      if (lastIngestedGov.last && lastIngestedGov.last[0] !== expectedLastId) {
+        throw new Error(`Last ingested gov ID ${lastIngestedGov.last[0]} does not match expected ID ${expectedLastId}`)
+        // TODO get govs, compare with accountsInOrder, uningest as necessary, resume ingestion
       }
     }
-    const accountsToIngest = accountsInOrder.slice(lastIngestedXGov.total ? lastIngestedXGov.total : 0)
+    const accountsToIngest = accountsInOrder.slice(lastIngestedGov.total ? lastIngestedGov.total : 0)
     const chunks = chunk(accountsToIngest, 120)
-    if (this.debug) console.log(`Ingesting ${accountsToIngest.length} xGovs in ${chunks.length} chunks...`)
+    if (this.debug) console.log(`Ingesting ${accountsToIngest.length} govs in ${chunks.length} chunks...`)
     for (const accountsChunk of chunks) {
-      const xGovs = accountsChunk.map(({ id, address }) => ({
+      const govs = accountsChunk.map(({ id, address }) => ({
         accountId: id,
         account: address,
-        votes: committeeFile.xGovs.find((x) => x.address === address)!.votes,
+        votes: votesByAddress.get(address)!,
       }))
-      const { txIds } = await this.ingestXGovs({ committeeId, xGovs })
+      const { txIds } = await this.ingestGovs({ committeeId, govs })
       const accountsLog = accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' ')
-      if (this.debug) console.log('xGov ingested ', accountsLog, txIds[txIds.length - 1])
+      if (this.debug) console.log('gov ingested ', accountsLog, txIds[txIds.length - 1])
     }
     return committeeId
   }
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeRegisterCommitteeTxns({
     committeeId,
@@ -106,10 +124,8 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   }: Omit<
     GGovRegistryContractArgs['registerCommittee(byte[32],uint32,uint32,uint32,uint32,uint64)void'],
     'committeeId'
-  > & {
-    committeeId: string | Uint8Array
-  } & CommonMethodBuilderArgs) {
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+  > & { committeeId: CommitteeId } & CommonMethodBuilderArgs) {
+    const committeeRaw = committeeIdToRaw(committeeId)
     const { sender, signer } = this.writerAccount!
     builder = builder ?? this.writeClient!.newGroup()
     return builder.registerCommittee({
@@ -123,13 +139,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeRegisterCommitteeTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  makeUnregisterCommitteeTxns({
-    committeeId,
-    builder,
-  }: { committeeId: string | Uint8Array } & CommonMethodBuilderArgs) {
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+  makeUnregisterCommitteeTxns({ committeeId, builder }: { committeeId: CommitteeId } & CommonMethodBuilderArgs) {
+    const committeeRaw = committeeIdToRaw(committeeId)
     const { sender, signer } = this.writerAccount!
     builder = builder ?? this.writeClient!.newGroup()
     return builder.unregisterCommittee({
@@ -143,34 +156,34 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeUnregisterCommitteeTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  makeIngestXGovsTxns({
+  makeIngestGovsTxns({
     committeeId,
-    xGovs,
+    govs,
     builder,
-  }: { committeeId: string | Uint8Array; xGovs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
+  }: { committeeId: CommitteeId; govs: AccountWithVotes[] } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+    const committeeRaw = committeeIdToRaw(committeeId)
     builder = builder ?? this.writeClient!.newGroup()
-    const xGovChunks = chunk(xGovs, 8)
-    if (xGovChunks.length > 15) {
-      throw new Error(`Too many xGovs to ingest in one transaction group: ${xGovs.length} (max 120)`)
+    const govChunks = chunk(govs, 8)
+    if (govChunks.length > 15) {
+      throw new Error(`Too many govs to ingest in one transaction group: ${govs.length} (max 120)`)
     }
-    for (const xGovs of xGovChunks)
-      builder = builder.ingestXGovs({
-        args: { committeeId: committeeRaw, xGovs: xGovs.map(xGovToTuple) },
+    for (const govs of govChunks)
+      builder = builder.ingestGovs({
+        args: { committeeId: committeeRaw, govs: govs.map(govToTuple) },
         sender,
         signer,
       })
     return builder
   }
 
-  ingestXGovs = this.makeTxnExecutor({
-    maker: this.makeIngestXGovsTxns,
+  ingestGovs = this.makeTxnExecutor({
+    maker: this.makeIngestGovsTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetXGovRegistryAppTxns({
     appId,
@@ -185,7 +198,37 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetXGovRegistryAppTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeSetFracRegistryAppTxns({
+    appId,
+    builder,
+  }: GGovRegistryContractArgs['setFracRegistryApp(uint64)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.setFracRegistryApp({ args: { appId } })
+    return builder
+  }
+
+  setFracRegistryApp = this.makeTxnExecutor({
+    maker: this.makeSetFracRegistryAppTxns,
+  })
+
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeSetMBRTopUpTxns({
+    amount,
+    builder,
+  }: GGovRegistryContractArgs['setMBRTopUp(uint64)void'] & CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.setMbrTopUp({ args: { amount } })
+    return builder
+  }
+
+  setMBRTopUp = this.makeTxnExecutor({
+    maker: this.makeSetMBRTopUpTxns,
+  })
+
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetOperatorTxns({
     account,
@@ -200,7 +243,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetOperatorTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetLastPeriodIdTxns({
     newLastPeriodId,
@@ -217,7 +260,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetLastPeriodIdTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetAdminTxns({ newAdmin, builder }: GGovRegistryContractArgs['setAdmin(address)void'] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
@@ -229,7 +272,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     maker: this.makeSetAdminTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeWithdrawALGOTxns({
     receiver,
@@ -247,59 +290,116 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   })
 
   /**
-   * Delete the GGovRegistry app. Admin-only (the contract's deleteApplication baremethod
-   * checks the caller is the admin directly — no inner call). On deletion the AVM closes the
-   * registry app account and sends its residual ALGO to the deleting sender, so withdraw any
-   * meaningful balance first.
+   * Update the `GGovRegistry` app's program to the build exported by this `ggov-sdk`  version.
+   * Admin-only. The write client compiles the current approval/clear programs from its embedded
+   * app spec, so the on-chain code is replaced with the version bundled here.
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  makeDeleteApplicationTxns({ builder }: CommonMethodBuilderArgs) {
+  makeUpdateApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    builder = builder.delete.bare({})
+    builder = builder.update.bare({ note })
     return builder
   }
 
+  private updateApplicationCode = this.makeTxnExecutor({
+    maker: this.makeUpdateApplicationTxns,
+  })
+
+  /**
+   * Update the `GGovRegistry` app's program, optionally resizing its global schema and extra
+   * program pages in the same transaction.
+   *
+   * The registry no longer declares a padded `stateTotals`, so its schema is whatever
+   * `GGovRegistryContract` infers — which means a build that adds global state needs the deployed
+   * registry grown to match. `factory.deploy` cannot do that: it classifies "existing app has fewer
+   * slots than needed" as a schema break whose only remedies are failing or creating a *new* app,
+   * and its update transaction carries no schema fields at all. So a resize is sent outside the
+   * composer by {@link sendAppSizeUpdate}. Without `size` this is the ordinary code update.
+   *
+   * Admin-only. On a resize the admin becomes the app's `sizeSponsor` and takes on the registry's
+   * whole schema + extra-page MBR — not just the delta.
+   */
+  updateApplication = async (
+    args: { size?: AppSizeParams; note?: string } = {},
+  ): Promise<SendResult | { txId: string }> => {
+    const { size, note } = args
+    if (!hasAppSizeChange(size)) return this.updateApplicationCode({ note })
+    if (!this.writerAccount) throw new Error('writerAccount not set on the SDK instance')
+    const byteCode = this.writeClient!.appClient.appSpec.byteCode
+    return sendAppSizeUpdate({
+      algorand: this.algorand,
+      appId: this.appId,
+      account: this.writerAccount,
+      size,
+      approvalProgram: byteCode ? Buffer.from(byteCode.approval, 'base64') : undefined,
+      clearStateProgram: byteCode ? Buffer.from(byteCode.clear, 'base64') : undefined,
+      note,
+    })
+  }
+
+  /**
+   * Delete the `GGovRegistry` app. Admin-only.
+   *
+   * WARNING: unlike {@link GGovSDK.deletePeriodApp}, this does NOT return the app's balance or
+   * clean up its boxes — the contract's `deleteApplication` is just an admin check, nothing else.
+   * The whole balance (base MBR, any boxes' MBR, plus any other funds) becomes permanently unreachable
+   * once the app is deleted, and any live delegations or period summaries are orphaned. See contract's
+   * `deleteApplication` baremethod for details.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeDeleteApplicationTxns({ note, builder }: CommonMethodBuilderArgs) {
+    builder = builder ?? this.writeClient!.newGroup()
+    builder = builder.delete.bare({ note })
+    return builder
+  }
+
+  /**
+   * Delete the `GGovRegistry` app. Admin-only.
+   *
+   * See {@link makeDeleteApplicationTxns} for important admin/MBR-recovery caveats.
+   */
   deleteApplication = this.makeTxnExecutor({
     maker: this.makeDeleteApplicationTxns,
   })
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  makeUningestXGovsTxns({
+  makeUningestGovsTxns({
     committeeId,
-    xGovs,
+    govs,
     builder,
-  }: Omit<GGovRegistryContractArgs['uningestXGovs(byte[32],address[])void'], 'committeeId'> & {
-    committeeId: string | Uint8Array
+  }: Omit<GGovRegistryContractArgs['uningestGovs(byte[32],address[])void'], 'committeeId'> & {
+    committeeId: CommitteeId
   } & CommonMethodBuilderArgs) {
     const { sender, signer } = this.writerAccount!
-    const committeeRaw = typeof committeeId === 'string' ? Buffer.from(committeeId, 'base64') : committeeId
+    const committeeRaw = committeeIdToRaw(committeeId)
     builder = builder ?? this.writeClient!.newGroup()
-    return builder.uningestXGovs({
-      args: { committeeId: committeeRaw, xGovs },
+    return builder.uningestGovs({
+      args: { committeeId: committeeRaw, govs },
       sender,
       signer,
     })
   }
 
-  uningestXGovs = this.makeTxnExecutor({
-    maker: this.makeUningestXGovsTxns,
+  uningestGovs = this.makeTxnExecutor({
+    maker: this.makeUningestGovsTxns,
   })
 
   /**
-   * Uningest xGovs from a committee in reverse ingestion order.
+   * Uningest govs from a committee in reverse ingestion order.
    * Looks up each account's committee offset, sorts descending, and sends sequentially.
    * @param committeeId Committee ID
    * @param accounts Accounts to uningest (in any order - will be sorted internally)
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  async uningestCommitteeXGovs({
+  async uningestCommitteeGovs({
     committeeId,
     accounts,
   }: {
-    committeeId: string | Uint8Array
+    committeeId: CommitteeId
     accounts: string[]
   }): Promise<void> {
     const metadata = await this.getCommitteeMetadata(committeeId)
@@ -326,7 +426,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     // send sequentially in chunks - strict reverse order required
     const chunks = chunk(sorted, 8)
     for (const accountsChunk of chunks) {
-      await this.uningestXGovs({ committeeId, xGovs: accountsChunk.map(({ address }) => address) })
+      await this.uningestGovs({ committeeId, govs: accountsChunk.map(({ address }) => address) })
       if (this.debug)
         console.log('Uningest chunk:', accountsChunk.map(({ address }) => address.slice(0, 8) + '..').join(' '))
     }
@@ -334,7 +434,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   // ── Delegation ───────────────────────────────────────────────────
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeMirrorXGovDelegationTxns({
     account,
@@ -348,6 +448,72 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   mirrorXGovDelegation = this.makeTxnExecutor({ maker: this.makeMirrorXGovDelegationTxns })
 
   /**
+   * Delegate a batch of escrow accounts to the frac instance each is registered to, so that instance
+   * can cast pooled gGov votes on their behalf. Admin only.
+   *
+   * Fail-loud: an escrow that is not a registered gGov account, or not registered to any frac
+   * instance, rejects the whole call. Unlike `mirrorXGovDelegation` this OVERWRITES an existing
+   * delegation; re-importing an unchanged delegation is a contract-level no-op.
+   *
+   * One group per call — use {@link importFracDelegationsAll} to import more than {@link MAX_ESCROWS_PER_FD_IMPORT}
+   * escrow delegations.
+   *
+   * The registry app account pays the delegation box MBR and no payment is attached — fund it
+   * first, sized by `DELEGATION_MBR_NEW_DELEGATEE_MICROALGOS` and `DELEGATION_MBR_EXISTING_DELEGATEE_MICROALGOS`.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  makeImportFracDelegationsTxns({
+    escrowAccounts,
+    note,
+    builder,
+  }: GGovRegistryContractArgs['importFracDelegations(address[])void'] & CommonMethodBuilderArgs) {
+    if (escrowAccounts.length > MAX_ESCROWS_PER_FD_IMPORT) {
+      throw new Error(
+        `Too many escrows to import in one transaction group: ${escrowAccounts.length} (max ${MAX_ESCROWS_PER_FD_IMPORT}). Use \`importFracDelegationsAll\` method.`,
+      )
+    }
+    builder = builder ?? this.writeClient!.newGroup()
+    // Slots: 7 per escrow, maximized case (every escrow on a distinct instance and already delegated elsewhere) —
+    // this registry's `accounts` (1) + `delegations` (2) boxes; its `reverseDelegations` box keyed by the
+    // previous delegatee (3) (unlinked) AND a second one keyed by the instance (4) (linked; the map is keyed by
+    // delegatee, so a re-delegation touches two entries); the frac registry's `escrows` (5) + `instances` (6) boxes
+    // read by the inner `getEscrow`, and the instance app ref (`Application(id).address` needs the app available).
+    // Plus a fixed 1 for the frac registry app ref, which the whole batch shares.
+    builder = padForRefSlots(builder, escrowAccounts.length * 7 + 1, 'importFracDelegations')
+    // extraFee covers one inner getEscrow call per escrow sent as argument
+    return builder.importFracDelegations({
+      args: { escrowAccounts },
+      note,
+      extraFee: (escrowAccounts.length * 1000).microAlgo(),
+    })
+  }
+
+  importFracDelegations = this.makeTxnExecutor({ maker: this.makeImportFracDelegationsTxns })
+
+  /**
+   * Import any number of frac escrows delegations, one transaction group per {@link MAX_ESCROWS_PER_FD_IMPORT}
+   * chunk.
+   *
+   * Throws on the first failing group, leaving earlier chunks imported. Re-running the whole list
+   * is safe and cheap: the contract treats an unchanged delegation as a no-op, so already-imported
+   * escrows are skipped without side effects.
+   */
+  @requireWriterWithClient()
+  @wrapErrors()
+  async importFracDelegationsAll({
+    escrowAccounts,
+    note,
+  }: GGovRegistryContractArgs['importFracDelegations(address[])void'] & {
+    note?: string | Uint8Array
+  }): Promise<void> {
+    for (const escrowsChunk of chunk(escrowAccounts, MAX_ESCROWS_PER_FD_IMPORT)) {
+      const { txIds } = await this.importFracDelegations({ escrowAccounts: escrowsChunk, note })
+      if (this.debug) console.log('escrows imported ', escrowsChunk.length, txIds[txIds.length - 1])
+    }
+  }
+
+  /**
    * Set (or clear) an account's voting-power delegation. ABI-compatible with the xGov registry's
    * `set_voting_account`:
    *  - delegate: `setVotingAccount({ votingAddress })`
@@ -355,21 +521,37 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
    *  - manage another account (as its current delegatee): `setVotingAccount({ account, votingAddress })`
    *
    * `account` defaults to the signer (self); `votingAddress` defaults to `account` (clear).
+   *
+   * The delegator may be a gGov account or a fractional-delegation account — this registry is the
+   * single source of truth for both. A gGov delegator is settled by a box read and needs no extra
+   * fee; only a delegator absent from the gGov `accounts` box falls through to a readonly inner call
+   * to the frac registry, so that call's fee is opt-in via `fractionalOnly`. Set it when the
+   * delegator is known to hold AlgoQuarters but no gGov committee membership — omitting it there
+   * fails the group on fee, and setting it for a gGov delegator merely overpays by 0.001 ALGO.
    */
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
   makeSetVotingAccountTxns({
     votingAddress,
     account,
+    fractionalOnly = false,
     note,
     sender,
     builder,
-  }: { votingAddress?: string; account?: string } & CommonMethodBuilderArgs & { sender?: string }) {
+  }: { votingAddress?: string; account?: string; fractionalOnly?: boolean } & CommonMethodBuilderArgs & {
+      sender?: string
+    }) {
     builder = builder ?? this.writeClient!.newGroup()
     const self = sender ?? String(this.writerAccount!.sender)
-    const xgovAddress = account ?? self
-    const target = votingAddress ?? xgovAddress // omitted target == clear ("vote for self")
-    const opts: any = { args: { xgovAddress, votingAddress: target }, note }
+    const govAddress = account ?? self
+    const target = votingAddress ?? govAddress // omitted target == clear ("vote for self")
+    const opts: any = {
+      args: { govAddress, votingAddress: target },
+      note,
+      // The frac fallback fires on the delegator, whichever way this call is going: clearing runs the
+      // same gate as delegating, so a frac-only account pays it to undelegate too.
+      ...(fractionalOnly ? { extraFee: (1000).microAlgo() } : {}),
+    }
     if (sender) {
       opts.sender = sender
       opts.signer = this.algorand.account.getSigner(sender)
@@ -380,31 +562,63 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
   setVotingAccount = this.makeTxnExecutor({ maker: this.makeSetVotingAccountTxns })
 
   // ── Period bytecode upload (admin-only) ──────────────────────────
+  // The registry's approval-bytecode box key, as raw bytes ('Pap').
 
-  @requireWriter()
+  @requireWriterWithClient()
   @wrapErrors()
-  makeUploadPeriodApprovalPartialTxns({
-    startOffset,
-    data,
+  makeUploadPeriodApprovalTxns({
+    page1,
+    page2,
+    page3,
+    staticFee,
     note,
     builder,
-  }: {
-    startOffset: bigint | number
-    data: Uint8Array
-  } & CommonMethodBuilderArgs) {
+  }: { staticFee?: number } & GGovRegistryContractArgs['uploadPeriodApproval(byte[],byte[],byte[])void'] &
+    CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    return builder.uploadPeriodApprovalPartial({
-      args: { startOffset, data },
+    const totalBytes = page1.length + page2.length + page3.length
+    // Creating and filling a box of N bytes costs N of box-write budget, and each box reference
+    // buys BOX_IO_BYTES_PER_REF of it. Resource population only adds one reference per distinct
+    // box, which covers a 1024-byte write and no more, so the budget is bought explicitly here.
+    // A three-page program needs 12 references, past the 8 MAX_APP_CALL_FOREIGN_REFERENCES allows
+    // on one call, so the surplus rides on no-op increaseBudget calls: box I/O budget is pooled
+    // across the group, and a call to this same app can carry references to its boxes without
+    // touching them.
+    const [ownRefs, ...padRefs] = boxIoRefsPerCall(boxIoRefsFor(totalBytes), 'uploadPeriodApproval')
+    for (let i = 0; i < padRefs.length; i++) {
+      builder = builder.increaseBudget({
+        args: { itxns: 0 },
+        boxReferences: Array.from({ length: padRefs[i] }, () => PERIOD_APPROVAL_BOX_NAME),
+        // Distinct notes: otherwise identical pads would collide into one duplicate txn ID.
+        note: `pap-refs-${i}-${noteNonce()}`,
+      })
+    }
+    return builder.uploadPeriodApproval({
+      args: { page1, page2, page3 },
+      boxReferences: Array.from({ length: ownRefs }, () => PERIOD_APPROVAL_BOX_NAME),
+      // Under AVM v13 the fee is usage-based across the group, and ~8KB of app args pushes usage past
+      // the free allowance, so the flat minimum is rejected. See feeFromGroupUsage: the caller
+      // simulates once to learn the real requirement and passes it back in as staticFee.
+      staticFee: (staticFee ?? UPLOAD_APPROVAL_MAX_FEE_MICROALGOS).microAlgo(),
       note,
     })
   }
 
-  uploadPeriodApprovalPartial = this.makeTxnExecutor({
-    maker: this.makeUploadPeriodApprovalPartialTxns,
+  uploadPeriodApproval = this.makeTxnExecutor({
+    maker: this.makeUploadPeriodApprovalTxns,
   })
 
-  /** Upload the full GGovPeriod approval bytecode, chunked into groups of up to 16 txns. */
-  @requireWriter()
+  /**
+   * Upload the full GGovPeriod approval bytecode in a single call.
+   *
+   * Was a loop of 2000-byte chunks across groups of up to 16 transactions, because total application
+   * arguments were capped at 2KB. AVM v13 raised that to 16KB, and an AVM bytes value still caps at
+   * 4096, so the program goes up as the same three pages the contract stores and reads back.
+   *
+   * Past two pages the write also outgrows the box I/O budget one app call can buy, so the call
+   * picks up reference-carrying companions — see {@link makeUploadPeriodApprovalTxns}.
+   */
+  @requireWriterWithClient()
   @wrapErrors()
   async uploadPeriodApprovalProgram({
     bytecode,
@@ -413,30 +627,46 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     bytecode: Uint8Array
     note?: string | Uint8Array
   }): Promise<void> {
-    const chunks = chunk(Array.from(bytecode), BODY_CHUNK_BYTES)
-    const groups = chunk(
-      chunks.map((c, i) => ({ index: i, data: c })),
-      MAX_GROUP_SIZE,
-    )
-    for (const group of groups) {
-      let builder: GGovRegistryComposer<any> = this.writeClient!.newGroup()
-      for (const { index, data: chunkData } of group) {
-        // The maker is @wrapErrors-decorated so it returns a Promise; await to unwrap.
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        builder = await this.makeUploadPeriodApprovalPartialTxns({
-          startOffset: index * BODY_CHUNK_BYTES,
-          data: new Uint8Array(chunkData),
-          note,
-          builder,
-        })
-      }
-      await builder.send()
-    }
+    // Distinct default note per call: re-uploading identical bytecode (a redeploy, or a test
+    // restoring the real program) would otherwise reproduce a byte-identical txn, which the node
+    // rejects as already-in-ledger while the earlier one is inside its validity window.
+    note = note ?? `pap-upload-${noteNonce()}`
+    const { page1, page2, page3 } = splitApprovalPages(bytecode)
+    // Two round trips on purpose. Simulate must run with a fee that already passes the v13 usage
+    // check, so the probe goes out at UPLOAD_APPROVAL_MAX_FEE_MICROALGOS; the real send then pays
+    // exactly what the network asked for.
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const probe = await this.makeUploadPeriodApprovalTxns({ page1, page2, page3, note })
+    const simulated = await probe.simulate({ skipSignatures: true })
+    const fee = feeFromGroupUsage(simulated.simulateResponse, await minFeeMicroAlgos(this.algorand.client.algod))
+
+    await this.uploadPeriodApproval({ page1, page2, page3, staticFee: Number(fee), note })
   }
 
   // ── addPeriod (paired payment + createPeriod) ────────────────────
 
-  @requireWriter()
+  /**
+   * Reference slots the group calling `createPeriod` must carry for it to read the approval box.
+   *
+   * The child's whole bytecode is read back out of the box at create time, and box I/O budget is
+   * {@link BOX_IO_BYTES_PER_REF} per reference pooled across the group — so a program past what
+   * one app call's {@link MAX_APP_CALL_FOREIGN_REFERENCES} slots can buy needs company in the
+   * group. The extra slot covers the small boxes the same call also touches.
+   *
+   * Sized from the box rather than the GGovPeriod built into this SDK: the box is what is being
+   * deployed, and it exists precisely so child code can be upgraded without redeploying the
+   * registry. A missing box costs no padding — the contract raises its own not-configured error.
+   */
+  private async approvalReadRefSlots(): Promise<number> {
+    try {
+      const box = await this.algorand.app.getBoxValue(this.appId, PERIOD_APPROVAL_BOX_NAME)
+      return boxIoRefsFor(box.length) + 1
+    } catch {
+      return 0
+    }
+  }
+
+  @requireWriterWithClient()
   @wrapErrors()
   async makeAddPeriodTxns({
     committeeId,
@@ -445,10 +675,11 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     mbrAmount,
     note,
     builder,
-  }: {
+  }: Omit<
+    GGovRegistryContractArgs['createPeriod(byte[32],uint64,uint64,pay)(uint32,uint64)'],
+    'committeeId' | 'mbrPayment'
+  > & {
     committeeId: CommitteeId
-    votingStart: bigint | number
-    votingEnd: bigint | number
     mbrAmount?: bigint | number
   } & CommonMethodBuilderArgs) {
     const writer = this.writerAccount!
@@ -459,6 +690,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       amount: { microAlgo: mbr } as any,
     } as any)
     builder = builder ?? this.writeClient!.newGroup()
+    builder = padForRefSlots(builder, await this.approvalReadRefSlots(), 'createPeriod')
     return builder.createPeriod({
       args: {
         committeeId: committeeIdToRaw(committeeId),
@@ -484,8 +716,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
   /**
    * Deploy a fresh `GGovRegistry` app, seed its MBR, upload the GGovPeriod approval bytecode
-   * into the registry's approval box, and optionally configure the xGov registry app id and
-   * operator account. Returns the writer-enabled registry SDK bound to the new app.
+   * into the registry's approval box, and optionally configure the xGov registry app id, the
+   * frac-delegation registry app id, and the operator account. Returns the writer-enabled
+   * registry SDK bound to the new app.
    *
    * The period approval bytecode comes from the generated `GGovPeriodClient` app spec
    * (`PERIOD_APP_SPEC.byteCode.approval`), so the version uploaded matches this build.
@@ -495,6 +728,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     deployer,
     operatorAccount,
     xGovRegistryAppId,
+    fracRegistryAppId,
     initialFundingAlgos,
     firstPeriodId,
     update = false,
@@ -503,6 +737,7 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     deployer: SenderWithSigner
     operatorAccount?: string | Address
     xGovRegistryAppId?: bigint | number
+    fracRegistryAppId?: bigint | number
     initialFundingAlgos?: bigint | number
     /**
      * Id to assign to the first period created on this registry. Use to continue numbering
@@ -520,7 +755,25 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       onUpdate: update ? 'update' : 'append',
       onSchemaBreak: update ? 'fail' : 'append',
       createParams: {
-        extraProgramPages: 3,
+        // The registry's create is an ABI method now, not a bare call: createApplication runs
+        // app_params_set to open this app's boxes to reads by any app. That opcode can only be run
+        // by the app on itself, so it has to happen inside a call.
+        method: 'createApplication',
+        args: [],
+        // Sized from the compiled program rather than pinned at the old AVM maximum, plus ONE spare
+        // page. Sized exactly, GGovRegistry would get a 6144-byte ceiling for a ~5.6KB program, which
+        // is tighter than the 3 pages it used to carry — and adding pages later is the one thing
+        // `factory.deploy` cannot do: it treats "existing pages < needed" as a schema break whose
+        // only remedies are failing or creating a NEW app. So without the spare page, the next time
+        // the program crossed that ceiling a routine `createRegistry({ update: true })` would start
+        // failing with "Schema break detected". 100k µAlgo once per registry removes that trap.
+        // (Spawned period/instance apps need no such margin: the registry sizes each one from the
+        // bytecode in its approval box at every create.)
+        extraProgramPages:
+          extraProgramPages(
+            Buffer.from(REGISTRY_APP_SPEC.byteCode!.approval, 'base64'),
+            Buffer.from(REGISTRY_APP_SPEC.byteCode!.clear, 'base64'),
+          ) + 1,
       },
     })
 
@@ -556,6 +809,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
 
     if (xGovRegistryAppId !== undefined) {
       await sdk.setXGovRegistryApp({ appId: BigInt(xGovRegistryAppId) })
+    }
+    if (fracRegistryAppId !== undefined) {
+      await sdk.setFracRegistryApp({ appId: BigInt(fracRegistryAppId) })
     }
     if (operatorAccount !== undefined) {
       const op = typeof operatorAccount === 'string' ? operatorAccount : operatorAccount.toString()

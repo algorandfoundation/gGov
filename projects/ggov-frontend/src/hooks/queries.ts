@@ -1,16 +1,42 @@
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useGGovSDK } from '@/hooks/useGGovSDK'
-import type { GGovPeriod, BodyJson, PeriodBodyJson, GGovVoteRecord, AccountWithVotes, GGovReaderSDK } from 'ggov-sdk'
+import type {
+  GGovPeriod,
+  PeriodBodyJson,
+  TopicBodyJson,
+  GGovVoteRecord,
+  AccountWithVotes,
+  GGovReaderSDK,
+} from 'ggov-sdk'
 
 export interface PeriodWithId {
   id: number
   period: GGovPeriod
   /** Registry-summary view: whether the operator has marked this period ready for voting. */
   ready: boolean
+  /**
+   * The period's own app. Carried through from the same registry summary as `ready`, so it costs
+   * nothing here and saves callers a `getPeriodAppId` round-trip — `hooks/mbrQueries.ts` needs it to
+   * read each period app's balance.
+   */
+  appId: bigint
 }
 
 export const queryKeys = {
   globalState: ['globalState'] as const,
+  // Balance + min-balance of one application's account, for the registry-funding panel
+  // (`hooks/mbrQueries.ts`). Keyed per app rather than per page, so the registry, its period apps
+  // and the frac instances all share one cache even though three different callers ask for them.
+  // Stringified because a bigint key is not JSON-serialisable and React Query hashes keys.
+  appAccountInfo: (appId: bigint) => ['appAccountInfo', String(appId)] as const,
+  // Frac registry global state — its own entry rather than a slice of `globalState`, which is the
+  // gGov registry's. Read for `mbrTopUp`, the chunk size the frac registry funds instances in.
+  fracGlobalState: ['fracGlobalState'] as const,
+  // Address rosters behind the funding panel's two delegation terms (`hooks/mbrQueries.ts`).
+  // Addresses rather than the `lastAccountId` counters, because the panel has to net the two
+  // registries' overlap against each other — something a counter cannot express.
+  ggovAccounts: ['ggovAccounts'] as const,
+  fracRegistryAccounts: ['fracRegistryAccounts'] as const,
   periods: ['periods'] as const,
   period: (id: number) => ['period', id] as const,
   periodAppId: (id: number) => ['periodAppId', id] as const,
@@ -32,9 +58,64 @@ export const queryKeys = {
   myVotes: (account: string) => ['myVotes', account] as const,
   committeeVotingPowers: (account: string) => ['committeeVotingPowers', account] as const,
   committeeMembers: (id: string) => ['committeeMembers', id] as const,
-  xgovVotingPower: (committeeId: string, account: string) => ['xgovVotingPower', committeeId, account] as const,
+  govVotingPower: (committeeId: string, account: string) => ['govVotingPower', committeeId, account] as const,
   producerRank: (committeeId: string, account: string) => ['producerRank', committeeId, account] as const,
   blockHeader: (round: number) => ['blockHeader', round] as const,
+  // Whether the gGov registry knows this account — the gate `set_voting_account`
+  // applies, so it decides whether a delegation needs the frac-registry fallback.
+  isGGovAccount: (account: string) => ['isGGovAccount', account] as const,
+  // Pooled voting (fractional delegation) — see hooks/fracQueries.ts.
+  fracAccount: (account: string) => ['fracAccount', account] as const,
+  // Keyed on the ids themselves, sorted+joined so the key is order-independent
+  // (same shape as `fracAccounts`). Not on their count: callers ask for different
+  // slices — one committee for a ballot, every committee for a pool's history —
+  // and two different single-committee requests would otherwise share an entry.
+  fracInstanceCommittees: (instanceNumId: number, committeeIds: string[]) =>
+    ['fracInstanceCommittees', instanceNumId, [...committeeIds].sort().join(',')] as const,
+  // One account's AQ standing across every instance it's in, over a *set* of committees — the
+  // registry reads both axes in one call. Sorted+joined for the same reason as
+  // `fracInstanceCommittees`: two different slices of the committee list are different reads.
+  fracAccountCommitteeAqs: (account: string, committeeIds: string[]) =>
+    ['fracAccountCommitteeAqs', account, [...committeeIds].sort().join(',')] as const,
+  // Several accounts' frac registry records in one read. Sorted+joined so the key
+  // is order-independent; overlaps `fracAccount` for a single account by design,
+  // since the two callers batch differently (see hooks/fracQueries.ts).
+  fracAccounts: (accounts: string[]) => ['fracAccounts', [...accounts].sort().join(',')] as const,
+  // Whether `sender` may cast `voter`'s pooled ballot on one instance, and its AQ weight.
+  fracCanVote: (periodId: number, instanceNumId: number, voter: string, sender: string) =>
+    ['fracCanVote', periodId, instanceNumId, voter, sender] as const,
+  // One account's pooled vote records for a period, across every instance it's in.
+  fracVotingRecords: (account: string, periodId: number) => ['fracVotingRecords', account, periodId] as const,
+  // Every pool's power in ONE committee — the committee page's pooled section.
+  // Committee-scoped rather than account-scoped, so it shares nothing with the
+  // account-side keys above.
+  fracCommitteePools: (committeeId: string) => ['fracCommitteePools', committeeId] as const,
+  // One pool's aggregate internal tally for one period — its own [topic][option]
+  // AlgoQuarters. Read whole: the pools index only wants the AQ that voted, the
+  // pool page wants the per-item split, and both come from the same box.
+  fracPeriodVoteCache: (instanceNumId: number, periodId: number) =>
+    ['fracPeriodVoteCache', instanceNumId, periodId] as const,
+  // Every account the frac registry knows, with its numeric id and instances.
+  // Registry-wide and account-independent, so one entry serves every pool page.
+  fracRoster: ['fracRoster'] as const,
+  // One pool's members in one committee, with the AlgoQuarters each holds there.
+  // `memberIds` is part of the key because the query joins the registry roster,
+  // which is its own entry: without it a changed roster would never reach this
+  // one. The ids rather than the roster's size, because an account already in the
+  // registry can join another instance without the size moving at all — that
+  // account would then stay missing from this pool until the entry went stale.
+  // Sorted+joined for an order-independent key, same as `fracPoolVotingRecords`.
+  fracPoolMembers: (instanceNumId: number, committeeId: string, memberIds: number[]) =>
+    ['fracPoolMembers', instanceNumId, committeeId, [...memberIds].sort((a, b) => a - b).join(',')] as const,
+  // Several members' internal vote records on one pool + period, in one read.
+  // Sorted+joined so the key is order-independent, same as `fracAccounts`.
+  fracPoolVotingRecords: (instanceNumId: number, periodId: number, accountIds: number[]) =>
+    ['fracPoolVotingRecords', instanceNumId, periodId, [...accountIds].sort((a, b) => a - b).join(',')] as const,
+  // The escrow accounts a pool's voting power is produced from.
+  fracInstanceEscrows: (instanceNumId: number) => ['fracInstanceEscrows', instanceNumId] as const,
+  // The applications behind those escrows — the protocol the pool actually is.
+  // Keyed on the escrows rather than the instance, since that is what it resolves.
+  fracProtocolApps: (escrows: string[]) => ['fracProtocolApps', [...escrows].sort().join(',')] as const,
 }
 
 export function useGlobalState() {
@@ -59,11 +140,18 @@ export function usePeriods() {
   })
 }
 
-export function usePeriod(periodId: number) {
+/**
+ * `enabled` is for callers whose period id is itself derived — the pool page picks
+ * a ballot from the committee's periods, and while that is undefined there is no
+ * period to read. Reading id 0 instead would be a wasted round-trip that surfaces
+ * an error dialog when it fails.
+ */
+export function usePeriod(periodId: number, enabled = true) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.period(periodId),
     queryFn: () => fetchPeriod(readerSDK, periodId),
+    enabled,
     meta: { surfaceError: true },
   })
 }
@@ -102,11 +190,12 @@ export function useAppEscrow(address: string | null | undefined) {
   })
 }
 
-export function usePeriodBody(periodId: number) {
+export function usePeriodBody(periodId: number, enabled = true) {
   const { readerSDK } = useGGovSDK()
   return useQuery({
     queryKey: queryKeys.periodBody(periodId),
     queryFn: () => fetchPeriodBody(readerSDK, periodId),
+    enabled,
     // Body is effectively immutable once uploaded; mutations that change it
     // (useUploadPeriodBodyMutation) invalidate this key, overriding staleTime.
     staleTime: 3_600_000,
@@ -264,6 +353,30 @@ export function useAllDelegations() {
   })
 }
 
+/**
+ * Whether the gGov registry has an `accounts` box for this address — i.e. whether
+ * it has ever produced blocks in a committee.
+ *
+ * This is exactly the gate `set_voting_account` applies (`ensureDelegatorRegistered`
+ * in `contracts/smart_contracts/ggov-registry/ggovRegistry.algo.ts`): a delegator
+ * the gGov registry doesn't know is looked up in the *frac* registry instead, via
+ * an extra inner call that the caller has to fund. So a `false` here means the
+ * delegation must be sent with `fractionalOnly` — see `hooks/mutations.ts`.
+ */
+export function fetchIsGGovAccount(readerSDK: GGovReaderSDK, account: string): Promise<boolean> {
+  return readerSDK.registry.getAccountIdMap([account]).then((map) => (map.get(account) ?? 0) > 0)
+}
+
+export function useIsGGovAccount(account: string | null | undefined) {
+  const { readerSDK } = useGGovSDK()
+  return useQuery({
+    queryKey: queryKeys.isGGovAccount(account ?? ''),
+    queryFn: () => fetchIsGGovAccount(readerSDK, account!),
+    enabled: !!account,
+    staleTime: 300_000,
+  })
+}
+
 /** Addresses that have delegated to `account` — a single reverse-index box read (`getDelegators`). */
 export function useDelegatedToMe(account: string | null | undefined) {
   const { readerSDK } = useGGovSDK()
@@ -332,7 +445,7 @@ export function fetchTopicBodies(
   readerSDK: GGovReaderSDK,
   periodId: number,
   topicCount: number,
-): Promise<(BodyJson | null)[]> {
+): Promise<(TopicBodyJson | null)[]> {
   assertNonNegativeInt(periodId, 'period id')
   assertNonNegativeInt(topicCount, 'topic count')
   return Promise.all(Array.from({ length: topicCount }, (_, i) => readerSDK.getTopicBody(BigInt(periodId), BigInt(i))))
@@ -340,7 +453,12 @@ export function fetchTopicBodies(
 
 export async function fetchPeriods(readerSDK: GGovReaderSDK): Promise<PeriodWithId[]> {
   const all = await readerSDK.getAllPeriods()
-  return all.map(({ id, period, summary }) => ({ id: Number(id), period, ready: summary.ready }))
+  return all.map(({ id, period, summary }) => ({
+    id: Number(id),
+    period,
+    ready: summary.ready,
+    appId: summary.appId,
+  }))
 }
 
 export async function fetchCommittees(readerSDK: GGovReaderSDK): Promise<CommitteeOption[]> {
@@ -379,7 +497,7 @@ export async function fetchCommittee(readerSDK: GGovReaderSDK, idBase64Url: stri
 }
 
 export function fetchCommitteeMembers(readerSDK: GGovReaderSDK, idBase64Url: string): Promise<AccountWithVotes[]> {
-  return readerSDK.registry.getCommitteeXGovs(fromBase64Url(idBase64Url))
+  return readerSDK.registry.getCommitteeGovs(fromBase64Url(idBase64Url))
 }
 
 export function useCommittees() {
@@ -420,21 +538,21 @@ export function useCommittee(idBase64Url: string | undefined) {
 }
 
 /**
- * Window-independent xGov voting power for several accounts in one committee,
+ * Window-independent gov voting power for several accounts in one committee,
  * read from the registry (unlike {@link useCanVoteMany}, which returns 0 outside
  * the voting window). One readonly call per account, cached per (committee, account).
  * Value per account: the power, or `undefined` while loading.
  */
-export function useXGovVotingPowers(
+export function useGovVotingPowers(
   committeeIdBase64Url: string | undefined,
   accounts: string[],
 ): Record<string, number | undefined> {
   const { readerSDK } = useGGovSDK()
   const results = useQueries({
     queries: accounts.map((account) => ({
-      queryKey: queryKeys.xgovVotingPower(committeeIdBase64Url ?? '', account),
+      queryKey: queryKeys.govVotingPower(committeeIdBase64Url ?? '', account),
       queryFn: async () => {
-        const [power] = await readerSDK.registry.getXGovVotingPowers([fromBase64Url(committeeIdBase64Url!)], account)
+        const [power] = await readerSDK.registry.getGovVotingPowers([fromBase64Url(committeeIdBase64Url!)], account)
         return power ?? 0
       },
       enabled: !!committeeIdBase64Url,
@@ -447,12 +565,12 @@ export function useXGovVotingPowers(
   return out
 }
 
-interface VoteEntry {
+export interface VoteEntry {
   periodId: number
   period: GGovPeriod
   record: GGovVoteRecord
-  body: BodyJson | null
-  topicBodies: (BodyJson | null)[]
+  body: PeriodBodyJson | null
+  topicBodies: (TopicBodyJson | null)[]
 }
 
 export function useMyVotes(account: string | null | undefined) {
@@ -504,7 +622,7 @@ export function useCommitteeVotingPowers(account: string | null | undefined) {
       // Two batched simulate groups instead of 2 serial on-chain reads per committee.
       const [metas, powers] = await Promise.all([
         readerSDK.registry.getCommitteesMetadata(ids),
-        readerSDK.registry.getXGovVotingPowers(ids, account!),
+        readerSDK.registry.getGovVotingPowers(ids, account!),
       ])
       const results: CommitteeVotingPower[] = []
       for (let i = 0; i < ids.length; i++) {
@@ -563,7 +681,7 @@ export function useProducerRank(committeeIdBase64Url: string | undefined, accoun
   return useQuery({
     queryKey: queryKeys.producerRank(committeeIdBase64Url ?? '', account ?? ''),
     queryFn: async (): Promise<ProducerRank | null> => {
-      const members = await readerSDK.registry.getCommitteeXGovs(fromBase64Url(committeeIdBase64Url!))
+      const members = await readerSDK.registry.getCommitteeGovs(fromBase64Url(committeeIdBase64Url!))
       return rankProducer(members, account!)
     },
     enabled: !!committeeIdBase64Url && !!account,

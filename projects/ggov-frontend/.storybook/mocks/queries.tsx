@@ -33,7 +33,9 @@ export type {
   CommitteeVotingPower,
   ProducerRank,
   BlockHeaderInfo,
+  VoteEntry,
 } from '../../src/hooks/queries'
+import type { CommitteeVotingPower as CommitteeVotingPowerType, VoteEntry } from '../../src/hooks/queries'
 
 // --- Scenario context --------------------------------------------------------
 
@@ -99,8 +101,9 @@ export function usePeriodAppId(periodId: number) {
   return useMemo(() => result(s.periodDetail[periodId]?.appId ?? null), [s, periodId])
 }
 
-export function useAppEscrow(_address: string | null | undefined) {
-  return useMemo(() => result<bigint | null>(null), [])
+export function useAppEscrow(address: string | null | undefined) {
+  const s = useMockScenario()
+  return useMemo(() => result<bigint | null>(address ? (s.appEscrows?.[address] ?? null) : null), [s, address])
 }
 
 export function usePeriodBody(periodId: number) {
@@ -138,7 +141,7 @@ export function useDelegation(account?: string | null) {
   const s = useMockScenario()
   return useMemo(() => {
     const delegatee = account ? (s.delegations.find(([d]) => d === account)?.[1] ?? '') : ''
-    return result({ delegatee, exists: !!delegatee })
+    return result({ delegatee, exists: !!delegatee }, { loading: s.flags?.delegationLoading })
   }, [s, account])
 }
 
@@ -150,7 +153,10 @@ export function useAllDelegations() {
 export function useDelegatedToMe(account?: string | null) {
   const s = useMockScenario()
   return useMemo(
-    () => result(account ? s.delegations.filter(([, d]) => d === account).map(([dl]) => dl) : []),
+    () =>
+      result(account ? s.delegations.filter(([, d]) => d === account).map(([dl]) => dl) : [], {
+        loading: s.flags?.delegatorsLoading,
+      }),
     [s, account],
   )
 }
@@ -176,12 +182,55 @@ export function useProducerRank(committeeIdBase64Url?: string, account?: string 
   )
 }
 
-export function useMyVotes(_account?: string | null) {
-  return useMemo(() => result<unknown[]>([]), [])
+/**
+ * Every period the account holds a vote record for, newest first — the account
+ * page's "Votes cast" grid. Assembled from the same scenario the detail pages
+ * read, so a period configured as voted shows up here with its body/topic bodies.
+ */
+export function useMyVotes(account?: string | null) {
+  const s = useMockScenario()
+  return useMemo(() => {
+    const entries: VoteEntry[] = []
+    if (account) {
+      for (const { id } of s.periods) {
+        const record = s.voteRecords[pakey(id, account)]
+        if (!record || record.topicVotes == null) continue
+        const detail = s.periodDetail[id]
+        if (!detail) continue
+        entries.push({
+          periodId: id,
+          period: detail.period,
+          record,
+          body: detail.body,
+          topicBodies: detail.topicBodies,
+        })
+      }
+      entries.sort((a, b) => b.periodId - a.periodId)
+    }
+    return result(entries, { loading: s.flags?.votesLoading })
+  }, [s, account])
 }
 
-export function useCommitteeVotingPowers(_account?: string | null) {
-  return useMemo(() => result<unknown[]>([]), [])
+/**
+ * Per-committee direct voting power for one account, derived from the scenario's
+ * `votingPowers`. Mirrors the real hook: committees where the account produced no
+ * blocks are omitted, and the result is sorted newest-window first.
+ */
+export function useCommitteeVotingPowers(account?: string | null) {
+  const s = useMockScenario()
+  return useMemo(() => {
+    if (!account) return result<CommitteeVotingPowerType[]>([])
+    const rows = Object.values(s.committees)
+      .map((c) => ({
+        idBase64Url: c.idBase64Url,
+        periodStart: c.periodStart,
+        periodEnd: c.periodEnd,
+        votingPower: s.votingPowers[cakey(c.idBase64Url, account)] ?? 0,
+      }))
+      .filter((c) => c.votingPower > 0)
+      .sort((a, b) => b.periodStart - a.periodStart)
+    return result(rows)
+  }, [s, account])
 }
 
 export function useCommitteeMembers(_idBase64Url?: string) {
@@ -229,7 +278,7 @@ export function useCanVoteMany(
   return out
 }
 
-export function useXGovVotingPowers(
+export function useGovVotingPowers(
   committeeIdBase64Url: string | undefined,
   accounts: string[],
 ): Record<string, number | undefined> {

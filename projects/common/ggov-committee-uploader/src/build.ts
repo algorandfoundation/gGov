@@ -18,10 +18,11 @@
  *   NETWORK_PATH  network path segment (default mainnet-v1.0-...)
  */
 
-import { createRequire } from 'node:module'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+
+import { calculateCommitteeId } from 'ggov-sdk'
 
 import {
   DEFAULT_REGISTRY_ID,
@@ -30,12 +31,7 @@ import {
   fetchCommitteeIndex,
   type IndexCommittee,
   type XGovSourceOptions,
-} from './xgov'
-
-// The ggov-sdk dist is ESM-syntax but ships without "type": "module", so it
-// must be loaded via require() rather than a static import.
-const require = createRequire(import.meta.url)
-const { calculateCommitteeId } = require('../../../ggov-sdk/dist/index.js')
+} from './ggov'
 
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'committees')
 

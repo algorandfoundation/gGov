@@ -1,17 +1,17 @@
 # Project Summary
 
-pnpm monorepo for an Algorand general governance (ggov) and gGov/xGov voting delegation system. Three core smart contracts (delegator + GGov registry + per-period GGov app), two SDKs, a React frontend, and shared resources.
+pnpm monorepo for an Algorand general governance (ggov) and gGov/xGov voting delegation system. Core smart contracts (GGov registry + per-period GGov app + frac-delegation registry/instance), multiple SDKs, a React frontend, and shared resources.
 
 ## Workspace Layout
 
 ```
-xgov-delegator/
-  .algokit.toml              # workspace config; build order: contracts -> delegator-sdk -> ggov-sdk
+gGov/
+  .algokit.toml              # workspace config; build order: contracts -> ggov-sdk -> frac-delegation-sdk
   pnpm-workspace.yaml        # packages: projects/*
   projects/
     contracts/               # PuyaTs smart contracts
     ggov-sdk/                # Unified GGov SDK: registry (src/registry/) + per-period operations
-    delegator-sdk/           # SDK for delegator contract
+    frac-delegation-sdk/     # SDK for the frac-delegation registry/instance contracts
     ggov-frontend/           # React + Vite + Tailwind frontend for gGov
     common/                  # Shared committee JSON files + build scripts
 ```
@@ -22,17 +22,18 @@ AlgoKit PuyaTs project. Contracts compile to TEAL; typed clients are auto-genera
 
 ### Smart Contracts
 
-| Contract                      | File                                          | Purpose                                                                                      |
-| ----------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `BaseContract`                | `base/base.algo.ts`                           | Abstract base: admin checks, `increaseBudget()`                                              |
-| `EmptyContract`               | `base/base.algo.ts`                           | Empty contract used for budget increases                                                     |
-| Account ID mixin              | `base/account-id.algo.ts`                     | Assigns uint32 IDs to addresses (saves 28 bytes/ref)                                         |
-| `Delegator`                   | `delegator/delegator.algo.ts`                 | Main delegator: internal voting (algohours) + external delegated xGov votes, proposal voting |
-| `GGovRegistryContract`        | `ggov-registry/ggovRegistry.algo.ts`          | Committee oracle + operator + delegations + period factory (spawns ggov-period apps)         |
-| `GGovRegistryAccountContract` | `ggov-registry/ggovRegistryAccount.algo.ts`   | Account management base for the registry                                                     |
-| `GGovPeriodContract`          | `ggov-period/ggovPeriod.algo.ts`              | One app per voting period: topics, vote tallies, vote records, period/topic bodies           |
-| `XGovRegistryMock`            | `xgov-registry-mock/xGovRegistryMock.algo.ts` | Mock for testing                                                                             |
-| `XGovProposalMock`            | `xgov-proposal-mock/xGovProposalMock.algo.ts` | Mock for testing                                                                             |
+| Contract                         | File                                             | Purpose                                                                              |
+| -------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `BaseContract`                   | `base/base.algo.ts`                              | Abstract base: admin checks, `increaseBudget()`                                      |
+| `EmptyContract`                  | `base/base.algo.ts`                              | Empty contract used for budget increases                                             |
+| Account ID mixin                 | `base/account-id.algo.ts`                        | Assigns uint32 IDs to addresses (saves 28 bytes/ref)                                 |
+| `GGovRegistryContract`           | `ggov-registry/ggovRegistry.algo.ts`             | Committee oracle + operator + delegations + period factory (spawns ggov-period apps) |
+| `GGovRegistryAccountContract`    | `ggov-registry/ggovRegistryAccount.algo.ts`      | Account management base for the registry                                             |
+| `GGovPeriodContract`             | `ggov-period/ggovPeriod.algo.ts`                 | One app per voting period: topics, vote tallies, vote records, period/topic bodies   |
+| `FracDelegationRegistryContract` | `frac-delegation/fracDelegationRegistry.algo.ts` | Frac-delegation registry: admin, escrows, instance factory                           |
+| `FracDelegationInstanceContract` | `frac-delegation/fracDelegationInstance.algo.ts` | Per-instance frac-delegation app spawned by the registry                             |
+| `XGovRegistryMock`               | `xgov-registry-mock/xGovRegistryMock.algo.ts`    | Mock for testing                                                                     |
+| `XGovProposalMock`               | `xgov-proposal-mock/xGovProposalMock.algo.ts`    | Mock for testing                                                                     |
 
 The registry holds the `periodId → GGovPeriodSummary` box. Each `GGovPeriod` app is created via inner-txn from the registry's `createPeriod`. The period app syncs `votingStart`/`votingEnd`/`numTopics` back to the registry on every `editPeriod` / `addTopic` via inner-call to `registry.updatePeriodSummary`, which validates the inner-call caller is the registered period app.
 
@@ -44,16 +45,14 @@ The registry holds the `periodId → GGovPeriodSummary` box. Each `GGovPeriod` a
 
 ### Tests
 
-| File                                      | Scope                                                                              |
-| ----------------------------------------- | ---------------------------------------------------------------------------------- |
-| `base/base.algo.spec.ts`                  | Base contract unit tests                                                           |
-| `base/account-id.algo.spec.ts`            | Account ID tests                                                                   |
-| `delegator/delegator.algo.spec.ts`        | Delegator unit tests                                                               |
-| `delegator/delegator.simple.e2e.spec.ts`  | Delegator simple E2E                                                               |
-| `delegator/delegator.complex.e2e.spec.ts` | Delegator complex E2E                                                              |
-| `ggov-registry/ggovRegistry.e2e.spec.ts`  | GGovRegistry (committee oracle) E2E tests                                          |
-| `ggov-period/ggovPeriod.e2e.spec.ts`      | GGovPeriod E2E: addPeriod/edit/addTopic/vote + summary-sync + trust-boundary tests |
-| `common-tests.ts`                         | Shared test utilities (deployRegistry, createCommittee, etc.)                      |
+| File                                     | Scope                                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| `base/base.algo.spec.ts`                 | Base contract unit tests                                                           |
+| `base/account-id.algo.spec.ts`           | Account ID tests                                                                   |
+| `ggov-registry/ggovRegistry.e2e.spec.ts` | GGovRegistry (committee oracle) E2E tests                                          |
+| `ggov-period/ggovPeriod.e2e.spec.ts`     | GGovPeriod E2E: addPeriod/edit/addTopic/vote + summary-sync + trust-boundary tests |
+| `frac-delegation/*.e2e.spec.ts`          | Frac-delegation registry/instance E2E tests                                        |
+| `common-tests.ts`                        | Shared test utilities (deployRegistry, createCommittee, etc.)                      |
 
 ### Artifacts
 
@@ -102,9 +101,9 @@ examples/
 
 Prebuild copies both clients from contracts artifacts + generates the error map, then tsc to `dist/`.
 
-## projects/delegator-sdk
+## projects/frac-delegation-sdk
 
-SDK for the delegator contract. Same architecture.
+SDK for the frac-delegation registry/instance contracts. Same architecture. Originated from the [xgov-delegator](https://github.com/d13co/xgov-delegator) prototype.
 
 ## projects/ggov-frontend
 
@@ -132,9 +131,35 @@ React 19 + Vite + TailwindCSS + DaisyUI. Current frontend for gGov.
 
 Full workspace build: `algokit project run build` (respects `.algokit.toml` build order)
 
+## CI/CD
+
+GitHub Actions workflows live in [`.github/workflows`](./.github/workflows).
+
+### CI
+
+Runs on PRs to `main` and `develop`. Contracts and SDKs are treated as one unit — a change in either triggers the test matrix.
+
+```
+audit   ─┐
+         ├─► validate (format → lint → build contracts → artifact check → build SDKs → typecheck → build frontend)
+changes -┤
+         └─► test (matrix) — only when contracts or SDKs changed
+```
+
+### CD
+
+| Workflow       | Deploys             | When                                               |
+| -------------- | ------------------- | -------------------------------------------------- |
+| `contracts-cd` | contracts (testnet) | Manual (`workflow_dispatch`)                       |
+| `frontend-cd`  | frontend (testnet)  | Auto on push to main (frontend/sdk paths) + manual |
+| `storybook-cd` | storybook           | Auto on push to main (frontend/sdk paths) + manual |
+
+All actions are pinned to commit SHAs. Secrets are scoped to the step that needs them.
+
 ## Key Patterns
 
 - **Registry-as-factory**: One durable `GGovRegistry` app; each voting period is a separate `GGovPeriod` app spawned via inner-txn. Registry is the trust root for committees, operator identity, and delegations.
+- **One delegation map for both systems**: `GGovRegistry.delegations` is the single source of truth for gGov period voting _and_ frac-delegation instance voting (escrow → instance and user → user alike), so `set_voting_account` accepts a delegator known to the gGov registry or to the frac registry. See `ARCHITECTURE.md` § Delegation.
 - **Period summary mirror**: Registry holds `periodId → { appId, votingStart, votingEnd, numTopics }`. Period contract mirrors edits back via `registry.updatePeriodSummary` (gated on `Global.callerApplicationId === storedAppId`). One round trip lists all periods.
 - **Account ID system**: uint32 IDs assigned to addresses to save storage (28 bytes/ref).
 - **Superbox**: Efficient large-array box storage via `@d13co/superbox`.

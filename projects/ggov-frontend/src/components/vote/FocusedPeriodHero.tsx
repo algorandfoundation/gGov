@@ -2,13 +2,13 @@ import { Link } from '@tanstack/react-router'
 import { useWallet } from '@txnlab/use-wallet-react'
 import type { GGovPeriod } from 'ggov-sdk'
 import { Button } from '@/components/ui/button'
-import { PeriodStatusTag } from '@/components/vote/PeriodRow'
-import { usePeriodBody, useCommittee, useXGovVotingPowers, useProducerRank, toBase64Url } from '@/hooks/queries'
+import PeriodStatusBadge from '@/components/PeriodStatusBadge'
+import { usePeriodBody, useCommittee, useGovVotingPowers, useProducerRank, toBase64Url } from '@/hooks/queries'
+import { usePooledPositions } from '@/hooks/fracQueries'
 import { periodTurnoutPct } from '@/lib/turnout'
 import { daysUntil, formatMonthDayYear, type PeriodStatus } from '@/utils/time'
-import { toPlainText } from '@/utils/format'
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+import { formatApprox, toPlainText } from '@/utils/format'
+import { periodCountLabel, plural } from '@/utils/periodTerms'
 
 /**
  * Circular progress dial (the hero centrepiece). `pct` (0–100) fills the arc
@@ -69,11 +69,19 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   const { data: body } = usePeriodBody(periodId)
   const committeeId = toBase64Url(period.committeeId)
   const { data: committee } = useCommittee(committeeId)
-  const powers = useXGovVotingPowers(committeeId, activeAddress ? [activeAddress] : [])
+  const powers = useGovVotingPowers(committeeId, activeAddress ? [activeAddress] : [])
   const power = activeAddress ? powers[activeAddress] : undefined
   const { data: rank } = useProducerRank(committeeId, activeAddress)
 
-  const topicCount = period.topics.length
+  // Pooled power for this period's committee only — the hero is about one period,
+  // so there's no reason to read the account's whole committee history here.
+  const { byCommittee } = usePooledPositions(activeAddress, committeeId ? [committeeId] : [])
+  const pooled = byCommittee[committeeId] ?? []
+  const pooledVotes = pooled.reduce((sum, p) => sum + p.votes, 0)
+  const directVotes = power ?? 0
+  const totalVotes = directVotes + pooledVotes
+
+  const countLabel = periodCountLabel(period.topics.length, body?.elect)
   const windowSecs = Math.max(1, period.votingEnd - period.votingStart)
   const nowSecs = Math.floor(Date.now() / 1000)
 
@@ -107,9 +115,9 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
   return (
     <section className="mx-auto max-w-[680px] text-center">
       <div className="inline-flex items-center gap-2.5 text-[13px] text-muted-foreground">
-        <PeriodStatusTag status={status} />
+        <PeriodStatusBadge status={status} />
         <span>
-          Period {periodId} · {plural(topicCount, 'topic')}
+          Period {periodId} · {countLabel}
         </span>
       </div>
 
@@ -137,17 +145,32 @@ export default function FocusedPeriodHero({ periodId, period, status }: Props) {
                 </Link>
               </Button>
             </div>
-            {activeAddress
-              ? power != null &&
-                power > 0 && (
+            {activeAddress ? (
+              totalVotes > 0 && (
+                <div className="flex flex-col items-center gap-2">
                   <div className="text-[13px] text-muted-foreground">
                     Your weight:{' '}
-                    <strong className="font-bold text-algo-blue dark:text-algo-teal">{power.toLocaleString()}</strong>{' '}
+                    <strong className="font-bold text-algo-blue dark:text-algo-teal">
+                      {pooledVotes > 0 ? `≈ ${formatApprox(totalVotes)}` : totalVotes.toLocaleString()}
+                    </strong>{' '}
                     votes
                     {rank ? ` · top ${rank.topPercentile}% of producers` : ''}
                   </div>
-                )
-              : null}
+                  {pooledVotes > 0 && (
+                    <div className="flex items-center gap-2 text-[12px]">
+                      <span className="rounded-full border border-border bg-muted/40 px-2.5 py-0.5 tabular-nums text-muted-foreground">
+                        {directVotes.toLocaleString()} direct
+                      </span>
+                      <span className="rounded-full bg-algo-teal/10 px-2.5 py-0.5 font-semibold tabular-nums text-teal-strong">
+                        ≈ {formatApprox(pooledVotes)} via {plural(pooled.length, 'pool')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )
+            ) : (
+              <div className="text-[13px] text-muted-foreground">Connect a wallet to see your voting weight</div>
+            )}
           </>
         ) : (
           <div className="w-full max-w-[280px]">

@@ -1,9 +1,10 @@
-#pragma version 11
+#pragma version 13
 #pragma typetrack false
+#pragma autosalt false
 
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
-    // smart_contracts/base/base.algo.ts:6
+    // smart_contracts/base/base.algo.ts:14
     // export class EmptyContract extends Contract {}
     txn NumAppArgs
     !
@@ -13,6 +14,4 @@ main:
     txn ApplicationID
     !
     &&
-    assert // OnCompletion must be NoOp && can only call when creating
-    pushint 1 // 1
     return

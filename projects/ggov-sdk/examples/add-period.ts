@@ -13,10 +13,11 @@
  *      bytecode, sets the operator (= deployer for convenience) in one call
  *   2. uploadCommitteeFile (committee must be complete before addPeriod)
  *   3. addPeriod (creates a child GGovPeriod app via inner txn)
- *   4. uploadPeriodBody — title + description, plus `electSeats` (the seat count) for a
- *      council election; the presence of `electSeats` is what marks the period as an election
- *   5. addTopic (+ uploadTopicBody) — one Support/Against/Abstain ballot per candidate for an election
- *      (the candidate handle is the topic title), otherwise a single topic
+ *   4. uploadPeriodBody — title + description, plus `elect` (one `{ t, s }` entry per election)
+ *      for a council election; the presence of `elect` is what marks the period as an election
+ *   5. addTopic (+ uploadTopicBody) — one Support/Veto/Abstain ballot per candidate for an election
+ *      (the candidate handle is the topic title, `e` is the index of the election it runs in),
+ *      otherwise a single topic
  *   6. getPeriod (reads from the per-period app)
  *   7. getPeriodSummary (reads from the registry)
  */
@@ -40,8 +41,11 @@ function parseElectSeats(): number | undefined {
 
 void (async () => {
   const file = JSON.parse(readFileSync(process.argv[2], 'utf-8'))
-  const electSeats = parseElectSeats()
-  const isElection = electSeats !== undefined
+  const seats = parseElectSeats()
+  const isElection = seats !== undefined
+  // One council election here, but `elect` is a list: a period can run several races side by
+  // side, and each candidate joins one by carrying that election's index in its own `e`.
+  const elect = isElection ? [{ t: 'Council', s: seats }] : undefined
 
   const algorand = getAlgorand()
   const deployer = await algorand.account.fromEnvironment('DEPLOYER')
@@ -67,34 +71,32 @@ void (async () => {
   })
   console.log('Period created, periodId:', periodId)
 
-  // 4. uploadPeriodBody — the `electSeats` body field (the seat count) marks a council election; omit it for a standard vote.
+  // 4. uploadPeriodBody — the `elect` body field (one entry per election) marks a council election; omit it for a standard vote.
   await sdk.uploadPeriodBody({
     periodId,
     body: {
       title: isElection ? 'gGov Council — Term 2 election' : 'Protocol parameter review',
       body: isElection
-        ? `Elect ${electSeats} council member${electSeats === 1 ? '' : 's'}. Each candidate below is a Support/Against/Abstain ballot; candidates are ranked by net score (Support − Against) and the top ${electSeats} lead for the available seats.`
+        ? `Elect ${seats} council member${seats === 1 ? '' : 's'}. Each candidate below is a Support/Veto/Abstain ballot; candidates are ranked by net score (Support − Veto) and the top ${seats} lead for the available seats.`
         : 'A standard governance vote on the proposed change.',
-      ...(isElection ? { electSeats } : {}),
+      ...(elect ? { elect } : {}),
     },
   })
   console.log(
-    isElection
-      ? `Period body uploaded (council election, ${electSeats} seats)`
-      : 'Period body uploaded (standard vote)',
+    isElection ? `Period body uploaded (council election, ${seats} seats)` : 'Period body uploaded (standard vote)',
   )
 
-  // 5. addTopic. For an election, one Support/Against/Abstain ballot per candidate — one more
+  // 5. addTopic. For an election, one Support/Veto/Abstain ballot per candidate — one more
   // than the seat count, so at least one candidate sits below the cutoff — with the candidate
-  // handle as the topic title. Otherwise, a single topic.
+  // handle as the topic title and `e: 0` entering it in the sole election. Otherwise, a single topic.
   if (isElection) {
-    const candidateCount = electSeats + 1
+    const candidateCount = seats + 1
     for (let i = 0; i < candidateCount; i++) {
-      const topicIndex = await sdk.addTopic({ periodId, options: ['Support', 'Against', 'Abstain'] })
+      const topicIndex = await sdk.addTopic({ periodId, options: ['Support', 'Veto', 'Abstain'] })
       await sdk.uploadTopicBody({
         periodId,
         topicIndex,
-        body: { title: `candidate-${i + 1}.algo`, body: `Candidate ${i + 1} for the council.` },
+        body: { title: `candidate-${i + 1}.algo`, body: `Candidate ${i + 1} for the council.`, e: 0 },
       })
       console.log(`Candidate topic added, index: ${topicIndex} (candidate-${i + 1}.algo)`)
     }
@@ -109,7 +111,7 @@ void (async () => {
     votingStart: period.votingStart,
     votingEnd: period.votingEnd,
     topics: period.topics.length,
-    electSeats: electSeats ?? '(standard vote)',
+    elect: elect?.map((election) => `${election.t} (${election.s} seats)`) ?? '(standard vote)',
   })
 
   // 7. getPeriodSummary (reads from registry)

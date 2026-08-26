@@ -11,6 +11,7 @@ export function expectArc65Error(ctx: TestExecutionContext, fn: () => void, errC
       throw new Error('No application logs found in the transaction.', { cause: error })
     }
     const lastLogStr = Buffer.from(appLogs[appLogs.length - 1].bytes, 'hex').toString('utf8')
-    expect(lastLogStr).toBe(errCode)
+    // loggedAssert/loggedErr prepend the "ERR:" prefix on-chain; the error constants hold the bare code.
+    expect(lastLogStr).toBe(`ERR:${errCode}`)
   }
 }

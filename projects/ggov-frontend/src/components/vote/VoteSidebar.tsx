@@ -8,7 +8,7 @@ import { BlockGrid } from '@/components/ui/block-grid'
 import ConnectWallet from '@/components/ConnectWallet'
 import CompactAccountSwitcher from '@/components/CompactAccountSwitcher'
 import { useAddressName } from '@/hooks/use-nfd'
-import { useCommittee, useGlobalState, useProducerRank, useXGovVotingPowers } from '@/hooks/queries'
+import { useCommittee, useGlobalState, useProducerRank, useGovVotingPowers } from '@/hooks/queries'
 import { ellipseAddress } from '@/utils/ellipseAddress'
 import { formatBlockRange } from '@/utils/format'
 
@@ -44,7 +44,7 @@ export function AccountCard() {
 export function VotingPowerCard({ committeeId }: { committeeId?: string }) {
   const { activeAddress } = useWallet()
   const { data: committee } = useCommittee(committeeId)
-  const powers = useXGovVotingPowers(committeeId, activeAddress ? [activeAddress] : [])
+  const powers = useGovVotingPowers(committeeId, activeAddress ? [activeAddress] : [])
   const power = activeAddress ? powers[activeAddress] : undefined
   const { data: rank } = useProducerRank(committeeId, activeAddress)
 

@@ -19,15 +19,18 @@ const outputFilePath = resolve(sdkRoot, 'src/generated/errors.ts')
 
 const content = readFileSync(errorsFilePath, 'utf-8')
 
-// Match lines like: export const errName = 'ERR:CODE' // Message
-const errorRegex = /export const \w+ = '(ERR:[^']+)'\s*\/\/\s*(.+)$/gm
+// Match lines like: export const errName = 'CODE' // Message
+// The contract constants hold the bare code; loggedAssert/loggedErr prepend the "ERR:" prefix
+// on-chain, so we reconstruct the full "ERR:CODE" key here to match what surfaces at runtime.
+const errorRegex = /export const \w+ = '([A-Z0-9_]+)'\s*\/\/\s*(.+)$/gm
 
 const errors: Record<string, string> = {}
 const duplicates: string[] = []
 let match: RegExpExecArray | null
 
 while ((match = errorRegex.exec(content)) !== null) {
-  const [, code, message] = match
+  const [, rawCode, message] = match
+  const code = `ERR:${rawCode}`
   if (Object.prototype.hasOwnProperty.call(errors, code)) {
     duplicates.push(`${code} (existing: "${errors[code]}", duplicate: "${message.trim()}")`)
     continue

@@ -1,8 +1,9 @@
-import { Config } from '@algorandfoundation/algokit-utils'
+import { AlgorandClient, Config } from '@algorandfoundation/algokit-utils'
 import { registerDebugEventHandlers } from '@algorandfoundation/algokit-utils-debug'
 import { consoleLogger } from '@algorandfoundation/algokit-utils/types/logging'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { wireRegistries, type DeployedAppIds } from './wire-registries'
 
 // Uncomment the traceAll option to enable auto generation of AVM Debugger compliant sourceMap and simulation trace file for all AVM calls.
 // Learn more about using AlgoKit AVM Debugger to debug your TEAL source codes and inspect various kinds of Algorand transactions in atomic groups -> https://github.com/algorandfoundation/algokit-avm-vscode-Debugger
@@ -27,12 +28,24 @@ async function importDeployerIfExists(dir: string) {
   return null
 }
 
+// listed contracts deploy first in this order; all others follow alphabetically.
+const DEPLOY_ORDER = ['ggov-registry', 'frac-delegation']
+
 // get a list of all deployers from the subdirectories
 async function getDeployers() {
   const directories = fs
     .readdirSync(baseDir, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => path.resolve(baseDir, dirent.name))
+    .map((dirent) => dirent.name)
+    .sort((a, b) => {
+      const indexA = DEPLOY_ORDER.indexOf(a)
+      const indexB = DEPLOY_ORDER.indexOf(b)
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b)
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
+    })
+    .map((name) => path.resolve(baseDir, name))
 
   const deployers = await Promise.all(directories.map(importDeployerIfExists))
   return deployers.filter((deployer) => deployer !== null) // Filter out null values
@@ -52,11 +65,24 @@ void (async () => {
     return
   }
 
+  // Contract dir name -> app id, for deploy configs that return one. Feeds wireRegistries so the
+  // cross-app links can be set once, at the end, when every app id is known.
+  const deployedAppIds: DeployedAppIds = new Map()
+
   for (const deployer of filteredDeployers) {
     try {
-      await deployer.deploy()
+      const appId = await deployer.deploy()
+      if (typeof appId === 'bigint') deployedAppIds.set(deployer.name, appId)
     } catch (e) {
       console.error(`Error deploying ${deployer.name}:`, e)
     }
+  }
+
+  try {
+    const algorand = AlgorandClient.fromEnvironment()
+    const deployer = await algorand.account.fromEnvironment('DEPLOYER')
+    await wireRegistries(algorand, { sender: deployer.addr, signer: deployer.signer }, deployedAppIds)
+  } catch (e) {
+    console.error('Error wiring registries:', e)
   }
 })()

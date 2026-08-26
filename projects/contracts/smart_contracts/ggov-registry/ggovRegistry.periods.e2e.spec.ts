@@ -1,6 +1,6 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { GGovPeriodFactory, GGovRegistryFactory, XGovCommitteeFile } from 'ggov-sdk'
+import { GGovPeriodFactory, GGovRegistryFactory, GGovCommitteeFile } from 'ggov-sdk'
 import {
   errCommitteeIncomplete,
   errCommitteeNotExists,
@@ -115,23 +115,56 @@ describe('GGovRegistry periods', () => {
       const { appClient: bareClient } = await factory.deploy({
         onUpdate: 'append',
         onSchemaBreak: 'append',
-        createParams: { extraProgramPages: 3 },
+        createParams: { method: 'createApplication', args: [], extraProgramPages: 3 },
       })
       await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
       const sdk = createSDK(localnet, bareClient.appId, testAccount)
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
       const committeeId = await sdk.uploadCommitteeFile({
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       })
       await sdk.setOperator({ account: testAccount.toString() })
       const now = BigInt(Math.floor(Date.now() / 1000))
       await expect(sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })).rejects.toThrow(
         transformedError(errPeriodAppNotConfigured),
       )
+    })
+  })
+
+  describe('requestMBR', () => {
+    // requestMBR is a public ABI method with no admin gate: a period calls it as an inner txn when
+    // writing a vote record leaves it below its minimum balance. The only thing stopping an arbitrary
+    // caller from making the registry pay out is the callerApplicationId check.
+
+    /** Available balance of the registry vault — what `requestMBR` pays out of. */
+    const vaultAvailable = async (address: string) => {
+      const info = await localnet.algorand.account.getInformation(address)
+      return info.balance.microAlgo - info.minBalance.microAlgo
+    }
+
+    test('a direct call cannot make the vault pay out, even naming a real period', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
+      await sdk.setOperator({ account: testAccount.toString() })
+      const now = BigInt(Math.floor(Date.now() / 1000))
+      const periodId = await sdk.addPeriod({ committeeId, votingStart: now + 100n, votingEnd: now + 3700n })
+      const vault = sdk.readClient.appAddress.toString()
+      const before = await vaultAvailable(vault)
+
+      await expect(
+        sdk.writeClient!.send.requestMbr({
+          args: { periodId: Number(periodId) },
+          sender: testAccount.toString(),
+          signer: testAccount.signer,
+          extraFee: (1000).microAlgo(),
+        }),
+      ).rejects.toThrow(transformedError(errUnauthorized))
+
+      expect(await vaultAvailable(vault)).toBe(before)
     })
   })
 
@@ -155,8 +188,24 @@ describe('GGovRegistry periods', () => {
   })
 
   describe('uploadPeriodApprovalProgram (SDK wrapper)', () => {
-    // chunked upload - uploadPeriodApprovalPartial wrapper
-    test('period box assembled via chunks enables createPeriod', async () => {
+    // One-shot upload: the whole program rides in a single call as up to three 4094-byte pages.
+    // 10000 bytes is past both ceilings at once: the 8188 two application arguments carry, and the
+    // 8192 of box write budget the 8 references a single app call can hold buy. It exercises the
+    // third page and the reference-carrying companion calls together.
+    test('period approval box uploaded in one call spans three pages', async () => {
+      const { testAccount } = localnet.context
+      const { sdk, client } = await deployRegistry(localnet, testAccount)
+      // A 10000-byte box costs ~4 ALGO of MBR, well past what the registry is deployed with.
+      await localnet.algorand.account.ensureFundedFromEnvironment(client.appAddress, (10).algos())
+
+      const bytecode = new Uint8Array(10000).map((_, i) => i % 251)
+      await sdk.uploadPeriodApprovalProgram({ bytecode })
+
+      const box = await localnet.algorand.app.getBoxValue(sdk.appId, 'Pap')
+      expect(box).toEqual(bytecode)
+    })
+
+    test('period box uploaded in one call enables createPeriod', async () => {
       const { testAccount } = localnet.context
       // Deploy bare registry (no period bytecode) by bypassing the deployRegistry helper
       await localnet.algorand.account.ensureFundedFromEnvironment(testAccount, (25).algos())
@@ -167,7 +216,7 @@ describe('GGovRegistry periods', () => {
       const { appClient: bareClient } = await factory.deploy({
         onUpdate: 'append',
         onSchemaBreak: 'append',
-        createParams: { extraProgramPages: 3 },
+        createParams: { method: 'createApplication', args: [], extraProgramPages: 3 },
       })
       await localnet.algorand.account.ensureFundedFromEnvironment(bareClient.appAddress, (10).algos())
       const sdk = createSDK(localnet, bareClient.appId, testAccount)
@@ -180,13 +229,13 @@ describe('GGovRegistry periods', () => {
       await sdk.uploadPeriodApprovalProgram({ bytecode: compiled.approvalProgram })
 
       // Verify the box was assembled correctly: createPeriod (addPeriod) must succeed
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const committeeFile: XGovCommitteeFile = {
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       }
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
       await sdk.setOperator({ account: testAccount.toString() })

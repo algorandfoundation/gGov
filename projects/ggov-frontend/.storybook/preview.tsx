@@ -53,7 +53,7 @@ const preview: Preview = {
       storySort: {
         order: [
           'PAGES',
-          ['1. Landing page', '2. Vote index', '3. Vote detail', '4. Vote results'],
+          ['1. Landing page', '2. Vote index', '3. Vote detail', '4. Vote results', '5. Account'],
           'COMPONENTS',
           'MISC_DIALOGS',
           '*',

@@ -1,12 +1,101 @@
 import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import { usePeriods, useCommittees } from '@/hooks/queries'
+import type { GGovPeriod } from 'ggov-sdk'
+import { usePeriods, useCommittees, usePeriodBody } from '@/hooks/queries'
+import { periodCountLabel } from '@/utils/periodTerms'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
-import { formatTimestampUTC } from '@/utils/time'
+import RegistryFundingPanel from '@/components/manage/RegistryFundingPanel'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { formatDateRangeUTC, formatTimestampUTC } from '@/utils/time'
+import { periodFrozen } from '@/utils/periodEditing'
 import { toBase64Url } from '@/hooks/queries'
+
+interface PeriodTableRowProps {
+  periodId: number
+  period: GGovPeriod
+  ready: boolean
+  /** Committee rounds for this period's committee, pre-resolved by the table. */
+  committeeRounds: string
+}
+
+/**
+ * One period in the table. A component of its own so it can read the period *body*,
+ * which the list query doesn't carry: the registry summary knows `numTopics` but neither
+ * the title nor `elect`. TODO(perf): one body read per row. A batched period-body reader
+ * on the SDK (alongside `getAllPeriodSummaries`) would collapse them into a single call.
+ */
+function PeriodTableRow({ periodId, period, ready, committeeRounds }: PeriodTableRowProps) {
+  const { data: body, isPending: bodyPending } = usePeriodBody(periodId)
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{periodId}</TableCell>
+      <TableCell className="text-sm">
+        <Link
+          to="/manage/period/$periodId"
+          params={{ periodId: String(periodId) }}
+          className="block max-w-[280px] truncate font-medium hover:underline"
+        >
+          {bodyPending ? (
+            <Skeleton className="h-4 w-40" />
+          ) : body?.title ? (
+            body.title
+          ) : (
+            <span className="font-normal text-muted-foreground">Untitled</span>
+          )}
+        </Link>
+      </TableCell>
+      <TableCell className="text-sm">{committeeRounds}</TableCell>
+      <TableCell className="text-sm">
+        {/* Dates alone, to leave the title room; the exact window is a hover away.
+            `tabIndex` because a bare span takes no focus, and Radix opens on focus as well as hover. */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span tabIndex={0} className="cursor-help">
+              {formatDateRangeUTC(period.votingStart, period.votingEnd)}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
+          </TooltipContent>
+        </Tooltip>
+      </TableCell>
+      <TableCell className="text-sm">{periodCountLabel(period.topics.length, body?.elect)}</TableCell>
+      <TableCell>
+        <span
+          className={
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
+            (ready ? 'bg-success/15 text-success-strong' : 'bg-warning/15 text-warning-strong')
+          }
+        >
+          {ready ? 'Ready' : 'Draft'}
+        </span>
+      </TableCell>
+      <TableCell>
+        <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
+      </TableCell>
+      <TableCell className="text-right">
+        {/* One button per row. A frozen period can never return to draft, so it offers View where the others offer Edit. */}
+        {periodFrozen(period, ready) ? (
+          <Link to="/manage/period/$periodId" params={{ periodId: String(periodId) }}>
+            <Button variant="ghost" size="sm">
+              View
+            </Button>
+          </Link>
+        ) : (
+          <Link to="/manage/period/$periodId" params={{ periodId: String(periodId) }} search={{ mode: 'edit' }}>
+            <Button variant="ghost" size="sm">
+              Edit
+            </Button>
+          </Link>
+        )}
+      </TableCell>
+    </TableRow>
+  )
+}
 
 export default function ManagePeriods() {
   const { data: periods = [], isLoading } = usePeriods()
@@ -23,6 +112,8 @@ export default function ManagePeriods() {
 
   return (
     <div className="space-y-4">
+      <RegistryFundingPanel />
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Manage periods</h1>
         <Link to="/manage/add-period">
@@ -43,9 +134,10 @@ export default function ManagePeriods() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
+              <TableHead>Title</TableHead>
               <TableHead>Committee (rounds)</TableHead>
               <TableHead>Voting window</TableHead>
-              <TableHead>Topics</TableHead>
+              <TableHead>Ballot</TableHead>
               <TableHead>Ready</TableHead>
               <TableHead>Status</TableHead>
               <TableHead></TableHead>
@@ -53,34 +145,13 @@ export default function ManagePeriods() {
           </TableHeader>
           <TableBody>
             {periods.map(({ id, period, ready }) => (
-              <TableRow key={id}>
-                <TableCell className="font-medium">{id}</TableCell>
-                <TableCell className="text-sm">{committeeRounds(period.committeeId)}</TableCell>
-                <TableCell className="text-sm">
-                  {formatTimestampUTC(period.votingStart)} — {formatTimestampUTC(period.votingEnd)}
-                </TableCell>
-                <TableCell>{period.topics.length}</TableCell>
-                <TableCell>
-                  <span
-                    className={
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
-                      (ready ? 'bg-success/15 text-success-strong' : 'bg-warning/15 text-warning-strong')
-                    }
-                  >
-                    {ready ? 'Ready' : 'Draft'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <PeriodStatusBadge votingStart={period.votingStart} votingEnd={period.votingEnd} />
-                </TableCell>
-                <TableCell>
-                  <Link to="/manage/period/$periodId" params={{ periodId: String(id) }}>
-                    <Button variant="ghost" size="sm">
-                      Edit
-                    </Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
+              <PeriodTableRow
+                key={id}
+                periodId={id}
+                period={period}
+                ready={ready}
+                committeeRounds={committeeRounds(period.committeeId)}
+              />
             ))}
           </TableBody>
         </Table>

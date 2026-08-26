@@ -1,20 +1,20 @@
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { calculateCommitteeId, GGovRegistrySDK, XGovCommitteeFile } from 'ggov-sdk'
+import { calculateCommitteeId, GGovRegistrySDK, GGovCommitteeFile } from 'ggov-sdk'
 import {
   errAccountNotExists,
   errAccountOffsetNotExists,
   errCommitteeExists,
   errCommitteeNotExists,
   errIngestedVotesNotZero,
-  errNumXGovsExceeded,
+  errNumGovsExceeded,
   errOutOfOrder,
   errPeriodEndLessThanStart,
   errTotalMembersZero,
   errTotalVotesExceeded,
   errTotalVotesMismatch,
   errTotalVotesZero,
-  errTotalXGovsExceeded,
+  errTotalGovsExceeded,
   errZeroVotes,
 } from '../base/errors.algo'
 import {
@@ -146,13 +146,13 @@ describe('GGovRegistry committees', () => {
 
     test('fails on committee with ingested votes', async () => {
       const { testAccount } = localnet.context
-      const xGovAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      const committeeFile: XGovCommitteeFile = {
+      const govAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 1,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [{ address: xGovAccount.toString(), votes: 10 }],
+        govs: [{ address: govAccount.toString(), votes: 10 }],
       }
       const { sdk } = await deployRegistry(localnet, testAccount)
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
@@ -169,43 +169,43 @@ describe('GGovRegistry committees', () => {
     })
 
     test('succeeds after full uningest', async () => {
-      const { sdk, committeeId, xGovAccounts } = await deployRegistryWithCommittee(localnet)
-      await sdk.uningestCommitteeXGovs({ committeeId, accounts: xGovAccounts.map((a) => a.toString()) })
+      const { sdk, committeeId, govAccounts } = await deployRegistryWithCommittee(localnet)
+      await sdk.uningestCommitteeGovs({ committeeId, accounts: govAccounts.map((a) => a.toString()) })
       await sdk.unregisterCommittee({ committeeId })
       expect(await sdk.getCommitteeMetadata(committeeId)).toBeNull()
     })
   })
 
-  describe('ingestXGovs', () => {
+  describe('ingestGovs', () => {
     test('rejects exceeding totalMembers', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      const xGovAccounts = await Promise.all(
+      const govAccounts = await Promise.all(
         Array.from({ length: 3 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
       )
-      const committeeFile: XGovCommitteeFile = {
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 2,
         totalVotes: 20,
         registryId: 0,
-        xGovs: xGovAccounts.map((a) => ({ address: a.toString(), votes: 10 })),
+        govs: govAccounts.map((a) => ({ address: a.toString(), votes: 10 })),
       }
-      await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errTotalXGovsExceeded))
+      await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errTotalGovsExceeded))
     })
 
     test('rejects exceeding totalVotes', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      const xGovAccounts = await Promise.all(
+      const govAccounts = await Promise.all(
         Array.from({ length: 2 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
       )
       // totalVotes=10 but 2 members with 10 votes each = 20
-      const committeeFile: XGovCommitteeFile = {
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 2,
         totalVotes: 10,
         registryId: 0,
-        xGovs: xGovAccounts.map((a) => ({ address: a.toString(), votes: 10 })),
+        govs: govAccounts.map((a) => ({ address: a.toString(), votes: 10 })),
       }
       await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errTotalVotesExceeded))
     })
@@ -213,44 +213,44 @@ describe('GGovRegistry committees', () => {
     test('enforces totalVotes match at completion', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      const xGovAccounts = await Promise.all(
+      const govAccounts = await Promise.all(
         Array.from({ length: 2 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
       )
       // totalVotes=30 but 2 members with 10 votes each = 20
-      const committeeFile: XGovCommitteeFile = {
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 2,
         totalVotes: 30,
         registryId: 0,
-        xGovs: xGovAccounts.map((a) => ({ address: a.toString(), votes: 10 })),
+        govs: govAccounts.map((a) => ({ address: a.toString(), votes: 10 })),
       }
       await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errTotalVotesMismatch))
     })
 
-    test('rejects zero-vote xGov', async () => {
+    test('rejects zero-vote gov', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      const xGovAccounts = await Promise.all(
+      const govAccounts = await Promise.all(
         Array.from({ length: 2 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
       )
       // one member carries 0 votes; totals still add up but the zero-vote entry must be rejected
-      const committeeFile: XGovCommitteeFile = {
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 2,
         totalVotes: 10,
         registryId: 0,
-        xGovs: [
-          { address: xGovAccounts[0].toString(), votes: 10 },
-          { address: xGovAccounts[1].toString(), votes: 0 },
+        govs: [
+          { address: govAccounts[0].toString(), votes: 10 },
+          { address: govAccounts[1].toString(), votes: 0 },
         ],
       }
       await expect(sdk.uploadCommitteeFile(committeeFile)).rejects.toThrow(transformedError(errZeroVotes))
     })
 
-    test('enforces xGovs in ascending account ID order', async () => {
+    test('enforces govs in ascending account ID order', async () => {
       const { sdk, sorted, committeeFile } = await deployRegistryWithCommittee(localnet, 5)
       const votesPerMember = 5
-      const newCommitteeFile: XGovCommitteeFile = {
+      const newCommitteeFile: GGovCommitteeFile = {
         ...committeeFile,
         totalMembers: committeeFile.totalMembers + 1,
         totalVotes: committeeFile.totalVotes + votesPerMember,
@@ -266,22 +266,22 @@ describe('GGovRegistry committees', () => {
         totalVotes: newCommitteeFile.totalVotes,
         xGovRegistryId: 0n,
       })
-      const xGovsToIngestSorted = sorted.map((x) => ({ account: x.address, votes: votesPerMember }))
-      xGovsToIngestSorted.push({
+      const govsToIngestSorted = sorted.map((x) => ({ account: x.address, votes: votesPerMember }))
+      govsToIngestSorted.push({
         account: (await localnet.context.generateAccount({ initialFunds: (1).algos() })).toString(),
         votes: votesPerMember,
       })
 
       await expect(
-        sdk.ingestXGovs({
+        sdk.ingestGovs({
           committeeId: newCommitteeId,
-          xGovs: [xGovsToIngestSorted.at(-1)!, ...xGovsToIngestSorted.slice(0, -1)],
+          govs: [govsToIngestSorted.at(-1)!, ...govsToIngestSorted.slice(0, -1)],
         }),
       ).rejects.toThrow(transformedError(errOutOfOrder))
       await expect(
-        sdk.ingestXGovs({
+        sdk.ingestGovs({
           committeeId: newCommitteeId,
-          xGovs: [xGovsToIngestSorted[1], xGovsToIngestSorted[0], ...xGovsToIngestSorted.slice(2)],
+          govs: [govsToIngestSorted[1], govsToIngestSorted[0], ...govsToIngestSorted.slice(2)],
         }),
       ).rejects.toThrow(transformedError(errOutOfOrder))
     })
@@ -289,17 +289,17 @@ describe('GGovRegistry committees', () => {
     test('works in multiple batches', async () => {
       const { testAccount } = localnet.context
       const { sdk } = await deployRegistry(localnet, testAccount)
-      // 10 xGovs will be split into multiple ingest chunks (8 per chunk)
-      const xGovAccounts = await Promise.all(
+      // 10 govs will be split into multiple ingest chunks (8 per chunk)
+      const govAccounts = await Promise.all(
         Array.from({ length: 10 }, () => localnet.context.generateAccount({ initialFunds: (1).algos() })),
       )
       const votesPerMember = 5
-      const committeeFile: XGovCommitteeFile = {
+      const committeeFile: GGovCommitteeFile = {
         ...committeeTemplate,
         totalMembers: 10,
         totalVotes: 10 * votesPerMember,
         registryId: 0,
-        xGovs: xGovAccounts.map((a) => ({ address: a.toString(), votes: votesPerMember })),
+        govs: govAccounts.map((a) => ({ address: a.toString(), votes: votesPerMember })),
       }
       const committeeId = await sdk.uploadCommitteeFile(committeeFile)
 
@@ -309,36 +309,36 @@ describe('GGovRegistry committees', () => {
       expect(metadata!.totalMembers).toBe(10)
 
       // verify all 10 accounts have voting power
-      for (const xGov of xGovAccounts) {
-        const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
-          args: { committeeId, account: xGov.toString() },
+      for (const gov of govAccounts) {
+        const { return: votingPower } = await sdk.readClient.send.getGovVotingPower({
+          args: { committeeId, account: gov.toString() },
         })
         expect(votingPower).toBe(votesPerMember)
       }
     })
   })
 
-  describe('uningestXGovs', () => {
+  describe('uningestGovs', () => {
     test('removes specific accounts', async () => {
       const { sdk, committeeId, committeeFile, sorted } = await deployRegistryWithCommittee(localnet)
       const lastAccount = sorted[sorted.length - 1]
-      await sdk.uningestXGovs({ committeeId, xGovs: [lastAccount.address] })
+      await sdk.uningestGovs({ committeeId, govs: [lastAccount.address] })
       const metadata = await sdk.getCommitteeMetadata(committeeId)
       expect(metadata!.ingestedVotes).toBe(
-        committeeFile.totalVotes - committeeFile.xGovs.find((x) => x.address === lastAccount.address)!.votes,
+        committeeFile.totalVotes - committeeFile.govs.find((x) => x.address === lastAccount.address)!.votes,
       )
       await expect(
-        sdk.readClient.send.getXGovVotingPower({ args: { committeeId, account: lastAccount.address } }),
+        sdk.readClient.send.getGovVotingPower({ args: { committeeId, account: lastAccount.address } }),
       ).rejects.toThrow(transformedError(errAccountOffsetNotExists))
     })
 
     test('uningest from one committee preserves other committee offset', async () => {
       const { sdk, committeeId1, committeeId2, accountA, accountB } = await deployRegistryWithTwoCommittees(localnet)
-      await sdk.uningestCommitteeXGovs({
+      await sdk.uningestCommitteeGovs({
         committeeId: committeeId1,
         accounts: [accountA.toString(), accountB.toString()],
       })
-      const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
+      const { return: votingPower } = await sdk.readClient.send.getGovVotingPower({
         args: { committeeId: committeeId2, account: accountB.toString() },
       })
       expect(votingPower).toBe(10)
@@ -346,7 +346,8 @@ describe('GGovRegistry committees', () => {
         args: { account: accountB.toString() },
       })
       expect(registryAccount!.committeeOffsets).toHaveLength(1)
-      expect(registryAccount!.committeeOffsets[0][0]).toBe(1)
+      // The surviving offset is the second committee's; numeric IDs start at 1, so it is 2.
+      expect(registryAccount!.committeeOffsets[0][0]).toBe(2)
       const { return: registryAccountA } = await sdk.readClient.send.getAccount({
         args: { account: accountA.toString() },
       })
@@ -355,7 +356,7 @@ describe('GGovRegistry committees', () => {
 
     test('rejects account not ingested in this committee', async () => {
       const { sdk, committeeId2, accountA } = await deployRegistryWithTwoCommittees(localnet)
-      await expect(sdk.uningestXGovs({ committeeId: committeeId2, xGovs: [accountA.toString()] })).rejects.toThrow(
+      await expect(sdk.uningestGovs({ committeeId: committeeId2, govs: [accountA.toString()] })).rejects.toThrow(
         transformedError(errAccountOffsetNotExists),
       )
     })
@@ -363,7 +364,7 @@ describe('GGovRegistry committees', () => {
     test('rejects wrong order (not reverse ingestion order)', async () => {
       const { sdk, committeeId, sorted } = await deployRegistryWithCommittee(localnet)
       // try to uningest the first account (should be last since it has lowest offset)
-      await expect(sdk.uningestXGovs({ committeeId, xGovs: [sorted[0].address] })).rejects.toThrow(
+      await expect(sdk.uningestGovs({ committeeId, govs: [sorted[0].address] })).rejects.toThrow(
         transformedError(errOutOfOrder),
       )
     })
@@ -371,29 +372,29 @@ describe('GGovRegistry committees', () => {
     test('rejects unknown account', async () => {
       const { sdk, committeeId } = await deployRegistryWithCommittee(localnet)
       const randomAccount = await localnet.context.generateAccount({ initialFunds: (1).algos() })
-      await expect(sdk.uningestXGovs({ committeeId, xGovs: [randomAccount.toString()] })).rejects.toThrow(
+      await expect(sdk.uningestGovs({ committeeId, govs: [randomAccount.toString()] })).rejects.toThrow(
         transformedError(errAccountNotExists),
       )
     })
 
-    test('rejects more xGovs than exist', async () => {
+    test('rejects more govs than exist', async () => {
       const { sdk, committeeId, sorted } = await deployRegistryWithCommittee(localnet)
       // uningest all 3 first
       for (let i = sorted.length - 1; i >= 0; i--) {
-        await sdk.uningestXGovs({ committeeId, xGovs: [sorted[i].address] })
+        await sdk.uningestGovs({ committeeId, govs: [sorted[i].address] })
       }
       // now try to uningest one more
-      await expect(sdk.uningestXGovs({ committeeId, xGovs: [sorted[0].address] })).rejects.toThrow(
-        transformedError(errNumXGovsExceeded),
+      await expect(sdk.uningestGovs({ committeeId, govs: [sorted[0].address] })).rejects.toThrow(
+        transformedError(errNumGovsExceeded),
       )
     })
 
     test('allows re-ingestion after full uningest', async () => {
-      const { sdk, committeeId, committeeFile, xGovAccounts } = await deployRegistryWithCommittee(localnet)
-      const allAddresses = xGovAccounts.map((a) => a.toString())
+      const { sdk, committeeId, committeeFile, govAccounts } = await deployRegistryWithCommittee(localnet)
+      const allAddresses = govAccounts.map((a) => a.toString())
 
       // uningest all
-      await sdk.uningestCommitteeXGovs({ committeeId, accounts: allAddresses })
+      await sdk.uningestCommitteeGovs({ committeeId, accounts: allAddresses })
       const metadataAfterUningest = await sdk.getCommitteeMetadata(committeeId)
       expect(metadataAfterUningest!.ingestedVotes).toBe(0)
 
@@ -405,9 +406,9 @@ describe('GGovRegistry committees', () => {
       expect(metadataAfterReingest!.ingestedVotes).toBe(committeeFile.totalVotes)
 
       // verify all accounts have voting power
-      for (const xGov of xGovAccounts) {
-        const { return: votingPower } = await sdk.readClient.send.getXGovVotingPower({
-          args: { committeeId, account: xGov.toString() },
+      for (const gov of govAccounts) {
+        const { return: votingPower } = await sdk.readClient.send.getGovVotingPower({
+          args: { committeeId, account: gov.toString() },
         })
         expect(votingPower).toBe(10)
       }
@@ -427,7 +428,7 @@ describe('GGovRegistry committees', () => {
       }
     })
 
-    // registerCommittee + ingestXGovs
+    // registerCommittee + ingestGovs
     for (const [i, [name, id, committeeFile]] of committeesForTests.entries()) {
       test(`uploads committee ${name}`, async () => {
         const committeeId = calculateCommitteeId(JSON.stringify(committeeFile))
@@ -440,9 +441,9 @@ describe('GGovRegistry committees', () => {
         expect(storedCommittee!.periodEnd).toEqual(committeeFile.periodEnd)
         expect(storedCommittee!.totalMembers).toEqual(committeeFile.totalMembers)
         expect(storedCommittee!.totalVotes).toEqual(committeeFile.totalVotes)
-        expect(storedCommittee!.xGovs).toEqual(committeeFile.xGovs)
-        expect(storedCommittee!.xGovs.length).toEqual(storedCommittee!.totalMembers)
-        expect(storedCommittee!.xGovs.reduce((acc, g) => acc + g.votes, 0)).toEqual(storedCommittee!.totalVotes)
+        expect(storedCommittee!.govs).toEqual(committeeFile.govs)
+        expect(storedCommittee!.govs.length).toEqual(storedCommittee!.totalMembers)
+        expect(storedCommittee!.govs.reduce((acc, g) => acc + g.votes, 0)).toEqual(storedCommittee!.totalVotes)
       })
     }
 
@@ -467,17 +468,17 @@ describe('GGovRegistry committees', () => {
     })
   })
 
-  describe('uningestCommitteeXGovs (SDK wrapper)', () => {
-    // uningest all xGovs from committee (uningestXGovs wrapper)
+  describe('uningestCommitteeGovs (SDK wrapper)', () => {
+    // uningest all govs from committee (uningestGovs wrapper)
     test('removes all members from a fully ingested committee', async () => {
-      const { sdk, committeeId, xGovAccounts } = await deployRegistryWithCommittee(localnet)
-      const allAddresses = xGovAccounts.map((a) => a.toString())
-      await sdk.uningestCommitteeXGovs({ committeeId, accounts: allAddresses })
+      const { sdk, committeeId, govAccounts } = await deployRegistryWithCommittee(localnet)
+      const allAddresses = govAccounts.map((a) => a.toString())
+      await sdk.uningestCommitteeGovs({ committeeId, accounts: allAddresses })
       const metadata = await sdk.getCommitteeMetadata(committeeId)
       expect(metadata!.ingestedVotes).toBe(0)
-      for (const xGov of xGovAccounts) {
+      for (const gov of govAccounts) {
         await expect(
-          sdk.readClient.send.getXGovVotingPower({ args: { committeeId, account: xGov.toString() } }),
+          sdk.readClient.send.getGovVotingPower({ args: { committeeId, account: gov.toString() } }),
         ).rejects.toThrow(transformedError(errAccountOffsetNotExists))
       }
       const gGovAccountsMap = await sdk.getGGovAccountsMap(allAddresses)

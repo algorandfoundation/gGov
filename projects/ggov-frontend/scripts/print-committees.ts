@@ -5,11 +5,8 @@
  *   npx tsx scripts/print-committees.ts
  */
 
-import { createRequire } from 'node:module'
-
-const require = createRequire(import.meta.url)
-const { AlgorandClient } = require('@algorandfoundation/algokit-utils')
-const { GGovReaderSDK } = require('../../ggov-sdk/dist/index.js')
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { GGovReaderSDK } from 'ggov-sdk'
 
 const KMD_TOKEN = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 const APP_ID = Number(process.env.VITE_GGOV_REGISTRY_APP_ID || process.env.VITE_GGOV_APP_ID || 1002)
@@ -67,12 +64,12 @@ async function main() {
       console.log('  (no metadata)')
     }
 
-    // Get xGov members (via composed registry SDK)
-    const xGovs = await sdk.registry.getCommitteeXGovs(committeeId)
-    console.log(`\n  Members (${xGovs.length}):`)
-    for (const xGov of xGovs) {
-      const addr = typeof xGov.account === 'string' ? xGov.account : xGov.account.toString()
-      console.log(`    ${addr}  votes: ${xGov.votes}`)
+    // Get gov members (via composed registry SDK)
+    const govs = await sdk.registry.getCommitteeGovs(committeeId)
+    console.log(`\n  Members (${govs.length}):`)
+    for (const gov of govs) {
+      const addr = typeof gov.account === 'string' ? gov.account : gov.account.toString()
+      console.log(`    ${addr}  votes: ${gov.votes}`)
     }
 
     console.log()

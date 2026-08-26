@@ -9,7 +9,7 @@ class BaseContractTest extends BaseContract {
   declare public ensureCallerIsAdmin: () => void
 }
 
-describe('BaseContract', () => {
+describe('[fast] BaseContract', () => {
   const ctx = new TestExecutionContext()
 
   beforeEach(() => ctx.reset())

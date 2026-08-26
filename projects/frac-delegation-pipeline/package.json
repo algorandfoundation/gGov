@@ -1,0 +1,38 @@
+{
+  "name": "frac-delegation-pipeline",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "From a gGov committee, all way into on-chain pooled voting state.",
+  "scripts": {
+    "seed-localnet-data": "node --experimental-strip-types --env-file=.env.test scripts/seed-localnet.ts",
+    "add-committee": "node --experimental-strip-types --env-file=.env.test scripts/add-committee.ts",
+    "test-pipeline": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/test-run.ts",
+    "seed-full-instances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/seed-full-instances.ts",
+    "seed-periods": "node --experimental-strip-types scripts/seed-periods.ts",
+    "verify-talgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-aq.ts",
+    "verify-talgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-talgo-balances.ts",
+    "verify-xalgo-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-xalgo-balances.ts",
+    "verify-reti-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-reti-aq.ts",
+    "verify-reti-balances": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/verify-reti-balances.ts",
+    "xalgo-aq": "NODE_OPTIONS=--max-old-space-size=8192 node --experimental-strip-types --env-file=.env.test scripts/xalgo-aq.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.0",
+    "algosdk": "^3.7.0",
+    "frac-delegation-sdk": "link:../frac-delegation-sdk",
+    "ggov-sdk": "link:../ggov-sdk",
+    "p-map": "^7.0.4",
+    "reti-ghost-sdk": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "tsx": "^4.21.0",
+    "vitest": "^4.1.10"
+  }
+}
