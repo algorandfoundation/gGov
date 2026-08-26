@@ -755,16 +755,16 @@ export class FracDelegationInstanceContract extends BaseContract {
   // ── Periods ───────────────────────────────────────────────────────
 
   /**
-   * Build a zero-filled [topic][option] tally shaped to `topicOptionLengths`.
+   * Build a zero-filled FLAT tally shaped to `topicOptionLengths`: one cell per option across every
+   * topic, in topic order. Flat rather than `Uint32[][]` because every vote-path access to a nested
+   * ARC-4 array pays an offset-table lookup plus a row decode/encode.
    */
-  private zeroedTopicShape(topicOptionLengths: Uint32[]): Uint32[][] {
-    const shape: Uint32[][] = []
+  private zeroedTopicShape(topicOptionLengths: Uint32[]): Uint32[] {
+    const shape: Uint32[] = []
     for (let i: uint64 = 0; i < topicOptionLengths.length; i++) {
-      const topic: Uint32[] = []
       for (let j: uint64 = 0; j < topicOptionLengths[i].asUint64(); j++) {
-        topic.push(u32(0))
+        shape.push(u32(0))
       }
-      shape.push(clone(topic))
     }
     return shape
   }
@@ -777,16 +777,10 @@ export class FracDelegationInstanceContract extends BaseContract {
   private cacheHasVotes(periodId: Uint32): boolean {
     const cache = clone(this.periodVoteCache(periodId).value)
     for (let i: uint64 = 0; i < cache.internal.length; i++) {
-      const topic = clone(cache.internal[i])
-      for (let j: uint64 = 0; j < topic.length; j++) {
-        if (topic[j].asUint64() > 0) return true
-      }
+      if (cache.internal[i].asUint64() > 0) return true
     }
     for (let i: uint64 = 0; i < cache.ggovTotals.length; i++) {
-      const topic = clone(cache.ggovTotals[i])
-      for (let j: uint64 = 0; j < topic.length; j++) {
-        if (topic[j].asUint64() > 0) return true
-      }
+      if (cache.ggovTotals[i].asUint64() > 0) return true
     }
     return false
   }
@@ -942,11 +936,11 @@ export class FracDelegationInstanceContract extends BaseContract {
    * @param voterAccount The account whose AlgoQuarters are being voted. Either `Txn.sender` itself
    *   or an account that has delegated to `Txn.sender` on the gGov registry.
    * @param periodId gGov period ID, as synced by `syncPeriod`
-   * @param topicVotes [topic][option] AlgoQuarters, parallel to the period's topics/options. Every
-   *   topic's row must sum to the voter's full `accountAq` weight; abstain explicitly via the last
-   *   option.
+   * @param topicVotes AlgoQuarters as a FLAT array: every topic's options concatenated in topic
+   *   order, sized by the period's `topicOptionLengths`. Every topic's slice must sum to the voter's
+   *   full `accountAq` weight; abstain explicitly via the last option.
    */
-  public vote(voterAccount: Account, periodId: Uint32, topicVotes: Uint32[][]): void {
+  public vote(voterAccount: Account, periodId: Uint32, topicVotes: Uint32[]): void {
     // TODO split out math-heavy sections into subroutines;
     // test them independently with algo-ts-testing
     const periodBox = this.periods(periodId)
@@ -1009,32 +1003,29 @@ export class FracDelegationInstanceContract extends BaseContract {
       if (isDelegated && !existing.isDelegated) {
         loggedErr(errGGovCannotOverride)
       }
-      for (let t: uint64 = 0; t < existing.topicVotes.length; t++) {
-        const oldRow = clone(existing.topicVotes[t])
-        const tally = clone(cache.internal[t])
-        const next: Uint32[] = []
-        for (let o: uint64 = 0; o < oldRow.length; o++) {
-          next.push(u32(tally[o].asUint64() - oldRow[o].asUint64()))
-        }
-        cache.internal[t] = clone(next)
+      const oldVotes = clone(existing.topicVotes)
+      loggedAssert(oldVotes.length === cache.internal.length, errGGovVoteMismatch)
+      for (let c: uint64 = 0; c < oldVotes.length; c++) {
+        cache.internal[c] = u32(cache.internal[c].asUint64() - oldVotes[c].asUint64())
       }
     }
 
     // Validate and tally in one pass, as GGovPeriod.vote does. Every topic's row must spend the
     // voter's exact full weight - that cap is also what bounds each tally cell by totalAq, keeping
     // the mapping's u32*u32 product inside uint64 and its last-option remainder non-negative.
-    for (let t: uint64 = 0; t < newVotes.length; t++) {
-      const row = clone(newVotes[t])
-      const tally = clone(cache.internal[t])
-      loggedAssert(row.length === tally.length, errGGovVoteMismatch)
+    const lengths = clone(period.topicOptionLengths)
+    let cell: uint64 = 0
+    for (let t: uint64 = 0; t < lengths.length; t++) {
+      const width: uint64 = lengths[t].asUint64()
       let rowSum: uint64 = 0
-      const next: Uint32[] = []
-      for (let o: uint64 = 0; o < row.length; o++) {
-        next.push(u32(tally[o].asUint64() + row[o].asUint64()))
-        rowSum += row[o].asUint64()
+      for (let o: uint64 = 0; o < width; o++) {
+        const idx: uint64 = cell + o
+        const cast: uint64 = newVotes[idx].asUint64()
+        cache.internal[idx] = u32(cache.internal[idx].asUint64() + cast)
+        rowSum += cast
       }
       loggedAssert(rowSum === userAq, errGGovVotePowerMismatch)
-      cache.internal[t] = clone(next)
+      cell += width
     }
 
     // Map the internal tally onto the committee's escrow power. Powers come from the first
@@ -1049,25 +1040,25 @@ export class FracDelegationInstanceContract extends BaseContract {
 
     // Non-last options floor-divide; the last option takes the remainder, folding together its own
     // mapped share, all AQ that never voted, and the rounding dust.
-    const ggovVotes: Uint32[][] = []
+    const ggovVotes: Uint32[] = []
     let ggovChanged = false
-    for (let t: uint64 = 0; t < cache.internal.length; t++) {
-      const tally = clone(cache.internal[t])
-      const cachedRow = clone(cache.ggovTotals[t])
-      const row: Uint32[] = []
+    cell = 0
+    for (let t: uint64 = 0; t < lengths.length; t++) {
+      const width: uint64 = lengths[t].asUint64()
       let allocated: uint64 = 0
-      for (let o: uint64 = 0; o < tally.length; o++) {
+      for (let o: uint64 = 0; o < width; o++) {
+        const idx: uint64 = cell + o
         let mapped: uint64
-        if (o === tally.length - 1) {
+        if (o === width - 1) {
           mapped = totalVotes - allocated
         } else {
-          mapped = (tally[o].asUint64() * totalVotes) / totalAq
+          mapped = (cache.internal[idx].asUint64() * totalVotes) / totalAq
           allocated += mapped
         }
-        row.push(u32(mapped))
-        if (mapped !== cachedRow[o].asUint64()) ggovChanged = true
+        ggovVotes.push(u32(mapped))
+        if (mapped !== cache.ggovTotals[idx].asUint64()) ggovChanged = true
       }
-      ggovVotes.push(clone(row))
+      cell += width
     }
 
     if (ggovChanged) {
@@ -1083,23 +1074,23 @@ export class FracDelegationInstanceContract extends BaseContract {
         const escrowEnd: uint64 = escrowStart + power
         const escrowBox = this.periodEscrowVotes([periodId, u8(i)])
         const cachedVotes = clone(escrowBox.value.votes)
-        const rows: Uint32[][] = []
+        const rows: Uint32[] = []
         let escrowChanged = false
-        for (let t: uint64 = 0; t < ggovVotes.length; t++) {
-          const demand = clone(ggovVotes[t])
-          const cachedRow = clone(cachedVotes[t])
-          const row: Uint32[] = []
+        cell = 0
+        for (let t: uint64 = 0; t < lengths.length; t++) {
+          const width: uint64 = lengths[t].asUint64()
           let optStart: uint64 = 0
-          for (let o: uint64 = 0; o < demand.length; o++) {
-            const optEnd: uint64 = optStart + demand[o].asUint64()
+          for (let o: uint64 = 0; o < width; o++) {
+            const idx: uint64 = cell + o
+            const optEnd: uint64 = optStart + ggovVotes[idx].asUint64()
             const lo: uint64 = optStart > escrowStart ? optStart : escrowStart
             const hi: uint64 = optEnd < escrowEnd ? optEnd : escrowEnd
             const overlap: uint64 = hi > lo ? hi - lo : 0
-            row.push(u32(overlap))
-            if (overlap !== cachedRow[o].asUint64()) escrowChanged = true
+            rows.push(u32(overlap))
+            if (overlap !== cachedVotes[idx].asUint64()) escrowChanged = true
             optStart = optEnd
           }
-          rows.push(clone(row))
+          cell += width
         }
         if (escrowChanged) {
           // Delegated external vote: the escrow is the voter, this app account the delegatee.

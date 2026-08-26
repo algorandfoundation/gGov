@@ -142,10 +142,16 @@ export type GGovPeriodMeta = {
   numTopics: Uint32
 }
 
-/** Vote record per account per period */
+/**
+ * Vote record per account per period.
+ *
+ * `topicVotes` is FLAT: every topic's options concatenated in topic order, sized by the period's
+ * `topicLengths`. Nested `Uint32[][]` costs an offset-table decode per topic on every access, which
+ * dominates the vote path; a flat `Uint32[]` is one contiguous run of cells.
+ */
 export type GGovVoteRecord = {
   isDelegated: boolean
-  topicVotes: Uint32[][]
+  topicVotes: Uint32[]
 }
 
 /**
@@ -181,7 +187,7 @@ export function getEmptyGGovPeriodShort(): GGovPeriodShort {
 export function getEmptyGGovVoteRecord(): GGovVoteRecord {
   return {
     isDelegated: false,
-    topicVotes: [] as Uint32[][],
+    topicVotes: [] as Uint32[],
   }
 }
 
@@ -201,8 +207,8 @@ export type GGovVoteCast = {
   updateVote: boolean
   /** Total voting power applied (sum of every option across every topic) */
   votingPower: uint64
-  /** Votes cast this call per topic, parallel to the period's topics/options */
-  topicVotes: Uint32[][]
+  /** Votes cast this call, FLAT: every topic's options concatenated in topic order */
+  topicVotes: Uint32[]
   // not adding global vote state intentionally, it would limit the number of topics/options we can support (via 1KB log limit)
 }
 
@@ -416,10 +422,10 @@ export function getEmptyFracInstancePeriod(): FracInstancePeriod {
  * at the ~58 topics `GGovPeriod.setReady` allows, so the topic ceiling is the period's, not ours.
  */
 export type FracPeriodVoteCache = {
-  /** [topic][option] internal vote tally, in AlgoQuarters */
-  internal: Uint32[][]
-  /** [topic][option] cached total of external gGov votes cast by this instance's escrows */
-  ggovTotals: Uint32[][]
+  /** Internal vote tally in AlgoQuarters, FLAT: every topic's options concatenated in topic order */
+  internal: Uint32[]
+  /** Cached total of external gGov votes cast by this instance's escrows, same flat layout */
+  ggovTotals: Uint32[]
 }
 
 /**
@@ -428,8 +434,8 @@ export type FracPeriodVoteCache = {
  */
 export function getEmptyFracPeriodVoteCache(): FracPeriodVoteCache {
   return {
-    internal: [] as Uint32[][],
-    ggovTotals: [] as Uint32[][],
+    internal: [] as Uint32[],
+    ggovTotals: [] as Uint32[],
   }
 }
 
@@ -458,8 +464,8 @@ export type FracPeriodEscrowKey = [Uint32, Uint8]
  * unbounded and each box stays far inside the cap.
  */
 export type FracEscrowVotes = {
-  /** [topic][option] external gGov votes cast by this escrow */
-  votes: Uint32[][]
+  /** External gGov votes cast by this escrow, FLAT: every topic's options concatenated */
+  votes: Uint32[]
 }
 
 /**
@@ -468,7 +474,7 @@ export type FracEscrowVotes = {
  */
 export function getEmptyFracEscrowVotes(): FracEscrowVotes {
   return {
-    votes: [] as Uint32[][],
+    votes: [] as Uint32[],
   }
 }
 
@@ -559,8 +565,8 @@ export type FracVotingRecord = {
    * and carries the same guard: a delegatee may not overwrite a record with `isDelegated === false`.
    */
   isDelegated: boolean
-  /** [topic][option] internal votes, in AlgoQuarters */
-  topicVotes: Uint32[][]
+  /** Internal votes in AlgoQuarters, FLAT: every topic's options concatenated in topic order */
+  topicVotes: Uint32[]
 }
 
 /**
@@ -570,7 +576,7 @@ export type FracVotingRecord = {
 export function getEmptyFracVotingRecord(): FracVotingRecord {
   return {
     isDelegated: false,
-    topicVotes: [] as Uint32[][],
+    topicVotes: [] as Uint32[],
   }
 }
 
@@ -628,8 +634,8 @@ export type FracAccountVotingRecord = {
   instanceName: string
   /** Whether the record was cast by a delegatee on the voter's behalf */
   isDelegated: boolean
-  /** [topic][option] internal votes, in AlgoQuarters; empty if the account has not voted */
-  topicVotes: Uint32[][]
+  /** Internal votes in AlgoQuarters, FLAT (every topic's options concatenated); empty if not voted */
+  topicVotes: Uint32[]
 }
 
 /**
@@ -650,6 +656,6 @@ export type FracVoteCast = {
   userAq: Uint32
   /** Whether this vote overwrote an earlier one */
   updateVote: boolean
-  /** [topic][option] internal votes, in AlgoQuarters */
-  topicVotes: Uint32[][]
+  /** Internal votes in AlgoQuarters, FLAT: every topic's options concatenated in topic order */
+  topicVotes: Uint32[]
 }

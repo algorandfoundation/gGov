@@ -252,9 +252,23 @@ value: GGovTopicOptions[] - array of `{ options: string[] }`
 
 ### Topic Votes (key: 't')
 
-Per-topic vote tallies. Mutated on every `vote()`. Parallel to topic options (same length & order).
+Vote tallies, **flat**: every topic's options concatenated in topic order, shaped by Topic Lengths.
+Mutated on every `vote()`.
 
-value: GGovTopicVotes[] - array of `{ votes: uint32[] }`
+value: uint32[] - one cell per option across every topic
+
+Flat rather than nested, because a nested ARC-4 array charges an offset-table lookup plus a row
+decode/encode on every element access and the vote path is nothing but element access — flattening
+cut a 22-topic pooled vote from ~214k opcodes to ~82k. The SDKs flatten ballots on the way in and
+re-row every tally they read back, so callers still work in `[topic][option]`.
+
+### Topic Lengths (key: 'l')
+
+Option count per topic, parallel to topic options (same length & order) — the shape that turns the
+flat tallies back into rows. Its own box so `vote()` can read the shape without decoding the
+string-heavy topic options.
+
+value: uint32[] - one entry per topic
 
 ### Period Body (key: 'P')
 
@@ -275,7 +289,7 @@ key: voter address
 value: GGovVoteRecord struct
 
 - `isDelegated`: boolean - whether the record was cast by a delegatee on the voter's behalf
-- `topicVotes`: uint32[][] - the voter's per-topic vote allocation (used to subtract old votes when re-voting)
+- `topicVotes`: uint32[] - the voter's vote allocation, flat and shaped by Topic Lengths (used to subtract old votes when re-voting)
 
 ## Methods
 
@@ -299,7 +313,7 @@ Operator status is resolved from the registry's `operator` global state (read di
 
 ### Voting Methods
 
-- `vote(voterAccount, topicVotes: uint64[][])` - Cast (or re-cast) a vote, direct or delegated
+- `vote(voterAccount, topicVotes: uint32[])` - Cast (or re-cast) a vote, direct or delegated
 
 ```
 ensure ready
@@ -307,7 +321,7 @@ ensure votingStart <= now < votingEnd
 if sender !== voterAccount:
   inner-call registry.getDelegate(voterAccount), ensure it === sender   // delegated vote
 inner-call registry.getGovVotingPower(committeeId, voterAccount)        // voting power
-ensure topicVotes shape matches topics; each topic's votes sum to votingPower
+ensure topicVotes has one cell per option across every topic; each topic's slice sums to votingPower
 if a record already exists:
   reject if a delegatee tries to override a direct vote
   subtract the old allocation from the tallies

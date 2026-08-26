@@ -7,4 +7,4 @@ export {
   FracDelegationRegistryFactory,
   FracDelegationRegistryClient,
 } from '../generated/FracDelegationRegistryClient.js'
-export type { FracAccountVotingRecord } from '../generated/FracDelegationRegistryClient.js'
+export type { FracAccountVotingRecord } from '../util/voteShapes.js'

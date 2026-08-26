@@ -752,7 +752,8 @@ describe('FracDelegationInstance vote', () => {
       })
       await expect(
         rawClient.send.vote({
-          args: { voterAccount: voter.account.toString(), periodId: ctx.periodId, topicVotes: [[100, 0, 0]] },
+          // Raw client, so the ballot is the contract's own flat shape rather than the SDK's rows.
+          args: { voterAccount: voter.account.toString(), periodId: ctx.periodId, topicVotes: [100, 0, 0] },
           extraFee: (5000).microAlgo(),
         }),
       ).rejects.toThrow(transformedError(errGGovDelegationNoAcctRef))
@@ -894,13 +895,15 @@ describe('FracDelegationInstance vote', () => {
     // Acts as well as regression test for the AVM property the whole design rests on: that `box_create`
     // raises `min_balance` immediately but defers the balance check to the end of the outer transaction.
 
-    // One topic of three options: S = 1 + 3, so the record is 5 + 4*S = 21 bytes over a 9-byte key
-    // ('r' + FracPeriodAccountKey), and box MBR is 2500 + 400 * (key + value).
-    const VOTE_RECORD_MBR = 2_500n + 400n * (9n + 21n)
+    // The ballot is stored flat, so the record is 5 + 4*C bytes for C option cells across all
+    // topics (3 head + 2 array count): one topic of three options is 17, over a 9-byte key
+    // ('r' + FracPeriodAccountKey), and box MBR is 2500 + 400 * (key + value). Nesting used to add
+    // another 4 bytes per topic for the row's own offset and length.
+    const VOTE_RECORD_MBR = 2_500n + 400n * (9n + 17n)
     // The period's own per-escrow record, allocated by the GGovPeriod.vote nested in a frac vote.
-    // Same 21-byte value, but `voteRecords` is keyed by Account under prefix 'v' — 33 bytes, not 9.
+    // Same 17-byte value, but `voteRecords` is keyed by Account under prefix 'v' — 33 bytes, not 9.
     // Kept in step with ggovPeriod.e2e.spec.ts's VOTE_RECORD_MBR, which covers the direct path.
-    const PERIOD_VOTE_RECORD_MBR = 2_500n + 400n * (33n + 21n)
+    const PERIOD_VOTE_RECORD_MBR = 2_500n + 400n * (33n + 17n)
     // The two vaults top up by different amounts: `mbrTopUp` defaults to 2 A on the frac
     // registry (which funds the instance) and 5 A on the gGov registry (which funds the period).
     const FRAC_MBR_TOP_UP = 2_000_000n

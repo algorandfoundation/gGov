@@ -88,14 +88,16 @@ describe('[fast] FracDelegationInstanceContract vote', () => {
         'otherwise — including the override guard, so it agrees with what vote() enforces',
     )
     it.todo(
-      'tally: first vote adds the rows into periodVoteCache.internal and writes votingRecords([periodId, accountId]); ' +
-        'a re-vote subtracts the stored rows before adding the new ones (overwrite, not accumulate)',
+      'tally: first vote adds the flat cells into periodVoteCache.internal and writes ' +
+        'votingRecords([periodId, accountId]); a re-vote subtracts the stored cells before adding the new ones ' +
+        '(overwrite, not accumulate)',
     )
     it.todo(
-      'mapping (pure math — unit-testable today if extracted into a protected subroutine): internal [[50,30,20]] ' +
-        'at totalAq 100, T 50 → ggovVotes [[25,15,10]]; non-last options floor(internal·T/totalAq), last option ' +
-        'takes T − Σ(others); unvoted AQ lands on the last option ([[100,0,0]] at totalAq 1000 → [[5,0,45]]); ' +
-        'rounding dust lands on the last option ([[1,1,1]] at totalAq 3 → [[16,16,18]])',
+      'mapping (pure math — unit-testable today if extracted into a protected subroutine), one topic of three ' +
+        'options so the flat cells are the row: internal [50,30,20] at totalAq 100, T 50 → ggovVotes [25,15,10]; ' +
+        'non-last options floor(internal·T/totalAq), last option takes T − Σ(others); unvoted AQ lands on the last ' +
+        'option ([100,0,0] at totalAq 1000 → [5,0,45]); rounding dust lands on the last option ([1,1,1] at ' +
+        'totalAq 3 → [16,16,18])',
     )
     it.todo(
       'greedy spread (pure math — same extraction): demands [25,15,10] over powers [15,15,20] → ' +

@@ -73,6 +73,7 @@ describe('box name helpers match the compiled ARC-56 specs', () => {
     test.each([
       ['o', 'topicOptionsArr'],
       ['t', 'topicVotesArr'],
+      ['l', 'topicLengths'],
       ['P', 'periodBody'],
     ])('asciiBoxName(%s) matches GGovPeriod `%s`', (char, specKey) => {
       expect(hex(asciiBoxName(char))).toBe(hex(keyBoxName(GGOV_PERIOD_SPEC, specKey)))
@@ -95,7 +96,7 @@ describe('box name helpers match the compiled ARC-56 specs', () => {
 // the expectation is rebuilt here from the compiled specs (prefix + keyType for the name, the
 // struct's own field types for the value) and encoded by algosdk, never by the same arithmetic.
 describe('vote-record box MBR matches the compiled ARC-56 specs', () => {
-  /** ARC-4 tuple type for a spec struct, e.g. GGovVoteRecord -> `(bool,uint32[][])`. */
+  /** ARC-4 tuple type for a spec struct, e.g. GGovVoteRecord -> `(bool,uint32[])`. */
   const structType = (spec: Arc56Contract, name: string): ABIType =>
     ABIType.from(`(${spec.structs[name].map((f) => f.type as string).join(',')})`)
 
@@ -108,17 +109,21 @@ describe('vote-record box MBR matches the compiled ARC-56 specs', () => {
   /** A [topic][option] ballot with `topics` topics of `options` options each. */
   const ballot = (topics: number, options: number): number[] => Array.from({ length: topics }, () => options)
 
-  /** An all-zero record of that shape — only its encoded length matters here. */
+  /**
+   * An all-zero record of that shape — only its encoded length matters here. `topicVotes` is flat:
+   * every topic's options concatenated in topic order, the shape recovered from `topicLengths`.
+   */
   const emptyRecord = (optionCounts: number[]): ABIValue => [
     false,
-    optionCounts.map((n) => Array.from({ length: n }, () => 0)),
+    Array.from({ length: optionCounts.reduce((a, b) => a + b, 0) }, () => 0),
   ]
 
   const ZERO_ADDRESS = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ'
 
   // 1x1 is the floor a ready period can reach; 22x4 is the shape VOTE.md sizes operator funding
-  // against; 60x8 approaches the ballot width setReady's 1024-byte log ceiling still admits. A
-  // single shape would pass against a formula that had the per-topic and per-option terms confused.
+  // against; 60x8 approaches the ballot width setReady's 1024-byte log ceiling still admits. Several
+  // shapes rather than one because the flat encoding makes the length depend on the option total
+  // alone: a formula that re-grew a per-topic term would still pass at a single shape.
   const SHAPES: [number, number][] = [
     [1, 1],
     [3, 2],

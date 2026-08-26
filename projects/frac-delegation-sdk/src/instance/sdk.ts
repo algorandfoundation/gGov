@@ -17,6 +17,7 @@ import { getSpendableBalance } from 'sdk-shared'
 import { committeeIdToRaw } from '../util/comitteeId.js'
 import { chunk } from '../util/chunk.js'
 import { instanceBoxName, periodBoxName } from '../util/boxes.js'
+import { flattenTopicVotes } from '../util/voteShapes.js'
 import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
@@ -709,9 +710,11 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     client,
     builder,
     readCache,
-  }: Omit<FracDelegationInstanceContractArgs['vote(address,uint32,uint32[][])void'], 'voterAccount'> & {
+  }: Omit<FracDelegationInstanceContractArgs['vote(address,uint32,uint32[])void'], 'voterAccount' | 'topicVotes'> & {
     /** Defaults to this SDK's writerAccount (self-vote) */
     voterAccount?: string
+    /** `[topic][option]`; flattened for the contract, which takes the concatenated shape. */
+    topicVotes: number[][]
     instanceNumId: bigint | number
     client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
@@ -734,7 +737,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // demand dominates. What simulate cannot see — the state-dependent MBR branches — is declared
     // statically below.
     const opts: Parameters<typeof builder.vote>[0] = {
-      args: { voterAccount: voter, periodId, topicVotes },
+      args: { voterAccount: voter, periodId, topicVotes: flattenTopicVotes(topicVotes) },
       note,
       // The two MBR inner calls are deliberately NOT counted here: both pay their own fee, so
       // the group's fee must not depend on whether the top-up fires.

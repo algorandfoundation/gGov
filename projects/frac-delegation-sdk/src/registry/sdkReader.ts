@@ -5,13 +5,17 @@ import pMap from 'p-map'
 import {
   FracDelegationRegistryClient,
   FracDelegationRegistryComposer,
-  FracAccountVotingRecord,
+  FracAccountVotingRecord as FracAccountVotingRecordFlat,
   FracEscrowInstance,
   FracInstance,
   FracRegAccount,
   APP_SPEC,
 } from '../generated/FracDelegationRegistryClient.js'
-import { APP_SPEC as INSTANCE_APP_SPEC, FracAccountCommitteeAq } from '../generated/FracDelegationInstanceClient.js'
+import {
+  APP_SPEC as INSTANCE_APP_SPEC,
+  FracAccountCommitteeAq,
+  FracDelegationInstanceClient,
+} from '../generated/FracDelegationInstanceClient.js'
 import type { FracInstanceCommitteeStanding } from '../generated/FracDelegationRegistryClient.js'
 import { getConstructorConfig } from '../networkConfig.js'
 import { ReaderConstructorArgs } from './types.js'
@@ -22,6 +26,7 @@ import { committeeIdToRaw } from '../util/comitteeId.js'
 import { errorTransformer } from '../util/wrapErrors.js'
 import { undefinedIfBoxMissing } from '../util/boxes.js'
 import { SIMULATE_PARAMS } from 'sdk-shared'
+import { FracAccountVotingRecord, toTopicRows } from '../util/voteShapes.js'
 
 /**
  * Max instances per page for the registry's paged cross-instance log methods. Each page is a single
@@ -94,6 +99,9 @@ export class FracDelegationRegistryReaderSDK {
   public readClient: FracDelegationRegistryClient
   public concurrency: number
   public debug?: boolean
+  protected readerAccount?: string
+  /** `instanceAppId:periodId` → that period's option counts, for re-rowing flat vote records. */
+  protected topicShapeCache: Map<string, number[]> = new Map()
 
   /** Per-page instance counts for the paged cross-instance log methods (see the constants above).
    *  Mutable so a caller can dial them down (or a test can force paging with few instances).
@@ -120,6 +128,7 @@ export class FracDelegationRegistryReaderSDK {
     this.appId = appId
     this.concurrency = concurrency
     this.debug = debug
+    this.readerAccount = readerAccount
     this.readClient = new FracDelegationRegistryClient({
       algorand: this.algorand,
       appId: this.appId,
@@ -336,11 +345,12 @@ export class FracDelegationRegistryReaderSDK {
    *
    * Drives the registry's paged `logAccountVotingRecords` the same way. Empty if the account is not
    * registered; an instance where the account has not voted for the period comes back with empty
-   * `topicVotes`.
+   * `topicVotes`. Cast ballots come back as [topic][option], re-rowed from the flat shape the
+   * instances store (see {@link rowVotingRecords}).
    */
   async getAccountVotingRecords(account: string, periodId: bigint | number): Promise<FracAccountVotingRecord[]> {
     const periodIdArg = assertUint(periodId, 32, 'periodId')
-    return this._pageInstanceLogs<FracAccountVotingRecord>(
+    const records = await this._pageInstanceLogs<FracAccountVotingRecordFlat>(
       this.votingRecordsPageSize,
       (limit, offset) =>
         this.readClient.newGroup().logAccountVotingRecords({
@@ -349,13 +359,61 @@ export class FracDelegationRegistryReaderSDK {
         }),
       'FracAccountVotingRecord',
     )
+    return this.rowVotingRecords(records, periodIdArg)
+  }
+
+  /**
+   * A period's option counts as one instance recorded them at `syncPeriod`, cached for this SDK's
+   * lifetime — a synced period's shape is fixed, since gGov refuses to edit topics on a ready
+   * period and refuses to un-ready a voted one.
+   *
+   * The instances store ballots FLAT, so re-rowing needs this shape. Unlike the instance reader,
+   * which groups its own `getPeriod` into the same simulate, this reader only learns which instance
+   * apps to ask about from the records themselves — hence a second read, taken only when an account
+   * has actually cast a ballot somewhere.
+   */
+  protected async getTopicOptionLengths(instanceAppId: bigint, periodId: bigint | number): Promise<number[]> {
+    const key = `${instanceAppId}:${periodId}`
+    const cached = this.topicShapeCache.get(key)
+    if (cached) return cached
+    const client = new FracDelegationInstanceClient({
+      algorand: this.algorand,
+      appId: instanceAppId,
+      defaultSender: this.readerAccount,
+      defaultSigner: makeEmptyTransactionSigner(),
+    })
+    const { returns } = await client.newGroup().getPeriod({ args: { periodId } }).simulate(SIMULATE_PARAMS)
+    const { topicOptionLengths } = returns[0]!
+    this.topicShapeCache.set(key, topicOptionLengths)
+    return topicOptionLengths
+  }
+
+  /**
+   * Re-row a page of cross-instance records to [topic][option]. Each instance carries its own copy
+   * of the period, so shapes are resolved per instance app (concurrently, and only for instances
+   * where a ballot was actually cast); a record with no ballot stays the empty array that marks it.
+   */
+  protected async rowVotingRecords(
+    records: FracAccountVotingRecordFlat[],
+    periodId: bigint | number,
+  ): Promise<FracAccountVotingRecord[]> {
+    const appIds = [...new Set(records.filter((r) => r.topicVotes.length > 0).map((r) => r.instanceAppId))]
+    const shapes = new Map<bigint, number[]>()
+    await pMap(appIds, async (appId) => shapes.set(appId, await this.getTopicOptionLengths(appId, periodId)), {
+      concurrency: this.concurrency,
+    })
+    return records.map((record) => ({
+      ...record,
+      topicVotes: toTopicRows(record.topicVotes, shapes.get(record.instanceAppId) ?? []),
+    }))
   }
 
   /**
    * Read one account's internal vote record for gGov period `periodId` in a single frac instance,
    * tagged with the instance's identity. The singular counterpart of `getAccountVotingRecords`:
    * returns one `FracAccountVotingRecord` directly (no paging) for a known `instanceNumId`. Empty
-   * `topicVotes` means the account has not voted this period on that instance.
+   * `topicVotes` means the account has not voted this period on that instance; a cast ballot comes
+   * back as [topic][option], re-rowed from the flat shape the instance stores.
    */
   async getAccountVotingRecord(
     account: string,
@@ -371,7 +429,8 @@ export class FracDelegationRegistryReaderSDK {
         staticFee: (2 * 1000).microAlgo(), // outer call + one inner call (instance getVotingRecord)
       })
       .simulate(SIMULATE_PARAMS)
-    return returns[0]!
+    const [record] = await this.rowVotingRecords([returns[0]!], periodIdArg)
+    return record!
   }
 
   /**
