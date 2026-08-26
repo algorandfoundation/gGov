@@ -54,6 +54,12 @@ interface RegistryColumnProps {
   label: string
   loading: boolean
   /**
+   * A balance read failed outright, rather than merely not having arrived. Panel-wide, because one
+   * failed read taints whichever column it belonged to and the panel does not track which; it only
+   * chooses the wording of the provisional notice, never whether to show it.
+   */
+  balancesFailed: boolean
+  /**
    * The only column on this network (no frac registry). Caps the width so the label/value rows and
    * the top-up button don't stretch the full page — a lone column otherwise reads as a stray row
    * rather than half of a pair.
@@ -61,12 +67,18 @@ interface RegistryColumnProps {
   solo?: boolean
 }
 
-function RegistryColumn({ title, registry, breakdown, label, loading, solo }: RegistryColumnProps) {
+function RegistryColumn({ title, registry, breakdown, label, loading, balancesFailed, solo }: RegistryColumnProps) {
   const [open, setOpen] = useState(false)
   const { activeAddress } = useWallet()
   const topUp = useTopUpRegistryMutation()
 
   const short = registry.shortfall > 0n
+
+  // A balance that never arrived counts as zero, which inflates the shortfall to the whole
+  // requirement — so the figures stay on screen (over-stating a requirement errs toward funding)
+  // but nothing offers to send them. `loading` is the transient half of the same condition; this is
+  // the half that will not clear on its own.
+  const provisional = !loading && !registry.resolved
 
   return (
     <div className={cn('flex min-w-0 flex-1 flex-col gap-3', solo && 'md:max-w-md')}>
@@ -98,7 +110,13 @@ function RegistryColumn({ title, registry, breakdown, label, loading, solo }: Re
       </div>
 
       {!loading &&
-        (short ? (
+        (provisional ? (
+          <Callout variant="warning" title="Balances incomplete">
+            {balancesFailed ? 'A balance read failed' : 'One of the account balances behind this figure is unavailable'}
+            , so an unread account counts as empty — the requirement above is an over-estimate and the shortfall is not
+            safe to fund.{balancesFailed && ' Reload to try again.'}
+          </Callout>
+        ) : short ? (
           <Callout variant="danger" title={`Short by ${formatAlgo(registry.shortfall)} ALGO`}>
             At this turnout the registry cannot cover everything it may be asked to fund.
           </Callout>
@@ -109,14 +127,29 @@ function RegistryColumn({ title, registry, breakdown, label, loading, solo }: Re
           </Callout>
         ))}
 
-      <TxButton
-        pending={topUp.isPending}
-        success={topUp.isSuccess}
-        disabled={!short || !activeAddress}
-        idleLabel={short ? `Top up ${formatAlgo(registry.shortfall)} ALGO` : 'Nothing to top up'}
-        onClick={() => topUp.mutate({ appId: registry.appId, amount: registry.shortfall, label })}
-      />
-      {short && !activeAddress && <p className="text-xs text-muted-foreground">Connect a wallet to top up.</p>}
+      {/* A skeleton rather than a disabled button: mid-load the label would read a full-requirement
+          shortfall off balances that have not arrived, and a number that large is worth not showing
+          at all rather than showing greyed out. */}
+      {loading ? (
+        <Skeleton className="h-9 w-full" />
+      ) : (
+        <TxButton
+          pending={topUp.isPending}
+          success={topUp.isSuccess}
+          disabled={provisional || !short || !activeAddress}
+          idleLabel={
+            provisional
+              ? 'Balances unavailable'
+              : short
+                ? `Top up ${formatAlgo(registry.shortfall)} ALGO`
+                : 'Nothing to top up'
+          }
+          onClick={() => topUp.mutate({ appId: registry.appId, amount: registry.shortfall, label })}
+        />
+      )}
+      {!loading && !provisional && short && !activeAddress && (
+        <p className="text-xs text-muted-foreground">Connect a wallet to top up.</p>
+      )}
 
       <button
         type="button"
@@ -209,7 +242,7 @@ function FracBreakdown({ detail }: { detail: FracMbrEstimate }) {
 
 export default function RegistryFundingPanel() {
   const [turnoutPct, setTurnoutPct] = useState(100)
-  const { ggov, frac, countedPeriodCount, isLoading } = useMbrEstimates(turnoutPct)
+  const { ggov, frac, countedPeriodCount, isLoading, isError } = useMbrEstimates(turnoutPct)
 
   return (
     <Surface className="p-5">
@@ -245,6 +278,7 @@ export default function RegistryFundingPanel() {
           label="gGov"
           registry={ggov}
           loading={isLoading}
+          balancesFailed={isError}
           solo={!frac}
           breakdown={<GgovBreakdown detail={ggov.detail} showPooled={frac !== null} />}
         />
@@ -256,6 +290,7 @@ export default function RegistryFundingPanel() {
               label="fractional"
               registry={frac}
               loading={isLoading}
+              balancesFailed={isError}
               breakdown={<FracBreakdown detail={frac.detail} />}
             />
           </>

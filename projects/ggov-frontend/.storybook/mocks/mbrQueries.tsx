@@ -37,6 +37,8 @@ export interface MockMbrFixture {
     balance: { amount: bigint; minBalance: bigint }
   }
   isLoading?: boolean
+  /** A balance read failed outright — the panel's provisional state, minus the loading spinner. */
+  isError?: boolean
 }
 
 let fixture: MockMbrFixture | null = null
@@ -57,6 +59,7 @@ const EMPTY: MbrEstimates = {
     spendable: 0n,
     required: 0n,
     shortfall: 0n,
+    resolved: true,
     detail: {
       periods: [],
       undelegatedAccounts: 0,
@@ -70,6 +73,7 @@ const EMPTY: MbrEstimates = {
   frac: null,
   countedPeriodCount: 0,
   isLoading: false,
+  isError: false,
 }
 
 export function useMbrEstimates(turnoutPct: number): MbrEstimates {
@@ -95,6 +99,10 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
       spendable: ggovSpendable,
       required: ggovDetail.required,
       shortfall: shortfallOf(ggovDetail.required, ggovSpendable),
+      // The registry's own balance is always supplied by a fixture, so the only thing that can
+      // leave this false is a child balance the story deliberately omitted (`childSpendable`
+      // undefined) — which is exactly the provisional state the panel now has to handle.
+      resolved: ggovDetail.resolved,
       detail: ggovDetail,
     },
     frac:
@@ -106,10 +114,12 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
             spendable: fracSpendable,
             required: fracDetail.required,
             shortfall: shortfallOf(fracDetail.required, fracSpendable),
+            resolved: fracDetail.resolved,
             detail: fracDetail,
           }
         : null,
     countedPeriodCount: fixture.periods.length,
     isLoading: fixture.isLoading ?? false,
+    isError: fixture.isError ?? false,
   }
 }

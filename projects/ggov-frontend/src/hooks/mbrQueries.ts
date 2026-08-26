@@ -51,6 +51,8 @@ export interface AppAccountInfo {
 export function useAppAccountInfos(appIds: bigint[]): {
   byAppId: Map<string, AppAccountInfo>
   isLoading: boolean
+  /** True if any balance read failed — see the note on the return below. */
+  isError: boolean
 } {
   const { readerSDK } = useGGovSDK()
 
@@ -72,6 +74,13 @@ export function useAppAccountInfos(appIds: bigint[]): {
   const signature = results.map((r, i) => `${appIds[i]}:${r.data?.amount ?? ''}:${r.data?.minBalance ?? ''}`).join('|')
   const isLoading = results.some((r) => r.isPending && r.fetchStatus !== 'idle')
 
+  // A failed read is not a pending one: it leaves `isLoading` false with the entry simply absent
+  // from `byAppId`, which every caller below reads as a zero balance — indistinguishable from an
+  // app account that really is empty, and enough to report a full-requirement shortfall on a
+  // registry that is in fact funded. `isError` is what carries that difference out, the same reason
+  // `fracQueries.ts` exposes it alongside every `cache`/`byAccountId` read.
+  const isError = results.some((r) => r.isError)
+
   const byAppId = useMemo(() => {
     const map = new Map<string, AppAccountInfo>()
     for (const entry of signature.split('|')) {
@@ -81,7 +90,7 @@ export function useAppAccountInfos(appIds: bigint[]): {
     return map
   }, [signature])
 
-  return { byAppId, isLoading }
+  return { byAppId, isLoading, isError }
 }
 
 /** Frac registry global state — read here only for `mbrTopUp`. */
@@ -146,6 +155,13 @@ export interface RegistryMbr {
   required: bigint
   /** `required - spendable`, floored at 0. */
   shortfall: bigint
+  /**
+   * Every balance behind these figures actually read — this registry's own and each of its
+   * children's. False means `required` and `shortfall` are provisional: an unread balance counts as
+   * zero, so both over-state. Safe to *display* (over-stating a requirement errs toward funding),
+   * never safe to *act* on, which is why the panel's top-up gates on it.
+   */
+  resolved: boolean
 }
 
 export interface MbrEstimates {
@@ -155,6 +171,8 @@ export interface MbrEstimates {
   /** Periods counted into both estimates — ready and not yet ended, drafts excluded. */
   countedPeriodCount: number
   isLoading: boolean
+  /** A balance read failed outright. Distinct from `isLoading`: it will not resolve on its own. */
+  isError: boolean
 }
 
 /**
@@ -208,7 +226,7 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
     })),
   })
 
-  const { data: fracKeyLength } = useQuery({
+  const { data: fracKeyLength, isLoading: fracKeyLoading } = useQuery({
     queryKey: ['fracVotingRecordKeyLength'] as const,
     queryFn: async () => (await getFracVotingRecordKeyLength()) ?? 0,
     enabled: fracEnabled,
@@ -245,7 +263,7 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
     return ids
   }, [countedPeriods, instanceAppIds])
 
-  const { byAppId, isLoading: balancesLoading } = useAppAccountInfos(appIds)
+  const { byAppId, isLoading: balancesLoading, isError: balancesError } = useAppAccountInfos(appIds)
 
   const spendableOf = (appId: bigint): bigint | undefined => {
     const info = byAppId.get(String(appId))
@@ -299,6 +317,16 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
   const fracInfo = fracRegistryAppId !== undefined ? byAppId.get(String(fracRegistryAppId)) : undefined
   const fracSpendable = fracInfo ? spendable(fracInfo.amount, fracInfo.minBalance) : 0n
 
+  // `detail.resolved` covers the children; the registry's own balance is the one it cannot see,
+  // and that is the balance a top-up is measured against.
+  const ggovResolved = registryInfo !== undefined && ggovDetail.resolved
+
+  // `fracKeyLength` is folded in because its absence is invisible downstream: without it
+  // `fracPools` is empty, and an empty instance list makes `estimateFracRegistry` report
+  // `resolved: true` with a requirement of zero — a registry that reads as fully covered because
+  // nothing was priced at all.
+  const fracResolved = fracInfo !== undefined && fracKeyLength !== undefined && fracDetail.resolved
+
   return {
     ggov: {
       appId: registryAppId,
@@ -307,6 +335,7 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
       spendable: ggovSpendable,
       required: ggovDetail.required,
       shortfall: shortfallOf(ggovDetail.required, ggovSpendable),
+      resolved: ggovResolved,
       detail: ggovDetail,
     },
     frac:
@@ -319,6 +348,7 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
             spendable: fracSpendable,
             required: fracDetail.required,
             shortfall: shortfallOf(fracDetail.required, fracSpendable),
+            resolved: fracResolved,
             detail: fracDetail,
           },
     countedPeriodCount: countedPeriods.length,
@@ -330,7 +360,11 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
       ggovAccountsLoading ||
       balancesLoading ||
       (fracEnabled &&
-        (fracGlobalLoading || fracAccountsLoading || poolQueries.some((q) => q.isPending && q.fetchStatus !== 'idle'))),
+        (fracGlobalLoading ||
+          fracAccountsLoading ||
+          fracKeyLoading ||
+          poolQueries.some((q) => q.isPending && q.fetchStatus !== 'idle'))),
+    isError: balancesError,
   }
 }
 

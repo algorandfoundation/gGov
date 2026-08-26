@@ -121,3 +121,30 @@ export const Loading: Story = {
   name: 'Loading',
   parameters: { mbr: fixture({ isLoading: true }) },
 }
+
+/**
+ * Loading finished but a balance read did not: period 22's app account never came back
+ * (`childSpendable` omitted), so the estimate treats it as empty and the requirement over-states.
+ *
+ * The distinction this story exists for is that the figure is still worth showing while the top-up
+ * is not: an unread balance can only push the requirement *up*, so displaying it errs toward
+ * funding, but signing a payment for a shortfall measured against balances that never arrived is
+ * how an operator overpays. Both columns are provisional here because the frac side omits one too.
+ *
+ * `isError` is set because a failed read is what produces this in practice; without it the notice
+ * says the balance is merely unavailable and drops the reload prompt.
+ */
+export const Provisional: Story = {
+  name: 'Balances incomplete',
+  parameters: {
+    mbr: fixture({
+      isError: true,
+      periods: [COUNTED_PERIODS[0], { periodId: 22, optionCounts: [4, 4, 4], members: 880 }],
+      frac: {
+        pools: [POOLS[0], { instanceNumId: 2, name: 'Tinyman tALGO', members: 806, perVoter: 113_300n }],
+        mbrTopUp: FRAC_MBR_TOPUP,
+        balance: { amount: 300_000_000n, minBalance: 8_000_000n },
+      },
+    }),
+  },
+}
