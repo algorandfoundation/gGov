@@ -112,14 +112,17 @@ export interface FracMbrEstimate {
  *   editable, so pricing it would size the registry against numbers nobody has committed to — and
  *   a draft that is never made ready costs nothing at all.
  * - **Not ended.** Once the window closes no further vote record can be written, so whatever the
- *   period still needed is no longer an obligation.
+ *   period still needed is no longer an obligation. The comparison is strict to match the
+ *   contracts, which admit a vote on `Global.latestTimestamp < votingEnd`
+ *   (`ggovPeriod.algo.ts` / `fracDelegationInstance.algo.ts`) — at `votingEnd` itself the period
+ *   has already stopped accepting votes and can no longer draw on the registry.
  *
  * A ready period whose window has not opened yet is the case this exists for: it is frozen and
  * will be voted on, and the registry has to be able to cover it *before* voting starts, not once
  * the first voter is already being turned away.
  */
 export function countsTowardMbr(period: { ready: boolean; votingEnd: number }, nowSeconds: number): boolean {
-  return period.ready && nowSeconds <= period.votingEnd
+  return period.ready && nowSeconds < period.votingEnd
 }
 
 /** A period the registry may still have to fund — see {@link countsTowardMbr}. */

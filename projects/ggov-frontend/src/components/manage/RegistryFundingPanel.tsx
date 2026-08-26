@@ -54,11 +54,11 @@ interface RegistryColumnProps {
   label: string
   loading: boolean
   /**
-   * A balance read failed outright, rather than merely not having arrived. Panel-wide, because one
+   * One of the reads failed outright, rather than merely not having arrived. Panel-wide, because a
    * failed read taints whichever column it belonged to and the panel does not track which; it only
    * chooses the wording of the provisional notice, never whether to show it.
    */
-  balancesFailed: boolean
+  readsFailed: boolean
   /**
    * The only column on this network (no frac registry). Caps the width so the label/value rows and
    * the top-up button don't stretch the full page — a lone column otherwise reads as a stray row
@@ -67,17 +67,19 @@ interface RegistryColumnProps {
   solo?: boolean
 }
 
-function RegistryColumn({ title, registry, breakdown, label, loading, balancesFailed, solo }: RegistryColumnProps) {
+function RegistryColumn({ title, registry, breakdown, label, loading, readsFailed, solo }: RegistryColumnProps) {
   const [open, setOpen] = useState(false)
   const { activeAddress } = useWallet()
   const topUp = useTopUpRegistryMutation()
 
   const short = registry.shortfall > 0n
 
-  // A balance that never arrived counts as zero, which inflates the shortfall to the whole
-  // requirement — so the figures stay on screen (over-stating a requirement errs toward funding)
-  // but nothing offers to send them. `loading` is the transient half of the same condition; this is
-  // the half that will not clear on its own.
+  // An input that never arrived leaves the figures wrong in a direction the panel cannot name: a
+  // missing balance inflates the shortfall (the child looks empty), a missing roster or pool
+  // standing deflates it (rows are dropped). They stay on screen because a rough number with a
+  // warning beats a blank card for an operator watching for a registry running low, but nothing
+  // offers to send them. `loading` is the transient half of the same condition; this is the half
+  // that will not clear on its own.
   const provisional = !loading && !registry.resolved
 
   return (
@@ -111,10 +113,12 @@ function RegistryColumn({ title, registry, breakdown, label, loading, balancesFa
 
       {!loading &&
         (provisional ? (
-          <Callout variant="warning" title="Balances incomplete">
-            {balancesFailed ? 'A balance read failed' : 'One of the account balances behind this figure is unavailable'}
-            , so an unread account counts as empty — the requirement above is an over-estimate and the shortfall is not
-            safe to fund.{balancesFailed && ' Reload to try again.'}
+          <Callout variant="warning" title="Estimate incomplete">
+            {readsFailed
+              ? 'One of the reads behind this figure failed'
+              : 'Part of the data behind this figure is unavailable'}
+            , so the requirement above may be over- or under-stated and the shortfall is not safe to fund.
+            {readsFailed && ' Reload to try again.'}
           </Callout>
         ) : short ? (
           <Callout variant="danger" title={`Short by ${formatAlgo(registry.shortfall)} ALGO`}>
@@ -139,7 +143,7 @@ function RegistryColumn({ title, registry, breakdown, label, loading, balancesFa
           disabled={provisional || !short || !activeAddress}
           idleLabel={
             provisional
-              ? 'Balances unavailable'
+              ? 'Estimate unavailable'
               : short
                 ? `Top up ${formatAlgo(registry.shortfall)} ALGO`
                 : 'Nothing to top up'
@@ -278,7 +282,7 @@ export default function RegistryFundingPanel() {
           label="gGov"
           registry={ggov}
           loading={isLoading}
-          balancesFailed={isError}
+          readsFailed={isError}
           solo={!frac}
           breakdown={<GgovBreakdown detail={ggov.detail} showPooled={frac !== null} />}
         />
@@ -290,7 +294,7 @@ export default function RegistryFundingPanel() {
               label="fractional"
               registry={frac}
               loading={isLoading}
-              balancesFailed={isError}
+              readsFailed={isError}
               breakdown={<FracBreakdown detail={frac.detail} />}
             />
           </>

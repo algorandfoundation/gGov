@@ -156,10 +156,14 @@ export interface RegistryMbr {
   /** `required - spendable`, floored at 0. */
   shortfall: bigint
   /**
-   * Every balance behind these figures actually read — this registry's own and each of its
-   * children's. False means `required` and `shortfall` are provisional: an unread balance counts as
-   * zero, so both over-state. Safe to *display* (over-stating a requirement errs toward funding),
-   * never safe to *act* on, which is why the panel's top-up gates on it.
+   * Every input behind these figures actually arrived — balances, rosters, committee sizes, pool
+   * standings, `mbrTopUp`.
+   *
+   * False means `required` and `shortfall` are provisional, and deliberately does not say in which
+   * direction: an unread *balance* over-states the requirement (the child appears to hold nothing),
+   * while an unread *roster or pool standing* under-states it (rows are dropped entirely). Since
+   * one flag covers both, nothing downstream may treat a provisional figure as conservative —
+   * which is why the panel's top-up gates on it rather than merely annotating it.
    */
   resolved: boolean
 }
@@ -171,7 +175,13 @@ export interface MbrEstimates {
   /** Periods counted into both estimates — ready and not yet ended, drafts excluded. */
   countedPeriodCount: number
   isLoading: boolean
-  /** A balance read failed outright. Distinct from `isLoading`: it will not resolve on its own. */
+  /**
+   * One of the reads failed outright. Distinct from `isLoading`: it will not resolve on its own.
+   *
+   * Only chooses how the panel words its provisional notice. The gate is the per-registry
+   * `resolved` flag, which is false for an absent input whether it failed, is disabled, or simply
+   * never ran.
+   */
   isError: boolean
 }
 
@@ -185,13 +195,22 @@ export interface MbrEstimates {
 export function useMbrEstimates(turnoutPct: number): MbrEstimates {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
 
-  const { data: periods = [], isLoading: periodsLoading } = usePeriods()
-  const { data: committees = [], isLoading: committeesLoading } = useCommittees()
-  const { data: globalState, isLoading: globalLoading } = useGlobalState()
-  const { data: delegations, isLoading: delegationsLoading } = useAllDelegations()
-  const { data: fracGlobalState, isLoading: fracGlobalLoading } = useFracGlobalState()
-  const { data: ggovAccounts, isLoading: ggovAccountsLoading } = useGGovAccounts()
-  const { data: fracAccounts, isLoading: fracAccountsLoading } = useFracRegistryAccounts()
+  // Every read is destructured with its `data` left possibly-undefined rather than defaulted here,
+  // because absence is the whole signal: an empty committee list, an empty roster and a missing
+  // `mbrTopUp` all look exactly like real values downstream, and each one moves the requirement.
+  // Missing balances push it *up* (an unread child appears to hold nothing); missing rosters and
+  // pool standings push it *down* (rows vanish). Neither direction is safe to act on, so presence
+  // is folded into `resolved` below and the defaults are applied at the point of use.
+  const { data: periodsData, isLoading: periodsLoading, isError: periodsError } = usePeriods()
+  const { data: committeesData, isLoading: committeesLoading, isError: committeesError } = useCommittees()
+  const { data: globalState, isLoading: globalLoading, isError: globalError } = useGlobalState()
+  const { data: delegations, isLoading: delegationsLoading, isError: delegationsError } = useAllDelegations()
+  const { data: fracGlobalState, isLoading: fracGlobalLoading, isError: fracGlobalError } = useFracGlobalState()
+  const { data: ggovAccounts, isLoading: ggovAccountsLoading, isError: ggovAccountsError } = useGGovAccounts()
+  const { data: fracAccounts, isLoading: fracAccountsLoading, isError: fracAccountsError } = useFracRegistryAccounts()
+
+  const periods = useMemo(() => periodsData ?? [], [periodsData])
+  const committees = useMemo(() => committeesData ?? [], [committeesData])
 
   // The clock is read inside the memo, not as a dependency: a `now` that ticks every render would
   // hand every downstream memo — committee ids, app ids, pool rows — a fresh array each time. The
@@ -203,8 +222,9 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
 
   const committeeById = useMemo(() => new Map(committees.map((c) => [c.idBase64Url, c])), [committees])
 
-  // An unloaded roster reads as empty here, which would understate both delegation terms — the
-  // panel's `isLoading` covers that window, and it now waits on these two reads as well.
+  // An unloaded roster reads as empty here, which would understate both delegation terms. Both
+  // halves of the window are covered upstream: `isLoading` while they are in flight, and
+  // `ggovResolved` below once they have failed and will not arrive at all.
   const undelegated = useMemo(
     () => splitUndelegated(ggovAccounts ?? [], fracAccounts ?? [], delegations?.keys() ?? []),
     [ggovAccounts, fracAccounts, delegations],
@@ -226,7 +246,11 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
     })),
   })
 
-  const { data: fracKeyLength, isLoading: fracKeyLoading } = useQuery({
+  const {
+    data: fracKeyLength,
+    isLoading: fracKeyLoading,
+    isError: fracKeyError,
+  } = useQuery({
     queryKey: ['fracVotingRecordKeyLength'] as const,
     queryFn: async () => (await getFracVotingRecordKeyLength()) ?? 0,
     enabled: fracEnabled,
@@ -235,9 +259,19 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
   })
 
   // Same trick as `useAppAccountInfos`: a per-committee array of query results cannot be a
-  // dependency, so key the memo on which committees resolved to which pools.
+  // dependency, so key the memo on the pools each committee resolved to.
+  //
+  // Every field `poolRowsOf` keeps is in the key, not just the instance set. Staker and member
+  // counts are what the estimate multiplies by, and they move without the set of instances
+  // changing — a roster that grows between refetches would otherwise leave the memo, and the
+  // figure on screen, on the previous count.
   const poolSignature = countedCommitteeIds
-    .map((id, i) => `${id}:${(poolQueries[i]?.data?.pools ?? []).map((p) => p.instanceNumId).join('.')}`)
+    .map(
+      (id, i) =>
+        `${id}:${(poolQueries[i]?.data?.pools ?? [])
+          .map((p) => `${p.instanceNumId}.${p.appId}.${p.name}.${p.members}.${p.stakers}`)
+          .join(',')}`,
+    )
     .join('|')
 
   const poolsByCommittee = useMemo(() => {
@@ -317,15 +351,35 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
   const fracInfo = fracRegistryAppId !== undefined ? byAppId.get(String(fracRegistryAppId)) : undefined
   const fracSpendable = fracInfo ? spendable(fracInfo.amount, fracInfo.minBalance) : 0n
 
-  // `detail.resolved` covers the children; the registry's own balance is the one it cannot see,
-  // and that is the balance a top-up is measured against.
-  const ggovResolved = registryInfo !== undefined && ggovDetail.resolved
+  // `detail.resolved` sees one input only — the child balances handed to it. Everything else the
+  // estimate was built from has already been flattened into a number by the time it gets there, so
+  // presence has to be checked here, at the point the reads are still distinguishable from their
+  // defaults.
+  //
+  // `fracAccounts` counts toward the *gGov* flag, not the frac one: pooled delegation writes its
+  // boxes on the gGov registry, so an unread AQ roster understates a gGov obligation.
+  const ggovInputsResolved =
+    periodsData !== undefined &&
+    committeesData !== undefined &&
+    globalState !== undefined &&
+    delegations !== undefined &&
+    ggovAccounts !== undefined &&
+    (!fracEnabled || fracAccounts !== undefined)
 
-  // `fracKeyLength` is folded in because its absence is invisible downstream: without it
-  // `fracPools` is empty, and an empty instance list makes `estimateFracRegistry` report
-  // `resolved: true` with a requirement of zero — a registry that reads as fully covered because
-  // nothing was priced at all.
-  const fracResolved = fracInfo !== undefined && fracKeyLength !== undefined && fracDetail.resolved
+  const ggovResolved = ggovInputsResolved && registryInfo !== undefined && ggovDetail.resolved
+
+  // Two inputs here are invisible to `detail.resolved` because their absence removes rows rather
+  // than blanking a field, and `[].every()` is `true`: without `fracKeyLength` the pool list is
+  // empty outright, and a committee whose pool read failed is skipped by the loop that builds it.
+  // Either way the registry reads as fully covered at a requirement that was never priced.
+  const poolsResolved = countedCommitteeIds.every((id) => poolsByCommittee.has(id))
+
+  const fracResolved =
+    fracInfo !== undefined &&
+    fracKeyLength !== undefined &&
+    fracGlobalState !== undefined &&
+    poolsResolved &&
+    fracDetail.resolved
 
   return {
     ggov: {
@@ -364,7 +418,14 @@ export function useMbrEstimates(turnoutPct: number): MbrEstimates {
           fracAccountsLoading ||
           fracKeyLoading ||
           poolQueries.some((q) => q.isPending && q.fetchStatus !== 'idle'))),
-    isError: balancesError,
+    isError:
+      periodsError ||
+      committeesError ||
+      globalError ||
+      delegationsError ||
+      ggovAccountsError ||
+      balancesError ||
+      (fracEnabled && (fracGlobalError || fracAccountsError || fracKeyError || poolQueries.some((q) => q.isError))),
   }
 }
 

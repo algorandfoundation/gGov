@@ -41,7 +41,9 @@ check('no drain when the child is covered', drainForChild(1_000n, 5_000n, 5_000_
 // ready period whose window has not opened yet is priced in full.
 const NOW = 1_000_000
 check('ready and still upcoming counts', countsTowardMbr({ ready: true, votingEnd: NOW + 86_400 }, NOW), true)
-check('ready and mid-window counts', countsTowardMbr({ ready: true, votingEnd: NOW }, NOW), true)
+check('ready and mid-window counts', countsTowardMbr({ ready: true, votingEnd: NOW + 1 }, NOW), true)
+// The contracts admit a vote on `latestTimestamp < votingEnd`, so the final second is already over.
+check('ready but exactly at votingEnd does not', countsTowardMbr({ ready: true, votingEnd: NOW }, NOW), false)
 check('ready but ended does not', countsTowardMbr({ ready: true, votingEnd: NOW - 1 }, NOW), false)
 check('draft does not, however soon', countsTowardMbr({ ready: false, votingEnd: NOW + 86_400 }, NOW), false)
 
