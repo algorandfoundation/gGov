@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import PeriodStatusBadge from '@/components/PeriodStatusBadge'
+import RegistryFundingPanel from '@/components/manage/RegistryFundingPanel'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { formatDateRangeUTC, formatTimestampUTC } from '@/utils/time'
 import { periodFrozen } from '@/utils/periodEditing'
@@ -111,6 +112,8 @@ export default function ManagePeriods() {
 
   return (
     <div className="space-y-4">
+      <RegistryFundingPanel />
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Manage periods</h1>
         <Link to="/manage/add-period">

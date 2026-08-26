@@ -14,10 +14,29 @@ export interface PeriodWithId {
   period: GGovPeriod
   /** Registry-summary view: whether the operator has marked this period ready for voting. */
   ready: boolean
+  /**
+   * The period's own app. Carried through from the same registry summary as `ready`, so it costs
+   * nothing here and saves callers a `getPeriodAppId` round-trip — `hooks/mbrQueries.ts` needs it to
+   * read each period app's balance.
+   */
+  appId: bigint
 }
 
 export const queryKeys = {
   globalState: ['globalState'] as const,
+  // Balance + min-balance of one application's account, for the registry-funding panel
+  // (`hooks/mbrQueries.ts`). Keyed per app rather than per page, so the registry, its period apps
+  // and the frac instances all share one cache even though three different callers ask for them.
+  // Stringified because a bigint key is not JSON-serialisable and React Query hashes keys.
+  appAccountInfo: (appId: bigint) => ['appAccountInfo', String(appId)] as const,
+  // Frac registry global state — its own entry rather than a slice of `globalState`, which is the
+  // gGov registry's. Read for `mbrTopUp`, the chunk size the frac registry funds instances in.
+  fracGlobalState: ['fracGlobalState'] as const,
+  // Address rosters behind the funding panel's two delegation terms (`hooks/mbrQueries.ts`).
+  // Addresses rather than the `lastAccountId` counters, because the panel has to net the two
+  // registries' overlap against each other — something a counter cannot express.
+  ggovAccounts: ['ggovAccounts'] as const,
+  fracRegistryAccounts: ['fracRegistryAccounts'] as const,
   periods: ['periods'] as const,
   period: (id: number) => ['period', id] as const,
   periodAppId: (id: number) => ['periodAppId', id] as const,
@@ -434,7 +453,12 @@ export function fetchTopicBodies(
 
 export async function fetchPeriods(readerSDK: GGovReaderSDK): Promise<PeriodWithId[]> {
   const all = await readerSDK.getAllPeriods()
-  return all.map(({ id, period, summary }) => ({ id: Number(id), period, ready: summary.ready }))
+  return all.map(({ id, period, summary }) => ({
+    id: Number(id),
+    period,
+    ready: summary.ready,
+    appId: summary.appId,
+  }))
 }
 
 export async function fetchCommittees(readerSDK: GGovReaderSDK): Promise<CommitteeOption[]> {

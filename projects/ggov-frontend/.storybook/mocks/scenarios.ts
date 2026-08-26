@@ -253,7 +253,7 @@ export function buildScenario(
       topics: topicConfigs.map((t) => makeTopic(t.options, t.tallies)),
     }
 
-    scenario.periods.push({ id: cfg.id, ready: cfg.ready ?? true, period })
+    scenario.periods.push({ id: cfg.id, ready: cfg.ready ?? true, period, appId: BigInt(cfg.appId ?? 1000 + cfg.id) })
 
     scenario.periodDetail[cfg.id] = {
       period,

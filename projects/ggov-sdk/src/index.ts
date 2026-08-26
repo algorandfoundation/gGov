@@ -1,6 +1,7 @@
 export * from './period/sdk.js'
 export * from './period/sdkReader.js'
 export * from './constants.js'
+export * from './util/voteRecordMbr.js'
 export * from './period/types.js'
 export * from './period/elections.js'
 export { GGovRegistryFactory, GGovRegistryClient } from './generated/GGovRegistryClient.js'

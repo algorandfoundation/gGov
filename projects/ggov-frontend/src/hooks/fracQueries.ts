@@ -5,6 +5,7 @@ import { fromBase64Url, queryKeys, toBase64Url } from '@/hooks/queries'
 import type {
   FracAccountCommitteeAq,
   FracAccountVotingRecord,
+  FracDelegationReaderSDK,
   FracInstanceCommittee,
   FracPeriodVoteCache,
   FracRegAccount,
@@ -343,37 +344,48 @@ const EMPTY_TOTALS: CommitteePoolTotals = { pools: [], pooledVotes: 0, participa
  * `getExistingInstances()` pre-read this used to open with — that cost an algod
  * lookup per instance on top of a snapshot read per instance.
  */
+/**
+ * The read behind {@link useCommitteePools}, exported so a caller that needs several committees at
+ * once can drive it through `useQueries` on the same cache key — see `hooks/mbrQueries.ts`, which
+ * sizes pooled voting load across every counted period. Same shape as the exported fetchers in
+ * `hooks/queries.ts`.
+ */
+export async function fetchCommitteePools(
+  sdk: FracDelegationReaderSDK | null,
+  committeeIdBase64Url: string,
+): Promise<CommitteePoolTotals> {
+  if (!sdk) return EMPTY_TOTALS
+  const standings = await sdk.registry.getInstanceCommitteeStandings(fromBase64Url(committeeIdBase64Url))
+  const pools = standings
+    // A standing with no votes is an instance that never synced this committee,
+    // or synced it and holds nothing — either way it has no pooled stake here.
+    .filter((standing) => standing.totalVotes > 0)
+    .map(
+      (standing): CommitteePool => ({
+        instanceNumId: standing.instanceNumId,
+        appId: standing.instanceAppId,
+        committeeNumId: standing.committeeNumId,
+        name: standing.instanceName,
+        members: Number(standing.instanceNumAccounts),
+        stakers: standing.numAccounts,
+        votes: standing.totalVotes,
+        aq: standing.totalAq,
+      }),
+    )
+  pools.sort((a, b) => b.votes - a.votes)
+  return {
+    pools,
+    pooledVotes: pools.reduce((sum, pool) => sum + pool.votes, 0),
+    participants: pools.reduce((sum, pool) => sum + pool.members, 0),
+  }
+}
+
 export function useCommitteePools(committeeIdBase64Url: string | undefined): CommitteePools {
   const { fracEnabled, getFracReaderSDK } = useGGovSDK()
   const { data, isPending, fetchStatus, isError } = useQuery({
     queryKey: queryKeys.fracCommitteePools(committeeIdBase64Url ?? ''),
-    queryFn: async (): Promise<CommitteePoolTotals> => {
-      const sdk = await getFracReaderSDK()
-      if (!sdk) return EMPTY_TOTALS
-      const standings = await sdk.registry.getInstanceCommitteeStandings(fromBase64Url(committeeIdBase64Url!))
-      const pools = standings
-        // A standing with no votes is an instance that never synced this committee,
-        // or synced it and holds nothing — either way it has no pooled stake here.
-        .filter((standing) => standing.totalVotes > 0)
-        .map(
-          (standing): CommitteePool => ({
-            instanceNumId: standing.instanceNumId,
-            appId: standing.instanceAppId,
-            committeeNumId: standing.committeeNumId,
-            name: standing.instanceName,
-            members: Number(standing.instanceNumAccounts),
-            stakers: standing.numAccounts,
-            votes: standing.totalVotes,
-            aq: standing.totalAq,
-          }),
-        )
-      pools.sort((a, b) => b.votes - a.votes)
-      return {
-        pools,
-        pooledVotes: pools.reduce((sum, pool) => sum + pool.votes, 0),
-        participants: pools.reduce((sum, pool) => sum + pool.members, 0),
-      }
-    },
+    queryFn: async (): Promise<CommitteePoolTotals> =>
+      fetchCommitteePools(await getFracReaderSDK(), committeeIdBase64Url!),
     enabled: fracEnabled && !!committeeIdBase64Url,
     // A committee is a closed historical window; its snapshots only change while
     // a pool is still syncing it.
