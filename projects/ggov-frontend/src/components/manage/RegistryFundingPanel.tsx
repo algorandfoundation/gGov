@@ -117,7 +117,7 @@ function RegistryColumn({ title, registry, breakdown, label, loading, readsFaile
             {readsFailed
               ? 'One of the reads behind this figure failed'
               : 'Part of the data behind this figure is unavailable'}
-            , so the requirement above may be over- or under-stated and the shortfall is not safe to fund.
+            {', so the requirement above may be over- or under-stated and the shortfall is not safe to fund.'}
             {readsFailed && ' Reload to try again.'}
           </Callout>
         ) : short ? (
