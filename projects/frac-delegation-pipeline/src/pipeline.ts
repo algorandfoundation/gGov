@@ -30,6 +30,12 @@ export const TALGO_APP_ADDRESS = getApplicationAddress(TALGO_APP_ID).toString()
 /** Admin of the two registries, or the operator that ingests AQ. */
 type PipelineAccount = { sender: string; signer: TransactionSigner }
 
+/** See `FracPipelineArgs.mapAqAccounts`. */
+export type AqAccountMapper = (
+  accounts: Record<string, number>,
+  ctx: { source: string; instanceName: string; instanceNumId: number },
+) => Promise<Record<string, number>>
+
 interface FracPipelineArgs {
   /** Client for ggov-sdk and frac-delegation-sdk. */
   algorand: AlgorandClient
@@ -53,6 +59,14 @@ interface FracPipelineArgs {
    * run has several of these in flight at once (see `aq/config.ts`).
    */
   concurrency?: number
+  /**
+   * Rewrite the accounts of a computed AQ manifest before it is assembled and ingested, e.g. to
+   * substitute synthetic accounts for ones nobody can sign for on the target network. Called once
+   * per instance with the plugin's `address → AlgoQuarters` map; must return a map of the same
+   * shape (addresses may change, quarters must not). Absent: manifests carry the addresses the
+   * plugin computed.
+   */
+  mapAqAccounts?: AqAccountMapper
   /** Admin of both registries. Falls back to ADMIN/ADMIN_MNEMONIC in the environment. */
   adminAccount?: PipelineAccount
   /** Operator that ingests AQ. Falls back to the admin account. */
@@ -208,6 +222,7 @@ export class FracDelegationPipeline {
 
   /** AQ ingestion is the operator's job, not the admin's: this is what `fracOperatorSdk` signs with. */
   private readonly operatorAccount?: PipelineAccount
+  private readonly mapAqAccounts?: AqAccountMapper
   private readonly debug: boolean
   // Per-run state, cleared at the top of `run` and filled by the step that owns each part.
   /** Everything the instance upsert reads and writes. Public: it is the run's report. */
@@ -237,11 +252,13 @@ export class FracDelegationPipeline {
     concurrency = 4,
     adminAccount,
     operatorAccount,
+    mapAqAccounts,
     debug = false,
   }: FracPipelineArgs) {
     this.algorand = algorand
     this.discoveryClient = discoveryClient ?? algorand
     this.concurrency = concurrency
+    this.mapAqAccounts = mapAqAccounts
     this.debug = debug
     adminAccount = adminAccount ?? envAccount(algorand)
     this.operatorAccount = operatorAccount ?? adminAccount
@@ -773,7 +790,7 @@ export class FracDelegationPipeline {
       // A source whose plugin has no AQ implementation yet leaves the instance out of the map.
       // Uploading nothing would fail manifest validation, so it is reported and left for when the
       // plugin lands.
-      const calculation = calculations.get(instance.name)
+      let calculation = calculations.get(instance.name)
       if (!calculation) {
         console.warn(
           `no AlgoQuarters computed for ${instance.name}: source ${source} has no AQ implementation yet, skipping`,
@@ -788,6 +805,15 @@ export class FracDelegationPipeline {
         this.log(`${instance.name}: no account earned a whole AlgoQuarter over the window, nothing to ingest`)
         computation.noEligibleAccounts.push(result)
         continue
+      }
+
+      if (this.mapAqAccounts) {
+        const accounts = await this.mapAqAccounts(calculation.accounts, {
+          source,
+          instanceName: instance.name,
+          instanceNumId: instance.numId,
+        })
+        calculation = { ...calculation, accounts }
       }
 
       const aqFile = buildAqFile(calculation, committee, networkGenesisHash)

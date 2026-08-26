@@ -142,6 +142,9 @@ importers:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.0
         version: 9.2.0(algosdk@3.7.0)
+      '@d13co/escreg-sdk':
+        specifier: ^0.1.0
+        version: 0.1.0(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)
       algosdk:
         specifier: ^3.7.0
         version: 3.7.0
@@ -640,6 +643,12 @@ packages:
     peerDependencies:
       '@algorandfoundation/algokit-utils': ^9.0.0
       algosdk: ^3.0.0
+
+  '@d13co/escreg-sdk@0.1.0':
+    resolution: {integrity: sha512-IcvNtbIFeuRkwQsn9z2amWu71viP/1/6BxFRCAHJNkhBQn/kkx4YplUqNdl3IiAhGVbx9z4/Kz32Y/lEvQ+llQ==}
+    peerDependencies:
+      '@algorandfoundation/algokit-utils': ^9.0.0
+      algosdk: ^3.6.0
 
   '@d13co/open-in@0.1.2':
     resolution: {integrity: sha512-s2/p03vJLJnN46X6mAo1P2kERi0UGAubLwk8S5AI6vsEmxrxmfIvic/B01FM0+ygAQU23cIMRbY+qwbPsuyYag==}
@@ -4340,6 +4349,7 @@ packages:
 
   lute-connect@1.7.0:
     resolution: {integrity: sha512-/eXb2/c/xltKyVEVWchd1QZB6F0fvgXwVIqXDQWeJ9unPo0kMMbtuLkeb1v4Kr1lffxX8uGnb+8kAMYjczUASg==}
+    deprecated: This package is deprecated. Please use @galaxypay/lute-connect instead.
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -5975,6 +5985,12 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.9
 
   '@d13co/escreg-sdk@0.0.3(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)':
+    dependencies:
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
+      algosdk: 3.7.0
+      p-map: 7.0.4
+
+  '@d13co/escreg-sdk@0.1.0(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)':
     dependencies:
       '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
       algosdk: 3.7.0
