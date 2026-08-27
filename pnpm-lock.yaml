@@ -64,7 +64,7 @@ importers:
         version: 3.7.0
       ggov-sdk:
         specifier: file:../../ggov-sdk
-        version: link:../../ggov-sdk
+        version: file:projects/ggov-sdk(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0)
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
@@ -182,6 +182,9 @@ importers:
       p-map:
         specifier: ^7.0.4
         version: 7.0.4
+      sdk-shared:
+        specifier: workspace:*
+        version: link:../sdk-shared
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
@@ -358,6 +361,9 @@ importers:
       p-map:
         specifier: ^7.0.4
         version: 7.0.4
+      sdk-shared:
+        specifier: workspace:*
+        version: link:../sdk-shared
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
@@ -365,6 +371,19 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+
+  projects/sdk-shared:
+    dependencies:
+      '@algorandfoundation/algokit-utils':
+        specifier: ^9.2.0
+        version: 9.2.0(algosdk@3.7.0)
+      algosdk:
+        specifier: ^3.7.0
+        version: 3.7.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.2.1
 
 packages:
 
@@ -3844,6 +3863,12 @@ packages:
 
   get-tsconfig@4.13.0:
     resolution: {integrity: sha512-1VKTZJCwBrvbd+Wn3AOgQP/2Av+TfTCOlE4AcRJE72W1ksZXbAx8PPBR9RzgTeSPzlPMHrbANMH3LbltH73wxQ==}
+
+  ggov-sdk@file:projects/ggov-sdk:
+    resolution: {directory: projects/ggov-sdk, type: directory}
+    peerDependencies:
+      '@algorandfoundation/algokit-utils': ^9.2.0
+      algosdk: ^3.7.0
 
   glob-parent@6.0.2:
     resolution: {integrity: sha512-XxwI8EOhVQgWp6iDL+3b0r86f4d6AX6zSU55HfB4ydCEuXLXc5FcYeOu+nnGftS4TEju/11rt4KJPTMgbfmv4A==}
@@ -9120,6 +9145,14 @@ snapshots:
   get-tsconfig@4.13.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  ggov-sdk@file:projects/ggov-sdk(@algorandfoundation/algokit-utils@9.2.0(algosdk@3.7.0))(algosdk@3.7.0):
+    dependencies:
+      '@algorandfoundation/algokit-utils': 9.2.0(algosdk@3.7.0)
+      algosdk: 3.7.0
+      js-sha512: 0.9.0
+      p-map: 7.0.4
+      sdk-shared: link:projects/sdk-shared
 
   glob-parent@6.0.2:
     dependencies:

@@ -51,6 +51,12 @@ export const STORED_GOV_BYTE_LENGTH = 8 // 4 bytes for ID + 4 bytes for Votes
 export interface CommonMethodBuilderArgs {
   builder?: GGovRegistryComposer<any>
   note?: string | Uint8Array
+  /**
+   * Scratch cache owned by the executor, valid only for the duration of one write. The maker is
+   * re-run up to three times while the group is sized, and anything it reads to size its own call
+   * belongs in here rather than being fetched again on every rerun.
+   */
+  readCache?: Map<string, unknown>
 }
 
 export type GGovRegistryContractArgs = GGovRegistryArgs['obj']

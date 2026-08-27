@@ -33,3 +33,21 @@ export async function minFeeMicroAlgos(algod: Algodv2): Promise<bigint> {
   const { minFee } = await algod.getTransactionParams().do()
   return BigInt(minFee ?? 1000)
 }
+
+/**
+ * Fee (µAlgo) demanded by a rejection that names its own usage, e.g.
+ * `txgroup with 1mA fees is less than 1.203mA (usage=1.202600 * base=1mA)`.
+ *
+ * A group rejected for a usage shortfall has already told us what it wanted, so the retry does not
+ * need to spend a simulate rediscovering it. Returns `undefined` when the message does not carry a
+ * usage figure, so the caller falls back to probing.
+ */
+export function feeFromUsageRejection(message: string, minFee: bigint): bigint | undefined {
+  const usage = /usage=(\d+(?:\.\d+)?)/.exec(message)?.[1]
+  if (usage === undefined) return undefined
+  // Fixed-point rather than float maths: the figure is printed with USAGE_SCALE's precision.
+  const [whole, fraction = ''] = usage.split('.')
+  const scaled = BigInt(whole) * BigInt(USAGE_SCALE) + BigInt((fraction + '000000').slice(0, 6))
+  const required = (minFee * scaled + BigInt(USAGE_SCALE) - 1n) / BigInt(USAGE_SCALE)
+  return required > minFee ? required : minFee
+}

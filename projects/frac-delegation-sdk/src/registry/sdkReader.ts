@@ -21,7 +21,7 @@ import { chunked } from '../util/chunked.js'
 import { committeeIdToRaw } from '../util/comitteeId.js'
 import { errorTransformer } from '../util/wrapErrors.js'
 import { undefinedIfBoxMissing } from '../util/boxes.js'
-import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
+import { SIMULATE_PARAMS } from 'sdk-shared'
 
 /**
  * Max instances per page for the registry's paged cross-instance log methods. Each page is a single

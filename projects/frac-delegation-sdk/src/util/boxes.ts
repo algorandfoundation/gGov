@@ -36,6 +36,3 @@ export function periodBoxName(periodId: number | bigint): Uint8Array {
   new DataView(name.buffer).setUint32(1, Number(periodId))
   return name
 }
-
-/** The registry box holding the FracDelegationInstance approval bytecode: the ASCII key 'Iap'. */
-export const INSTANCE_APPROVAL_BOX_NAME = new TextEncoder().encode('Iap')

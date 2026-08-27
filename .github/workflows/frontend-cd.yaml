@@ -16,6 +16,7 @@ on:
     paths:
       - 'projects/ggov-frontend/**'
       - 'projects/ggov-sdk/**'
+      - 'projects/sdk-shared/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/frontend-cd.yaml'
   workflow_dispatch:
@@ -58,10 +59,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ggov-frontend consumes ggov-sdk via `link:../ggov-sdk` (built dist/). The
+      # ggov-frontend consumes ggov-sdk via `link:../ggov-sdk` (built dist/), and ggov-sdk
+      # consumes sdk-shared the same way — hence the `...`, which pulls in its deps. The
       # generated clients are committed, so a plain tsc builds it — no algokit.
       - name: Build ggov-sdk
-        run: pnpm --filter ggov-sdk build
+        run: pnpm --filter 'ggov-sdk...' build
 
       # `deploy:testnet` = typecheck && CLOUDFLARE_ENV=testnet vite build --mode testnet && wrangler deploy.
       # CLOUDFLARE_ENV makes @cloudflare/vite-plugin emit the ggov-frontend-testnet config.

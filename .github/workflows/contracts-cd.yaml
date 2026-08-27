@@ -65,7 +65,7 @@ jobs:
           fi
 
       - name: Build SDK
-        run: algokit project run build --project-name 'ggov-sdk'
+        run: algokit project run build --project-name 'sdk-shared' --project-name 'ggov-sdk'
 
       - name: Deploy to testnet
         run: algokit project deploy testnet --project-name 'contracts'

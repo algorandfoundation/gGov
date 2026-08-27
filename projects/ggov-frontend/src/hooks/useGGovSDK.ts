@@ -40,6 +40,17 @@ export function GGovSDKProvider({ children }: { children: ReactNode }) {
   // App-escrow lookups are read-only and wallet-independent (see createEscregSDK).
   const escregSDK = useMemo(() => createEscregSDK(), [])
 
+  // No `emptyTxnSigner` on either writerAccount below. The SDK uses one to price the AVM v13
+  // post-quantum fee premium during its sizing simulates — the surcharge is charged off the
+  // signature envelope, so a plain empty signer measures a PQ writer's group as classic — but
+  // building one needs the account's PQ scheme and public key, and @txnlab/use-wallet exposes
+  // neither: as of v5.0.0 `WalletAccount` is still `{ name, address, metadata? }` and `BaseWallet`
+  // has only `transactionSigner`. A PQ user still succeeds; the executor's send-time fee-shortfall
+  // retry re-prices the group, at the cost of one extra round trip.
+  //
+  // When a wallet does expose it: pass it through here, NOT through `wrapSignerWithPhase`. That
+  // wrapper flips the global phase to 'signing', and TxButtonContent would render "Sign in <wallet>"
+  // for a sizing simulate that never prompts anyone.
   const sdk = useMemo(() => {
     if (!activeAddress || !transactionSigner) return null
     const algorand = createAlgorandClient()

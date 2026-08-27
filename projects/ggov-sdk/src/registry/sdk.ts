@@ -21,19 +21,14 @@ import { calculateCommitteeId, committeeIdToRaw } from '../util/comitteeId.js'
 import { govToTuple } from './gov.js'
 import { GGovRegistryReaderSDK } from './sdkReader.js'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
-import { createTxnExecutor } from '../util/txnExecutor.js'
+import { createTxnExecutor, noteNonce } from 'sdk-shared'
 import { chunk } from '../util/chunk.js'
-import { padForRefSlots } from '../util/padForRefSlots.js'
 import { extraProgramPages } from '../util/extraProgramPages.js'
-import { boxIoRefsFor, boxIoRefsPerCall, splitApprovalPages } from '../util/approvalPages.js'
-import { feeFromGroupUsage, minFeeMicroAlgos } from '../util/groupUsageFee.js'
-import { PERIOD_APPROVAL_BOX_NAME } from '../util/boxNames.js'
-import { noteNonce } from '../util/noteNonce.js'
+import { splitApprovalPages } from '../util/approvalPages.js'
 import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   DEFAULT_PERIOD_MBR_MICROALGOS,
   MAX_ESCROWS_PER_FD_IMPORT,
-  UPLOAD_APPROVAL_MAX_FEE_MICROALGOS,
 } from '../constants.js'
 
 export class GGovRegistrySDK extends GGovRegistryReaderSDK {
@@ -480,7 +475,12 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     // delegatee, so a re-delegation touches two entries); the frac registry's `escrows` (5) + `instances` (6) boxes
     // read by the inner `getEscrow`, and the instance app ref (`Application(id).address` needs the app available).
     // Plus a fixed 1 for the frac registry app ref, which the whole batch shares.
-    builder = padForRefSlots(builder, escrowAccounts.length * 7 + 1, 'importFracDelegations')
+    // Reference slots (7N+1, maximized case: per escrow this registry's `accounts` and `delegations`
+    // boxes, its `reverseDelegations` box keyed by the previous delegatee AND a second keyed by the
+    // instance — the map is keyed by delegatee, so a re-delegation touches two entries — the frac
+    // registry's `escrows` and `instances` boxes read by the inner `getEscrow`, and the instance app
+    // ref; plus the frac registry app ref the whole batch shares) are measured off simulate and
+    // padded for by the executor. See `sdk-shared`.
     // extraFee covers one inner getEscrow call per escrow sent as argument
     return builder.importFracDelegations({
       args: { escrowAccounts },
@@ -570,38 +570,23 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     page1,
     page2,
     page3,
-    staticFee,
     note,
     builder,
-  }: { staticFee?: number } & GGovRegistryContractArgs['uploadPeriodApproval(byte[],byte[],byte[])void'] &
-    CommonMethodBuilderArgs) {
+  }: GGovRegistryContractArgs['uploadPeriodApproval(byte[],byte[],byte[])void'] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    const totalBytes = page1.length + page2.length + page3.length
-    // Creating and filling a box of N bytes costs N of box-write budget, and each box reference
-    // buys BOX_IO_BYTES_PER_REF of it. Resource population only adds one reference per distinct
-    // box, which covers a 1024-byte write and no more, so the budget is bought explicitly here.
-    // A three-page program needs 12 references, past the 8 MAX_APP_CALL_FOREIGN_REFERENCES allows
-    // on one call, so the surplus rides on no-op increaseBudget calls: box I/O budget is pooled
-    // across the group, and a call to this same app can carry references to its boxes without
-    // touching them.
-    const [ownRefs, ...padRefs] = boxIoRefsPerCall(boxIoRefsFor(totalBytes), 'uploadPeriodApproval')
-    for (let i = 0; i < padRefs.length; i++) {
-      builder = builder.increaseBudget({
-        args: { itxns: 0 },
-        boxReferences: Array.from({ length: padRefs[i] }, () => PERIOD_APPROVAL_BOX_NAME),
-        // Distinct notes: otherwise identical pads would collide into one duplicate txn ID.
-        note: `pap-refs-${i}-${noteNonce()}`,
-      })
-    }
-    return builder.uploadPeriodApproval({
-      args: { page1, page2, page3 },
-      boxReferences: Array.from({ length: ownRefs }, () => PERIOD_APPROVAL_BOX_NAME),
-      // Under AVM v13 the fee is usage-based across the group, and ~8KB of app args pushes usage past
-      // the free allowance, so the flat minimum is rejected. See feeFromGroupUsage: the caller
-      // simulates once to learn the real requirement and passes it back in as staticFee.
-      staticFee: (staticFee ?? UPLOAD_APPROVAL_MAX_FEE_MICROALGOS).microAlgo(),
-      note,
-    })
+    // Neither box references nor a fee are declared here; the executor measures both.
+    //
+    // Box I/O budget is 2048 bytes per reference (ref-swept on localnet at every boundary), and
+    // resource population DOES add more than one reference per distinct box: simulate reports the
+    // shortfall as `extraBoxRefs` and the populator materialises them as empty refs. So a caller
+    // never has to repeat a box reference by hand to buy write budget, and the three-page upload
+    // needs no companion calls carrying spare refs — `planGroupExtras` costs whatever simulate
+    // reports and pads the group itself.
+    //
+    // The AVM v13 usage fee is the same story: ~12KB of app args puts the group well past the free
+    // allowance, and the executor reads the real requirement off simulate and carries it on a
+    // prepended `increaseBudget` rather than on this call.
+    return builder.uploadPeriodApproval({ args: { page1, page2, page3 }, note })
   }
 
   uploadPeriodApproval = this.makeTxnExecutor({
@@ -632,39 +617,10 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
     // rejects as already-in-ledger while the earlier one is inside its validity window.
     note = note ?? `pap-upload-${noteNonce()}`
     const { page1, page2, page3 } = splitApprovalPages(bytecode)
-    // Two round trips on purpose. Simulate must run with a fee that already passes the v13 usage
-    // check, so the probe goes out at UPLOAD_APPROVAL_MAX_FEE_MICROALGOS; the real send then pays
-    // exactly what the network asked for.
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    const probe = await this.makeUploadPeriodApprovalTxns({ page1, page2, page3, note })
-    const simulated = await probe.simulate({ skipSignatures: true })
-    const fee = feeFromGroupUsage(simulated.simulateResponse, await minFeeMicroAlgos(this.algorand.client.algod))
-
-    await this.uploadPeriodApproval({ page1, page2, page3, staticFee: Number(fee), note })
+    await this.uploadPeriodApproval({ page1, page2, page3, note })
   }
 
   // ── addPeriod (paired payment + createPeriod) ────────────────────
-
-  /**
-   * Reference slots the group calling `createPeriod` must carry for it to read the approval box.
-   *
-   * The child's whole bytecode is read back out of the box at create time, and box I/O budget is
-   * {@link BOX_IO_BYTES_PER_REF} per reference pooled across the group — so a program past what
-   * one app call's {@link MAX_APP_CALL_FOREIGN_REFERENCES} slots can buy needs company in the
-   * group. The extra slot covers the small boxes the same call also touches.
-   *
-   * Sized from the box rather than the GGovPeriod built into this SDK: the box is what is being
-   * deployed, and it exists precisely so child code can be upgraded without redeploying the
-   * registry. A missing box costs no padding — the contract raises its own not-configured error.
-   */
-  private async approvalReadRefSlots(): Promise<number> {
-    try {
-      const box = await this.algorand.app.getBoxValue(this.appId, PERIOD_APPROVAL_BOX_NAME)
-      return boxIoRefsFor(box.length) + 1
-    } catch {
-      return 0
-    }
-  }
 
   @requireWriterWithClient()
   @wrapErrors()
@@ -690,7 +646,9 @@ export class GGovRegistrySDK extends GGovRegistryReaderSDK {
       amount: { microAlgo: mbr } as any,
     } as any)
     builder = builder ?? this.writeClient!.newGroup()
-    builder = padForRefSlots(builder, await this.approvalReadRefSlots(), 'createPeriod')
+    // The child's whole bytecode is read back out of the approval box at create time, which
+    // costs box I/O budget the group has to carry. The executor measures it off simulate and
+    // pads the group, so nothing is declared here — see `sdk-shared`.
     return builder.createPeriod({
       args: {
         committeeId: committeeIdToRaw(committeeId),

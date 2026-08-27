@@ -1,7 +1,7 @@
 {
-  "name": "ggov-sdk",
+  "name": "sdk-shared",
   "version": "0.0.1",
-  "description": "",
+  "description": "Group sizing shared by ggov-sdk and frac-delegation-sdk: opcode budget, reference slots and AVM v13 usage fees",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/algorandfoundation/gGov.git"
@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/algorandfoundation/gGov/issues"
   },
-  "homepage": "https://github.com/algorandfoundation/gGov/tree/main/projects/ggov-sdk#readme",
+  "homepage": "https://github.com/algorandfoundation/gGov/tree/main/projects/sdk-shared#readme",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/index.d.ts",
@@ -31,7 +31,6 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "cp ../contracts/smart_contracts/artifacts/ggov-registry/GGovRegistryClient.ts src/generated/GGovRegistryClient.ts && cp ../contracts/smart_contracts/artifacts/ggov-period/GGovPeriodClient.ts src/generated/GGovPeriodClient.ts && tsx ../common/sdks/generate-errors.ts .",
     "clean": "rm -rf dist",
     "build": "pnpm run clean && pnpm run build:esm && pnpm run build:cjs && pnpm run build:dist-pkg",
     "build:esm": "tsc -p tsconfig.esm.json",
@@ -45,17 +44,11 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "js-sha512": "^0.9.0",
-    "p-map": "^7.0.4",
-    "sdk-shared": "workspace:*"
-  },
   "peerDependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",
     "algosdk": "^3.7.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
-    "tsx": "^4.21.0"
+    "@types/node": "^25.0.10"
   }
 }
