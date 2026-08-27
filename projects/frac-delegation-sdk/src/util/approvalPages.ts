@@ -1,7 +1,4 @@
 /* Verbatim copy of ggov-sdk/src/util/approvalPages.ts — the two SDKs do not share runtime code. */
-import { MAX_APP_CALL_FOREIGN_REFERENCES } from '@algorandfoundation/algokit-utils'
-import { MAX_GROUP_SIZE } from '../constants.js'
-
 /**
  * Largest approval page one application argument can carry.
  *
@@ -23,9 +20,6 @@ export const APPROVAL_PAGES = 3
  * the clear-state program) — short only of one that fills them.
  */
 export const MAX_APPROVAL_BYTES = APPROVAL_PAGES * APPROVAL_PAGE_BYTES
-
-/** Box read/write budget bought by one box reference on an app call. */
-export const BOX_IO_BYTES_PER_REF = 1024
 
 /**
  * Split approval bytecode into the pages the upload call carries.
@@ -49,40 +43,4 @@ export function splitApprovalPages(bytecode: Uint8Array): {
     page2: bytecode.subarray(APPROVAL_PAGE_BYTES, 2 * APPROVAL_PAGE_BYTES),
     page3: bytecode.subarray(2 * APPROVAL_PAGE_BYTES),
   }
-}
-
-/**
- * Box references a group must carry to move `bytes` in or out of a box.
- *
- * Box I/O budget is {@link BOX_IO_BYTES_PER_REF} per reference and is pooled across the whole
- * transaction group; creating plus filling a box of N bytes spends N of it, and reading one back
- * spends N again. Resource population only adds one reference per distinct box, which covers 1024
- * bytes and no more, so a larger transfer must buy the budget explicitly by repeating the
- * reference — see {@link boxIoRefsPerCall} for spreading them once they outgrow a single call.
- */
-export function boxIoRefsFor(bytes: number): number {
-  return Math.max(1, Math.ceil(bytes / BOX_IO_BYTES_PER_REF))
-}
-
-/**
- * Spread `refs` reference slots over as many app calls as it takes, most-loaded first.
- *
- * {@link MAX_APP_CALL_FOREIGN_REFERENCES} is the AVM's combined cap on accounts + apps + assets +
- * boxes for a single call, so a full three-page program (12 references' worth of write budget)
- * cannot be bought by one transaction; the surplus rides on companion calls to the same app. The
- * returned array is one entry per app call, the first being the call doing the work.
- *
- * @param refs Total reference slots the group must carry
- * @param label Method name, used for the group-limit error
- */
-export function boxIoRefsPerCall(refs: number, label: string): number[] {
-  const calls = Math.max(1, Math.ceil(refs / MAX_APP_CALL_FOREIGN_REFERENCES))
-  if (calls > MAX_GROUP_SIZE) {
-    throw new Error(
-      `${label} needs ${refs} box references (${calls} app calls), over the ${MAX_GROUP_SIZE}-txn group limit.`,
-    )
-  }
-  return Array.from({ length: calls }, (_, i) =>
-    Math.min(MAX_APP_CALL_FOREIGN_REFERENCES, refs - i * MAX_APP_CALL_FOREIGN_REFERENCES),
-  )
 }

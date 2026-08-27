@@ -19,19 +19,14 @@ import {
 import { requireWriterWithClient } from '../util/requiresSender.js'
 import { FracDelegationRegistryReaderSDK } from './sdkReader.js'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
-import { createTxnExecutor } from '../util/txnExecutor.js'
+import { createTxnExecutor, noteNonce } from 'sdk-shared'
 import { chunk } from '../util/chunk.js'
-import { noteNonce } from '../util/noteNonce.js'
 import { extraProgramPages } from '../util/extraProgramPages.js'
-import { boxIoRefsFor, boxIoRefsPerCall, splitApprovalPages } from '../util/approvalPages.js'
-import { padForRefSlots } from '../util/padForRefSlots.js'
-import { feeFromGroupUsage, minFeeMicroAlgos } from '../util/groupUsageFee.js'
-import { INSTANCE_APPROVAL_BOX_NAME } from '../util/boxes.js'
+import { splitApprovalPages } from '../util/approvalPages.js'
 import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   DEFAULT_INSTANCE_MBR_MICROALGOS,
   MAX_ESCROWS_PER_REGISTER_GROUP,
-  UPLOAD_APPROVAL_MAX_FEE_MICROALGOS,
 } from '../constants.js'
 
 export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
@@ -327,38 +322,23 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     page1,
     page2,
     page3,
-    staticFee,
     note,
     builder,
-  }: { staticFee?: number } & FracDelegationRegistryContractArgs['uploadInstanceApproval(byte[],byte[],byte[])void'] &
-    CommonMethodBuilderArgs) {
+  }: FracDelegationRegistryContractArgs['uploadInstanceApproval(byte[],byte[],byte[])void'] & CommonMethodBuilderArgs) {
     builder = builder ?? this.writeClient!.newGroup()
-    const totalBytes = page1.length + page2.length + page3.length
-    // Creating and filling a box of N bytes costs N of box-write budget, and each box reference
-    // buys BOX_IO_BYTES_PER_REF of it. Resource population only adds one reference per distinct
-    // box, which covers a 1024-byte write and no more, so the budget is bought explicitly here.
-    // A three-page program needs 12 references, past the 8 MAX_APP_CALL_FOREIGN_REFERENCES allows
-    // on one call, so the surplus rides on no-op increaseBudget calls: box I/O budget is pooled
-    // across the group, and a call to this same app can carry references to its boxes without
-    // touching them.
-    const [ownRefs, ...padRefs] = boxIoRefsPerCall(boxIoRefsFor(totalBytes), 'uploadInstanceApproval')
-    for (let i = 0; i < padRefs.length; i++) {
-      builder = builder.increaseBudget({
-        args: { itxns: 0 },
-        boxReferences: Array.from({ length: padRefs[i] }, () => INSTANCE_APPROVAL_BOX_NAME),
-        // Distinct notes: otherwise identical pads would collide into one duplicate txn ID.
-        note: `iap-refs-${i}-${noteNonce()}`,
-      })
-    }
-    return builder.uploadInstanceApproval({
-      args: { page1, page2, page3 },
-      boxReferences: Array.from({ length: ownRefs }, () => INSTANCE_APPROVAL_BOX_NAME),
-      // Under AVM v13 the fee is usage-based across the group, and ~8KB of app args pushes usage past
-      // the free allowance, so the flat minimum is rejected. See feeFromGroupUsage: the caller
-      // simulates once to learn the real requirement and passes it back in as staticFee.
-      staticFee: (staticFee ?? UPLOAD_APPROVAL_MAX_FEE_MICROALGOS).microAlgo(),
-      note,
-    })
+    // Neither box references nor a fee are declared here; the executor measures both.
+    //
+    // Box I/O budget is 2048 bytes per reference (ref-swept on localnet at every boundary), and
+    // resource population DOES add more than one reference per distinct box: simulate reports the
+    // shortfall as `extraBoxRefs` and the populator materialises them as empty refs. So a caller
+    // never has to repeat a box reference by hand to buy write budget, and the three-page upload
+    // needs no companion calls carrying spare refs — `planGroupExtras` costs whatever simulate
+    // reports and pads the group itself.
+    //
+    // The AVM v13 usage fee is the same story: ~12KB of app args puts the group well past the free
+    // allowance, and the executor reads the real requirement off simulate and carries it on a
+    // prepended `increaseBudget` rather than on this call.
+    return builder.uploadInstanceApproval({ args: { page1, page2, page3 }, note })
   }
 
   uploadInstanceApproval = this.makeTxnExecutor({
@@ -389,40 +369,10 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
     // rejects as already-in-ledger while the earlier one is inside its validity window.
     note = note ?? `iap-upload-${noteNonce()}`
     const { page1, page2, page3 } = splitApprovalPages(bytecode)
-    // Two round trips on purpose. Simulate must run with a fee that already passes the v13 usage
-    // check, so the probe goes out at UPLOAD_APPROVAL_MAX_FEE_MICROALGOS; the real send then pays
-    // exactly what the network asked for.
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    const probe = await this.makeUploadInstanceApprovalTxns({ page1, page2, page3, note })
-    const simulated = await probe.simulate({ skipSignatures: true })
-    const fee = feeFromGroupUsage(simulated.simulateResponse, await minFeeMicroAlgos(this.algorand.client.algod))
-
-    await this.uploadInstanceApproval({ page1, page2, page3, staticFee: Number(fee), note })
+    await this.uploadInstanceApproval({ page1, page2, page3, note })
   }
 
   // ── Admin: addInstance (paired payment + createInstance) ─────────
-
-  /**
-   * Reference slots the group calling `createInstance` must carry for it to read the approval box.
-   *
-   * The child's whole bytecode is read back out of the box at create time, and box I/O budget is
-   * {@link BOX_IO_BYTES_PER_REF} per reference pooled across the group — so a program past what
-   * one app call's {@link MAX_APP_CALL_FOREIGN_REFERENCES} slots can buy needs company in the
-   * group. The extra slot covers the small boxes the same call also touches.
-   *
-   * Sized from the box rather than the FracDelegationInstance built into this SDK: the box is what
-   * is being deployed, and it exists precisely so child code can be upgraded without redeploying
-   * the registry. A missing box costs no padding — the contract raises its own not-configured
-   * error.
-   */
-  private async approvalReadRefSlots(): Promise<number> {
-    try {
-      const box = await this.algorand.app.getBoxValue(this.appId, INSTANCE_APPROVAL_BOX_NAME)
-      return boxIoRefsFor(box.length) + 1
-    } catch {
-      return 0
-    }
-  }
 
   @requireWriterWithClient()
   @wrapErrors()
@@ -442,7 +392,9 @@ export class FracDelegationRegistrySDK extends FracDelegationRegistryReaderSDK {
       amount: { microAlgo: mbr } as any,
     } as any)
     builder = builder ?? this.writeClient!.newGroup()
-    builder = padForRefSlots(builder, await this.approvalReadRefSlots(), 'createInstance')
+    // The child's whole bytecode is read back out of the approval box at create time, which
+    // costs box I/O budget the group has to carry. The executor measures it off simulate and
+    // pads the group, so nothing is declared here — see `sdk-shared`.
     return builder.createInstance({
       args: { name, mbrPayment },
       note,

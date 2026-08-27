@@ -16,6 +16,3 @@ export const periodBoxName = (periodId: number | bigint): Uint8Array => {
   new DataView(name.buffer).setUint32(1, Number(periodId))
   return name
 }
-
-/** The registry box holding the GGovPeriod approval bytecode: the ASCII key 'Pap'. */
-export const PERIOD_APPROVAL_BOX_NAME = new TextEncoder().encode('Pap')

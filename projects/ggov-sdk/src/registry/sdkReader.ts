@@ -25,7 +25,7 @@ import { chunk } from '../util/chunk.js'
 import { chunked } from '../util/chunked.js'
 import { committeeIdToRaw } from '../util/comitteeId.js'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors.js'
-import { SIMULATE_PARAMS } from '../util/increaseBudget.js'
+import { SIMULATE_PARAMS } from 'sdk-shared'
 
 /** A registry period summary paired with its periodId. */
 export interface PeriodSummaryWithId {

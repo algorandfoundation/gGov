@@ -58,15 +58,15 @@ jobs:
             echo "pipeline=false"
           } >> "$GITHUB_OUTPUT"
 
-          grep -qE '^projects/(contracts|[^/]+-sdk)/|^pnpm-lock\.yaml|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml' \
+          grep -qE '^projects/(contracts|sdk-shared|[^/]+-sdk)/|^pnpm-lock\.yaml|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml' \
             <<<"$changed" && echo "contracts=true" >> "$GITHUB_OUTPUT" || true
           grep -qE '^projects/contracts/smart_contracts/.*\.algo\.ts$' \
             <<<"$changed" && echo "puya_ts=true"   >> "$GITHUB_OUTPUT" || true
-          grep -qE '^projects/common/ggov-committee-uploader/|^projects/ggov-sdk/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
+          grep -qE '^projects/common/ggov-committee-uploader/|^projects/(ggov-sdk|sdk-shared)/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
             <<<"$changed" && echo "committee_uploader=true" >> "$GITHUB_OUTPUT" || true
           # The pipeline holds every AlgoQuarters engine — reti, tALGO and xALGO — and the shared
           # scan/snapshot primitives they build on, so any change under it has to run it.
-          grep -qE '^projects/frac-delegation-pipeline/|^projects/(frac-delegation|ggov)-sdk/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
+          grep -qE '^projects/frac-delegation-pipeline/|^projects/((frac-delegation|ggov)-sdk|sdk-shared)/|^projects/common/eslint\.config\.mjs$|^eslint\.config\.base\.mjs$|^\.prettier(ignore|rc)$|^pnpm-lock\.yaml$|^package\.json$|^pnpm-workspace\.yaml$|^\.github/workflows/ci\.yaml$' \
             <<<"$changed" && echo "pipeline=true" >> "$GITHUB_OUTPUT" || true
 
   audit:
@@ -143,7 +143,7 @@ jobs:
           fi
 
       - name: Build SDKs
-        run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
+        run: algokit project run build --project-name 'sdk-shared' --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
 
       - name: Typecheck
         run: algokit project run typecheck
@@ -202,7 +202,7 @@ jobs:
         run: pipx install algokit
 
       - name: Build SDKs
-        run: algokit project run build --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
+        run: algokit project run build --project-name 'sdk-shared' --project-name 'ggov-sdk' --project-name 'frac-delegation-sdk'
 
       - name: Start LocalNet
         run: algokit localnet start

@@ -30,6 +30,12 @@ export type ReaderConstructorArgs = {
 export interface CommonMethodBuilderArgs {
   builder?: FracDelegationRegistryComposer<any>
   note?: string | Uint8Array
+  /**
+   * Scratch cache owned by the executor, valid only for the duration of one write. The maker is
+   * re-run up to three times while the group is sized, and anything it reads to size its own call
+   * belongs in here rather than being fetched again on every rerun.
+   */
+  readCache?: Map<string, unknown>
 }
 
 export type FracDelegationRegistryContractArgs = FracDelegationRegistryArgs['obj']

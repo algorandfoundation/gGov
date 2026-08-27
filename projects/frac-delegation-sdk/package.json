@@ -46,7 +46,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "p-map": "^7.0.4"
+    "p-map": "^7.0.4",
+    "sdk-shared": "workspace:*"
   },
   "peerDependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.0",

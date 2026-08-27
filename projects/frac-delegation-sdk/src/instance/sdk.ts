@@ -13,11 +13,10 @@ import { requireWriter } from '../util/requiresSender.js'
 import { FracDelegationReaderSDK } from './sdkReader.js'
 import { wrapErrors, wrapErrorsInternal } from '../util/wrapErrors.js'
 import { parseAqFile } from '../util/aqFile.js'
-import { getSpendableBalance } from '../util/spendable.js'
+import { getSpendableBalance } from 'sdk-shared'
 import { committeeIdToRaw } from '../util/comitteeId.js'
 import { chunk } from '../util/chunk.js'
 import { instanceBoxName, periodBoxName } from '../util/boxes.js'
-import { padForRefSlots } from '../util/padForRefSlots.js'
 import { AppSizeParams, hasAppSizeChange, sendAppSizeUpdate } from '../util/appSizeUpdate.js'
 import {
   AQ_INSTANCE_MBR_PER_ACCOUNT_MICROALGOS,
@@ -212,8 +211,15 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * is append-only and the snapshot is rebuilt from it, so `escrowsVotes.length <= escrows.length`
    * always holds. Over-padding costs one min fee per spare txn; under-padding fails the group.
    */
-  private async escrowCountUpperBound(instanceNumId: bigint | number) {
-    return (await this.getEscrows(instanceNumId)).length
+  private async escrowCountUpperBound(instanceNumId: bigint | number, readCache?: Map<string, unknown>) {
+    // `getEscrows` is a simulate. The executor re-runs the maker while it sizes the group, so
+    // without the cache a single write pays for this several times over.
+    const key = `escrowCount:${instanceNumId}`
+    const cached = readCache?.get(key)
+    if (typeof cached === 'number') return cached
+    const count = (await this.getEscrows(instanceNumId)).length
+    readCache?.set(key, count)
+    return count
   }
 
   // ── Committees ───────────────────────────────────────────────────
@@ -227,8 +233,8 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * automatically via resource population; the instance app account pays the box MBR, which
    * grows with the escrow count.
    *
-   * The group is padded with no-op app calls to carry the per-escrow references — see
-   * `padForRefSlots`.
+   * The executor pads the group with no-op app calls to carry the per-escrow references — see
+   * `sdk-shared`.
    */
   @requireWriter()
   @wrapErrors()
@@ -238,6 +244,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     note,
     client,
     builder,
+    readCache,
   }: Omit<FracDelegationInstanceContractArgs['syncCommittee(byte[32])(uint16,uint32[],uint32)'], 'committeeId'> & {
     instanceNumId: bigint | number
     /** 32-byte committee ID, raw bytes or base64 */
@@ -245,12 +252,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
-    const numEscrows = await this.escrowCountUpperBound(instanceNumId)
-    // Slots: the gGov registry reads one box per escrow to resolve its voting power, plus a fixed
-    // 5 boxes (this instance's escrows + committees, the registry's committee metadata and its
-    // account-id map) and 2 app refs (the gGov registry, and registryApp which resolveOperator
-    // reads). Measured against simulate: N=3 -> 10, N=6 -> 13, N=9 -> 16, N=12 -> 19.
-    builder = padForRefSlots(builder, numEscrows + 7, 'syncCommittee')
+    const numEscrows = await this.escrowCountUpperBound(instanceNumId, readCache)
+    // Reference slots (N+7: one gGov registry box per escrow, plus 5 fixed boxes and 2 app refs)
+    // are measured and padded for by the executor.
     // extraFee covers the inner calls to the gGov registry: one getCommitteeMetadata, plus one
     // tryGetGovVotingPower per registered escrow.
     const innerCalls = 1 + numEscrows
@@ -338,10 +342,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
           `chunk them, or use ingestAqAll.`,
       )
     }
-    // Slots: 2 per account (this instance's accountAq box, and the registry's accounts box that
-    // getOrCreateAccountWithInstance reads/writes), plus a fixed 3 — the registryApp ref (also what
-    // resolveOperator reads), the registry's instances box, and this instance's committeeAq box.
-    builder = padForRefSlots(builder, accountAqs.length * 2 + 3, 'ingestAq')
+    // Reference slots (2N+3: per account this instance's accountAq box and the registry's accounts
+    // box, plus the registryApp ref, the registry's instances box and this instance's committeeAq
+    // box) are measured and padded for by the executor.
     // extraFee covers one getOrCreateAccountWithInstance inner call per account. Those inner calls
     // each add 700 to the opcode pool, so the loop largely funds its own compute.
     return builder.ingestAq({
@@ -596,10 +599,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
           `chunk them, or use uningestAqAll.`,
       )
     }
-    // Slots: 2 per account (the registry's accounts box read by getAccount + this instance's
-    // accountAq box), plus the registryApp ref and this instance's committeeAq box. No registry
-    // instances box — getAccount, unlike getOrCreateAccountWithInstance, doesn't touch it.
-    builder = padForRefSlots(builder, accounts.length * 2 + 2, 'uningestAq')
+    // Reference slots (2N+2: per account the registry's accounts box read by getAccount and this
+    // instance's accountAq box, plus the registryApp ref and the committeeAq box) are measured and
+    // padded for by the executor.
     // extraFee covers one getAccount inner call per account.
     return builder.uningestAq({
       args: { committeeNumId, accounts },
@@ -647,13 +649,13 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
    * and every box touched are resolved automatically via resource population; the instance app
    * account pays the box MBR, which grows with escrow and topic count.
    *
-   * The group is padded with no-op app calls when the escrow count needs more reference slots than
-   * one transaction carries — see `padForRefSlots`.
+   * The executor pads the group with no-op app calls when the escrow count needs more reference
+   * slots than one transaction carries — see `sdk-shared`.
    */
   @requireWriter()
   @wrapErrors()
   async makeSyncPeriodTxns({
-    instanceNumId,
+    instanceNumId: _instanceNumId,
     periodApp,
     note,
     client,
@@ -663,10 +665,9 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
-    // Slots: N escrow boxes + periods + periodVoteCache + committees + the period app's
-    // topicOptionsArr box (read by the getPeriodShort inner call) + 2 app refs (periodApp, and
-    // registryApp which resolveOperator reads). Measured against simulate: N=6 -> 12, N=8 -> 14.
-    builder = padForRefSlots(builder, (await this.escrowCountUpperBound(instanceNumId)) + 6, 'syncPeriod')
+    // Reference slots (N+6: one box per escrow, plus periods/periodVoteCache/committees, the
+    // period app's topicOptionsArr box and the periodApp + registryApp refs) are measured and
+    // padded for by the executor.
     // extraFee covers the single inner call to the period app: getPeriodShort.
     return builder.syncPeriod({ args: { periodApp }, note, extraFee: (1000).microAlgo() })
   }
@@ -707,6 +708,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     note,
     client,
     builder,
+    readCache,
   }: Omit<FracDelegationInstanceContractArgs['vote(address,uint32,uint32[][])void'], 'voterAccount'> & {
     /** Defaults to this SDK's writerAccount (self-vote) */
     voterAccount?: string
@@ -714,7 +716,7 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     client: FracDelegationInstanceClient
   } & InstanceMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
-    const numEscrows = await this.escrowCountUpperBound(instanceNumId)
+    const numEscrows = await this.escrowCountUpperBound(instanceNumId, readCache)
     const gGovRegistryAppId = await this.getGGovRegistryAppId()
     // The sender is always this SDK's writerAccount; the voter defaults to it (self-vote).
     const effectiveSender = String(this.writerAccount!.sender)
@@ -724,19 +726,13 @@ export class FracDelegationSDK extends FracDelegationReaderSDK {
     // plus per re-cast escrow the period vote() and the two registry reads it makes itself
     // (getDelegate + getGovVotingPower).
     const innerCalls = 1 + (isDelegated ? 1 : 0) + numEscrows * 3
-    // Slots, worst case (every escrow re-cast): 5 per escrow (the escrow's account ref — the inner
-    // vote() passes it in its foreign-accounts array, so it must be available to the group — plus
-    // this instance's periodEscrowVotes box, the period app's per-escrow vote record, and the gGov
-    // registry's delegations + accounts boxes), plus a fixed ~22 (3 app refs: period app, frac
-    // registry, gGov registry; this instance's periods/periodVoteCache/committees/committeeAq/
-    // accountAq/votingRecords/escrows boxes; the frac registry's accounts and instances boxes, the
-    // latter for checkNeedMBR's conditional top-up; the gGov registry's periods box, for the
-    // conditional top-up of the period vote nested in this one; the period's tallies box; the gGov
-    // registry's committee metadata + member superbox). Each pad also adds 16 inner-txn allowance
-    // and 700 opcodes, both of which the ref demand dominates. Validated against simulate in the
-    // e2e spec (8 escrows fail at 4-per-escrow sizing; 5 passes).
-    // A delegated vote adds 2: the voter's account ref and the gGov registry's delegations box.
-    builder = padForRefSlots(builder, numEscrows * 5 + 22 + (isDelegated ? 2 : 0), 'vote')
+    // Reference slots are measured off simulate and padded for by the executor: roughly 5 per
+    // re-cast escrow (its account ref, this instance's periodEscrowVotes box, the period app's
+    // per-escrow vote record, the gGov registry's delegations + accounts boxes) plus ~22 fixed
+    // (3 app refs and the boxes of all four apps this vote touches), and 2 more for a delegated
+    // vote. Each pad also adds 16 inner-txn allowance and 700 opcodes, both of which the ref
+    // demand dominates. What simulate cannot see — the state-dependent MBR branches — is declared
+    // statically below.
     const opts: Parameters<typeof builder.vote>[0] = {
       args: { voterAccount: voter, periodId, topicVotes },
       note,
