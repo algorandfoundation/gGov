@@ -4,6 +4,7 @@ import pMap from 'p-map'
 import { GGovRegistrySDK, SendResult, executeTxns } from '../registry/index.js'
 import { GGovPeriodClient, GGovPeriodComposer } from '../generated/GGovPeriodClient.js'
 import { GGovReaderSDK } from './sdkReader.js'
+import { flattenTopicVotes } from './voteShapes.js'
 import {
   BodyJson,
   PeriodBodyJson,
@@ -676,14 +677,24 @@ export class GGovSDK extends GGovReaderSDK {
     note,
     client,
     builder,
-  }: GGovPeriodContractArgs['vote(address,uint32[][])void'] & {
+  }: Omit<GGovPeriodContractArgs['vote(address,uint32[])void'], 'topicVotes'> & {
+    /** `[topic][option]`; flattened for the contract, which takes the concatenated shape. */
+    topicVotes: number[][]
     periodId: bigint | number
     client: GGovPeriodClient
   } & PeriodMethodBuilderArgs) {
     builder = builder ?? client.newGroup()
+    // Reference slots the vote spends, worst case: the voter's account ref; the registry app ref;
+    // the registry's periods box (checkNeedMBR's conditional top-up), delegations box, accounts box
+    // and the committee's metadata + member superbox (getDelegate + getGovVotingPower); and this
+    // period's own tallies, shape and vote-record boxes. Ten — over what one app call may carry, so
+    // the group needs a prepended call to hold them. Measured off simulate and padded for by the
+    // executor, which sizes pads from reference demand rather than from the opcode budget: the flat
+    // ballot made vote() cheap enough that a small period no longer trips the budget at all. See
+    // `sdk-shared`.
 
     const opts: any = {
-      args: { voterAccount, topicVotes },
+      args: { voterAccount, topicVotes: flattenTopicVotes(topicVotes) },
       note,
       // 1 inner getDelegate (when delegated) + 1 inner getGovVotingPower. The two MBR inner txns are
       // deliberately NOT counted here: both pay their own fee, so the group's fee must not depend on
@@ -798,8 +809,8 @@ export class GGovSDK extends GGovReaderSDK {
    *
    * Deleting an app does NOT delete its boxes — the box MBR would be locked forever — so this first
    * clears every per-topic body box ('T'+index) in batches of {@link MAX_BOX_REFS_PER_TXN} (the AVM
-   * box-reference limit), then the final delete deletes the always-present option/vote boxes
-   * ('o','t') and the optional period body ('P'), inner-calls registry.removePeriodSummary to drop
+   * box-reference limit), then the final delete deletes the always-present option/vote/shape boxes
+   * ('o','t','l') and the optional period body ('P'), inner-calls registry.removePeriodSummary to drop
    * the summary box, and sweeps the whole app-account balance (base + freed box MBR) back to the
    * deleting admin via closeRemainderTo. No prior withdrawal is needed.
    */
@@ -809,15 +820,21 @@ export class GGovSDK extends GGovReaderSDK {
     const client = await this.getPeriodWriteClient(periodId)
     const appId = await this.getPeriodAppId(periodId)
 
-    // Enumerate existing boxes. 'o'/'t' (options/votes) are always present; 'P' is the optional
-    // period body; each topic that uploaded a body has a 'T'+uint32 box. 'v' (vote records) cannot
-    // exist while !ready. Anything else is unexpected — refuse rather than silently strand its MBR.
+    // Enumerate existing boxes. 'o'/'t'/'l' (options, flat votes, per-topic option counts) are
+    // always present; 'P' is the optional period body; each topic that uploaded a body has a
+    // 'T'+uint32 box. 'v' (vote records) cannot exist while !ready. Anything else is unexpected —
+    // refuse rather than silently strand its MBR.
     const topicBodyIndexes: number[] = []
     for (const { nameRaw } of await this.algorand.app.getBoxNames(appId)) {
       const tag = nameRaw[0]
       if (tag === 0x54 /* 'T' */ && nameRaw.length === 5) {
         topicBodyIndexes.push(new DataView(nameRaw.buffer, nameRaw.byteOffset, nameRaw.byteLength).getUint32(1))
-      } else if (tag === 0x6f /* 'o' */ || tag === 0x74 /* 't' */ || (tag === 0x50 /* 'P' */ && nameRaw.length === 1)) {
+      } else if (
+        tag === 0x6f /* 'o' */ ||
+        tag === 0x74 /* 't' */ ||
+        tag === 0x6c /* 'l' */ ||
+        (tag === 0x50 /* 'P' */ && nameRaw.length === 1)
+      ) {
         // handled by the final delete txn
       } else {
         throw new Error(
@@ -840,13 +857,13 @@ export class GGovSDK extends GGovReaderSDK {
       await builder.send()
     }
 
-    // Final delete: deletes 'o'/'t'/'P' (all referenced — box_del requires the ref even when the box
-    // is absent), drops the registry summary, and sweeps the balance via closeRemainderTo.
+    // Final delete: deletes 'o'/'t'/'l'/'P' (all referenced — box_del requires the ref even when the
+    // box is absent), drops the registry summary, and sweeps the balance via closeRemainderTo.
     await client
       .newGroup()
       .delete.bare({
         note,
-        boxReferences: [asciiBoxName('o'), asciiBoxName('t'), asciiBoxName('P')],
+        boxReferences: [asciiBoxName('o'), asciiBoxName('t'), asciiBoxName('l'), asciiBoxName('P')],
         // 1 inner removePeriodSummary + 1 inner sweep payment
         extraFee: (2000).microAlgo(),
       })

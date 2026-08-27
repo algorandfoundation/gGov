@@ -82,8 +82,20 @@ export class GGovPeriodContract extends BaseContract {
 
   /** Per-topic option labels. Mutated only while editable. Parallel to topicVotesArr (same length & order). Last option is always Abstain (enforced). */
   topicOptionsArr = Box<GGovTopicOptions[]>({ key: 'o' })
-  /** Per-topic vote tallies. Mutated on every vote(). Parallel to topicOptionsArr (same length & order). */
-  topicVotesArr = Box<GGovTopicVotes[]>({ key: 't' })
+  /**
+   * Vote tallies, FLAT: every topic's options concatenated in topic order. Mutated on every vote().
+   * Shaped by topicLengths, which is parallel to topicOptionsArr.
+   *
+   * Flat rather than `GGovTopicVotes[]`: a nested ARC-4 array pays an offset-table lookup plus a
+   * per-row decode/encode on every element access, which is what dominates vote()'s opcode cost.
+   */
+  topicVotesArr = Box<Uint32[]>({ key: 't' })
+  /**
+   * Per-topic option counts, parallel to topicOptionsArr — the shape that turns the flat tallies
+   * back into rows. Maintained by the topic CRUD; kept as its own box so vote() can read the shape
+   * without decoding the (string-heavy) topicOptionsArr.
+   */
+  topicLengths = Box<Uint32[]>({ key: 'l' })
   /** Period body JSON (chunked) */
   periodBody = Box<bytes>({ key: 'P' })
   /** Topic body JSON by topicIndex */
@@ -114,7 +126,8 @@ export class GGovPeriodContract extends BaseContract {
     this.votingStart.value = votingStart.asUint64()
     this.votingEnd.value = votingEnd.asUint64()
     this.topicOptionsArr.value = [] as GGovTopicOptions[]
-    this.topicVotesArr.value = [] as GGovTopicVotes[]
+    this.topicVotesArr.value = [] as Uint32[]
+    this.topicLengths.value = [] as Uint32[]
   }
 
   // ── Helpers ──────────────────────────────────────────────────────
@@ -231,6 +244,17 @@ export class GGovPeriodContract extends BaseContract {
     }
   }
 
+  /** A flat, zero-filled tally sized to `lengths` (one cell per option across every topic). */
+  private zeroedCells(lengths: Uint32[]): Uint32[] {
+    const cells: Uint32[] = []
+    for (let t: uint64 = 0; t < lengths.length; t++) {
+      for (let o: uint64 = 0; o < lengths[t].asUint64(); o++) {
+        cells.push(u32(0))
+      }
+    }
+    return cells
+  }
+
   // ── Operator: period/topic CRUD ──────────────────────────────────
 
   public editPeriod(committeeId: CommitteeId, votingStart: uint64, votingEnd: uint64): void {
@@ -248,19 +272,19 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureEditable()
     this.ensureValidOptions(options)
 
-    const votes: Uint32[] = []
-    for (let i: uint64 = 0; i < options.length; i++) {
-      votes.push(u32(0))
-    }
     const newOptions: GGovTopicOptions = { options: clone(options) }
-    const newVotes: GGovTopicVotes = { votes: clone(votes) }
     const optionsArr = clone(this.topicOptionsArr.value)
     const votesArr = clone(this.topicVotesArr.value)
+    const lengths = clone(this.topicLengths.value)
     const topicIndex: uint64 = optionsArr.length
     optionsArr.push(clone(newOptions))
-    votesArr.push(clone(newVotes))
+    for (let i: uint64 = 0; i < options.length; i++) {
+      votesArr.push(u32(0))
+    }
+    lengths.push(u32(options.length))
     this.topicOptionsArr.value = clone(optionsArr)
     this.topicVotesArr.value = clone(votesArr)
+    this.topicLengths.value = clone(lengths)
     this.syncSummaryToRegistry()
     return topicIndex
   }
@@ -269,19 +293,18 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureCallerIsOperator()
     this.ensureEditable()
     const optionsArr = clone(this.topicOptionsArr.value)
-    const votesArr = clone(this.topicVotesArr.value)
+    const lengths = clone(this.topicLengths.value)
     loggedAssert(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     // Same enforcement as addTopic — the option list is fully replaced
     this.ensureValidOptions(options)
 
-    const votes: Uint32[] = []
-    for (let i: uint64 = 0; i < options.length; i++) {
-      votes.push(u32(0))
-    }
     optionsArr[topicIndex] = { options: clone(options) }
-    votesArr[topicIndex] = { votes: clone(votes) }
+    lengths[topicIndex] = u32(options.length)
     this.topicOptionsArr.value = clone(optionsArr)
-    this.topicVotesArr.value = clone(votesArr)
+    this.topicLengths.value = clone(lengths)
+    // Editable implies no votes have been cast (setReady(false) rejects a voted period), so the
+    // flat tallies are all zero and can simply be rebuilt at the new width.
+    this.topicVotesArr.value = clone(this.zeroedCells(lengths))
   }
 
   /** Remove the topic at $topicIndex. Operator only; only allowed while editable. */
@@ -289,18 +312,20 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureCallerIsOperator()
     this.ensureEditable()
     const optionsArr = clone(this.topicOptionsArr.value)
-    const votesArr = clone(this.topicVotesArr.value)
+    const lengths = clone(this.topicLengths.value)
     loggedAssert(topicIndex < optionsArr.length, errGGovTopicIndexOOB)
     const nextOptions: GGovTopicOptions[] = []
-    const nextVotes: GGovTopicVotes[] = []
+    const nextLengths: Uint32[] = []
     for (let i: uint64 = 0; i < optionsArr.length; i++) {
       if (i !== topicIndex) {
         nextOptions.push(clone(optionsArr[i]))
-        nextVotes.push(clone(votesArr[i]))
+        nextLengths.push(lengths[i])
       }
     }
     this.topicOptionsArr.value = clone(nextOptions)
-    this.topicVotesArr.value = clone(nextVotes)
+    this.topicLengths.value = clone(nextLengths)
+    // Editable implies zero tallies (see editTopic), so rebuild the flat cells at the new width.
+    this.topicVotesArr.value = clone(this.zeroedCells(nextLengths))
     this.syncSummaryToRegistry()
   }
 
@@ -309,26 +334,21 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureCallerIsOperator()
     const votesArr = clone(this.topicVotesArr.value)
     if (ready) {
-      // A vote() must submit a row for every topic and emits the ARC-28 GGovVoteCast event carrying
-      // the full per-topic breakdown. A single app call may log at most 1024 bytes, so if that event
-      // would overflow, the period could never be voted on. The encoded size depends only on the
-      // topic/option shape (known now), so reject readiness up-front rather than at vote time.
+      // A vote() submits one cell per option across every topic and emits the ARC-28 GGovVoteCast
+      // event carrying the full breakdown. A single app call may log at most 1024 bytes, so if that
+      // event would overflow, the period could never be voted on. The encoded size depends only on
+      // the topic/option shape (known now), so reject readiness up-front rather than at vote time.
       //
-      // GGovVoteCast = 4-byte ARC-28 prefix + ARC-4 (address,address,bool,uint64,uint32[][]):
-      //   81 bytes fixed = 4 prefix + 75 head (32+32+1+8 + 2-byte tail offset) + 2-byte outer count,
-      //   plus per topic (4 + 4·numOptions) = 2-byte element offset + 2-byte row length + numOptions·uint32.
-      let logSize: uint64 = 81
-      for (let i: uint64 = 0; i < votesArr.length; i++) {
-        logSize += 4 + 4 * votesArr[i].votes.length
-      }
+      // GGovVoteCast = 4-byte ARC-28 prefix + ARC-4 (address,address,bool,uint64,uint32[]):
+      //   81 bytes fixed = 4 prefix + 75 head (32+32+1+8 + 2-byte tail offset) + 2-byte array count,
+      //   plus 4 bytes per option cell. Flattening dropped the per-topic 4-byte offset+length pair,
+      //   so a flat period fits strictly more topics than a nested one did.
+      const logSize: uint64 = 81 + 4 * votesArr.length
       loggedAssert(logSize <= 1024, errGGovUnvotable)
     } else {
       // ensure no votes have been cast yet (only votes box loaded — options skipped)
       for (let i: uint64 = 0; i < votesArr.length; i++) {
-        const tallies = clone(votesArr[i].votes)
-        for (let j: uint64 = 0; j < tallies.length; j++) {
-          loggedAssert(tallies[j].asUint64() === 0, errGGovHasVotes)
-        }
+        loggedAssert(votesArr[i].asUint64() === 0, errGGovHasVotes)
       }
     }
     this.ready.value = ready
@@ -400,9 +420,9 @@ export class GGovPeriodContract extends BaseContract {
    *
    * Vote record MBR is paid by the period app account on an account's first vote. A top-up is requested from the registry via inner call when needed; see the `checkNeedMBR` post-condition.
    * @param voterAccount Account with voting power
-   * @param topicVotes Votes per topic, parallel to the period's topics/options. Each topic's votes are an array of Uint32, parallel to that topic's options, with the count of votes for each option. The sum of every topic's votes must equal the voter's total voting power (enforced in code, not ABI).
+   * @param topicVotes Votes as a FLAT Uint32[]: every topic's options concatenated in topic order, sized by the period's topicLengths. The sum of each topic's slice must equal the voter's total voting power (enforced in code, not ABI).
    */
-  public vote(voterAccount: Account, topicVotes: Uint32[][]): void {
+  public vote(voterAccount: Account, topicVotes: Uint32[]): void {
     loggedAssert(this.ready.value, errGGovNotReady)
     loggedAssert(Global.latestTimestamp >= this.votingStart.value, errGGovVotingNotStarted)
     loggedAssert(Global.latestTimestamp < this.votingEnd.value, errGGovVotingEnded)
@@ -430,7 +450,7 @@ export class GGovPeriodContract extends BaseContract {
       args: [this.committeeId.value, voterAccount],
     }).returnValue
 
-    // Global topic votes
+    // Global tallies, flat: cell c of topic t lives at (offset of t) + c.
     const globalVotesArr = clone(this.topicVotesArr.value)
     loggedAssert(newTopicVotes.length === globalVotesArr.length, errGGovVoteMismatch)
 
@@ -442,30 +462,28 @@ export class GGovPeriodContract extends BaseContract {
       if (isDelegated && !existingRecord.isDelegated) {
         loggedErr(errGGovCannotOverride)
       }
-      for (let i: uint64 = 0; i < existingRecord.topicVotes.length; i++) {
-        const oldTopicVotes = clone(existingRecord.topicVotes[i])
-        const currentVotes = clone(globalVotesArr[i].votes)
-        const subtractedVotes: Uint32[] = []
-        for (let j: uint64 = 0; j < oldTopicVotes.length; j++) {
-          subtractedVotes.push(u32(currentVotes[j].asUint64() - oldTopicVotes[j].asUint64()))
-        }
-        globalVotesArr[i] = { votes: clone(subtractedVotes) }
+      const oldVotes = clone(existingRecord.topicVotes)
+      loggedAssert(oldVotes.length === globalVotesArr.length, errGGovVoteMismatch)
+      for (let c: uint64 = 0; c < oldVotes.length; c++) {
+        globalVotesArr[c] = u32(globalVotesArr[c].asUint64() - oldVotes[c].asUint64())
       }
     }
 
-    // Tally new votes & check that the sum of each topic's votes equals the voter's total voting power
-    for (let i: uint64 = 0; i < newTopicVotes.length; i++) {
-      const topicVote = clone(newTopicVotes[i])
-      loggedAssert(topicVote.length === globalVotesArr[i].votes.length, errGGovVoteMismatch)
+    // Tally new votes & check that each topic's slice sums to the voter's total voting power. One
+    // pass over the flat cells, closing a topic whenever its boundary is reached.
+    const lengths = clone(this.topicLengths.value)
+    let cell: uint64 = 0
+    for (let t: uint64 = 0; t < lengths.length; t++) {
+      const width: uint64 = lengths[t].asUint64()
       let voteSum: uint64 = 0
-      const currentGlobalVotes = clone(globalVotesArr[i].votes)
-      const nextGlobalVotes: Uint32[] = []
-      for (let j: uint64 = 0; j < topicVote.length; j++) {
-        nextGlobalVotes.push(u32(currentGlobalVotes[j].asUint64() + topicVote[j].asUint64()))
-        voteSum += topicVote[j].asUint64()
+      for (let o: uint64 = 0; o < width; o++) {
+        const idx: uint64 = cell + o
+        const cast: uint64 = newTopicVotes[idx].asUint64()
+        globalVotesArr[idx] = u32(globalVotesArr[idx].asUint64() + cast)
+        voteSum += cast
       }
       loggedAssert(voteSum === votingPower.asUint64(), errGGovVotePowerMismatch)
-      globalVotesArr[i] = { votes: clone(nextGlobalVotes) }
+      cell += width
     }
 
     // emit event - BEFORE writing voteRecordBox; firstVote works without new var assignment
@@ -529,8 +547,15 @@ export class GGovPeriodContract extends BaseContract {
     const optionsArr = clone(this.topicOptionsArr.value)
     const votesArr = clone(this.topicVotesArr.value)
     const topics: GGovTopic[] = []
+    let cell: uint64 = 0
     for (let i: uint64 = 0; i < optionsArr.length; i++) {
-      topics.push({ options: clone(optionsArr[i].options), votes: clone(votesArr[i].votes) })
+      const width: uint64 = optionsArr[i].options.length
+      const row: Uint32[] = []
+      for (let o: uint64 = 0; o < width; o++) {
+        row.push(votesArr[cell + o])
+      }
+      cell += width
+      topics.push({ options: clone(optionsArr[i].options), votes: clone(row) })
     }
     return {
       committeeId: this.committeeId.value,
@@ -576,8 +601,15 @@ export class GGovPeriodContract extends BaseContract {
       numTopics: u32(optionsArr.length),
     }
     log(encodeArc4(meta))
+    let cell: uint64 = 0
     for (let i: uint64 = 0; i < optionsArr.length; i++) {
-      const topic: GGovTopic = { options: clone(optionsArr[i].options), votes: clone(votesArr[i].votes) }
+      const width: uint64 = optionsArr[i].options.length
+      const row: Uint32[] = []
+      for (let o: uint64 = 0; o < width; o++) {
+        row.push(votesArr[cell + o])
+      }
+      cell += width
+      const topic: GGovTopic = { options: clone(optionsArr[i].options), votes: clone(row) }
       log(encodeArc4(topic))
     }
   }
@@ -602,13 +634,22 @@ export class GGovPeriodContract extends BaseContract {
     const box = this.voteRecords(account)
     if (!box.exists) return
     const record = clone(box.value)
+    const lengths = clone(this.topicLengths.value)
     const meta: GGovVoteRecordMeta = {
       isDelegated: record.isDelegated,
-      numTopics: u32(record.topicVotes.length),
+      numTopics: u32(lengths.length),
     }
     log(encodeArc4(meta))
-    for (let i: uint64 = 0; i < record.topicVotes.length; i++) {
-      const topicVotes: GGovTopicVotes = { votes: clone(record.topicVotes[i]) }
+    // The record is stored flat; the per-topic line shape is preserved for readers.
+    let cell: uint64 = 0
+    for (let t: uint64 = 0; t < lengths.length; t++) {
+      const width: uint64 = lengths[t].asUint64()
+      const row: Uint32[] = []
+      for (let o: uint64 = 0; o < width; o++) {
+        row.push(record.topicVotes[cell + o])
+      }
+      cell += width
+      const topicVotes: GGovTopicVotes = { votes: clone(row) }
       log(encodeArc4(topicVotes))
     }
   }
@@ -644,10 +685,11 @@ export class GGovPeriodContract extends BaseContract {
     this.ensureCallerIsAdmin()
     this.ensureEditable()
     // delete boxes to reclaim their mbr
-    // topicOptionsArr and topicVotesArr will always exist
+    // topicOptionsArr, topicVotesArr and topicLengths will always exist
     // periodBody may or may not exist
     this.topicOptionsArr.delete()
     this.topicVotesArr.delete()
+    this.topicLengths.delete()
     if (this.periodBody.exists) this.periodBody.delete()
     // Inner-call the registry to remove this period's summary box so deleted periods drop out of
     // getAllPeriods/getAllPeriodSummaries (which filter on appId === 0).

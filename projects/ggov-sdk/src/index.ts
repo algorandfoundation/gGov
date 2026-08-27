@@ -10,8 +10,10 @@ export {
   GGovPeriodClient,
   type GGovPeriod,
   type GGovPeriodShort,
-  type GGovVoteRecord,
 } from './generated/GGovPeriodClient.js'
+// `GGovVoteRecord` is deliberately NOT re-exported from the generated client: on chain its
+// `topicVotes` is flat, and the SDK hands back the re-rowed [topic][option] shape instead.
+export * from './period/voteShapes.js'
 
 // Registry SDK surface.
 export {

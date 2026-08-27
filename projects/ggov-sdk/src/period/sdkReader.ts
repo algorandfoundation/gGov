@@ -8,10 +8,10 @@ import {
   GGovPeriodComposer,
   GGovPeriod,
   GGovPeriodShort,
-  GGovVoteRecord,
   APP_SPEC as PERIOD_APP_SPEC,
 } from '../generated/GGovPeriodClient.js'
 import { getConstructorConfig } from '../networkConfig.js'
+import { GGovVoteRecord } from './voteShapes.js'
 import {
   PeriodBodyJson,
   TopicBodyJson,
@@ -204,6 +204,8 @@ export class GGovReaderSDK {
     if (logs.length === 0) return null
 
     const [isDelegated] = GGovReaderSDK.VOTE_RECORD_META_TYPE.decode(new Uint8Array(logs[0])) as [boolean, bigint]
+    // Stored flat on chain, but `logVotingRecord` lines the record out one log per topic, so the
+    // rows arrive already shaped — no `topicOptionLengths` read needed to re-row it.
     const topicVotes = logs.slice(1).map((log) => {
       const [votes] = GGovReaderSDK.VOTE_RECORD_TOPIC_TYPE.decode(new Uint8Array(log)) as [bigint[]]
       return votes.map((v) => Number(v))

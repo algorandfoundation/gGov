@@ -157,16 +157,24 @@ global-schema headroom so the instance can grow without a registry redeploy.
 
 **Boxes:**
 
-| Prefix / key         | Contents                                                                                                       |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `escrows`            | `Account[]` — this instance's escrows, append-only                                                             |
-| `c<CommitteeId:32>`  | `FracInstanceCommittee` (committee numId, per-escrow votes, total) — snapshot from gGov                        |
-| `p<Uint32>`          | `FracInstancePeriod` (period app, committee, topic shape, escrow count) — snapshot from gGov                   |
-| `V<Uint32>`          | `FracPeriodVoteCache` (aggregate `internal` AQ + `ggovTotals` external [topic][option] tallies)                |
-| `E<[Uint32,Uint8]>`  | `FracEscrowVotes` (one escrow's external gGov votes for a period)                                              |
-| `A<Uint16>`          | `FracCommitteeAq` (per-committee AQ ledger: totals + running tallies)                                          |
-| `q<[Uint32,Uint16]>` | Per-[account, committee] ingested AlgoQuarters (`Uint32`)                                                      |
-| `r<[Uint32,Uint32]>` | `FracVotingRecord` (`isDelegated` + rows) — one account's internal vote for a period (`[periodId, accountId]`) |
+| Prefix / key         | Contents                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `escrows`            | `Account[]` — this instance's escrows, append-only                                                              |
+| `c<CommitteeId:32>`  | `FracInstanceCommittee` (committee numId, per-escrow votes, total) — snapshot from gGov                         |
+| `p<Uint32>`          | `FracInstancePeriod` (period app, committee, topic shape, escrow count) — snapshot from gGov                    |
+| `V<Uint32>`          | `FracPeriodVoteCache` (aggregate `internal` AQ + `ggovTotals` external tallies)                                 |
+| `E<[Uint32,Uint8]>`  | `FracEscrowVotes` (one escrow's external gGov votes for a period)                                               |
+| `A<Uint16>`          | `FracCommitteeAq` (per-committee AQ ledger: totals + running tallies)                                           |
+| `q<[Uint32,Uint16]>` | Per-[account, committee] ingested AlgoQuarters (`Uint32`)                                                       |
+| `r<[Uint32,Uint32]>` | `FracVotingRecord` (`isDelegated` + cells) — one account's internal vote for a period (`[periodId, accountId]`) |
+
+Every tally here — the cache, the per-escrow rows, the vote records — is stored **flat**: one cell
+per option across every topic, concatenated in topic order and shaped by the period snapshot's
+`topicOptionLengths`. A nested `Uint32[][]` charges an ARC-4 offset-table lookup plus a row
+decode/encode on every element access, and `vote()` is nothing but element access across two
+unbounded axes; flattening cut a 22-topic, 6-escrow vote from ~214k opcodes to ~82k, which is what
+keeps a large pool inside the AVM's pooled budget at all. The SDK flattens ballots on the way in and
+re-rows every tally it reads back, so callers still work in `[topic][option]`.
 
 ## Voting
 
@@ -184,11 +192,12 @@ operator/admin gate.
    voter's delegatee (`getDelegate`, one readonly inner call), and the voter must be referenced at
    `Txn.accounts(1)` so delegated votes are visible to indexers. See **User delegation** below.
 4. **Weight & shape.** The voter's AQ weight is one registry `getAccount` (readonly) + one O(1)
-   `accountAq` box read. Every topic row must sum to the voter's **full** AQ weight (as
-   `GGovPeriod.vote` requires); abstaining is voting the last option.
+   `accountAq` box read. `topicVotes` carries one cell per option across every topic, and each
+   topic's slice must sum to the voter's **full** AQ weight (as `GGovPeriod.vote` requires);
+   abstaining is voting the last option.
 5. **Internal tally.** Votes accumulate into `periodVoteCache.internal` in AlgoQuarters. Re-votes
-   overwrite: the account's previous rows (from its `r` record) are subtracted before the new rows are
-   added. A delegatee may **not** overwrite a record the owner cast directly (`errGGovCannotOverride`).
+   overwrite: the account's previous cells (from its `r` record) are subtracted before the new ones
+   are added. A delegatee may **not** overwrite a record the owner cast directly (`errGGovCannotOverride`).
 6. **Map internal → external.** The internal AQ tally is mapped onto the committee's total escrow gGov
    power against the `totalAq` denominator: non-last options floor-divide (`tally · totalVotes /
 totalAq`); the **last option takes the remainder**, so all AQ that never voted plus rounding dust

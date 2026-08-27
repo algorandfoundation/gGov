@@ -132,8 +132,17 @@ deleteApplication: admin, only while !ready → deletes boxes, removePeriodSumma
 The registry reserves extra program pages + global schema so the period can grow to the AVM
 ceiling without a registry redeploy.
 
-**Boxes:** `o` topicOptionsArr, `t` topicVotesArr (parallel to `o`, mutated per vote), `P` period
-body JSON, `T<Uint32>` per-topic body JSON, `v<Account>` `GGovVoteRecord` { isDelegated, topicVotes[][] }.
+**Boxes:** `o` topicOptionsArr, `t` topicVotesArr, `l` topicLengths (option count per topic,
+parallel to `o`), `P` period body JSON, `T<Uint32>` per-topic body JSON, `v<Account>`
+`GGovVoteRecord` { isDelegated, topicVotes }.
+
+Tallies and vote records are stored **flat** — every topic's options concatenated in topic order,
+shaped by `l` — rather than as a nested `Uint32[][]`. Every access to a nested ARC-4 array pays an
+offset-table lookup plus a row decode/encode, and the vote path is nothing but element access: the
+flat shape cut a 22-topic pooled vote from ~214k opcodes to ~82k, which is what keeps large
+pools inside the AVM's pooled budget at all. `l` is its own box so `vote()` can read the shape
+without decoding the string-heavy `o`. The SDKs flatten ballots on the way in and re-row every
+tally they read back, so off-chain callers still work in `[topic][option]`.
 
 ## Cross-contract trust boundaries
 
@@ -177,14 +186,14 @@ that accrue gGov voting power. This way, the instance can cast pooled gGov votes
 
 ## Voting mechanics
 
-`vote(voterAccount, topicVotes: Uint32[][])`:
+`vote(voterAccount, topicVotes: Uint32[])`:
 
 1. Period is `ready` and within the voting window.
 2. If `sender != voter`: registry must report `sender` as the voter's delegatee, and `voter` must
    be referenced in the txn's foreign accounts (`Txn.accounts(1)`) so indexers observe the delegation.
 3. Voting power = `registry.getGovVotingPower(committeeId, voter)`.
-4. `topicVotes` has one row per topic; each row matches that topic's option count; **each row sums
-   to the voter's full voting power** (`ERR:GV_VP`).
+4. `topicVotes` carries one cell per option across every topic, concatenated in topic order and
+   sized by `l`; **each topic's slice sums to the voter's full voting power** (`ERR:GV_VP`).
 5. Re-votes overwrite: old tallies subtracted, new added. A delegatee **cannot** override a vote the
    voter cast directly (`isDelegated=false` record ⇒ `ERR:GV_OD`).
 6. Emits `GGovVoteCast`; updates `first`/`lastVotingRound` and the `v<Account>` record.

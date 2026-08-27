@@ -11,8 +11,15 @@ all inside the one `vote()` app call. First consumer of the scaffolding `syncPer
 - **Denominator = `committeeAq.totalAq`.** Unvoted AQ implicitly counts as abstain (the last
   option). The denominator never moves, so a vote only re-maps options it touched — minimal escrow
   re-cast churn. A voter's influence is their AQ share of the _whole committee_, not of turnout.
-- **Exact sum rule: `Σ topicVotes[t] === userAQ` for every topic** (mirrors gGov's
+- **Exact sum rule: every topic's slice of `topicVotes` sums to `userAQ`** (mirrors gGov's
   `errGGovVotePowerMismatch` rule). Users abstain explicitly via the last option.
+- **Every tally is stored FLAT** — one cell per option across every topic, concatenated in topic
+  order and shaped by the period snapshot's `topicOptionLengths`. A nested `Uint32[][]` charges an
+  ARC-4 offset-table lookup plus a row decode/encode on every element access, and this method is
+  nothing but element access across two unbounded axes (topics x escrows): flat, a 22-topic
+  6-escrow vote burns ~82k opcodes where nested burnt ~214k — over what a group can pool at all.
+  The SDK flattens ballots on the way in and re-rows what it reads back, so callers keep
+  `[topic][option]`.
 - **`votingRecords` MBR comes from the instance balance** — operator pre-funds, sized by
   `committeeAq.numAccounts` (≈0.15 ALGO per voter at ~22-topic shape, ≈0.38 worst case). Matches
   gGovPeriod, whose `vote()` creates `voteRecords` boxes with no MBR payment.
@@ -52,12 +59,13 @@ all inside the one `vote()` app call. First consumer of the scaffolding `syncPer
 ## Signature
 
 ```
-vote(voterAccount: Account, periodId: Uint32, topicVotes: Uint32[][]): void   // the AQ holder, or its delegatee
+vote(voterAccount: Account, periodId: Uint32, topicVotes: Uint32[]): void   // the AQ holder, or its delegatee
 canVote(voterAccount: Account, senderAccount: Account, periodId: Uint32): [boolean, uint64]  // readonly mirror
 ```
 
-`topicVotes` is `[topic][option]` absolute AQ counts, parallel to the period's topics/options, each
-topic summing to the voter's full `userAQ`.
+`topicVotes` is absolute AQ counts, one cell per option across every topic, concatenated in topic
+order and sized by the snapshot's `topicOptionLengths`; each topic's slice sums to the voter's full
+`userAQ`. The SDK takes `[topic][option]` and flattens.
 
 > **v1 → v2.** v1 shipped as `vote(periodId, topicVotes)` with the voter hardwired to `Txn.sender`
 > and no frac-level delegation. User delegation added `voterAccount` (a breaking selector change,
@@ -72,7 +80,8 @@ topic summing to the voter's full `userAQ`.
 3. `committeeAq(period.committeeNumId)` exists and `ingestedAq === totalAq`
    (`errAqNotStarted` / `errAqIncomplete` — the `FracCommitteeAq` docstring already defines
    "votable" as complete).
-4. Outer length: `topicVotes.length === cache.internal.length` (`errGGovVoteMismatch`).
+4. Length: `topicVotes.length === cache.internal.length`, i.e. one cell per option across every
+   topic (`errGGovVoteMismatch`).
 5. Delegation: if `Txn.sender !== voterAccount`, inner-call the **gGov registry**'s
    `getDelegate(voterAccount)` and require it to equal `Txn.sender` (`errGGovNoDelegation`), plus
    `Txn.accounts(1) === voterAccount` (`errGGovDelegationNoAcctRef`) so the delegation is visible to
@@ -83,9 +92,10 @@ topic summing to the voter's full `userAQ`.
    must exist (`errAccountAqNotExists`).
 7. Re-vote: if `votingRecords([periodId, accountId])` exists, reject when `isDelegated` and the
    stored record has `isDelegated === false` (`errGGovCannotOverride` — checked before any mutation),
-   then subtract its stored `topicVotes` from `cache.internal`.
-8. Tally loop (one pass, like gGov `vote()`): per topic assert inner length (`errGGovVoteMismatch`)
-   and `Σ === userAq` (`errGGovVotePowerMismatch`), add into `cache.internal`.
+   then subtract its stored `topicVotes` from `cache.internal` cell by cell.
+8. Tally loop (one pass, like gGov `vote()`): walk the flat cells, closing a topic at each boundary
+   from `topicOptionLengths` and asserting `Σ === userAq` (`errGGovVotePowerMismatch`); add into
+   `cache.internal`.
 9. Map internal → gGov: `powers = committees(period.committeeId).escrowsVotes[0..numEscrows)`,
    `T = Σ powers`. Per topic: options `0..n-2` get `floor(internal[o] · T / totalAq)` (u32×u32
    product fits u64); the last option gets `T − Σ others` — explicit abstain AQ + unvoted AQ +
@@ -183,15 +193,16 @@ the user leg. Those fail the whole group; nothing is partially written.
 | Item               | Definition                                                                                    |
 | ------------------ | --------------------------------------------------------------------------------------------- |
 | `votingRecords`    | `BoxMap<[Uint32, Uint32], FracVotingRecord>({ keyPrefix: 'r' })`, key `[periodId, accountId]` |
-| `FracVotingRecord` | `{ isDelegated: boolean, topicVotes: Uint32[][] }` (`base/types.algo.ts`)                     |
+| `FracVotingRecord` | `{ isDelegated: boolean, topicVotes: Uint32[] }` (`base/types.algo.ts`), flat                 |
 | `FracVoteCast`     | ARC-28 event `{ voter, sender, accountId, userAq, updateVote, topicVotes }`                   |
 
 ## SDK
 
 `FracDelegationSDK` (`frac-delegation-sdk/src/instance/sdk.ts`):
 `vote({ instanceNumId, periodId, topicVotes, voterAccount? })` — like every instance-side method on
-the combined SDK it is keyed by `instanceNumId` (PR #78 restructure); sets worst-case `extraFee`,
-pads the group past 5 escrows, populates resources. No pre-resolution needed; address→ID is on-chain.
+the combined SDK it is keyed by `instanceNumId` (PR #78 restructure); takes `topicVotes` as
+`[topic][option]` and flattens it for the contract, sets worst-case `extraFee`, pads the group past
+5 escrows, populates resources. No pre-resolution needed; address→ID is on-chain.
 `voterAccount` defaults to the SDK's `writerAccount` (self-vote); pass a delegator to cast on their
 behalf and the SDK adds the required `accountReferences: [voterAccount]` and the extra inner-call
 fee. Readers: `getVotingRecord(instanceNumId, periodId, accountId)` and

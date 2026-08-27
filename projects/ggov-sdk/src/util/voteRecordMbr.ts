@@ -7,7 +7,7 @@
  * when the child runs dry its `checkNeedMBR` pulls a fixed `mbrTopUp` chunk off the registry. Sizing
  * a registry's funding therefore starts here.
  *
- * Both record types are ARC-4 `(bool, uint32[][])` and differ only in key width, so this takes the
+ * Both record types are ARC-4 `(bool, uint32[])` and differ only in key width, so this takes the
  * key length as an argument rather than existing twice. See `GGOV_VOTE_RECORD_KEY_LENGTH` below and
  * `FRAC_VOTING_RECORD_KEY_LENGTH` in frac-delegation-sdk.
  */
@@ -24,27 +24,29 @@ const BOX_PER_BYTE_MICROALGOS = 400n
 export const GGOV_VOTE_RECORD_KEY_LENGTH = 33
 
 /**
- * Encoded byte length of an ARC-4 `(bool, uint32[][])` vote record whose `[topic][option]` shape has
+ * Encoded byte length of an ARC-4 `(bool, uint32[])` vote record whose `[topic][option]` shape has
  * `optionCounts[t]` options in topic `t`.
+ *
+ * The record stores every topic's options concatenated in topic order, so only the total option
+ * count reaches the wire — the shape itself is recovered from the period's `topicLengths`:
  *
  * ```
  * head   1 bool + 2-byte offset to the dynamic tail        = 3
- * tail   2-byte outer length (topic count)                 = 2
- *        per topic: 2-byte element offset
- *                 + 2-byte inner length
- *                 + 4 bytes per uint32 option              = 4 + 4 * options
+ * tail   2-byte array length (total option cells)          = 2
+ *        + 4 bytes per uint32 option cell                  = 4 * totalOptions
  * ```
  *
- * The per-topic term is the same `4 + 4 * numOptions` that `GGovPeriod.setReady` sums when it
- * rejects a ballot whose `GGovVoteCast` event would overflow the 1024-byte log budget — that
- * contract is the cross-check for this arithmetic.
+ * The per-option term is the same `4 * totalOptions` that `GGovPeriod.setReady` sums when it rejects
+ * a ballot whose `GGovVoteCast` event would overflow the 1024-byte log budget — that contract is the
+ * cross-check for this arithmetic. Flattening dropped what used to be a further 4 bytes per topic
+ * (the nested shape's per-row offset and length), so a record is strictly smaller than it was.
  *
  * A vote must submit a row for every topic, so the box is written at full size on the first vote and
  * never grows. There is no partial-record case to account for.
  */
 export function voteRecordValueLength(optionCounts: readonly number[]): number {
   let length = 5
-  for (const options of optionCounts) length += 4 + 4 * options
+  for (const options of optionCounts) length += 4 * options
   return length
 }
 

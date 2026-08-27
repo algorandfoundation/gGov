@@ -93,7 +93,7 @@ export const DEFAULT_INSTANCE_MBR_MICROALGOS = 1_000_000n
  *
  * Keyed by numeric account id rather than by address, which is what makes it 24 bytes cheaper per
  * voter than the gGov period's address-keyed `voteRecords`. Pair it with ggov-sdk's
- * `voteRecordBoxMbr`, which both records share: they are the same ARC-4 `(bool, uint32[][])` shape
+ * `voteRecordBoxMbr`, which both records share: they are the same ARC-4 `(bool, uint32[])` shape
  * and differ only here.
  */
 export const FRAC_VOTING_RECORD_KEY_LENGTH = 9

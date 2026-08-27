@@ -24,9 +24,10 @@ function check(label: string, actual: unknown, expected: unknown) {
   console.log(`${ok ? 'ok  ' : 'FAIL'}  ${label}${ok ? '' : ` — got ${actual}, want ${expected}`}`)
 }
 
-// A 3-topic, 2-option ballot: value = 5 + 3*(4 + 4*2) = 41; key 33; MBR = 2500 + 400*74 = 32_100.
+// A 3-topic, 2-option ballot. topicVotes is flat, so only the 6 option cells reach the wire:
+// value = 5 + 4*6 = 29; key 33; MBR = 2500 + 400*62 = 27_300.
 const OPTS = [2, 2, 2]
-check('voteRecordBoxMbr 3x2', voteRecordBoxMbr(GGOV_VOTE_RECORD_KEY_LENGTH, OPTS), 32_100n)
+check('voteRecordBoxMbr 3x2', voteRecordBoxMbr(GGOV_VOTE_RECORD_KEY_LENGTH, OPTS), 27_300n)
 
 check('spendable above floor', spendable(1_000_000n, 400_000n), 600_000n)
 check('spendable below floor floors at 0', spendable(100_000n, 400_000n), 0n)

@@ -10,11 +10,11 @@ import {
   FracAccountCommitteeAq,
   FracCommitteeAq,
   FracCommitteeStanding,
-  FracEscrowVotes,
+  FracEscrowVotes as FracEscrowVotesFlat,
   FracInstanceCommittee,
   FracInstancePeriod,
-  FracPeriodVoteCache,
-  FracVotingRecord,
+  FracVotingRecord as FracVotingRecordFlat,
+  FracPeriodVoteCache as FracPeriodVoteCacheFlat,
 } from '../generated/FracDelegationInstanceClient.js'
 import { getConstructorConfig } from '../networkConfig.js'
 import { errorTransformer, wrapErrors } from '../util/wrapErrors.js'
@@ -22,6 +22,7 @@ import { assertUint } from '../util/assertUint.js'
 import { chunk } from '../util/chunk.js'
 import { chunked } from '../util/chunked.js'
 import { committeeIdToRaw } from '../util/comitteeId.js'
+import { FracEscrowVotes, FracPeriodVoteCache, FracVotingRecord, toTopicRows } from '../util/voteShapes.js'
 import { ReaderConstructorArgs } from './types.js'
 
 export class FracDelegationReaderSDK {
@@ -403,6 +404,9 @@ export class FracDelegationReaderSDK {
   /**
    * This instance's aggregate vote tallies for a gGov period, or undefined if `syncPeriod` has
    * never been run for it. Both tallies are [topic][option], shaped to the period's topics.
+   *
+   * The tallies are stored flat, so the period record rides along in the same simulate group for
+   * its `topicOptionLengths` — same round-trip, and no cached shape to go stale.
    */
   async getPeriodVoteCache(
     instanceNumId: bigint | number,
@@ -412,11 +416,17 @@ export class FracDelegationReaderSDK {
     const client = await this.getInstanceReadClient(instanceNumId)
     const { returns } = await client
       .newGroup()
+      .getPeriod({ args: { periodId: periodIdArg } })
       .getPeriodVoteCache({ args: { periodId: periodIdArg } })
       .simulate(SIMULATE_PARAMS)
-    const cache = returns[0]!
+    const { topicOptionLengths } = returns[0]!
+    const cache = returns[1]!
     // Sentinel: a synced period fills `internal` to its topic shape, so empty means "not synced".
-    return cache.internal.length === 0 ? undefined : cache
+    if (cache.internal.length === 0) return undefined
+    return {
+      internal: toTopicRows(cache.internal, topicOptionLengths),
+      ggovTotals: toTopicRows(cache.ggovTotals, topicOptionLengths),
+    }
   }
 
   /**
@@ -431,13 +441,17 @@ export class FracDelegationReaderSDK {
     const periodIdArg = assertUint(periodId, 32, 'periodId')
     const accountIdArg = assertUint(accountId, 32, 'accountId')
     const client = await this.getInstanceReadClient(instanceNumId)
+    // The period rides along for its `topicOptionLengths`, which re-rows the flat stored ballot.
     const { returns } = await client
       .newGroup()
+      .getPeriod({ args: { periodId: periodIdArg } })
       .getVotingRecord({ args: { periodId: periodIdArg, accountId: accountIdArg } })
       .simulate(SIMULATE_PARAMS)
-    const record = returns[0]!
-    // Sentinel: a cast vote has one row per topic, so empty `topicVotes` means "has not voted".
-    return record.topicVotes.length === 0 ? undefined : record
+    const { topicOptionLengths } = returns[0]!
+    const record = returns[1]!
+    // Sentinel: a cast vote fills every cell, so empty `topicVotes` means "has not voted".
+    if (record.topicVotes.length === 0) return undefined
+    return { ...record, topicVotes: toTopicRows(record.topicVotes, topicOptionLengths) }
   }
 
   /**
@@ -477,20 +491,24 @@ export class FracDelegationReaderSDK {
     periodId: bigint | number,
   ): Promise<(FracVotingRecord | undefined)[]> {
     if (accountIds.length === 0) return []
-    let builder: FracDelegationInstanceComposer<any> = client.newGroup()
+    // The period leads the group for its `topicOptionLengths`; its own return is logged like any
+    // ABI return, so the record logs start one confirmation later.
+    let builder: FracDelegationInstanceComposer<any> = client.newGroup().getPeriod({ args: { periodId } })
     for (const ids of chunk(accountIds, 63)) {
       builder = builder.logVotingRecords({ args: { periodId, accountIds: ids.map(BigInt) } })
     }
-    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
-    const logs = confirmations.flatMap(({ logs }) => logs ?? [])
+    const { returns, confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const { topicOptionLengths } = returns[0] as FracInstancePeriod
+    const logs = confirmations.slice(1).flatMap(({ logs }) => logs ?? [])
     return logs.map((log) => {
       const record = getABIDecodedValue(
         new Uint8Array(log!),
         'FracVotingRecord',
         client.appSpec.structs,
-      ) as FracVotingRecord
-      // Same sentinel as the singular reader: a cast vote has one row per topic.
-      return record.topicVotes.length === 0 ? undefined : record
+      ) as FracVotingRecordFlat
+      // Same sentinel as the singular reader: a cast vote fills every cell.
+      if (record.topicVotes.length === 0) return undefined
+      return { ...record, topicVotes: toTopicRows(record.topicVotes, topicOptionLengths) }
     })
   }
 
@@ -534,13 +552,17 @@ export class FracDelegationReaderSDK {
     const periodIdArg = assertUint(periodId, 32, 'periodId')
     const escrowIndexArg = assertUint(escrowIndex, 8, 'escrowIndex')
     const client = await this.getInstanceReadClient(instanceNumId)
+    // The period rides along for its `topicOptionLengths`, which re-rows the flat stored tally.
     const { returns } = await client
       .newGroup()
+      .getPeriod({ args: { periodId: periodIdArg } })
       .getPeriodEscrowVotes({ args: { periodId: periodIdArg, escrowIndex: escrowIndexArg } })
       .simulate(SIMULATE_PARAMS)
-    const escrowVotes = returns[0]!
+    const { topicOptionLengths } = returns[0]!
+    const escrowVotes = returns[1]!
     // Sentinel: a synced period fills each escrow box to its topic shape, so empty means "no box".
-    return escrowVotes.votes.length === 0 ? undefined : escrowVotes
+    if (escrowVotes.votes.length === 0) return undefined
+    return { votes: toTopicRows(escrowVotes.votes, topicOptionLengths) }
   }
 
   /**
@@ -578,10 +600,12 @@ export class FracDelegationReaderSDK {
       getABIDecodedValue(new Uint8Array(raw), struct, client.appSpec.structs) as T
 
     const period = decode<FracInstancePeriod>(logs[0]!, 'FracInstancePeriod')
-    const cache = decode<FracPeriodVoteCache>(logs[1]!, 'FracPeriodVoteCache')
-    const escrowVotes = logs.slice(2).map((l) => decode<FracEscrowVotes>(l!, 'FracEscrowVotes').votes)
+    const cache = decode<FracPeriodVoteCacheFlat>(logs[1]!, 'FracPeriodVoteCache')
+    // Every tally in this read is flat on chain and re-rowed against the period that leads the log.
+    const rows = (flat: number[]) => toTopicRows(flat, period.topicOptionLengths)
+    const escrowVotes = logs.slice(2).map((l) => rows(decode<FracEscrowVotesFlat>(l!, 'FracEscrowVotes').votes))
 
-    return { period, internal: cache.internal, ggovTotals: cache.ggovTotals, escrowVotes }
+    return { period, internal: rows(cache.internal), ggovTotals: rows(cache.ggovTotals), escrowVotes }
   }
 
   /** Read all instance global state, plus the current network round. */

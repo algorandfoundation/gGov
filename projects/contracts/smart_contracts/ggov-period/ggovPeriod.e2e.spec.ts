@@ -510,8 +510,8 @@ describe('GGovPeriod contract', () => {
       // Over-fund the period app so it can hold the period body + all topic-body box MBR.
       await localnet.algorand.account.ensureFundedFromEnvironment(getApplicationAddress(periodAppId), (3).algos())
 
-      // >8 topics each with an uploaded body, plus a period body → 'o','t','P' + 9×'T' = 12 boxes,
-      // so topic-body cleanup spans multiple batches (>8 box refs per txn is impossible).
+      // >8 topics each with an uploaded body, plus a period body → 'o','t','l','P' + 9×'T' = 13
+      // boxes, so topic-body cleanup spans multiple batches (>8 box refs per txn is impossible).
       const NUM_TOPICS = 9
       for (let i = 0; i < NUM_TOPICS; i++) {
         // Unique note per call so otherwise-identical addTopic txns get distinct txids.
@@ -523,7 +523,7 @@ describe('GGovPeriod contract', () => {
       }
 
       // Sanity: all boxes are present before deletion.
-      expect((await localnet.algorand.app.getBoxNames(periodAppId)).length).toBe(3 + NUM_TOPICS)
+      expect((await localnet.algorand.app.getBoxNames(periodAppId)).length).toBe(4 + NUM_TOPICS)
 
       const adminBefore = (await localnet.algorand.client.algod.accountInformation(admin.toString()).do()).amount
 
@@ -1090,9 +1090,11 @@ describe('GGovPeriod contract', () => {
     // Acts as well as regression test for the AVM property the whole design rests on: that `box_create`
     // raises `min_balance` immediately but defers the balance check to the end of the outer transaction.
 
-    // One topic of three options: S = 1 + 3, so the record is 5 + 4*S = 21 bytes over a 33-byte key
-    // ('v' + address), and box MBR is 2500 + 400 * (key + value).
-    const VOTE_RECORD_MBR = 2_500n + 400n * (33n + 21n)
+    // The ballot is stored flat, so the record is 5 + 4*C bytes for C option cells across all topics
+    // (3 head + 2 array count): one topic of three options is 17, over a 33-byte key ('v' +
+    // address), and box MBR is 2500 + 400 * (key + value). Nesting used to add another 4 bytes per
+    // topic for the row's own offset and length.
+    const VOTE_RECORD_MBR = 2_500n + 400n * (33n + 17n)
     const MBR_TOP_UP = 5_000_000n
     const REQUEST_FEE = 1_000n
 
@@ -1356,7 +1358,8 @@ describe('GGovPeriod contract', () => {
       })
       await expect(
         rawClient.send.vote({
-          args: { voterAccount: voter.toString(), topicVotes: [[10, 0, 0]] },
+          // Raw client, so the ballot is the contract's own flat shape rather than the SDK's rows.
+          args: { voterAccount: voter.toString(), topicVotes: [10, 0, 0] },
           extraFee: (2000).microAlgo(),
         }),
       ).rejects.toThrow(transformedError(errGGovDelegationNoAcctRef))
@@ -2193,18 +2196,19 @@ describe('GGovPeriod contract', () => {
 
   // ── Maximum number of topics ─────────────────────────────────────
   describe('maximum number of topics', () => {
-    // A vote() must submit a vote row for *every* topic — the contract enforces
-    // `topicVotes.length === numTopics` — and on every vote it emits the ARC-28 `GGovVoteCast`
-    // event, which carries the full per-topic vote breakdown. A single application call may log at
-    // most MaxLogSize = 1024 bytes, so the encoded event is the binding limit. The event is a
-    // 4-byte ARC-28 prefix + ARC-4 (address,address,bool,uint64,uint32[][]): a 75-byte head
-    // (32+32+1+8 + a 2-byte offset) + the topicVotes tail (2-byte array header + one row per
-    // topic). With `k` options each row encodes to (4 + 4·k) bytes (2 offset + 2 length + k×uint32):
-    //   4 + 75 + 2 + (4 + 4·k)·N ≤ 1024
-    // k=2 (Yes/No) → N ≤ 78; k=3 (Yes/No/Abstain) → N ≤ 58. Verified with algosdk's encoder + on-chain.
+    // A vote() must submit a cell for *every* option of *every* topic — the contract enforces
+    // `topicVotes.length === the period's total cell count` — and on every vote it emits the ARC-28
+    // `GGovVoteCast` event, which carries the full vote breakdown. A single application call may log
+    // at most MaxLogSize = 1024 bytes, so the encoded event is the binding limit. The event is a
+    // 4-byte ARC-28 prefix + ARC-4 (address,address,bool,uint64,uint32[]): a 75-byte head
+    // (32+32+1+8 + a 2-byte offset) + the topicVotes tail (2-byte array header + 4 bytes per cell):
+    //   4 + 75 + 2 + 4·k·N ≤ 1024  =>  k·N ≤ 235
+    // k=2 (Yes/Abstain) → N ≤ 117; k=3 (Yes/No/Abstain) → N ≤ 78. Verified with algosdk's encoder +
+    // on-chain. Flattening the ballot is what raised these: a nested uint32[][] spent another 4
+    // bytes per topic on the row's own offset and length, which capped the same shapes at 78 and 58.
     // Other ceilings sit higher, so they never bind: the vote's app args (MaxAppTotalArgLen = 2048)
-    // allow 167 (2-option) topics, and the 32 KB box ceiling allows thousands to be *stored*. The
-    // 1024-byte event log is what caps a *votable* period.
+    // allow 503 cells, and the 32 KB box ceiling allows thousands to be *stored*. The 1024-byte
+    // event log is what caps a *votable* period.
     //
     // setReady() recomputes this size up-front and refuses to ready a period whose vote event would
     // overflow, so an over-max period is rejected at ready time rather than discovered at vote time.
@@ -2238,8 +2242,8 @@ describe('GGovPeriod contract', () => {
     const voteRow = (numOptions: number) => Array.from({ length: numOptions }, (_, i) => (i === 0 ? 10 : 0))
 
     describe.each([
-      { label: 'Yes/Abstain (2 options)', options: ['Yes', 'Abstain'], max: 78 },
-      { label: 'Yes/No/Abstain (3 options)', options: ['Yes', 'No', 'Abstain'], max: 58 },
+      { label: 'Yes/Abstain (2 options)', options: ['Yes', 'Abstain'], max: 117 },
+      { label: 'Yes/No/Abstain (3 options)', options: ['Yes', 'No', 'Abstain'], max: 78 },
     ])('$label', ({ options, max }) => {
       test(`a period at the maximum (${max}) topics can be readied and voted across all topics`, async () => {
         const { sdk, committeeId, govAccounts, appClient, admin } = await deployWithCommittee(localnet, 1, 10)
@@ -2308,7 +2312,9 @@ describe('GGovPeriod contract', () => {
     }
     const addr = (v: ABIValue): string => (typeof v === 'string' ? v : encodeAddress(v as Uint8Array))
 
-    const VOTE_CAST = ['address', 'address', 'bool', 'uint64', 'uint32[][]']
+    // The ballot rides the event in the contract's own flat shape: every topic's options
+    // concatenated, not one array per topic.
+    const VOTE_CAST = ['address', 'address', 'bool', 'uint64', 'uint32[]']
     const DELEGATION = ['address', 'address', 'address']
 
     test('vote() emits GGovVoteCast with the voter, sender, updateVote flag, power and votes', async () => {
@@ -2335,10 +2341,7 @@ describe('GGovPeriod contract', () => {
       expect(addr(evSender)).toBe(voter.toString())
       expect(evUpdate).toBe(false) // first vote → not an update
       expect(Number(evPower)).toBe(10)
-      expect((evVotes as bigint[][]).map((r) => r.map(Number))).toEqual([
-        [10, 0, 0],
-        [10, 0, 0, 0],
-      ])
+      expect((evVotes as bigint[]).map(Number)).toEqual([10, 0, 0, 10, 0, 0, 0])
 
       // Re-voting on the same record flips updateVote to true.
       const second = await voterSDK.vote({
@@ -2351,10 +2354,7 @@ describe('GGovPeriod contract', () => {
       })
       const [, , evUpdate2, , evVotes2] = decodeEvent(second, 'GGovVoteCast', VOTE_CAST)
       expect(evUpdate2).toBe(true)
-      expect((evVotes2 as bigint[][]).map((r) => r.map(Number))).toEqual([
-        [0, 10, 0],
-        [0, 10, 0, 0],
-      ])
+      expect((evVotes2 as bigint[]).map(Number)).toEqual([0, 10, 0, 0, 10, 0, 0])
     })
 
     test('setVotingAccount() emits GGovDelegationSet on delegate and re-delegate', async () => {
